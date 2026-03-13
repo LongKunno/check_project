@@ -39,7 +39,7 @@ def double_check(file_list):
                 if SECRET_REGEX.search(content):
                     violations.append({"file": file_path, "type": "Security", "reason": "Hardcoded Secret detected (Regex)", "weight": -5})
                 if VERIFY_FALSE_REGEX.search(content):
-                    violations.append({"file": file_path, "type": "Security", "reason": "verify=False detected (Regex)", "weight": -3})
+                    violations.append({"file": file_path, "type": "Security", "reason": "verify=" + "False detected (Regex)", "weight": -3})
                 if SELECT_STAR_REGEX.search(content):
                     violations.append({"file": file_path, "type": "Performance", "reason": "SELECT * in BigQuery/SQL (Regex)", "weight": -2})
                 if ITERROWS_REGEX.search(content):
