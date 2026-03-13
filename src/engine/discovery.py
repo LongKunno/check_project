@@ -42,7 +42,7 @@ def run_precheck():
                         if loc > 0:
                             results["total_files"] += 1
                             results["total_loc"] += loc
-                            results["files"].append({{"path": path, "loc": loc}})
+                            results["files"].append({{"path": os.path.abspath(path), "loc": loc}})
                 except Exception:
                     continue
     

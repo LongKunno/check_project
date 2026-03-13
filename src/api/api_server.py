@@ -121,6 +121,7 @@ async def run_audit(target: str = Query(".", description="Path to the directory 
         # 5. Trả về kết quả cho Frontend
         return {
             "status": "success",
+            "target": target_path,
             "project_name": os.path.basename(target_path),
             "metrics": {
                 "total_loc": total_loc,
