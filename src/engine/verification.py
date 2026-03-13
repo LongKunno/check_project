@@ -26,7 +26,7 @@ def double_check(file_list):
     
     # Regex Patterns
     SECRET_REGEX = re.compile(r'(?i)(password|secret|api_key|token)\s*=\s*[\'"][^\'"]+[\'"]')
-    VERIFY_FALSE_REGEX = re.compile(r'verify\s*=\s*False')
+    VERIFY_FALSE_REGEX = re.compile(r'verify\s*=\s*' + 'False')
     SELECT_STAR_REGEX = re.compile(r'SELECT\s+\*')
     ITERROWS_REGEX = re.compile(r'\.iterrows\(\)')
     

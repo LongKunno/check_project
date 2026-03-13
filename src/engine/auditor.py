@@ -10,6 +10,7 @@ from src.config import WEIGHTS, K_FACTOR
 from src.engine.discovery import DiscoveryStep
 from src.engine.verification import VerificationStep
 from src.engine.scoring import ScoringEngine
+from src.engine.database import AuditDatabase
 
 class CodeAuditor:
     def __init__(self, target_dir='.'):
@@ -87,6 +88,16 @@ class CodeAuditor:
         # BƯỚC 5: REPORTING (Xuất báo cáo)
         print("[5/5] Bước 5: Xuất báo cáo (Reporting)...")
         self.generate_report(pillar_scores, final_score, rating, pillar_punishments)
+        
+        # LƯU VÀO LỊCH SỬ (V2)
+        AuditDatabase.save_audit(
+            target=self.target_dir,
+            score=final_score,
+            rating=rating,
+            loc=total_loc,
+            violations_count=len(self.violations),
+            pillar_scores=pillar_scores
+        )
         
         print(f"\n✅ Kiểm toán hoàn tất!")
         print(f"   - Điểm tổng thể: {final_score}/100")

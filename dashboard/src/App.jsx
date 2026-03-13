@@ -19,16 +19,20 @@ import {
 import {
   Chart as ChartJS,
   RadialLinearScale,
+  CategoryScale,
+  LinearScale,
   PointElement,
   LineElement,
   Filler,
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Radar } from 'react-chartjs-2';
+import { Radar, Line } from 'react-chartjs-2';
 
 ChartJS.register(
   RadialLinearScale,
+  CategoryScale,
+  LinearScale,
   PointElement,
   LineElement,
   Filler,
@@ -123,6 +127,7 @@ function App() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [showExplorer, setShowExplorer] = useState(false);
+  const [history, setHistory] = useState([]);
   /**
    * Gọi API Backend để kích hoạt quy trình kiểm toán.
    */
@@ -139,10 +144,29 @@ function App() {
       }
       const result = await response.json();
       setData(result);
+      if (result.target) {
+        fetchHistory(result.target);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
       setIsAuditing(false);
+    }
+  };
+
+  /**
+   * Lấy lịch sử kiểm toán từ Backend (V2)
+   */
+  const fetchHistory = async (path) => {
+    try {
+      const response = await fetch(`/api/history?target=${encodeURIComponent(path)}`);
+      if (response.ok) {
+        const historyData = await response.json();
+        // Đảo ngược để vẽ chart từ cũ đến mới
+        setHistory(historyData.reverse());
+      }
+    } catch (err) {
+      console.error("Lỗi lấy lịch sử:", err);
     }
   };
 

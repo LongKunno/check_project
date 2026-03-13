@@ -14,6 +14,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 from src.engine.auditor import CodeAuditor
 from src.config import WEIGHTS
 from src.engine.scoring import ScoringEngine
+from src.engine.database import AuditDatabase
 
 app = FastAPI(
     title="AI Static Analysis API (V1)",
@@ -135,6 +136,15 @@ async def run_audit(target: str = Query(".", description="Path to the directory 
     except Exception as e:
         # Xử lý lỗi hệ thống nếu có
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {str(e)}")
+
+@app.get("/history")
+async def get_audit_history(target: str = None):
+    """Lấy danh sách lịch sử các lần kiểm toán."""
+    try:
+        history = AuditDatabase.get_history(target)
+        return history
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn
