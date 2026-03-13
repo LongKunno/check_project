@@ -324,6 +324,52 @@ function App() {
             </div>
           </div>
 
+          {/* Biểu đồ xu hướng (V2) */}
+          {history.length > 1 && (
+            <div className="glass-card" style={{ marginBottom: '2.5rem', padding: '1.5rem', animation: 'fadeIn 0.5s ease-out' }}>
+              <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '1rem', color: '#94a3b8' }}>
+                <Activity size={18} color="var(--accent-blue)" /> XU HƯỚNG SỨC KHỎE DỰ ÁN (HISTORICAL TRENDS)
+              </h3>
+              <div style={{ height: '220px' }}>
+                <Line 
+                  data={{
+                    labels: history.map(h => new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })),
+                    datasets: [{
+                      label: 'Audit Score',
+                      data: history.map(h => h.score),
+                      borderColor: '#3b82f6',
+                      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                      fill: true,
+                      tension: 0.4,
+                      pointRadius: 4,
+                      pointHoverRadius: 6,
+                      pointBackgroundColor: '#3b82f6',
+                      pointBorderColor: '#fff',
+                    }]
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                      legend: { display: false },
+                      tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        padding: 12,
+                        cornerRadius: 8
+                      }
+                    },
+                    scales: {
+                      y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } },
+                      x: { grid: { display: false }, ticks: { color: '#64748b' } }
+                    }
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
           <div className="main-grid">
             {/* Danh sách vi phạm chi tiết */}
             <div className="glass-card" style={{ overflow: 'hidden' }}>
