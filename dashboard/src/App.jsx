@@ -39,7 +39,6 @@ ChartJS.register(
 );
 
 function App() {
-  const [selectedFiles, setSelectedFiles] = useState(null);
   const [folderName, setFolderName] = useState('');
   const [isAuditing, setIsAuditing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -47,14 +46,21 @@ function App() {
   const [error, setError] = useState(null);
   const [history, setHistory] = useState([]);
   const [isDragOver, setIsDragOver] = useState(false);
+  const [fileCount, setFileCount] = useState(0);
+  const [preparingProgress, setPreparingProgress] = useState(0);
+  const [isPreparing, setIsPreparing] = useState(false);
+  const filesRef = useRef(null);
   const fileInputRef = useRef(null);
 
   const handleFolderSelect = (e) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-    setSelectedFiles(files);
+    
+    filesRef.current = files; // Lưu vào ref để tránh lag React state
+    setFileCount(files.length);
     setError(null);
     setData(null);
+    
     // Lấy tên thư mục từ file đầu tiên
     const firstPath = files[0].webkitRelativePath || files[0].name;
     const name = firstPath.split('/')[0] || 'project';
@@ -62,22 +68,43 @@ function App() {
   };
 
   const runAudit = async () => {
-    if (!selectedFiles || selectedFiles.length === 0) {
+    const files = filesRef.current;
+    if (!files || files.length === 0) {
       setError('Vui lòng chọn một thư mục để kiểm toán.');
       return;
     }
+    
     setIsAuditing(true);
+    setIsPreparing(true);
     setError(null);
     setData(null);
     setUploadProgress(0);
+    setPreparingProgress(0);
 
     try {
       const formData = new FormData();
-      for (const file of selectedFiles) {
-        formData.append('files', file, file.webkitRelativePath || file.name);
+      const total = files.length;
+      const batchSize = 5000;
+      
+      // Xử lý theo đợt để không treo Main Thread
+      for (let i = 0; i < total; i += batchSize) {
+        // Sử dụng Array.from chỉ cho phần chunk để tránh tạo mảng khổng lồ cùng lúc
+        for (let j = i; j < Math.min(i + batchSize, total); j++) {
+          const file = files[j];
+          formData.append('files', file, file.webkitRelativePath || file.name);
+        }
+        
+        // Cập nhật tiến trình chuẩn bị
+        const currentCount = Math.min(i + batchSize, total);
+        const progress = Math.min(Math.round((currentCount / total) * 100), 100);
+        setPreparingProgress(progress);
+        
+        // Nhường CPU cho UI render
+        await new Promise(resolve => setTimeout(resolve, 0));
       }
 
-      setUploadProgress(10); // Khởi động fake progress cho Brave
+      setIsPreparing(false);
+      setUploadProgress(10); // Bắt đầu upload
       
       console.log("Bắt đầu Audit với fetch tới /api/audit/process...");
       const response = await fetch('/api/audit/process', {
@@ -210,10 +237,16 @@ function App() {
               <>
                 <FolderOpen size={16} color="var(--accent-blue)" />
                 <span className="upload-folder-name">{folderName}</span>
-                <span className="upload-file-count">({selectedFiles?.length} files)</span>
+                <span className="upload-file-count">({fileCount} files)</span>
                 <button
                   className="upload-clear"
-                  onClick={(e) => { e.stopPropagation(); setSelectedFiles(null); setFolderName(''); setData(null); }}
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    filesRef.current = null; 
+                    setFileCount(0);
+                    setFolderName(''); 
+                    setData(null); 
+                  }}
                 >
                   <X size={14} />
                 </button>
@@ -226,12 +259,14 @@ function App() {
             )}
           </div>
 
-          <button className="btn-audit" onClick={runAudit} disabled={isAuditing || !selectedFiles}>
+          <button className="btn-audit" onClick={runAudit} disabled={isAuditing || fileCount === 0}>
             {isAuditing ? <Zap className="spin" size={20} /> : <Zap size={20} />}
             {isAuditing 
-              ? (uploadProgress > 0 && uploadProgress < 100 
-                  ? `ĐANG UPLOAD ${uploadProgress}%...` 
-                  : 'ĐANG PHÂN TÍCH...') 
+              ? (isPreparing 
+                  ? `CHUẨN BỊ ${preparingProgress}%...`
+                  : (uploadProgress > 0 && uploadProgress < 100 
+                      ? `ĐANG UPLOAD ${uploadProgress}%...` 
+                      : 'ĐANG PHÂN TÍCH...')) 
               : 'CHẠY KIỂM TOÁN'}
           </button>
         </div>
