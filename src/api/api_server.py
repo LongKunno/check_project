@@ -5,6 +5,10 @@ Provides a RESTful interface to trigger code audits and retrieve results.
 
 import os
 import sys
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # HACK: Tăng giới hạn upload file cho Starlette/FastAPI (Deep Monkeypatch)
 # Mặc định Starlette giới hạn 1000 file, chúng ta nâng lên 100,000 để hỗ trợ project lớn.
@@ -22,15 +26,17 @@ from fastapi import FastAPI, HTTPException, Query, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 import shutil
 import tempfile
-from typing import List
+from typing import List, Optional
+from pydantic import BaseModel
 # Đảm bảo import được các module từ thư mục 'src'
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from src.engine.auditor import CodeAuditor
-from src.config import WEIGHTS
+from src.config import WEIGHTS, CONFIGURED_REPOSITORIES
 from src.engine.scoring import ScoringEngine
 from src.engine.database import AuditDatabase
 from fastapi.exceptions import RequestValidationError
+from src.api.git_helper import GitHelper
 import logging
 
 # Thiết lập logging chi tiết
@@ -56,9 +62,14 @@ async def add_private_network_header(request, call_next):
     return response
 
 # Cấu hình CORS (Phải đăng ký SAU middleware PNA để wrapping đúng cách)
+ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -92,19 +103,32 @@ async def upload_and_audit(files: List[UploadFile] = File(...)):
     project_name = "uploaded_project"
 
     try:
-        # Lưu từng file, giữ nguyên cấu trúc thư mục tương đối
+        # Lưu từng file, giữ nguyên cấu trúc thư mục tương đối (đã sanitize)
         for upload_file in files:
-            # filename từ browser là đường dẫn tương đối: "project/src/main.py"
-            relative_path = upload_file.filename
-            if not relative_path:
+            # filename từ browser: "project/src/main.py"
+            raw_path = upload_file.filename
+            if not raw_path:
                 continue
 
-            # Lấy tên project từ file đầu tiên (thư mục gốc)
-            parts = relative_path.replace("\\", "/").split("/")
-            if len(parts) > 1:
-                project_name = parts[0]
+            # Xử lý an toàn: chuẩn hóa path và ngăn chặn quay ngược thư mục (../)
+            # Chúng ta giữ cấu trúc folder nhưng đảm bảo nó không thoát khỏi temp_dir
+            parts = raw_path.replace("\\", "/").split("/")
+            # Lọc bỏ các part nguy hiểm như ".." hoặc "."
+            safe_parts = [p for p in parts if p not in ("..", ".", "")]
+            
+            if not safe_parts:
+                continue
+                
+            relative_path = os.path.join(*safe_parts)
+            
+            # Lấy tên project từ phần tử đầu tiên
+            project_name = safe_parts[0]
 
             dest_path = os.path.join(temp_dir, relative_path)
+            # Đảm bảo dest_path vẫn nằm trong temp_dir
+            if not os.path.abspath(dest_path).startswith(os.path.abspath(temp_dir)):
+                continue
+
             os.makedirs(os.path.dirname(dest_path), exist_ok=True)
 
             content = await upload_file.read()
@@ -209,6 +233,101 @@ async def run_audit(target: str = Query(".", description="Path to the directory 
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {str(e)}")
+
+@app.get("/repositories")
+async def get_configured_repositories():
+    """Lấy danh sách các repository đã được cấu hình sẵn (ẩn token/username)."""
+    public_repos = []
+    for repo in CONFIGURED_REPOSITORIES:
+        public_repos.append({
+            "id": repo["id"],
+            "name": repo["name"],
+            "url": repo["url"]
+        })
+    return {"status": "success", "data": public_repos}
+
+class RepositoryAuditRequest(BaseModel):
+    id: Optional[str] = None
+    repo_url: Optional[str] = None
+    username: Optional[str] = None
+    token: Optional[str] = None
+
+@app.post("/audit/repository")
+async def audit_repository(request: RepositoryAuditRequest):
+    """
+    Nhận id (repo cấu hình sẵn) hoặc URL Repository, clone về thư mục tạm, chạy kiểm toán rồi dọn dẹp.
+    """
+    repo_url = request.repo_url
+    username = request.username
+    token = request.token
+
+    if request.id:
+        # Nếu có gửi ID, lấy thông tin từ cấu hình
+        config_repo = next((r for r in CONFIGURED_REPOSITORIES if r["id"] == request.id), None)
+        if not config_repo:
+            raise HTTPException(status_code=400, detail="Không tìm thấy ID dự án được cấu hình.")
+        repo_url = config_repo["url"]
+        username = config_repo["username"]
+        token = config_repo["token"]
+        
+    if not repo_url:
+        raise HTTPException(status_code=400, detail="Thiếu cấu hình ID dự án hoặc URL Repository.")
+
+    temp_dir = tempfile.mkdtemp(prefix="git_audit_")
+    
+    try:
+        # Clone repo
+        target_path = os.path.join(temp_dir, "repo")
+        GitHelper.clone_repository(
+            repo_url=repo_url, 
+            dest_dir=target_path, 
+            username=username, 
+            token=token
+        )
+        
+        # Chạy kiểm toán
+        auditor = CodeAuditor(target_path)
+        auditor.run()
+
+        # Tổng hợp kết quả
+        pillar_punishments = {p: 0 for p in WEIGHTS.keys()}
+        for v in auditor.violations:
+            pillar_punishments[v['pillar']] += v['weight']
+
+        total_loc = auditor.discovery_data['total_loc']
+
+        pillar_scores = {}
+        for pillar in WEIGHTS.keys():
+            pillar_scores[pillar] = ScoringEngine.calculate_pillar_score(
+                pillar_punishments[pillar],
+                total_loc
+            )
+
+        final_score = ScoringEngine.calculate_final_score(pillar_scores)
+        rating = ScoringEngine.get_rating(final_score)
+
+        return {
+            "status": "success",
+            "target": repo_url,
+            "project_name": repo_url.split('/')[-1].replace('.git', ''),
+            "metrics": {
+                "total_loc": total_loc,
+                "total_files": auditor.discovery_data['total_files']
+            },
+            "scores": {
+                "final": final_score,
+                "rating": rating,
+                "pillars": pillar_scores
+            },
+            "violations": auditor.violations
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {str(e)}")
+    finally:
+        # Luôn dọn dẹp thư mục tạm
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir)
 
 @app.get("/history")
 async def get_audit_history(target: str = None):

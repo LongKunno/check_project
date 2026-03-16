@@ -1,61 +1,69 @@
 # AI Static Analysis - Release V1.0.0 (Framework V3)
 
-Dự án này là một công cụ phân tích tĩnh chuyên biệt được thiết kế để đánh giá chất lượng, bảo mật và hiệu năng của các dự án phần mềm khác. Phiên bản 1.0.0 tích hợp đầy đủ Web Dashboard và Docker Orchestration.
+Dự án này là một nền tảng phân tích tĩnh thông minh được thiết kế để đánh giá chất lượng, bảo mật và hiệu năng của các dự án phần mềm. Phiên bản 1.0.0 tích hợp đầy đủ Web Dashboard, Core Engine mạnh mẽ và hệ thống Deployment qua Docker.
 
-## 核心架构 (Core Architecture)
+## 🌟 Kiến trúc Hệ thống (System Architecture)
 
-Hệ thống hoạt động dựa trên nguyên tắc "Chỉ phân tích tĩnh" (**Static-Only**), đảm bảo an toàn và tốc độ bằng cách phân tích mã nguồn mà không cần thực thi. Công cụ đánh giá dựa trên 4 trụ cột chính:
+Dự án được cấu trúc theo mô hình Micro-service tối giản:
 
-1.  **Hiệu năng (Performance - 30%)**: Tối ưu hóa **BigQuery**, quản lý bộ nhớ (**Memory management**), độ trễ API (**API latency**), hiệu suất xây dựng (**Build efficiency**).
-2.  **Bảo trì (Maintainability - 25%)**: Các lỗi trình bày (**Code smells**), tuân thủ kiến trúc (**Architecture compliance**), các quy ước (**Conventions** như PEP8, Type Hints), tài liệu (**Documentation**).
-3.  **Độ tin cậy (Reliability - 25%)**: Xử lý ngoại lệ (**Exception handling**), độ bao phủ mã nguồn (**Code coverage**), lỗi logic (**Logical flaws**), tính ổn định (**Robustness**).
-4.  **Bảo mật (Security - 20%)**: Quản lý bí mật (**Secret management**), xác thực & phân quyền (**Auth/Authz**), làm sạch dữ liệu (**Sanitization**), bảo vệ phụ thuộc (**Dependency protection**).
-
-## Chế độ hoạt động (Operating Modes)
-
-Công cụ kiểm toán có thể được tích hợp vào các quy trình làm việc khác nhau:
--   **Terminal CLI**: Dùng cho việc kiểm toán thủ công nhanh chóng.
--   **CI/CD Pipeline**: Tự động kiểm tra trong mỗi **Pull Request**.
--   **Bulk Auditor**: Quét hàng loạt nhiều kho lưu trữ (**Repositories**) trong một không gian làm việc.
-
-## Định mức hóa (Normalization)
-
-Điểm số được tính toán dựa trên mật độ vi phạm trên mỗi 1000 dòng code (LOC):
-`Điểm = 10 / (1 + (|Tổng trọng số vi phạm| / 2))`
+1. **Frontend Dashboard (`/dashboard`)**: 
+   - Ứng dụng Single Page (SPA) xây dựng bằng **React + Vite**, hoạt động với cấu trúc siêu phân tầng bề mặt **Hero Grid 4 Cột** tối ưu hiển thị Data-Dense cho màn hình rộng. 
+   - Cung cấp giao diện trực quan với hệ thống **Chart.js** chuyên sâu: Biểu đồ năng lực toàn cảnh (Radar), Tỷ trọng vi phạm (Doughnut), Cột mức độ siêu nghiêm trọng (Bar) và tính năng định vị nhanh **Top 5 Tệp Tin Nhiều Lỗi Nhất**. Hỗ trợ upload mã nguồn (nhiều files) trực tiếp từ trình duyệt hoặc nạp Repo qua Remote URL.
+2. **Backend API (`/src/api`)**: 
+   - Phát triển bằng **FastAPI**, cung cấp các endpoint RESTful để nhận/xử lý source code và truy vấn kết quả.
+   - Hỗ trợ xử lý dự án lớn (đã bypass giới hạn Starlette để nhận lên tới 100,000 files cùng lúc).
+3. **Core Auditor Engine (`/src/engine`)**: 
+   - Bộ mã lõi chạy ngầm sử dụng Python. Hoạt động trên 5 bước: Khám phá tài nguyên (Discovery) -> Quét chuyên sâu (Scanning) -> Xác thực tự động bằng AST/Regex (Verification) -> Tổng hợp (Aggregation) -> Báo cáo (Reporting).
+4. **Cơ sở dữ liệu (Database)**: 
+   - Sử dụng **SQLite** (`auditor_v2.db`) để lưu trữ vững chắc toàn bộ lịch sử điểm số, metrics (LOC) và các tiêu chí vi phạm cho từng lần kiểm toán.
 
 ---
 
-## Hướng dẫn cho Kiểm toán viên (System Prompt)
+## 🧭 Cốt lõi của Bộ Máy Kiểm Toán (Core Engine)
 
-Quy trình kiểm toán tuân thủ nghiêm ngặt 5 bước:
-1.  **DISCOVERY**: Tự động tính toán LOC và lập chỉ mục file (**File indexing**) qua `ai_precheck.py`.
-2.  **ITERATIVE SCANNING**: Phân tích ngữ nghĩa chuyên sâu từng file theo bảng tiêu chí V3.
-3.  **AUTOMATED VERIFICATION**: Kiểm tra chéo dựa trên **AST** (Abstract Syntax Tree) và **Regex** qua `ai_double_check.py`.
-4.  **AGGREGATION**: Tổng hợp dữ liệu và tính điểm theo trọng số.
-5.  **FINAL REPORTING**: Xuất báo cáo `Final_Audit_Report.md` và các bản tóm tắt cấp cao.
+Hệ thống hoạt động dựa trên nguyên tắc "Chỉ phân tích tĩnh" (**Static-Only**), đảm bảo an toàn và tối đa tốc độ quét. Đánh giá chia thành 4 trụ cột (Pillars) trọng điểm:
+
+1. **Hiệu năng (Performance - 30%)**: Tối ưu hóa Database/BigQuery, quản lý bộ nhớ, độ trễ API, hiệu suất loop/nhóm dữ liệu.
+2. **Bảo trì (Maintainability - 25%)**: Các mã thừa (Code smells), tuân thủ kiến trúc, quy ước code (ví dụ PEP8, Type Hints), và tài liệu giải thích.
+3. **Độ tin cậy (Reliability - 25%)**: Quản trị ngoại lệ bắt buộc, độ bao phủ mã nguồn theo logic, quản lý Null/Undefined, tính ổn định kết nối.
+4. **Bảo mật (Security - 20%)**: Ngăn rò rỉ secret/key, kiểm soát xác thực & phân quyền (Auth), hạn chế Injection (SQLi/XSS), bảo vệ phụ thuộc gói (Dependencies).
 
 ---
 
-## Hướng dẫn sử dụng (How to Use)
+## 🚀 Hướng dẫn Quản trị (Project Management)
 
-### 1. Chạy cục bộ (Local Development)
-- **Backend**: 
-  ```bash
-  python3 src/api/api_server.py
-  ```
-- **Frontend**:
-  ```bash
-  cd dashboard && npm install && npm run dev
-  ```
+Hệ thống được thiết kế để chạy mượt mà thông qua Docker Compose và script khởi động nhanh gọn. Không cần phải nhớ các câu lệnh Docker dài dòng.
 
-### 2. Chạy bằng Docker (Production Ready)
+### Để chạy dự án nhanh chóng:
+Chỉ cần gọi script quản lý:
 ```bash
-docker-compose up --build
+./manage.sh
 ```
-Hệ thống sẽ khả dụng tại:
-- Dashboard: `http://localhost:3000`
-- API Swagger: `http://localhost:8000/docs`
+Hệ thống sẽ bật lên một menu tương tác:
+1. `Start (Fast)`: Khởi chạy dự án nền web nhanh không qua build lại (dùng Docker Compose).
+2. `Start (Rebuild)`: Khởi tạo, cài đặt lại toàn bộ gói dependency và chạy dịch vụ (+ Rebuild image).
+3. `Build Only`: Chỉ build các Docker image mà không chạy.
+4. `Stop`: Tắt toàn bộ hệ thống ngay lập tức.
+5. `Status`: Xem các cổng (ports) và containers đang hoạt động.
+6. `Logs`: Xem màn hình console của backend và frontend trực tiếp.
+
+### Cổng dịch vụ khả dụng (Sau khi start):
+- **Web Dashboard (Vite HMR Mode)**: [http://localhost:3000](http://localhost:3000)
+- **Backend API Server**: [http://localhost:8000](http://localhost:8000)
+- **API Swagger/OpenAPI Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ---
 
-*Khung đánh giá này dựa trên các tiêu chuẩn quốc tế bao gồm ISO/IEC 5055:2021, ISO/IEC 25010, và các chuẩn OWASP/CWE.*
+## 🛠 Chế độ Hoạt động (Usage Modes)
+
+1. **Dashboard UI (Khuyên dùng)**: Kéo thả các tệp tin trong thư mục mã nguồn vào luồng Upload của Web App. Phân tích trực quan.
+2. **Terminal CLI (Kiểm toán nội bộ)**: 
+   Chạy code quét trực tiếp không qua UI đối với thư mục bất kỳ:
+   ```bash
+   python3 main.py /duong/dan/toi/thu_muc_code/
+   ```
+   *Báo cáo Markdown chi tiết sẽ được tự động xuất vào thư mục `/reports/Final_Audit_Report.md`.*
+
+---
+
+*Khung đánh giá và chấm điểm này dựa trên các tiêu chuẩn quốc tế thực tế bao gồm ISO/IEC 5055:2021, ISO/IEC 25010 và các chuẩn OWASP/CWE.*

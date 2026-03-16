@@ -35,3 +35,40 @@ SEVERITY = {
     "MISSING_DOCSTRING": -0.3,
     "PEP8_VIOLATION": -1.0,
 }
+
+import os
+
+# Hardcoded Repositories for Quick Audit
+BITBUCKET_USER = os.getenv("BITBUCKET_USERNAME", "")
+BITBUCKET_PASS = os.getenv("BITBUCKET_TOKEN", "")
+
+CONFIGURED_REPOSITORIES = [
+    {
+        "id": "fastapi/fastapi",
+        "name": "FastAPI (Public)",
+        "url": "https://github.com/fastapi/fastapi.git",
+        "username": "",
+        "token": ""
+    },
+    {
+        "id": "liftsoftvn/ana-api",
+        "name": "ANA API",
+        "url": "https://bitbucket.org/liftsoftvn/lpp_grm_ana_api.git",
+        "username": BITBUCKET_USER,
+        "token": BITBUCKET_PASS
+    },
+    {
+        "id": "liftsoftvn/grm-app",
+        "name": "GRM APP",
+        "url": "https://bitbucket.org/liftsoftvn/lpp_grm_app.git",
+        "username": BITBUCKET_USER,
+        "token": BITBUCKET_PASS
+    },
+    {
+        "id": "liftsoftvn/sp-integrate",
+        "name": "SP Integrate API",
+        "url": "https://bitbucket.org/liftsoftvn/sp-integrate.git",
+        "username": BITBUCKET_USER,
+        "token": BITBUCKET_PASS
+    },
+]

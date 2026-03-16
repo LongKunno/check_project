@@ -12,7 +12,10 @@ import {
   Zap,
   FolderOpen,
   Upload,
-  X
+  X,
+  Wrench,
+  ShieldCheck,
+  CheckSquare
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -21,11 +24,13 @@ import {
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
+  ArcElement,
   Filler,
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Radar, Line } from 'react-chartjs-2';
+import { Radar, Line, Doughnut, Bar } from 'react-chartjs-2';
 
 ChartJS.register(
   RadialLinearScale,
@@ -33,12 +38,71 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
+  BarElement,
+  ArcElement,
   Filler,
   Tooltip,
   Legend
 );
 
 function App() {
+  const [activeTab, setActiveTab] = useState('local'); // 'local' or 'remote'
+  const [configuredRepos, setConfiguredRepos] = useState([]);
+  const [selectedRepoId, setSelectedRepoId] = useState('');
+  
+  // Fetch configured repositories on mount
+  useEffect(() => {
+    const fetchRepos = async () => {
+      try {
+        const response = await fetch('/api/repositories');
+        if (response.ok) {
+          const result = await response.json();
+          if (result.status === 'success') {
+            setConfiguredRepos(result.data);
+            if (result.data.length > 0) {
+                setSelectedRepoId(result.data[0].id);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch configured repositories:", err);
+      }
+    };
+    fetchRepos();
+  }, []);
+
+  const handleRepoUrlChange = (e) => {
+    const val = e.target.value;
+    setRepoUrl(val);
+    try {
+      if (val.includes('bitbucket.org') || val.includes('github.com') || val.includes('gitlab.com')) {
+        let cleanVal = val.trim();
+        // Remove trailing slash if exists
+        if (cleanVal.endsWith('/')) cleanVal = cleanVal.slice(0, -1);
+        
+        const urlObj = new URL(cleanVal);
+        const parts = urlObj.pathname.split('/').filter(Boolean);
+        
+        if (parts.length >= 2) {
+          const user = parts[0];
+          const repo = parts[1].replace('.git', '');
+          setRepoUsername(user);
+          
+          // Construct a clean .git URL if not already one
+          let finalGitUrl = cleanVal;
+          if (!cleanVal.endsWith('.git')) {
+             finalGitUrl = `https://${urlObj.host}/${user}/${repo}.git`;
+          }
+          setRepoUrl(finalGitUrl);
+        }
+      }
+    } catch(err) {
+      // Ignore invalid URLs while typing
+    }
+  };
+  const [repoUsername, setRepoUsername] = useState('liftsoftvn');
+  const [repoToken, setRepoToken] = useState('');
+  
   const [folderName, setFolderName] = useState('');
   const [isAuditing, setIsAuditing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -60,7 +124,6 @@ function App() {
     setFileCount(files.length);
     setError(null);
     setData(null);
-    
     // Lấy tên thư mục từ file đầu tiên
     const firstPath = files[0].webkitRelativePath || files[0].name;
     const name = firstPath.split('/')[0] || 'project';
@@ -68,6 +131,36 @@ function App() {
   };
 
   const runAudit = async () => {
+    if (activeTab === 'remote') {
+      if (!selectedRepoId) {
+        setError('Vui lòng chọn một dự án từ danh sách.');
+        return;
+      }
+      setIsAuditing(true);
+      setError(null);
+      setData(null);
+      try {
+        const response = await fetch('/api/audit/repository', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: selectedRepoId
+          })
+        });
+        if (!response.ok) {
+          const errData = await response.json();
+          throw new Error(errData.detail || `Server error: ${response.status}`);
+        }
+        const result = await response.json();
+        setData(result);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setIsAuditing(false);
+      }
+      return;
+    }
+
     const files = filesRef.current;
     if (!files || files.length === 0) {
       setError('Vui lòng chọn một thư mục để kiểm toán.');
@@ -159,6 +252,67 @@ function App() {
     return 'status-low';
   };
 
+  const getScoreColorClass = (score) => {
+    if (score < 5) return 'var(--accent-red)';
+    if (score < 8) return 'var(--accent-yellow)';
+    return 'var(--accent-green)';
+  };
+
+  // Tính toán dữ liệu cho các biểu đồ mới
+  const getViolationDistributionData = () => {
+    if (!data) return null;
+    const counts = { Performance: 0, Maintainability: 0, Reliability: 0, Security: 0 };
+    data.violations.forEach(v => {
+      if (counts[v.pillar] !== undefined) counts[v.pillar]++;
+    });
+    return {
+      labels: ['Hiệu năng', 'Bảo trì', 'Độ tin cậy', 'Bảo mật'],
+      datasets: [{
+        data: [counts.Performance, counts.Maintainability, counts.Reliability, counts.Security],
+        backgroundColor: [
+          'rgba(59, 130, 246, 0.8)',
+          'rgba(168, 85, 247, 0.8)',
+          'rgba(245, 158, 11, 0.8)',
+          'rgba(239, 68, 68, 0.8)'
+        ],
+        borderWidth: 0,
+      }]
+    };
+  };
+
+  const getSeverityDistributionData = () => {
+    if (!data) return null;
+    let high = 0, medium = 0, low = 0;
+    data.violations.forEach(v => {
+      if (v.weight <= -5) high++;
+      else if (v.weight <= -3) medium++;
+      else low++;
+    });
+    return {
+      labels: ['Nghiêm trọng (High)', 'Trung bình (Medium)', 'Nhẹ (Low)'],
+      datasets: [{
+        label: 'Số lượng vi phạm',
+        data: [high, medium, low],
+        backgroundColor: [
+          'rgba(239, 68, 68, 0.8)',
+          'rgba(245, 158, 11, 0.8)',
+          'rgba(16, 185, 129, 0.8)'
+        ],
+      }]
+    };
+  };
+
+  const getTopProblematicFiles = () => {
+    if (!data) return [];
+    const fileCounts = {};
+    data.violations.forEach(v => {
+      fileCounts[v.file] = (fileCounts[v.file] || 0) + 1;
+    });
+    return Object.entries(fileCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5);
+  };
+
   const chartData = data ? {
     labels: ['Performance', 'Maintainability', 'Reliability', 'Security'],
     datasets: [
@@ -210,65 +364,97 @@ function App() {
           <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Hệ thống Kiểm toán Mã nguồn Tự động (Framework V3)</p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          {/* Upload Zone */}
-          <div
-            className={`upload-zone ${isDragOver ? 'drag-over' : ''} ${folderName ? 'has-folder' : ''}`}
-            onClick={() => fileInputRef.current?.click()}
-            onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
-            onDragLeave={() => setIsDragOver(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setIsDragOver(false);
-              // Drag & drop thư mục qua input file
-              fileInputRef.current?.click();
-            }}
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              webkitdirectory="true"
-              directory="true"
-              multiple
-              style={{ display: 'none' }}
-              onChange={handleFolderSelect}
-            />
-            {folderName ? (
-              <>
-                <FolderOpen size={16} color="var(--accent-blue)" />
-                <span className="upload-folder-name">{folderName}</span>
-                <span className="upload-file-count">({fileCount} files)</span>
-                <button
-                  className="upload-clear"
-                  onClick={(e) => { 
-                    e.stopPropagation(); 
-                    filesRef.current = null; 
-                    setFileCount(0);
-                    setFolderName(''); 
-                    setData(null); 
-                  }}
-                >
-                  <X size={14} />
-                </button>
-              </>
-            ) : (
-              <>
-                <Upload size={16} color="var(--text-muted)" />
-                <span>Chọn thư mục để kiểm toán</span>
-              </>
-            )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'flex-end' }}>
+          
+          <div style={{ display: 'flex', gap: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.25rem', borderRadius: '8px' }}>
+            <button 
+              onClick={() => setActiveTab('local')}
+              style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: 'none', background: activeTab === 'local' ? 'var(--accent-blue)' : 'transparent', color: 'white', cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.875rem', fontWeight: 500 }}
+            >
+              Local Folder
+            </button>
+            <button 
+              onClick={() => setActiveTab('remote')}
+              style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: 'none', background: activeTab === 'remote' ? 'var(--accent-blue)' : 'transparent', color: 'white', cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.875rem', fontWeight: 500 }}
+            >
+              Remote Repository
+            </button>
           </div>
 
-          <button className="btn-audit" onClick={runAudit} disabled={isAuditing || fileCount === 0}>
-            {isAuditing ? <Zap className="spin" size={20} /> : <Zap size={20} />}
-            {isAuditing 
-              ? (isPreparing 
-                  ? `CHUẨN BỊ ${preparingProgress}%...`
-                  : (uploadProgress > 0 && uploadProgress < 100 
-                      ? `ĐANG UPLOAD ${uploadProgress}%...` 
-                      : 'ĐANG PHÂN TÍCH...')) 
-              : 'CHẠY KIỂM TOÁN'}
-          </button>
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            {activeTab === 'local' ? (
+              <div
+                className={`upload-zone ${isDragOver ? 'drag-over' : ''} ${folderName ? 'has-folder' : ''}`}
+                onClick={() => fileInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+                onDragLeave={() => setIsDragOver(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDragOver(false);
+                  fileInputRef.current?.click();
+                }}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  webkitdirectory="true"
+                  directory="true"
+                  multiple
+                  style={{ display: 'none' }}
+                  onChange={handleFolderSelect}
+                />
+                {folderName ? (
+                  <>
+                    <FolderOpen size={16} color="var(--accent-blue)" />
+                    <span className="upload-folder-name">{folderName}</span>
+                    <span className="upload-file-count">({fileCount} files)</span>
+                    <button
+                      className="upload-clear"
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        filesRef.current = null; 
+                        setFileCount(0);
+                        setFolderName(''); 
+                        setData(null); 
+                      }}
+                    >
+                      <X size={14} />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Upload size={16} color="var(--text-muted)" />
+                    <span>Chọn thư mục để kiểm toán</span>
+                  </>
+                )}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', gap: '0.5rem', background: 'var(--card-bg)', padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', alignItems: 'center' }}>
+                <select 
+                  value={selectedRepoId}
+                  onChange={(e) => setSelectedRepoId(e.target.value)}
+                  style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0.25rem 0.5rem', borderRadius: '4px', outline: 'none', fontSize: '0.875rem', cursor: 'pointer', minWidth: '300px' }}
+                >
+                  {configuredRepos.map(repo => (
+                    <option key={repo.id} value={repo.id}>{repo.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <button className="btn-audit" onClick={runAudit} disabled={isAuditing || (activeTab === 'local' && fileCount === 0) || (activeTab === 'remote' && !selectedRepoId)}>
+              {isAuditing ? <Zap className="spin" size={20} /> : <Zap size={20} />}
+              {isAuditing 
+                ? (activeTab === 'remote' 
+                  ? 'ĐANG CLONE & PHÂN TÍCH...' 
+                  : (isPreparing 
+                    ? `CHUẨN BỊ ${preparingProgress}%...`
+                    : (uploadProgress > 0 && uploadProgress < 100 
+                        ? `ĐANG UPLOAD ${uploadProgress}%...` 
+                        : 'ĐANG PHÂN TÍCH...'))) 
+                : 'CHẠY KIỂM TOÁN'}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -284,39 +470,125 @@ function App() {
 
       {data ? (
         <>
-          {/* Khối các chỉ số tổng quan */}
+          {/* Khối các chỉ số tổng quan (Hero Card + 4 Pillars) */}
           <div className="stats-grid">
-            <div className="glass-card">
-              <div className="metric-label"><Activity size={16} /> ĐIỂM TỔNG QUÁT</div>
-              <div className="metric-value" style={{ 
-                color: data.scores.final >= 80 ? 'var(--accent-green)' : data.scores.final >= 50 ? 'var(--accent-yellow)' : 'var(--accent-red)' 
-              }}>
-                {data.scores.final}
-                <span style={{ fontSize: '1rem', color: 'var(--text-muted)', marginLeft: '0.5rem' }}>/ 100</span>
+            {/* --- HERO CARD (Spans 4 columns) --- */}
+            <div className="glass-card hero-card col-span-4">
+              <div className="hero-left">
+                <div className="metric-label" style={{ fontSize: '1rem', color: '#e2e8f0' }}><Activity size={20} /> TỔNG QUAN DỰ ÁN</div>
+                
+                <div style={{ display: 'flex', alignItems: 'baseline', marginTop: '1rem' }}>
+                  <div className="metric-value" style={{ 
+                    fontSize: '4.5rem',
+                    lineHeight: '1',
+                    color: data.scores.final >= 80 ? 'var(--accent-green)' : data.scores.final >= 50 ? 'var(--accent-yellow)' : 'var(--accent-red)' 
+                  }}>
+                    {data.scores.final}
+                  </div>
+                  <span style={{ fontSize: '1.5rem', color: 'var(--text-muted)', marginLeft: '0.5rem' }}>/ 100</span>
+                </div>
+                
+                <div style={{ marginTop: '1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  XẾP HẠNG: <span className="status-badge" style={{ fontSize: '1.25rem', padding: '0.5rem 1rem' }}>{data.scores.rating}</span>
+                </div>
+
+                <div style={{ display: 'flex', gap: '2rem', marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--glass-border)' }}>
+                  <div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Tổng số dòng Code</div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>{data.metrics.total_loc.toLocaleString()}</div>
+                  </div>
+                  <div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Tổng số Tệp tin</div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>{data.metrics.total_files.toLocaleString()}</div>
+                  </div>
+                </div>
               </div>
-              <div style={{ marginTop: '0.5rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                XẾP HẠNG: <span className="status-badge" style={{ fontSize: '1rem' }}>{data.scores.rating}</span>
+
+              <div className="hero-right">
+                <div style={{ width: '100%', height: '100%', maxWidth: '350px' }}>
+                  <Radar 
+                    data={chartData} 
+                    options={{ 
+                      maintainAspectRatio: false,
+                      scales: { 
+                        r: { 
+                          min: 0, 
+                          max: 10, 
+                          grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                          angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+                          pointLabels: { color: '#e2e8f0', font: { size: 12 } },
+                          ticks: { display: false } 
+                        } 
+                      },
+                      plugins: { legend: { display: false } } 
+                    }} 
+                  />
+                </div>
+              </div>
+            </div>
+            {/* --- END HERO CARD --- */}
+            
+            <div className="glass-card">
+              <div className="metric-label"><Settings size={16} /> 1. HIỆU NĂNG</div>
+              <div className="metric-value" style={{ color: getScoreColorClass(data.scores.pillars.Performance) }}>
+                {data.scores.pillars.Performance}<span style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>/10</span>
+              </div>
+              <div className="progress-track">
+                <div className="progress-fill" style={{ width: `${data.scores.pillars.Performance * 10}%`, backgroundColor: getScoreColorClass(data.scores.pillars.Performance) }}></div>
+              </div>
+              <div style={{ marginTop: '0.5rem', color: 'var(--text-muted)' }}>Tối ưu hóa vòng lặp & tài nguyên</div>
+            </div>
+
+            <div className="glass-card">
+              <div className="metric-label"><Wrench size={16} /> 2. BẢO TRÌ</div>
+              <div className="metric-value" style={{ color: getScoreColorClass(data.scores.pillars.Maintainability) }}>
+                {data.scores.pillars.Maintainability}<span style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>/10</span>
+              </div>
+              <div className="progress-track">
+                <div className="progress-fill" style={{ width: `${data.scores.pillars.Maintainability * 10}%`, backgroundColor: getScoreColorClass(data.scores.pillars.Maintainability) }}></div>
+              </div>
+              <div style={{ marginTop: '0.5rem', color: 'var(--text-muted)' }}>Chất lượng code, PEP8, mô-đun hóa</div>
+            </div>
+
+            <div className="glass-card">
+              <div className="metric-label"><CheckSquare size={16} /> 3. ĐỘ TIN CẬY</div>
+              <div className="metric-value" style={{ color: getScoreColorClass(data.scores.pillars.Reliability) }}>
+                {data.scores.pillars.Reliability}<span style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>/10</span>
+              </div>
+              <div className="progress-track">
+                <div className="progress-fill" style={{ width: `${data.scores.pillars.Reliability * 10}%`, backgroundColor: getScoreColorClass(data.scores.pillars.Reliability) }}></div>
+              </div>
+              <div style={{ marginTop: '0.5rem', color: 'var(--text-muted)' }}>Xử lý ngoại lệ, tính ổn định</div>
+            </div>
+
+            <div className="glass-card">
+              <div className="metric-label"><ShieldCheck size={16} /> 4. BẢO MẬT</div>
+              <div className="metric-value" style={{ color: getScoreColorClass(data.scores.pillars.Security) }}>
+                {data.scores.pillars.Security}<span style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>/10</span>
+              </div>
+              <div className="progress-track">
+                <div className="progress-fill" style={{ width: `${data.scores.pillars.Security * 10}%`, backgroundColor: getScoreColorClass(data.scores.pillars.Security) }}></div>
+              </div>
+              <div style={{ marginTop: '0.5rem', color: 'var(--text-muted)' }}>
+                {data.violations.filter(v => v.pillar === 'Security').length} vi phạm
+              </div>
+            </div>
+          </div>
+
+          {/* Hàng biểu đồ phân tích mới */}
+          <div className="charts-row">
+            <div className="chart-card">
+              <h3 className="chart-title"><Activity size={18} color="var(--accent-blue)" /> Phân Bố Vi Phạm</h3>
+              <div className="chart-container">
+                <Doughnut data={getViolationDistributionData()} options={{ maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#e2e8f0' } } } }} />
               </div>
             </div>
             
-            <div className="glass-card">
-              <div className="metric-label"><FileSearch size={16} /> QUY MÔ DỰ ÁN</div>
-              <div className="metric-value">{data.metrics.total_loc.toLocaleString()}</div>
-              <div style={{ marginTop: '0.5rem', color: 'var(--text-muted)' }}>Dòng code (Lines of Code)</div>
-            </div>
-
-            <div className="glass-card">
-              <div className="metric-label"><Shield size={16} /> BẢO MẬT & RỦI RO</div>
-              <div className="metric-value">
-                {data.violations.filter(v => v.pillar === 'Security').length}
+            <div className="chart-card">
+              <h3 className="chart-title"><Shield size={18} color="var(--accent-red)" /> Mức Độ Nghiêm Trọng</h3>
+              <div className="chart-container">
+                <Bar data={getSeverityDistributionData()} options={{ maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { color: '#94a3b8' } }, x: { ticks: { color: '#94a3b8' } } }, plugins: { legend: { display: false } } }} />
               </div>
-              <div style={{ marginTop: '0.5rem', color: 'var(--text-muted)' }}>Vấn đề bảo mật tiềm ẩn</div>
-            </div>
-
-            <div className="glass-card">
-              <div className="metric-label"><Settings size={16} /> HIỆU NĂNG</div>
-              <div className="metric-value">{data.scores.pillars.Performance}/10</div>
-              <div style={{ marginTop: '0.5rem', color: 'var(--text-muted)' }}>Chỉ số tối ưu hóa</div>
             </div>
           </div>
 
@@ -413,13 +685,6 @@ function App() {
             {/* Cột bên phải */}
             <div className="sidebar">
               <div className="glass-card">
-                <div className="metric-label"><BarChart3 size={16} /> PHÂN BỔ TRỤ CỘT (PILLAR RADAR)</div>
-                <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-                  <Radar data={chartData} options={chartOptions} />
-                </div>
-              </div>
-
-              <div className="glass-card">
                 <div className="metric-label">THÔNG TIN KIỂM TOÁN</div>
                 <div style={{ fontSize: '0.875rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -440,6 +705,22 @@ function App() {
                     </p>
                   </div>
                 </div>
+                {/* Widget Top Problematic Files */}
+                {getTopProblematicFiles().length > 0 && (
+                  <div className="glass-card" style={{ marginTop: '1.5rem', animation: 'fadeIn 0.6s ease-out' }}>
+                    <h3 style={{ marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '1rem', color: 'var(--text-main)' }}>
+                      <FolderOpen size={18} color="var(--accent-yellow)" /> TOP FILE LỖI NHIỀU NHẤT
+                    </h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      {getTopProblematicFiles().map(([filename, count], idx) => (
+                        <div key={idx} style={{ background: 'rgba(255,255,255,0.03)', padding: '0.75rem 1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.85rem', wordBreak: 'break-all', paddingRight: '1rem' }}>{filename}</span>
+                          <span className="status-badge" style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--accent-red)', whiteSpace: 'nowrap' }}>{count} lỗi</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
