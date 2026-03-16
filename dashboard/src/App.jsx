@@ -11,9 +11,7 @@ import {
   Search,
   Zap,
   FolderOpen,
-  ChevronRight,
-  ChevronLeft,
-  Folder,
+  Upload,
   X
 } from 'lucide-react';
 import {
@@ -40,129 +38,91 @@ ChartJS.register(
   Legend
 );
 
-/**
- * Component trình duyệt thư mục (Folder Explorer)
- */
-function FolderExplorer({ onSelect, onClose }) {
-  const [currentPath, setCurrentPath] = useState('.');
-  const [folders, setFolders] = useState([]);
-  const [parentPath, setParentPath] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    fetchFolders(currentPath);
-  }, [currentPath]);
-
-  const fetchFolders = async (path) => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(`/api/list-dir?path=${encodeURIComponent(path)}`);
-      if (!response.ok) throw new Error('Không thể tải thư mục');
-      const data = await response.json();
-      setFolders(data.folders);
-      setParentPath(data.parent_path);
-      setCurrentPath(data.current_path);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return (
-    <div className="modal-overlay">
-      <div className="explorer-modal glass-card">
-        <div className="explorer-header">
-          <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <FolderOpen size={20} color="var(--accent-blue)" /> Duyệt thư mục
-          </h3>
-          <button className="btn-browse" style={{ padding: '0.5rem', borderRadius: '50%' }} onClick={onClose}>
-            <X size={20} />
-          </button>
-        </div>
-
-        <div className="explorer-content">
-          <div className="path-breadcrumb">
-             {currentPath}
-          </div>
-
-          {isLoading ? (
-            <div style={{ padding: '2rem', textAlign: 'center' }}>Đang tải...</div>
-          ) : (
-            <>
-              {parentPath && (
-                <div className="explorer-item" onClick={() => setCurrentPath(parentPath)}>
-                  <ChevronLeft size={18} color="var(--text-muted)" />
-                  <span>.. (Thư mục cha)</span>
-                </div>
-              )}
-              {folders.map((folder) => (
-                <div key={folder.path} className="explorer-item" onClick={() => setCurrentPath(folder.path)}>
-                  <Folder size={18} color="var(--accent-yellow)" />
-                  <span>{folder.name}</span>
-                  <ChevronRight size={14} style={{ marginLeft: 'auto', opacity: 0.5 }} />
-                </div>
-              ))}
-              {folders.length === 0 && !parentPath && (
-                <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                  Không có thư mục nào.
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
-        <div className="explorer-footer">
-          <button className="btn-secondary" onClick={onClose}>HỦY</button>
-          <button className="btn-audit" onClick={() => onSelect(currentPath)}>CHỌN THƯ MỤC NÀY</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function App() {
-  const [targetDir, setTargetDir] = useState('.');
+  const [selectedFiles, setSelectedFiles] = useState(null);
+  const [folderName, setFolderName] = useState('');
   const [isAuditing, setIsAuditing] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
-  const [showExplorer, setShowExplorer] = useState(false);
   const [history, setHistory] = useState([]);
-  /**
-   * Gọi API Backend để kích hoạt quy trình kiểm toán.
-   */
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleFolderSelect = (e) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setSelectedFiles(files);
+    setError(null);
+    setData(null);
+    // Lấy tên thư mục từ file đầu tiên
+    const firstPath = files[0].webkitRelativePath || files[0].name;
+    const name = firstPath.split('/')[0] || 'project';
+    setFolderName(name);
+  };
+
   const runAudit = async () => {
+    if (!selectedFiles || selectedFiles.length === 0) {
+      setError('Vui lòng chọn một thư mục để kiểm toán.');
+      return;
+    }
     setIsAuditing(true);
     setError(null);
-    setData(null); // Reset dữ liệu cũ để tạo hiệu ứng load mới
+    setData(null);
+    setUploadProgress(0);
+
     try {
-      // Gọi đến FastAPI Endpoint qua Vite Proxy (/api)
-      const response = await fetch(`/api/audit?target=${encodeURIComponent(targetDir)}`);
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.detail || 'Không thể thực hiện kiểm toán');
+      const formData = new FormData();
+      for (const file of selectedFiles) {
+        formData.append('files', file, file.webkitRelativePath || file.name);
       }
-      const result = await response.json();
+
+      // Sử dụng XMLHttpRequest để theo dõi progress upload
+      const xhr = new XMLHttpRequest();
+      
+      const uploadPromise = new Promise((resolve, reject) => {
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            setUploadProgress(percent);
+          }
+        });
+
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            resolve(JSON.parse(xhr.responseText));
+          } else {
+            try {
+              const errData = JSON.parse(xhr.responseText);
+              reject(new Error(errData.detail || `Server error: ${xhr.status}`));
+            } catch {
+              reject(new Error(`Server error: ${xhr.status}`));
+            }
+          }
+        });
+
+        xhr.addEventListener('error', () => reject(new Error('Mất kết nối với server (XHR error)')));
+        xhr.addEventListener('abort', () => reject(new Error('Upload bị hủy')));
+      });
+
+      xhr.open('POST', '/api/upload-audit');
+      xhr.send(formData);
+
+      const result = await uploadPromise;
       setData(result);
-      if (result.target) {
-        fetchHistory(result.target);
-      }
     } catch (err) {
       setError(err.message);
     } finally {
       setIsAuditing(false);
+      setUploadProgress(0);
     }
   };
 
-  /**
-   * Lấy lịch sử kiểm toán từ Backend (V2)
-   */
   const fetchHistory = async (path) => {
     try {
       const response = await fetch(`/api/history?target=${encodeURIComponent(path)}`);
       if (response.ok) {
         const historyData = await response.json();
-        // Đảo ngược để vẽ chart từ cũ đến mới
         setHistory(historyData.reverse());
       }
     } catch (err) {
@@ -170,16 +130,18 @@ function App() {
     }
   };
 
-  /**
-   * Tính toán màu sắc dựa trên trọng số vi phạm.
-   */
+  useEffect(() => {
+    if (data?.target) {
+      fetchHistory(data.target);
+    }
+  }, [data]);
+
   const getSeverityClass = (weight) => {
-    if (weight <= -5) return 'status-high';    // Lỗi chí mạng
-    if (weight <= -3) return 'status-medium';  // Lỗi trung bình
-    return 'status-low';                        // Lỗi nhẹ/Gợi ý
+    if (weight <= -5) return 'status-high';
+    if (weight <= -3) return 'status-medium';
+    return 'status-low';
   };
 
-  // Cấu hình dữ liệu cho biểu đồ Radar (Pillar Breakdown)
   const chartData = data ? {
     labels: ['Performance', 'Maintainability', 'Reliability', 'Security'],
     datasets: [
@@ -225,53 +187,62 @@ function App() {
 
   return (
     <div className="dashboard-container">
-      {/* Hiển thị Folder Explorer Modal */}
-      {showExplorer && (
-        <FolderExplorer 
-          onClose={() => setShowExplorer(false)} 
-          onSelect={(path) => {
-            setTargetDir(path);
-            setShowExplorer(false);
-          }} 
-        />
-      )}
-
-
       <header>
         <div>
           <h1>SOFTWARE AUDIT ENGINE</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Hệ thống Kiểm toán Mã nguồn Tự động (Framework V3)</p>
         </div>
-        
+
         <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          {/* Ô nhập đường dẫn thư mục */}
-          <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '12px', overflow: 'hidden' }}>
-            <div style={{ position: 'relative', flex: 1 }}>
-              <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-              <input 
-                type="text" 
-                value={targetDir} 
-                onChange={(e) => setTargetDir(e.target.value)}
-                placeholder="Đường dẫn thư mục..."
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  padding: '0.75rem 1rem 0.75rem 2.5rem',
-                  color: 'white',
-                  width: '300px',
-                  outline: 'none',
-                  fontFamily: 'inherit'
-                }}
-              />
-            </div>
-            <button className="btn-browse" title="Duyệt thư mục" onClick={() => setShowExplorer(true)}>
-              <FolderOpen size={18} />
-            </button>
+          {/* Upload Zone */}
+          <div
+            className={`upload-zone ${isDragOver ? 'drag-over' : ''} ${folderName ? 'has-folder' : ''}`}
+            onClick={() => fileInputRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
+            onDragLeave={() => setIsDragOver(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setIsDragOver(false);
+              // Drag & drop thư mục qua input file
+              fileInputRef.current?.click();
+            }}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              webkitdirectory="true"
+              directory="true"
+              multiple
+              style={{ display: 'none' }}
+              onChange={handleFolderSelect}
+            />
+            {folderName ? (
+              <>
+                <FolderOpen size={16} color="var(--accent-blue)" />
+                <span className="upload-folder-name">{folderName}</span>
+                <span className="upload-file-count">({selectedFiles?.length} files)</span>
+                <button
+                  className="upload-clear"
+                  onClick={(e) => { e.stopPropagation(); setSelectedFiles(null); setFolderName(''); setData(null); }}
+                >
+                  <X size={14} />
+                </button>
+              </>
+            ) : (
+              <>
+                <Upload size={16} color="var(--text-muted)" />
+                <span>Chọn thư mục để kiểm toán</span>
+              </>
+            )}
           </div>
 
-          <button className="btn-audit" onClick={runAudit} disabled={isAuditing}>
+          <button className="btn-audit" onClick={runAudit} disabled={isAuditing || !selectedFiles}>
             {isAuditing ? <Zap className="spin" size={20} /> : <Zap size={20} />}
-            {isAuditing ? 'ĐANG QUÉT...' : 'CHẠY KIỂM TOÁN'}
+            {isAuditing 
+              ? (uploadProgress > 0 && uploadProgress < 100 
+                  ? `ĐANG UPLOAD ${uploadProgress}%...` 
+                  : 'ĐANG PHÂN TÍCH...') 
+              : 'CHẠY KIỂM TOÁN'}
           </button>
         </div>
       </header>
@@ -279,7 +250,7 @@ function App() {
       {/* Thông báo lỗi */}
       {error && (
         <div className="glass-card" style={{ borderColor: 'var(--accent-red)', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--accent-red)' }}>
-          <AlertTriangle size={24} /> 
+          <AlertTriangle size={24} />
           <div>
             <strong>Lỗi thực thi:</strong> {error}
           </div>
@@ -324,7 +295,7 @@ function App() {
             </div>
           </div>
 
-          {/* Biểu đồ xu hướng (V2) */}
+          {/* Biểu đồ xu hướng */}
           {history.length > 1 && (
             <div className="glass-card" style={{ marginBottom: '2.5rem', padding: '1.5rem', animation: 'fadeIn 0.5s ease-out' }}>
               <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '1rem', color: '#94a3b8' }}>
@@ -414,7 +385,7 @@ function App() {
               </div>
             </div>
 
-            {/* Cột bên phải: Biểu đồ và thông tin Project */}
+            {/* Cột bên phải */}
             <div className="sidebar">
               <div className="glass-card">
                 <div className="metric-label"><BarChart3 size={16} /> PHÂN BỔ TRỤ CỘT (PILLAR RADAR)</div>
@@ -449,18 +420,18 @@ function App() {
           </div>
         </>
       ) : (
-        /* Trạng thái trống (Empty State) */
+        /* Trạng thái trống */
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '8rem 0', opacity: 0.4 }}>
           <div style={{ position: 'relative', marginBottom: '2rem' }}>
             <BarChart3 size={80} style={{ color: 'var(--accent-blue)' }} />
-            <Search size={32} style={{ position: 'absolute', bottom: -10, right: -10 }} />
+            <Upload size={32} style={{ position: 'absolute', bottom: -10, right: -10 }} />
           </div>
           <p style={{ fontSize: '1.5rem', fontWeight: 500, fontFamily: 'var(--font-display)' }}>Sẵn sàng để đánh giá mã nguồn</p>
-          <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>Duyệt thư mục và nhấn nút <strong>Chạy Kiểm Toán</strong></p>
+          <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>Chọn thư mục từ máy tính và nhấn nút <strong>Chạy Kiểm Toán</strong></p>
         </div>
       )}
 
-      {/* Animation spins */}
+      {/* Animation */}
       <style>{`
         @keyframes spin {
           from { transform: rotate(0deg); }
@@ -471,19 +442,10 @@ function App() {
           color: var(--accent-yellow);
         }
         
-        ::-webkit-scrollbar {
-          width: 6px;
-        }
-        ::-webkit-scrollbar-track {
-          background: rgba(255,255,255,0.02);
-        }
-        ::-webkit-scrollbar-thumb {
-          background: rgba(255,255,255,0.1);
-          border-radius: 10px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-          background: rgba(255,255,255,0.2);
-        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.02); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
       `}</style>
     </div>
   );

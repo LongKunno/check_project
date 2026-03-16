@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Project Management Script with Optimized Options
+# Project Management Script with Interactive Menu
 # Usage: ./manage.sh [command]
 
 function show_menu() {

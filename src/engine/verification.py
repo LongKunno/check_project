@@ -10,18 +10,27 @@ class VerificationStep:
     Performs deep analysis using AST and Regex to confirm violations.
     """
     def __init__(self, target_dir, file_list):
-        """Initializes the verification step with a target directory and file list."""
+        """
+        Khởi tạo bước xác thực. 
+        Sử dụng file JSON tạm thời để truyền danh sách file nhằm tránh lỗi 
+        'Argument list too long' trên OS khi xử lý hàng chục nghìn file.
+        """
         self.target_dir = target_dir
         self.file_list = file_list
         self.verification_script = os.path.join(target_dir, 'ai_double_check.py')
+        self.file_list_json = os.path.join(target_dir, 'audit_files.json')
 
     def generate_verification_script(self):
         script_content = r"""
 import ast
 import re
 import json
+import sys
 
-def double_check(file_list):
+def double_check(file_list_json):
+    with open(file_list_json, 'r', encoding='utf-8') as f:
+        file_list = json.load(f)
+        
     violations = []
     
     # Regex Patterns
@@ -63,9 +72,12 @@ def double_check(file_list):
     return violations
 
 if __name__ == "__main__":
-    import sys
-    files = json.loads(sys.argv[1])
-    print(json.dumps(double_check(files)))
+    if len(sys.argv) < 2:
+        print("Usage: python3 ai_double_check.py <file_list_json>")
+        sys.exit(1)
+    
+    result = double_check(sys.argv[1])
+    print(json.dumps(result))
 """
         with open(self.verification_script, 'w') as f:
             f.write(script_content)
@@ -73,9 +85,13 @@ if __name__ == "__main__":
     def run_verification(self):
         self.generate_verification_script()
         try:
+            # Lưu danh sách file vào JSON file thay vì truyền qua Argument
             file_paths = [f['path'] for f in self.file_list]
+            with open(self.file_list_json, 'w', encoding='utf-8') as f:
+                json.dump(file_paths, f)
+                
             result = subprocess.run(
-                ['python3', 'ai_double_check.py', json.dumps(file_paths)], 
+                ['python3', 'ai_double_check.py', 'audit_files.json'], 
                 cwd=self.target_dir, 
                 capture_output=True, 
                 text=True, 
@@ -90,3 +106,5 @@ if __name__ == "__main__":
         finally:
             if os.path.exists(self.verification_script):
                 os.remove(self.verification_script)
+            if os.path.exists(self.file_list_json):
+                os.remove(self.file_list_json)

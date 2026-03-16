@@ -1,6 +1,138 @@
 # SỔ CÁI VI PHẠM (AI VIOLATION LEDGER)
 
-- [Performance] | [/home/long/Documents/project_private/check_project/src/engine/database.py] | Lý do: SELECT * in BigQuery/SQL (Regex) | Trọng số: -2 | ``
-- [Security] | [/home/long/Documents/project_private/check_project/src/engine/verification.py] | Lý do: verify=False detected (Regex) | Trọng số: -3 | ``
-- [Performance] | [/home/long/Documents/project_private/check_project/src/engine/verification.py] | Lý do: SELECT * in BigQuery/SQL (Regex) | Trọng số: -2 | ``
-- [Performance] | [/home/long/Documents/project_private/check_project/src/engine/verification.py] | Lý do: Pandas .iterrows() detected (Regex) | Trọng số: -3 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/Utils/Handle/draw_excel_function.py] | Lý do: Function draw_excel_table_only_with_format_and_merge too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/Utils/Handle/draw_excel_function.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/Utils/Handle/draw_excel_function.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/Utils/Handle/handle_file.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Security] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/HTML/read_html_2.py] | Lý do: verify=False detected (Regex) | Trọng số: -3 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/HTML/read_html_2.py] | Lý do: Function get_page_info_v2 too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/HTML/read_html_2.py] | Lý do: Function get_page_tree_info too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/HTML/read_html_2.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/HTML/read_html_2.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/HTML/read_html_2.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/NLP/extractor.py] | Lý do: Function extract_keyword_tf_idf too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/NLP/extractor.py] | Lý do: Function extract_jp_words too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Security] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/MSP_API/_Base/api_auth.py] | Lý do: Hardcoded Secret detected (Regex) | Trọng số: -5 | ``
+- [Security] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/MSP_API/_Base/api_auth.py] | Lý do: verify=False detected (Regex) | Trọng số: -3 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/Google_Search_Console_V2/Handle/gsc_handle_search_analytics_api.py] | Lý do: Function get_keyword_in_performance too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/Slack_API/_Base/_slack_files_api.py] | Lý do: Function _upload_file too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Security] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/Backlog_API/_const.py] | Lý do: Hardcoded Secret detected (Regex) | Trọng số: -5 | ``
+- [Performance] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/Google_BigQuery/Handle/handle_cta_performance.py] | Lý do: SELECT * in BigQuery/SQL (Regex) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/Google_BigQuery/Handle/handle_cta_performance.py] | Lý do: Function get_all_blog_flowing_lp too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/Google_BigQuery/Handle/handle_cta_performance.py] | Lý do: Function get_all_cta_performance too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/Google_BigQuery/Handle/handle_cta_performance.py] | Lý do: Function get_all_performance_landing_page too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/Google_BigQuery/Handle/handle_cta_performance.py] | Lý do: Function get_landing_page_flow_blog too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/Google_Ads_API/Handle/handle_search_volume.py] | Lý do: Function get_search_volume_list_keyword too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Security] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/Google_Ads_API/_Base/adword_API_auth.py] | Lý do: Hardcoded Secret detected (Regex) | Trọng số: -5 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/Google_Trend_API/Handle/handle_gg_trend.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/Data_For_SEO_V3/Handle/SERP_google_rank.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Security] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/Data_For_SEO_V3/_Base/_const.py] | Lý do: Hardcoded Secret detected (Regex) | Trọng số: -5 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/GRM_API/Handle/handle_site.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Security] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/GRM_API/_Base/const.py] | Lý do: Hardcoded Secret detected (Regex) | Trọng số: -5 | ``
+- [Security] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/GRM_API/_Base/grm_api_auth.py] | Lý do: Hardcoded Secret detected (Regex) | Trọng số: -5 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/Hubspot_API/Handle/hubspot_handle_contacts_API.py] | Lý do: Function get_all_contact_value_only_v2 too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/Hubspot_API/Handle/hubspot_handle_contacts_API.py] | Lý do: Function get_all_contact_update_merge_site too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/Hubspot_API/Handle/hubspot_handle_contacts_API.py] | Lý do: Function get_all_contact_update_merge_site_v2 too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/Hubspot_API/Handle/hubspot_handle_analytics_API.py] | Lý do: Function __result_analytics_sources too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/Hubspot_API/Handle/hubspot_handle_analytics_API.py] | Lý do: Function get_analytics_blog_posts too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/Hubspot_API/Handle/hubspot_handle_analytics_API.py] | Lý do: Function get_analytic_device_type too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/Hubspot_API/Handle/hubspot_handle_analytics_API.py] | Lý do: Function get_analytics_sources_v2 too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/Hubspot_API/Handle/hubspot_handle_analytics_API.py] | Lý do: Function get_analytic_landing_page_by_id_v2 too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/Hubspot_API/Handle/hubspot_handle_analytics_API.py] | Lý do: Function get_analytic_web_page_by_id_v2 too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/Hubspot_API/Handle/hubspot_handle_analytics_API.py] | Lý do: Function get_analytic_blog_post_by_id_v2 too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/Hubspot_API/Handle/hubspot_handle_events_email_API_v2.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/Hubspot_API/Handle/hubspot_handle_cms_page_API.py] | Lý do: Function get_all_web_pages_v2 too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Security] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/Hubspot_API/_Base/hubspot_API_auth.py] | Lý do: Hardcoded Secret detected (Regex) | Trọng số: -5 | ``
+- [Security] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/API/Hubspot_API/_Base/_const.py] | Lý do: Hardcoded Secret detected (Regex) | Trọng số: -5 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F0_4_Update_Prompt/handle_view/chatgpt_view.py] | Lý do: Function get_chatgpt_prompt_index too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/lpp_grm_ana_api/middleware.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/models.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/s007_view.py] | Lý do: Function get_data_compare too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/s003_view_v2.py] | Lý do: Function get_data_table too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/s003_view_v2.py] | Lý do: Function get_performance_information too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/s003_view_v2.py] | Lý do: Function get_refer_overview_data too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/s003_view_v2.py] | Lý do: Function get_cta_match_this_blog too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/s003_view_v2.py] | Lý do: Function get_article_cta too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/s003_view_v2.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/s003_view_v2.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/s003_view_v2.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/s004_view.py] | Lý do: Function get_kw_with_track_record too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/s001_view.py] | Lý do: Function get_title_improve_data too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/s001_view.py] | Lý do: Function get_performance_info too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/s001_view.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/s001_view.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/s001_view.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Security] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/slack_listener_view.py] | Lý do: Hardcoded Secret detected (Regex) | Trọng số: -5 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/list_task_view.py] | Lý do: Function get_data_table_list_task too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/s002_view.py] | Lý do: Function get_rewrite_table too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/s002_view.py] | Lý do: Function get_performance_info too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/s002_view.py] | Lý do: Function get_blog_with_inflow_kw too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/s002_view.py] | Lý do: Function get_kw_compare_with_serp too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/s002_view.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/s005_view.py] | Lý do: Function get_data_table_lp_kw too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/s005_view.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/export_view.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/s003_view.py] | Lý do: Function get_data_table too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/s003_view.py] | Lý do: Function get_performance_information too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/s003_view.py] | Lý do: Function get_cta_performance_overview_v2 too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/s003_view.py] | Lý do: Function get_cta_suggest too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/s003_view.py] | Lý do: Function get_cta_performance_current too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/s006_view.py] | Lý do: Function get_data_rewrite too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/html_reader_view.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_view/s008_view.py] | Lý do: Function get_data_table_landing_page too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_data/handle_overview_data.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_data/handle_kpi_task_type.py] | Lý do: Function function_s001 too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_data/handle_kpi_task_type.py] | Lý do: Function function_s003 too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_data/handle_data_list_task.py] | Lý do: Function handle_data_task_type too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_data/handle_data_list_task.py] | Lý do: Function handle_data_task_type_v2 too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_data/handle_data_list_task.py] | Lý do: Function handle_update_task too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_data/handle_data_list_task.py] | Lý do: Function handle_create_task too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_data/handle_data_list_task.py] | Lý do: Function run_task too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_data/handle_data_list_task.py] | Lý do: Function run_task too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_data/handle_data_list_task.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_data/handle_data_list_task.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_data/handle_data_list_task.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_data/handle_data_list_task.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Security] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_data/handle_chat_gpt.py] | Lý do: Hardcoded Secret detected (Regex) | Trọng số: -5 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S005.py] | Lý do: Function mapping_table_landing_page_S005 too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S005.py] | Lý do: Function scan_data_cta_performance_for_this_lp too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S005.py] | Lý do: Function scan_data_landing_page_performance_S005 too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S005.py] | Lý do: Function get_all_lp_flow_blog too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S005.py] | Lý do: Function get_data_improvement_proposal_by_keyword too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S005.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S005.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S005.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S003.py] | Lý do: Function scan_data_table_s003_per_site too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S003.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S008.py] | Lý do: Function scan_data_analytic_page_v2 too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S008.py] | Lý do: Function scan_data_landing_page_performance_S008_v2 too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S008.py] | Lý do: Function scan_data_landing_page_performance_S008 too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S008.py] | Lý do: Function scan_data_cta_performance_for_this_lp too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S004.py] | Lý do: Function scan_blog_top_views_all_site too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S004.py] | Lý do: Function scan_data_table_s004_per_site too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S004.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S002.py] | Lý do: Function scan_data_search_volume_s002_all_site too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S002.py] | Lý do: Function scan_data_table_s002 too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S002.py] | Lý do: Function get_data_blog_with_inflow_kw too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S002.py] | Lý do: Function get_data_list_compare_kw_with_organic_serp too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S002.py] | Lý do: Function scan_data_detail_s002 too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S002.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S001.py] | Lý do: Function scan_data_s001_table too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S001.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S007.py] | Lý do: Function scan_data_s007_table too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S007.py] | Lý do: Function scan_data_s007_detail too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S007.py] | Lý do: Function get_table_recommend_blog_manufacturing_2 too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S007.py] | Lý do: Function get_data_compare_kw_with_organic_serp too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S007.py] | Lý do: Function update_data_last_months_table_detail too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_list_task.py] | Lý do: Function scan_update_measure_value too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_list_task.py] | Lý do: Function scan_data_lastest_value_task_finished too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_list_task.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Maintainability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S006.py] | Lý do: Function get_data_table_S006_follow_company_name too long > 100 lines (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/handle_scan_data/scan_data_S006.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F2_1_Analytics/utils/utils.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F1_4_User_Tracking/views.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F1_4_User_Tracking/views.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Reliability] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F1_4_User_Tracking/views.py] | Lý do: Bare except: block (AST) | Trọng số: -2 | ``
+- [Security] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F1_1_Auth/GRM_Authen/grm_authen.py] | Lý do: verify=False detected (Regex) | Trọng số: -3 | ``
+- [Security] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F1_1_Auth/utils/const.py] | Lý do: Hardcoded Secret detected (Regex) | Trọng số: -5 | ``
+- [Security] | [/tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/F1_1_Auth/MSP_Authen/msp_authen.py] | Lý do: verify=False detected (Regex) | Trọng số: -3 | ``

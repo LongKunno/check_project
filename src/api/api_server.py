@@ -3,10 +3,26 @@ API Server for AI Static Analysis Engine (V3).
 Provides a RESTful interface to trigger code audits and retrieve results.
 """
 
-from fastapi import FastAPI, HTTPException, Query
-from fastapi.middleware.cors import CORSMiddleware
 import os
 import sys
+
+# HACK: Tăng giới hạn upload file cho Starlette/FastAPI (Deep Monkeypatch)
+# Mặc định Starlette giới hạn 1000 file, chúng ta nâng lên 100,000 để hỗ trợ project lớn.
+import starlette.formparsers
+_original_multipart_init = starlette.formparsers.MultiPartParser.__init__
+
+def _patched_multipart_init(self, *args, **kwargs):
+    kwargs['max_files'] = 100000
+    kwargs['max_fields'] = 100000
+    _original_multipart_init(self, *args, **kwargs)
+
+starlette.formparsers.MultiPartParser.__init__ = _patched_multipart_init
+
+from fastapi import FastAPI, HTTPException, Query, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
+import shutil
+import tempfile
+from typing import List
 
 # Đảm bảo import được các module từ thư mục 'src'
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -15,6 +31,12 @@ from src.engine.auditor import CodeAuditor
 from src.config import WEIGHTS
 from src.engine.scoring import ScoringEngine
 from src.engine.database import AuditDatabase
+from fastapi.exceptions import RequestValidationError
+import logging
+
+# Thiết lập logging chi tiết
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="AI Static Analysis API (V1)",
@@ -25,46 +47,16 @@ app = FastAPI(
 # Cấu hình CORS để Frontend (React) có thể gọi API từ cổng khác
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Trong thực tế nên giới hạn domain cụ thể
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-@app.get("/list-dir")
-async def list_directory(path: str = Query(".", description="Path to list contents for")):
-    """
-    Liệt kê các thư mục con của một đường dẫn cụ thể.
-    Sử dụng cho trình duyệt thư mục trên giao diện Web.
-    """
-    abs_path = os.path.abspath(path)
-    if not os.path.exists(abs_path):
-        raise HTTPException(status_code=404, detail="Đường dẫn không tồn tại")
-    
-    try:
-        items = []
-        # Lấy danh sách các thư mục con
-        for item in os.listdir(abs_path):
-            item_path = os.path.join(abs_path, item)
-            if os.path.isdir(item_path):
-                # Không hiển thị các thư mục ẩn hoặc thư mục đặc biệt
-                if not item.startswith('.') or item == '.':
-                    items.append({
-                        "name": item,
-                        "path": item_path,
-                        "is_dir": True
-                    })
-        
-        # Thêm mục quay lại thư mục cha
-        parent_dir = os.path.dirname(abs_path)
-        
-        return {
-            "current_path": abs_path,
-            "parent_path": parent_dir if parent_dir != abs_path else None,
-            "folders": sorted(items, key=lambda x: x['name'].lower())
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    logger.error(f"Validation Error: {exc.errors()}")
+    return {"detail": exc.errors(), "body": exc.body}
 
 @app.get("/")
 async def root():
@@ -72,53 +64,123 @@ async def root():
     return {
         "status": "ready",
         "engine": "AI Static Analysis V3",
-        "author": "Antigravity",
         "message": "API đang hoạt động ổn định."
     }
+
+@app.post("/upload-audit")
+async def upload_and_audit(files: List[UploadFile] = File(...)):
+    """
+    Nhận các file được upload từ trình duyệt (webkitdirectory),
+    lưu vào thư mục tạm, chạy kiểm toán, rồi dọn dẹp.
+    """
+    if not files:
+        raise HTTPException(status_code=400, detail="Không có file nào được upload.")
+
+    # Tạo thư mục tạm để lưu code được upload
+    temp_dir = tempfile.mkdtemp(prefix="audit_upload_")
+    project_name = "uploaded_project"
+
+    try:
+        # Lưu từng file, giữ nguyên cấu trúc thư mục tương đối
+        for upload_file in files:
+            # filename từ browser là đường dẫn tương đối: "project/src/main.py"
+            relative_path = upload_file.filename
+            if not relative_path:
+                continue
+
+            # Lấy tên project từ file đầu tiên (thư mục gốc)
+            parts = relative_path.replace("\\", "/").split("/")
+            if len(parts) > 1:
+                project_name = parts[0]
+
+            dest_path = os.path.join(temp_dir, relative_path)
+            os.makedirs(os.path.dirname(dest_path), exist_ok=True)
+
+            content = await upload_file.read()
+            with open(dest_path, "wb") as f:
+                f.write(content)
+
+        # Đường dẫn thư mục gốc của project trong temp
+        target_path = os.path.join(temp_dir, project_name)
+        if not os.path.isdir(target_path):
+            target_path = temp_dir  # fallback nếu không có thư mục gốc
+
+        # Chạy kiểm toán
+        auditor = CodeAuditor(target_path)
+        auditor.run()
+
+        # Tổng hợp kết quả
+        pillar_punishments = {p: 0 for p in WEIGHTS.keys()}
+        for v in auditor.violations:
+            pillar_punishments[v['pillar']] += v['weight']
+
+        total_loc = auditor.discovery_data['total_loc']
+
+        pillar_scores = {}
+        for pillar in WEIGHTS.keys():
+            pillar_scores[pillar] = ScoringEngine.calculate_pillar_score(
+                pillar_punishments[pillar],
+                total_loc
+            )
+
+        final_score = ScoringEngine.calculate_final_score(pillar_scores)
+        rating = ScoringEngine.get_rating(final_score)
+
+        return {
+            "status": "success",
+            "target": target_path,
+            "project_name": project_name,
+            "metrics": {
+                "total_loc": total_loc,
+                "total_files": auditor.discovery_data['total_files']
+            },
+            "scores": {
+                "final": final_score,
+                "rating": rating,
+                "pillars": pillar_scores
+            },
+            "violations": auditor.violations
+        }
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {str(e)}")
+    finally:
+        # Luôn dọn dẹp thư mục tạm
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir)
 
 @app.get("/audit")
 async def run_audit(target: str = Query(".", description="Path to the directory to be audited")):
     """
-    Điểm cuối (Endpoint) để thực hiện kiểm toán mã nguồn.
-    
-    Args:
-        target (str): Đường dẫn đến thư mục cần quét (mặc định là thư mục hiện tại).
-        
-    Returns:
-        JSON bao gồm các chỉ số Metrics, Điểm số (Scores) và danh sách Vi phạm (Violations).
+    Endpoint legacy để kiểm toán qua đường dẫn (dùng nội bộ hoặc CLI).
     """
-    # 1. Kiểm tra sự tồn tại của thư mục mục tiêu
     target_path = os.path.abspath(target)
     if not os.path.exists(target_path):
         raise HTTPException(
-            status_code=404, 
+            status_code=404,
             detail=f"Không tìm thấy thư mục: {target}"
         )
-    
+
     try:
-        # 2. Khởi tạo và chạy bộ máy kiểm toán (Auditor)
         auditor = CodeAuditor(target_path)
         auditor.run()
-        
-        # 3. Tổng hợp dữ liệu vi phạm theo từng trụ cột
+
         pillar_punishments = {p: 0 for p in WEIGHTS.keys()}
         for v in auditor.violations:
             pillar_punishments[v['pillar']] += v['weight']
-            
+
         total_loc = auditor.discovery_data['total_loc']
-        
-        # 4. Tính toán điểm quy đổi và xếp hạng
+
         pillar_scores = {}
         for pillar in WEIGHTS.keys():
             pillar_scores[pillar] = ScoringEngine.calculate_pillar_score(
-                pillar_punishments[pillar], 
+                pillar_punishments[pillar],
                 total_loc
             )
-            
+
         final_score = ScoringEngine.calculate_final_score(pillar_scores)
         rating = ScoringEngine.get_rating(final_score)
-        
-        # 5. Trả về kết quả cho Frontend
+
         return {
             "status": "success",
             "target": target_path,
@@ -132,10 +194,9 @@ async def run_audit(target: str = Query(".", description="Path to the directory 
                 "rating": rating,
                 "pillars": pillar_scores
             },
-            "violations": auditor.violations # Danh sách chi tiết lỗi để hiển thị lên bảng Sổ Cái
+            "violations": auditor.violations
         }
     except Exception as e:
-        # Xử lý lỗi hệ thống nếu có
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {str(e)}")
 
 @app.get("/history")
@@ -149,5 +210,4 @@ async def get_audit_history(target: str = None):
 
 if __name__ == "__main__":
     import uvicorn
-    # Khởi chạy server tại port 8000
     uvicorn.run(app, host="0.0.0.0", port=8000)
