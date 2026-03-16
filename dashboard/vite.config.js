@@ -5,12 +5,15 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 3000,
+    // Header quan trọng để Brave cho phép truy cập Localhost từ nội bộ
+    headers: {
+      'Access-Control-Allow-Private-Network': 'true'
+    },
     proxy: {
       '/api': {
         target: 'http://backend:8000',
-        changeOrigin: true,
+        changeOrigin: false, // Để Brave nhận diện là cùng origin qua proxy
         rewrite: (path) => path.replace(/^\/api/, ''),
-        // Tăng timeout cho các dự án lớn
         timeout: 600000,
         proxyTimeout: 600000,
         configure: (proxy, options) => {

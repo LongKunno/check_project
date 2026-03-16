@@ -23,7 +23,6 @@ from fastapi.middleware.cors import CORSMiddleware
 import shutil
 import tempfile
 from typing import List
-
 # Đảm bảo import được các module từ thư mục 'src'
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
@@ -38,13 +37,25 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# --- CONFIGURATION & BRAVE COMPATIBILITY ---
 app = FastAPI(
     title="AI Static Analysis API (V1)",
     description="Hệ thống cung cấp API cho việc kiểm toán mã nguồn tự động dựa trên Framework V3.",
     version="1.0.0"
 )
 
-# Cấu hình CORS để Frontend (React) có thể gọi API từ cổng khác
+# Xử lý Private Network Access (PNA) - Cần thiết cho trình duyệt Brave/Chromium
+@app.middleware("http")
+async def add_private_network_header(request, call_next):
+    response = await call_next(request)
+    response.headers["Access-Control-Allow-Private-Network"] = "true"
+    # Đảm bảo hỗ trợ CORS cho Preflight nếu cần
+    if request.method == "OPTIONS":
+        response.headers["Access-Control-Allow-Methods"] = "POST, GET, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
+
+# Cấu hình CORS (Phải đăng ký SAU middleware PNA để wrapping đúng cách)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -67,7 +78,7 @@ async def root():
         "message": "API đang hoạt động ổn định."
     }
 
-@app.post("/upload-audit")
+@app.post("/audit/process")
 async def upload_and_audit(files: List[UploadFile] = File(...)):
     """
     Nhận các file được upload từ trình duyệt (webkitdirectory),

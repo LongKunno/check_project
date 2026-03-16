@@ -77,41 +77,31 @@ function App() {
         formData.append('files', file, file.webkitRelativePath || file.name);
       }
 
-      // Sử dụng XMLHttpRequest để theo dõi progress upload
-      const xhr = new XMLHttpRequest();
+      setUploadProgress(10); // Khởi động fake progress cho Brave
       
-      const uploadPromise = new Promise((resolve, reject) => {
-        xhr.upload.addEventListener('progress', (e) => {
-          if (e.lengthComputable) {
-            const percent = Math.round((e.loaded / e.total) * 100);
-            setUploadProgress(percent);
-          }
-        });
-
-        xhr.addEventListener('load', () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            resolve(JSON.parse(xhr.responseText));
-          } else {
-            try {
-              const errData = JSON.parse(xhr.responseText);
-              reject(new Error(errData.detail || `Server error: ${xhr.status}`));
-            } catch {
-              reject(new Error(`Server error: ${xhr.status}`));
-            }
-          }
-        });
-
-        xhr.addEventListener('error', () => reject(new Error('Mất kết nối với server (XHR error)')));
-        xhr.addEventListener('abort', () => reject(new Error('Upload bị hủy')));
+      console.log("Bắt đầu Audit với fetch tới /api/audit/process...");
+      const response = await fetch('/api/audit/process', {
+        method: 'POST',
+        body: formData
       });
 
-      xhr.open('POST', '/api/upload-audit');
-      xhr.send(formData);
+      console.log("Phản hồi từ server:", response.status);
+      if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(errData.detail || `Server error: ${response.status}`);
+      }
 
-      const result = await uploadPromise;
+      setUploadProgress(100);
+      const result = await response.json();
       setData(result);
     } catch (err) {
-      setError(err.message);
+      console.error("CHI TIẾT LỖI AUDIT:", err);
+      // Xử lý lỗi đặc thù cho Brave Shields/Network
+      if (err.message === 'Failed to fetch') {
+         setError('Lỗi kết nối: Brave đang chặn yêu cầu. Thử: F12 -> Console để xem chi tiết hoặc Tắt Shields hoàn toàn.');
+      } else {
+         setError(err.message);
+      }
     } finally {
       setIsAuditing(false);
       setUploadProgress(0);

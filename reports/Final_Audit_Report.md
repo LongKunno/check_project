@@ -15,13 +15,13 @@
 | Security | 20% | -67 | 6.36 |
 
 ### Top 10 Vi phạm tiêu biểu
-- **[Maintainability]** /tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/Utils/Handle/draw_excel_function.py: Function draw_excel_table_only_with_format_and_merge too long > 100 lines (AST) (Trọng số: -2)
-- **[Reliability]** /tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/Utils/Handle/draw_excel_function.py: Bare except: block (AST) (Trọng số: -2)
-- **[Reliability]** /tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/Utils/Handle/draw_excel_function.py: Bare except: block (AST) (Trọng số: -2)
-- **[Reliability]** /tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/Utils/Handle/handle_file.py: Bare except: block (AST) (Trọng số: -2)
-- **[Security]** /tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/HTML/read_html_2.py: verify=False detected (Regex) (Trọng số: -3)
-- **[Maintainability]** /tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/HTML/read_html_2.py: Function get_page_info_v2 too long > 100 lines (AST) (Trọng số: -2)
-- **[Maintainability]** /tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/HTML/read_html_2.py: Function get_page_tree_info too long > 100 lines (AST) (Trọng số: -2)
-- **[Reliability]** /tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/HTML/read_html_2.py: Bare except: block (AST) (Trọng số: -2)
-- **[Reliability]** /tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/HTML/read_html_2.py: Bare except: block (AST) (Trọng số: -2)
-- **[Reliability]** /tmp/audit_upload_dr44y208/lpp_grm_ana_api/source_code/__LP_Library/HTML/read_html_2.py: Bare except: block (AST) (Trọng số: -2)
+- **[Maintainability]** /tmp/audit_upload_vs4wy1eh/lpp_grm_ana_api/source_code/__LP_Library/Utils/Handle/draw_excel_function.py: Function draw_excel_table_only_with_format_and_merge too long > 100 lines (AST) (Trọng số: -2)
+- **[Reliability]** /tmp/audit_upload_vs4wy1eh/lpp_grm_ana_api/source_code/__LP_Library/Utils/Handle/draw_excel_function.py: Bare except: block (AST) (Trọng số: -2)
+- **[Reliability]** /tmp/audit_upload_vs4wy1eh/lpp_grm_ana_api/source_code/__LP_Library/Utils/Handle/draw_excel_function.py: Bare except: block (AST) (Trọng số: -2)
+- **[Reliability]** /tmp/audit_upload_vs4wy1eh/lpp_grm_ana_api/source_code/__LP_Library/Utils/Handle/handle_file.py: Bare except: block (AST) (Trọng số: -2)
+- **[Security]** /tmp/audit_upload_vs4wy1eh/lpp_grm_ana_api/source_code/__LP_Library/HTML/read_html_2.py: verify=False detected (Regex) (Trọng số: -3)
+- **[Maintainability]** /tmp/audit_upload_vs4wy1eh/lpp_grm_ana_api/source_code/__LP_Library/HTML/read_html_2.py: Function get_page_info_v2 too long > 100 lines (AST) (Trọng số: -2)
+- **[Maintainability]** /tmp/audit_upload_vs4wy1eh/lpp_grm_ana_api/source_code/__LP_Library/HTML/read_html_2.py: Function get_page_tree_info too long > 100 lines (AST) (Trọng số: -2)
+- **[Reliability]** /tmp/audit_upload_vs4wy1eh/lpp_grm_ana_api/source_code/__LP_Library/HTML/read_html_2.py: Bare except: block (AST) (Trọng số: -2)
+- **[Reliability]** /tmp/audit_upload_vs4wy1eh/lpp_grm_ana_api/source_code/__LP_Library/HTML/read_html_2.py: Bare except: block (AST) (Trọng số: -2)
+- **[Reliability]** /tmp/audit_upload_vs4wy1eh/lpp_grm_ana_api/source_code/__LP_Library/HTML/read_html_2.py: Bare except: block (AST) (Trọng số: -2)
