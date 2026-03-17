@@ -9,6 +9,7 @@ services:
       - ./src:/app/src
       - ./main.py:/app/main.py
       - ./reports:/app/reports
+      - ./.env:/app/.env
     environment:
       - PYTHONUNBUFFERED=1
       - MAX_MULTIPART_FILES=100000

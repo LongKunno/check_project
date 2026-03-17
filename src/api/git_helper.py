@@ -1,5 +1,6 @@
 import os
 import shutil
+import urllib.parse
 from typing import Optional
 from git import Repo, GitCommandError
 import logging
@@ -17,20 +18,28 @@ class GitHelper:
             # Format URL with credentials if provided
             clone_url = repo_url
             if username and token:
+                # URL Encode credentials to handle special characters (@, :, =, etc.)
+                quoted_username = urllib.parse.quote(username)
+                quoted_token = urllib.parse.quote(token)
+                
                 # Basic Auth Injection into URL
                 if "://" in clone_url:
                     protocol, rest = clone_url.split("://", 1)
                     # Xử lý trường hợp có username trong url rồi (ví dụ: https://admin@bitbucket.org...)
                     if "@" in rest:
                         rest = rest.split("@", 1)[1]
-                    clone_url = f"{protocol}://{username}:{token}@{rest}"
+                    clone_url = f"{protocol}://{quoted_username}:{quoted_token}@{rest}"
                 else:
-                    clone_url = f"https://{username}:{token}@{clone_url}"
+                    clone_url = f"https://{quoted_username}:{quoted_token}@{clone_url}"
             
             logger.info(f"Cloning repository into {dest_dir} (Shallow clone, depth=1)...")
             
             # Khởi tạo bản sao (Shallow clone để tốc độ nhanh nhất)
-            Repo.clone_from(clone_url, dest_dir, multi_options=['--depth 1'])
+            # Thiết lập GIT_TERMINAL_PROMPT=0 để ngăn việc Git bị treo khi hỏi password tương tác
+            env = os.environ.copy()
+            env["GIT_TERMINAL_PROMPT"] = "0"
+            
+            Repo.clone_from(clone_url, dest_dir, depth=1, env=env)
             
             # Xóa thư mục .git để tránh Engine quét nhầm file lịch sử / config của Git (rất nặng)
             git_dir = os.path.join(dest_dir, '.git')
