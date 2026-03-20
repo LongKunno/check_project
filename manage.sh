@@ -13,9 +13,10 @@ function show_menu() {
     echo "4) Stop            - Stop and remove containers"
     echo "5) Status          - Check service status"
     echo "6) Logs            - Follow service logs"
-    echo "7) Exit"
+    echo "7) Test            - Run tests inside Docker"
+    echo "8) Exit"
     echo "=========================================="
-    read -p "Select an option [1-7]: " choice
+    read -p "Select an option [1-8]: " choice
     
     case $choice in
         1) run_cmd "start" ;;
@@ -24,7 +25,8 @@ function show_menu() {
         4) run_cmd "stop" ;;
         5) run_cmd "status" ;;
         6) run_cmd "logs" ;;
-        7) exit 0 ;;
+        7) run_cmd "test" ;;
+        8) exit 0 ;;
         *) echo "Invalid option"; show_menu ;;
     esac
 }
@@ -53,9 +55,13 @@ function run_cmd() {
         logs)
             docker compose logs -f
             ;;
+        test)
+            echo "Running tests in backend container..."
+            docker compose exec backend pytest tests/
+            ;;
         *)
             echo "Unknown command: $1"
-            echo "Usage: $0 {start|rebuild|build|stop|status|logs}"
+            echo "Usage: $0 {start|rebuild|build|stop|status|logs|test}"
             exit 1
             ;;
     esac

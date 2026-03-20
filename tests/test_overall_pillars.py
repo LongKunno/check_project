@@ -17,16 +17,16 @@ def setup_test_project():
     # Feature 1: Auth (100 LOC, 1 major violation -5)
     os.makedirs(os.path.join(test_dir, 'auth'))
     with open(os.path.join(test_dir, 'auth/login.py'), 'w') as f:
-        f.write("# Auth\n" + "print('test')\n" * 99) # 100 lines
+        f.write("# Auth\n" + "x = 1\n" * 99) # 100 lines
         
     # Feature 2: Payments (400 LOC, 1 minor violation -2)
     os.makedirs(os.path.join(test_dir, 'payments'))
     with open(os.path.join(test_dir, 'payments/pay.py'), 'w') as f:
-        f.write("# Payments\n" + "print('money')\n" * 399) # 400 lines
+        f.write("# Payments\n" + "x = 1\n" * 399) # 400 lines
         
     return test_dir
 
-def run_test():
+def test_overall_pillars():
     test_dir = setup_test_project()
     auditor = CodeAuditor(test_dir)
     
@@ -54,7 +54,7 @@ def run_test():
 
 if __name__ == "__main__":
     try:
-        run_test()
+        test_overall_pillars()
     except Exception as e:
         print(f"TEST FAILED: {e}")
         import traceback

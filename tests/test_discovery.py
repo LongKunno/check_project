@@ -42,7 +42,7 @@ def setup_test_dir(use_source_code=False):
             
     return test_dir
 
-def run_test():
+def test_discovery():
     print("Testing WITHOUT source_code folder...")
     td1 = setup_test_dir(use_source_code=False)
     discovery1 = DiscoveryStep(td1)
@@ -68,7 +68,7 @@ def run_test():
 
 if __name__ == "__main__":
     try:
-        run_test()
+        test_discovery()
         print("\nALL TESTS PASSED!")
     except Exception as e:
         print(f"\nTEST FAILED: {e}")
