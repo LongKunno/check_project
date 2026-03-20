@@ -313,17 +313,13 @@ function App() {
       .slice(0, 5);
   };
 
+  // Tính toán dữ liệu cho biểu đồ Radar (Theo từng Tính năng)
   const chartData = data ? {
-    labels: ['Performance', 'Maintainability', 'Reliability', 'Security'],
+    labels: Object.keys(data.scores.features),
     datasets: [
       {
-        label: 'Quality Score',
-        data: [
-          data.scores.pillars.Performance,
-          data.scores.pillars.Maintainability,
-          data.scores.pillars.Reliability,
-          data.scores.pillars.Security
-        ],
+        label: 'Feature Score',
+        data: Object.values(data.scores.features).map(f => f.final),
         backgroundColor: 'rgba(59, 130, 246, 0.2)',
         borderColor: '#3b82f6',
         borderWidth: 2,
@@ -338,9 +334,9 @@ function App() {
         angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
         grid: { color: 'rgba(255, 255, 255, 0.1)' },
         pointLabels: { color: '#94a3b8', font: { size: 12, weight: '600' } },
-        ticks: { display: false, stepSize: 2 },
+        ticks: { display: false, stepSize: 20 },
         suggestedMin: 0,
-        suggestedMax: 10
+        suggestedMax: 100
       }
     },
     plugins: {
@@ -361,7 +357,7 @@ function App() {
       <header>
         <div>
           <h1>SOFTWARE AUDIT ENGINE</h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Hệ thống Kiểm toán Mã nguồn Tự động (Framework V3)</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Hệ thống Kiểm toán Mã nguồn Tự động (Phân loại theo Tính năng)</p>
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'flex-end' }}>
@@ -470,7 +466,7 @@ function App() {
 
       {data ? (
         <>
-          {/* Khối các chỉ số tổng quan (Hero Card + 4 Pillars) */}
+          {/* Khối các chỉ số tổng quan (Hero Card + Features) */}
           <div className="stats-grid">
             {/* --- HERO CARD (Spans 4 columns) --- */}
             <div className="glass-card hero-card col-span-4">
@@ -498,8 +494,8 @@ function App() {
                     <div style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>{data.metrics.total_loc.toLocaleString()}</div>
                   </div>
                   <div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Tổng số Tệp tin</div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>{data.metrics.total_files.toLocaleString()}</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Số lượng tính năng</div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>{Object.keys(data.scores.features).length}</div>
                   </div>
                 </div>
               </div>
@@ -508,71 +504,70 @@ function App() {
                 <div style={{ width: '100%', height: '100%', maxWidth: '350px' }}>
                   <Radar 
                     data={chartData} 
-                    options={{ 
-                      maintainAspectRatio: false,
-                      scales: { 
-                        r: { 
-                          min: 0, 
-                          max: 10, 
-                          grid: { color: 'rgba(255, 255, 255, 0.1)' },
-                          angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
-                          pointLabels: { color: '#e2e8f0', font: { size: 12 } },
-                          ticks: { display: false } 
-                        } 
-                      },
-                      plugins: { legend: { display: false } } 
-                    }} 
+                    options={chartOptions} 
                   />
                 </div>
               </div>
             </div>
             {/* --- END HERO CARD --- */}
             
-            <div className="glass-card">
-              <div className="metric-label"><Settings size={16} /> 1. HIỆU NĂNG</div>
-              <div className="metric-value" style={{ color: getScoreColorClass(data.scores.pillars.Performance) }}>
-                {data.scores.pillars.Performance}<span style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>/10</span>
-              </div>
-              <div className="progress-track">
-                <div className="progress-fill" style={{ width: `${data.scores.pillars.Performance * 10}%`, backgroundColor: getScoreColorClass(data.scores.pillars.Performance) }}></div>
-              </div>
-              <div style={{ marginTop: '0.5rem', color: 'var(--text-muted)' }}>Tối ưu hóa vòng lặp & tài nguyên</div>
-            </div>
+            {/* DANH SÁCH TÍNH NĂNG */}
+            {Object.entries(data.scores.features).map(([name, feat]) => (
+                <div key={name} className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div className="metric-label" style={{ color: 'var(--accent-blue)', fontWeight: 'bold', fontSize: '1rem' }}>
+                        <FolderOpen size={16} /> {name.toUpperCase()}
+                    </div>
+                    <div className="metric-value" style={{ fontSize: '2rem', color: getScoreColorClass(feat.final / 10) }}>
+                        {feat.final}<span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>/100</span>
+                    </div>
+                    
+                    <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        {/* 4 Pillars within feature */}
+                        <div style={{ fontSize: '0.75rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                                <span>Hiệu năng</span>
+                                <span>{feat.pillars.Performance}/10</span>
+                            </div>
+                            <div className="progress-track" style={{ height: '4px' }}>
+                                <div className="progress-fill" style={{ width: `${feat.pillars.Performance * 10}%`, backgroundColor: getScoreColorClass(feat.pillars.Performance) }}></div>
+                            </div>
+                        </div>
 
-            <div className="glass-card">
-              <div className="metric-label"><Wrench size={16} /> 2. BẢO TRÌ</div>
-              <div className="metric-value" style={{ color: getScoreColorClass(data.scores.pillars.Maintainability) }}>
-                {data.scores.pillars.Maintainability}<span style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>/10</span>
-              </div>
-              <div className="progress-track">
-                <div className="progress-fill" style={{ width: `${data.scores.pillars.Maintainability * 10}%`, backgroundColor: getScoreColorClass(data.scores.pillars.Maintainability) }}></div>
-              </div>
-              <div style={{ marginTop: '0.5rem', color: 'var(--text-muted)' }}>Chất lượng code, PEP8, mô-đun hóa</div>
-            </div>
+                        <div style={{ fontSize: '0.75rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                                <span>Bảo trì</span>
+                                <span>{feat.pillars.Maintainability}/10</span>
+                            </div>
+                            <div className="progress-track" style={{ height: '4px' }}>
+                                <div className="progress-fill" style={{ width: `${feat.pillars.Maintainability * 10}%`, backgroundColor: getScoreColorClass(feat.pillars.Maintainability) }}></div>
+                            </div>
+                        </div>
 
-            <div className="glass-card">
-              <div className="metric-label"><CheckSquare size={16} /> 3. ĐỘ TIN CẬY</div>
-              <div className="metric-value" style={{ color: getScoreColorClass(data.scores.pillars.Reliability) }}>
-                {data.scores.pillars.Reliability}<span style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>/10</span>
-              </div>
-              <div className="progress-track">
-                <div className="progress-fill" style={{ width: `${data.scores.pillars.Reliability * 10}%`, backgroundColor: getScoreColorClass(data.scores.pillars.Reliability) }}></div>
-              </div>
-              <div style={{ marginTop: '0.5rem', color: 'var(--text-muted)' }}>Xử lý ngoại lệ, tính ổn định</div>
-            </div>
+                        <div style={{ fontSize: '0.75rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                                <span>Tin cậy</span>
+                                <span>{feat.pillars.Reliability}/10</span>
+                            </div>
+                            <div className="progress-track" style={{ height: '4px' }}>
+                                <div className="progress-fill" style={{ width: `${feat.pillars.Reliability * 10}%`, backgroundColor: getScoreColorClass(feat.pillars.Reliability) }}></div>
+                            </div>
+                        </div>
 
-            <div className="glass-card">
-              <div className="metric-label"><ShieldCheck size={16} /> 4. BẢO MẬT</div>
-              <div className="metric-value" style={{ color: getScoreColorClass(data.scores.pillars.Security) }}>
-                {data.scores.pillars.Security}<span style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>/10</span>
-              </div>
-              <div className="progress-track">
-                <div className="progress-fill" style={{ width: `${data.scores.pillars.Security * 10}%`, backgroundColor: getScoreColorClass(data.scores.pillars.Security) }}></div>
-              </div>
-              <div style={{ marginTop: '0.5rem', color: 'var(--text-muted)' }}>
-                {data.violations.filter(v => v.pillar === 'Security').length} vi phạm
-              </div>
-            </div>
+                        <div style={{ fontSize: '0.75rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+                                <span>Bảo mật</span>
+                                <span>{feat.pillars.Security}/10</span>
+                            </div>
+                            <div className="progress-track" style={{ height: '4px' }}>
+                                <div className="progress-fill" style={{ width: `${feat.pillars.Security * 10}%`, backgroundColor: getScoreColorClass(feat.pillars.Security) }}></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'right' }}>
+                        {feat.loc.toLocaleString()} LOC
+                    </div>
+                </div>
+            ))}
           </div>
 
           {/* Hàng biểu đồ phân tích mới */}

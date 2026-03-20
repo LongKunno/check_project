@@ -69,25 +69,55 @@ class CodeAuditor:
         for v in automated_violations:
             self.log_violation(v['type'], v['file'], v['reason'], v['weight'])
 
-        # BƯỚC 4: AGGREGATION (Tổng hợp điểm số)
+        # BƯỚC 4: AGGREGATION (Tổng hợp điểm số Phân cấp)
         print("[4/5] Bước 4: Tổng hợp dữ liệu (Aggregation)...")
-        pillar_punishments = {p: 0 for p in WEIGHTS.keys()}
+        
+        # Ánh xạ file -> feature
+        file_to_feature = {f['path']: f.get('feature', 'unknown') for f in self.discovery_data['files']}
+        
+        # Khởi tạo bảng điểm phạt: feature -> pillar -> punishment
+        feature_punishments = {}
+        for feature in self.discovery_data['features'].keys():
+            feature_punishments[feature] = {p: 0 for p in WEIGHTS.keys()}
+            
         for v in self.violations:
-            pillar_punishments[v['pillar']] += v['weight']
+            feat = file_to_feature.get(v['file'], 'unknown')
+            if feat not in feature_punishments:
+                feature_punishments[feat] = {p: 0 for p in WEIGHTS.keys()}
+            feature_punishments[feat][v['pillar']] += v['weight']
 
-        pillar_scores = {}
-        for pillar in WEIGHTS.keys():
-            pillar_scores[pillar] = ScoringEngine.calculate_pillar_score(
-                pillar_punishments[pillar], 
-                total_loc
-            )
+        # Tính điểm cho từng Tính năng
+        self.feature_results = {}
+        total_features_score = 0
+        
+        for feature, punishments in feature_punishments.items():
+            feat_loc = self.discovery_data['features'].get(feature, {}).get('loc', 0)
+            if feat_loc == 0: continue
+            
+            p_scores = {}
+            for pillar in WEIGHTS.keys():
+                p_scores[pillar] = ScoringEngine.calculate_pillar_score(punishments[pillar], feat_loc)
+            
+            f_score = ScoringEngine.calculate_final_score(p_scores)
+            self.feature_results[feature] = {
+                "pillars": p_scores,
+                "final": f_score,
+                "punishments": punishments,
+                "loc": feat_loc
+            }
+            total_features_score += f_score
 
-        final_score = ScoringEngine.calculate_final_score(pillar_scores)
+        # Điểm tổng kết dự án = Trung bình cộng điểm các tính năng
+        if self.feature_results:
+            final_score = round(total_features_score / len(self.feature_results), 2)
+        else:
+            final_score = 100.0
+            
         rating = ScoringEngine.get_rating(final_score)
 
-        # BƯỚC 5: REPORTING (Xuất báo cáo)
+        # BƯỚC 5: REPORTING (Xuất báo cáo theo Tính năng)
         print("[5/5] Bước 5: Xuất báo cáo (Reporting)...")
-        self.generate_report(pillar_scores, final_score, rating, pillar_punishments)
+        self.generate_report(self.feature_results, final_score, rating)
         
         # LƯU VÀO LỊCH SỬ (V2)
         AuditDatabase.save_audit(
@@ -96,7 +126,7 @@ class CodeAuditor:
             rating=rating,
             loc=total_loc,
             violations_count=len(self.violations),
-            pillar_scores=pillar_scores
+            pillar_scores=self.feature_results # Lưu object phân cấp
         )
         
         print(f"\n✅ Kiểm toán hoàn tất!")
@@ -104,23 +134,28 @@ class CodeAuditor:
         print(f"   - Xếp hạng: {rating}")
         print(f"   - Báo cáo chi tiết: {self.report_path}")
 
-    def generate_report(self, pillar_scores, final_score, rating, punishments):
-        """Tạo file báo cáo Markdown chuyên nghiệp."""
+    def generate_report(self, feature_results, final_score, rating):
+        """Tạo file báo cáo Markdown chuyên nghiệp phân cấp theo Tính năng."""
         with open(self.report_path, 'w') as f:
-            f.write(f"# BÁO CÁO KIỂM TOÁN CUỐI CÙNG (FINAL AUDIT REPORT) - V3\n\n")
-            f.write(f"## Điểm số tổng quát: {final_score} / 100 ({rating})\n\n")
+            f.write(f"# BÁO CÁO KIỂM TOÁN PHÂN CẤP (HIERARCHICAL AUDIT REPORT)\n\n")
+            f.write(f"## ĐIỂM TỔNG DỰ ÁN: {final_score} / 100 ({rating})\n\n")
             
-            f.write("### Chỉ số dự án (Metrics)\n")
+            f.write("### 📊 Chỉ số dự án (Project Metrics)\n")
             f.write(f"- Tổng LOC: {self.discovery_data['total_loc']}\n")
-            f.write(f"- Tổng số file: {self.discovery_data['total_files']}\n\n")
+            f.write(f"- Tổng số file: {self.discovery_data['total_files']}\n")
+            f.write(f"- Tổng số tính năng: {len(feature_results)}\n\n")
             
-            f.write("### Chi tiết theo trụ cột (Pillar Breakdown)\n")
-            f.write("| Trụ cột | Trọng số | Tổng điểm phạt | Điểm quy đổi (Thang 10) |\n")
-            f.write("|---|---|---|---|\n")
-            for pillar, score in pillar_scores.items():
-                f.write(f"| {pillar} | {int(WEIGHTS[pillar]*100)}% | {punishments[pillar]} | {score} |\n")
+            f.write("### 🧩 Chi tiết theo Tính năng (Feature Breakdown)\n")
+            for feature, res in feature_results.items():
+                f.write(f"#### 🔹 Tính năng: `{feature}` (LOC: {res['loc']})\n")
+                f.write(f"**Điểm tính năng: {res['final']} / 100**\n\n")
+                f.write("| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |\n")
+                f.write("|---|---|---|\n")
+                for pillar, p_score in res['pillars'].items():
+                    f.write(f"| {pillar} | {res['punishments'][pillar]} | {p_score} |\n")
+                f.write("\n---\n")
             
-            f.write("\n### Top 10 Vi phạm tiêu biểu\n")
+            f.write("\n### 🚨 Top 10 Vi phạm tiêu biểu\n")
             for v in self.violations[:10]:
                 f.write(f"- **[{v['pillar']}]** {v['file']}: {v['reason']} (Trọng số: {v['weight']})\n")
             

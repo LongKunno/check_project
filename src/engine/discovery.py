@@ -25,13 +25,24 @@ def run_precheck():
     results = {{
         "total_loc": 0,
         "total_files": 0,
-        "files": []
+        "files": [],
+        "features": {{}} # Nhóm theo thư mục cấp 1
     }}
     
     for root, dirs, files in os.walk('.'):
-        # Filter directories
+        # Lọc thư mục
         dirs[:] = [d for d in dirs if d not in exclude_dirs]
         
+        # Xác định tên tính năng từ root
+        rel_root = os.path.relpath(root, '.')
+        if rel_root == '.':
+            feature_name = "root"
+        else:
+            feature_name = rel_root.split(os.sep)[0]
+            
+        if feature_name not in results["features"]:
+            results["features"][feature_name] = {{"loc": 0, "files_count": 0}}
+            
         for file in files:
             if any(file.endswith(ext) for ext in scan_ext) and file != 'ai_precheck.py':
                 path = os.path.join(root, file)
@@ -42,7 +53,9 @@ def run_precheck():
                         if loc > 0:
                             results["total_files"] += 1
                             results["total_loc"] += loc
-                            results["files"].append({{"path": os.path.abspath(path), "loc": loc}})
+                            results["files"].append({{"path": os.path.abspath(path), "loc": loc, "feature": feature_name}})
+                            results["features"][feature_name]["loc"] += loc
+                            results["features"][feature_name]["files_count"] += 1
                 except Exception:
                     continue
     

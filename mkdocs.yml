@@ -1,0 +1,51 @@
+site_name: AI Static Analysis Documentation
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - tables
+
+nav:
+  - Trang chủ: index.md
+  - Hiện trạng Dự án: current_state.md
+  - Kiến trúc hệ thống:
+      - Tổng quan: architecture/overview.md
+      - Quyết định Thiết kế (ADR): architecture/design_decisions.md
+  - API Specifications: api_specs/endpoints.md
+  - Database Schema: database/schema.md
+  - Quy chuẩn Tech Stack:
+      - Python Rules: tech_stack/python_rules.md
+  - Roadmap: roadmap.md

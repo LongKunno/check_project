@@ -144,21 +144,8 @@ async def upload_and_audit(files: List[UploadFile] = File(...)):
         auditor = CodeAuditor(target_path)
         auditor.run()
 
-        # Tổng hợp kết quả
-        pillar_punishments = {p: 0 for p in WEIGHTS.keys()}
-        for v in auditor.violations:
-            pillar_punishments[v['pillar']] += v['weight']
-
         total_loc = auditor.discovery_data['total_loc']
-
-        pillar_scores = {}
-        for pillar in WEIGHTS.keys():
-            pillar_scores[pillar] = ScoringEngine.calculate_pillar_score(
-                pillar_punishments[pillar],
-                total_loc
-            )
-
-        final_score = ScoringEngine.calculate_final_score(pillar_scores)
+        final_score = ScoringEngine.calculate_final_score_from_features(auditor.feature_results)
         rating = ScoringEngine.get_rating(final_score)
 
         return {
@@ -172,7 +159,7 @@ async def upload_and_audit(files: List[UploadFile] = File(...)):
             "scores": {
                 "final": final_score,
                 "rating": rating,
-                "pillars": pillar_scores
+                "features": auditor.feature_results # Cấu trúc mới: feature -> pillars
             },
             "violations": auditor.violations
         }
@@ -197,23 +184,12 @@ async def run_audit(target: str = Query(".", description="Path to the directory 
         )
 
     try:
+        # Chạy kiểm toán
         auditor = CodeAuditor(target_path)
         auditor.run()
 
-        pillar_punishments = {p: 0 for p in WEIGHTS.keys()}
-        for v in auditor.violations:
-            pillar_punishments[v['pillar']] += v['weight']
-
         total_loc = auditor.discovery_data['total_loc']
-
-        pillar_scores = {}
-        for pillar in WEIGHTS.keys():
-            pillar_scores[pillar] = ScoringEngine.calculate_pillar_score(
-                pillar_punishments[pillar],
-                total_loc
-            )
-
-        final_score = ScoringEngine.calculate_final_score(pillar_scores)
+        final_score = ScoringEngine.calculate_final_score_from_features(auditor.feature_results)
         rating = ScoringEngine.get_rating(final_score)
 
         return {
@@ -227,7 +203,7 @@ async def run_audit(target: str = Query(".", description="Path to the directory 
             "scores": {
                 "final": final_score,
                 "rating": rating,
-                "pillars": pillar_scores
+                "features": auditor.feature_results
             },
             "violations": auditor.violations
         }
@@ -289,21 +265,8 @@ async def audit_repository(request: RepositoryAuditRequest):
         auditor = CodeAuditor(target_path)
         auditor.run()
 
-        # Tổng hợp kết quả
-        pillar_punishments = {p: 0 for p in WEIGHTS.keys()}
-        for v in auditor.violations:
-            pillar_punishments[v['pillar']] += v['weight']
-
         total_loc = auditor.discovery_data['total_loc']
-
-        pillar_scores = {}
-        for pillar in WEIGHTS.keys():
-            pillar_scores[pillar] = ScoringEngine.calculate_pillar_score(
-                pillar_punishments[pillar],
-                total_loc
-            )
-
-        final_score = ScoringEngine.calculate_final_score(pillar_scores)
+        final_score = ScoringEngine.calculate_final_score_from_features(auditor.feature_results)
         rating = ScoringEngine.get_rating(final_score)
 
         return {
@@ -317,11 +280,10 @@ async def audit_repository(request: RepositoryAuditRequest):
             "scores": {
                 "final": final_score,
                 "rating": rating,
-                "pillars": pillar_scores
+                "features": auditor.feature_results
             },
             "violations": auditor.violations
         }
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {str(e)}")
     finally:

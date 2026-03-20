@@ -28,13 +28,24 @@ class ScoringEngine:
     @staticmethod
     def calculate_final_score(pillar_scores):
         """
-        Calculates the final weighted score (0-100).
+        Calculates the final weighted score (0-10) for a single feature/project.
         """
         from src.config import WEIGHTS
         final = 0
         for pillar, score in pillar_scores.items():
             final += score * WEIGHTS.get(pillar, 0.25)
         return round(final * 10, 2)
+
+    @staticmethod
+    def calculate_final_score_from_features(feature_results):
+        """
+        Calculates the average score (0-100) from multiple features.
+        """
+        if not feature_results:
+            return 100.0
+        
+        total = sum(f['final'] for f in feature_results.values())
+        return round(total / len(feature_results), 2)
 
     @staticmethod
     def get_rating(score):
