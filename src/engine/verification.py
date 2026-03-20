@@ -39,6 +39,8 @@ def double_check(file_list_json):
     VERIFY_FALSE_REGEX = re.compile(r'verify\s*=\s*' + 'False')
     SELECT_STAR_REGEX = re.compile(r'SELECT\s+\*')
     ITERROWS_REGEX = re.compile(r'\.iterrows\(\)')
+    CORS_REGEX = re.compile(r'allow_origins\s*=\s*\[\s*[\'"]\*[\'"]\s*\]')
+    PRINT_REGEX = re.compile(r'print\(.+\)')
     
     for file_path in file_list:
         try:
@@ -47,25 +49,45 @@ def double_check(file_list_json):
                 
                 # Regex Checks
                 if SECRET_REGEX.search(content):
-                    violations.append({"file": file_path, "type": "Security", "reason": "Hardcoded Secret detected (Regex)", "weight": -5})
+                    violations.append({"file": file_path, "type": "Security", "reason": "Hardcoded Secret detected (Regex)", "weight": -5, "rule_id": "HARDCODED_SECRET"})
                 if VERIFY_FALSE_REGEX.search(content):
-                    violations.append({"file": file_path, "type": "Security", "reason": "verify=" + "False detected (Regex)", "weight": -3})
+                    violations.append({"file": file_path, "type": "Security", "reason": "verify=" + "False detected (Regex)", "weight": -3, "rule_id": "HARDCODED_SECRET"}) # Vẫn là security secret/config
                 if SELECT_STAR_REGEX.search(content):
-                    violations.append({"file": file_path, "type": "Performance", "reason": "SELECT * in BigQuery/SQL (Regex)", "weight": -2})
+                    violations.append({"file": file_path, "type": "Performance", "reason": "SELECT * in BigQuery/SQL (Regex)", "weight": -2, "rule_id": "SELECT_STAR"})
                 if ITERROWS_REGEX.search(content):
-                    violations.append({"file": file_path, "type": "Performance", "reason": "Pandas .iterrows() detected (Regex)", "weight": -3})
+                    violations.append({"file": file_path, "type": "Performance", "reason": "Pandas .iterrows() detected (Regex)", "weight": -3, "rule_id": "ITERROWS_USE"})
+                if CORS_REGEX.search(content):
+                    violations.append({"file": file_path, "type": "Security", "reason": "Unrestricted CORS (allow_origins='*') (Regex)", "weight": -3, "rule_id": "UNRESTRICTED_CORS"})
+                if PRINT_REGEX.search(content):
+                    violations.append({"file": file_path, "type": "Maintainability", "reason": "Print statement found (Regex)", "weight": -0.5, "rule_id": "PRINT_STATEMENT"})
 
                 # AST Checks
                 tree = ast.parse(content)
+                imported_names = set()
+                used_names = set()
+                
                 for node in ast.walk(tree):
                     # Bare Except
                     if isinstance(node, ast.ExceptHandler) and node.type is None:
-                        violations.append({"file": file_path, "type": "Reliability", "reason": "Bare except: block (AST)", "weight": -2})
+                        violations.append({"file": file_path, "type": "Reliability", "reason": "Bare except: block (AST)", "weight": -2, "rule_id": "BARE_EXCEPT"})
                     
                     # Function length
                     if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                         if node.end_lineno - node.lineno > 100:
-                            violations.append({"file": file_path, "type": "Maintainability", "reason": f"Function {node.name} too long > 100 lines (AST)", "weight": -2})
+                            violations.append({"file": file_path, "type": "Maintainability", "reason": f"Function {node.name} too long > 100 lines (AST)", "weight": -2, "rule_id": "GOD_OBJECT"})
+                    
+                    # Track Imports & Usage (Simple)
+                    if isinstance(node, ast.Import):
+                        for n in node.names: imported_names.add(n.asname or n.name)
+                    if isinstance(node, ast.ImportFrom):
+                        for n in node.names: imported_names.add(n.asname or n.name)
+                    if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load):
+                        used_names.add(node.id)
+
+                # Check unused imports
+                for name in imported_names:
+                    if name not in used_names and name not in ['os', 'sys', 'json', 'ast', 're']: # Ignore some common imports
+                        violations.append({"file": file_path, "type": "Maintainability", "reason": f"Import '{name}' might be unused (AST)", "weight": -0.5, "rule_id": "UNUSED_IMPORT"})
                             
         except Exception:
             continue

@@ -53,4 +53,26 @@ Bổ sung `Access-Control-Allow-Private-Network: true` vào header của mọi r
 **Tại sao?**: Giúp lọc nhiễu tự động và tập trung đánh giá vào đúng khu vực chứa logic nghiệp vụ chính của dự án.
 
 ---
+
+## ADR-004: Khôi phục Mô hình 4 Trụ cột và Nâng cao bộ Quy tắc kiểm tra (Case Checks)
+
+### Trạng thái (Status)
+**Accepted** (2026-03-20)
+
+### Vấn đề (Problem)
+Mô hình rating A-E của SonarQube tuy chuyên nghiệp nhưng có thể gây khó hiểu cho người dùng đã quen với thang điểm 10. Tuy nhiên, kiến thức về Severity và Technical Debt từ SonarQube lại rất hữu ích để làm phong phú thêm bộ quy tắc kiểm tra.
+
+### Giải pháp (Options & Decision & Why)
+**Quyết định**: 
+1. Quay lại sử dụng thang điểm 0-10 cho 4 trụ cột (Performance, Maintainability, Reliability, Security).
+2. Tích hợp Technical Debt và Severity từ SonarQube vào metadata của các quy tắc để làm "Case Checks" chuyên sâu hơn.
+3. Bổ sung các quy tắc kiểm tra mới như CORS, Unused Imports, và Print Statements.
+
+**Tại sao?**: Giữ được sự đơn giản, trực quan của điểm số 0-10 nhưng vẫn tận dụng được chiều sâu phân tích của các công cụ hàng đầu như SonarQube.
+
+### Hệ quả (Consequences)
+- **Tích cực**: Dashboard dễ hiểu hơn, bộ quy tắc kiểm tra mạnh mẽ và đa dạng hơn.
+- **Thử thách**: Duy trì sự cân bằng giữa điểm phạt (Punishment) và Nợ kỹ thuật (Debt) để điểm số phản ánh đúng thực tế.
+
+---
 *(Bổ sung các ADR mới khi có quyết định kiến trúc lớn).*

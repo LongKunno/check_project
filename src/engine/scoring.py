@@ -50,11 +50,10 @@ class ScoringEngine:
     @staticmethod
     def get_rating(score):
         """
-        Returns a letter rating and emoji based on the score.
+        Returns a descriptive rating and emoji based on the 0-100 score.
         """
-        if score >= 90: return "🏆 A+"
-        if score >= 85: return "🥇 A"
-        if score >= 75: return "🥈 B"
-        if score >= 60: return "🚨 C"
-        if score >= 40: return "⚠️ D"
-        return "❌ E"
+        if score >= 90: return "🏆 Xuất sắc"
+        if score >= 80: return "🥈 Tốt"
+        if score >= 65: return "🥉 Khá"
+        if score >= 45: return "⚠️ Trung bình"
+        return "🚨 Cần cải thiện ngay"

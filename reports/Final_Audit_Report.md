@@ -1,162 +1,52 @@
-# BÁO CÁO KIỂM TOÁN PHÂN CẤP (HIERARCHICAL AUDIT REPORT)
+# BÁO CÁO KIỂM TOÁN TỔNG THỂ (OVERALL AUDIT REPORT)
 
-## ĐIỂM TỔNG DỰ ÁN: 89.91 / 100 (🥇 A)
+## ĐIỂM TỔNG DỰ ÁN: 62.44 / 100 (⚠️ Trung bình)
 
 ### 📊 Chỉ số dự án (Project Metrics)
-- Tổng LOC: 58056
-- Tổng số file: 282
-- Tổng số tính năng: 12
+- Tổng LOC: 382713
+- Tổng số file: 1621
+- Tổng số tính năng: 2
 
-### 🛡️ Đánh giá Trụ cột Dự án (Overall Project Pillars)
+### 🛡️ Đánh giá 4 Trụ cột Dự án
 | Trụ cột | Điểm (Thang 10) | Trạng thái |
 |---|---|---|
-| Performance | 9.83 | ✅ Tốt |
-| Maintainability | 4.21 | 🚨 Nguy cơ |
-| Reliability | 5.86 | ⚠️ Cần cải thiện |
-| Security | 6.34 | ⚠️ Cần cải thiện |
+| Performance | 9.16 | ✅ Tốt |
+| Maintainability | 2.15 | 🚨 Nguy cơ |
+| Reliability | 5.3 | 🚨 Nguy cơ |
+| Security | 7.08 | ⚠️ Cần cải thiện |
 
 ### 🧩 Chi tiết theo Tính năng (Feature Breakdown)
-#### 🔹 Tính năng: `source_code_root` (LOC: 22)
-**Điểm tính năng: 100.0 / 100**
+#### 🔹 Tính năng: `growme_app` (LOC: 274119)
+**Điểm tính năng: 61.92 / 100** (Nợ: 17663m)
 
 | Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
 |---|---|---|
-| Performance | 0 | 10.0 |
-| Maintainability | 0 | 10.0 |
-| Reliability | 0 | 10.0 |
-| Security | 0 | 10.0 |
+| Performance | -52 | 9.13 |
+| Maintainability | -1961.5 | 2.18 |
+| Reliability | -512 | 5.17 |
+| Security | -225 | 7.09 |
 
 ---
-#### 🔹 Tính năng: `__Common` (LOC: 1306)
-**Điểm tính năng: 100.0 / 100**
+#### 🔹 Tính năng: `growme_api` (LOC: 108594)
+**Điểm tính năng: 62.96 / 100** (Nợ: 7251m)
 
 | Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
 |---|---|---|
-| Performance | 0 | 10.0 |
-| Maintainability | 0 | 10.0 |
-| Reliability | 0 | 10.0 |
-| Security | 0 | 10.0 |
-
----
-#### 🔹 Tính năng: `__LP_Library` (LOC: 18473)
-**Điểm tính năng: 66.22 / 100**
-
-| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
-|---|---|---|
-| Performance | -2 | 9.49 |
-| Maintainability | -46 | 4.45 |
-| Reliability | -20 | 6.49 |
-| Security | -46 | 4.45 |
-
----
-#### 🔹 Tính năng: `F0_4_Update_Prompt` (LOC: 377)
-**Điểm tính năng: 81.85 / 100**
-
-| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
-|---|---|---|
-| Performance | 0 | 10.0 |
-| Maintainability | -2 | 2.74 |
-| Reliability | 0 | 10.0 |
-| Security | 0 | 10.0 |
-
----
-#### 🔹 Tính năng: `F0_5_Notification` (LOC: 221)
-**Điểm tính năng: 100.0 / 100**
-
-| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
-|---|---|---|
-| Performance | 0 | 10.0 |
-| Maintainability | 0 | 10.0 |
-| Reliability | 0 | 10.0 |
-| Security | 0 | 10.0 |
-
----
-#### 🔹 Tính năng: `F1_3_System_Status` (LOC: 169)
-**Điểm tính năng: 100.0 / 100**
-
-| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
-|---|---|---|
-| Performance | 0 | 10.0 |
-| Maintainability | 0 | 10.0 |
-| Reliability | 0 | 10.0 |
-| Security | 0 | 10.0 |
-
----
-#### 🔹 Tính năng: `lpp_grm_ana_api` (LOC: 768)
-**Điểm tính năng: 88.68 / 100**
-
-| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
-|---|---|---|
-| Performance | 0 | 10.0 |
-| Maintainability | 0 | 10.0 |
-| Reliability | -2 | 4.34 |
-| Security | 0 | 10.0 |
-
----
-#### 🔹 Tính năng: `F2_1_Analytics` (LOC: 32393)
-**Điểm tính năng: 72.37 / 100**
-
-| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
-|---|---|---|
-| Performance | 0 | 10.0 |
-| Maintainability | -112 | 3.66 |
-| Reliability | -54 | 5.45 |
-| Security | -10 | 8.66 |
-
----
-#### 🔹 Tính năng: `F1_2_Create_New_Blog` (LOC: 568)
-**Điểm tính năng: 100.0 / 100**
-
-| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
-|---|---|---|
-| Performance | 0 | 10.0 |
-| Maintainability | 0 | 10.0 |
-| Reliability | 0 | 10.0 |
-| Security | 0 | 10.0 |
-
----
-#### 🔹 Tính năng: `F1_4_User_Tracking` (LOC: 1749)
-**Điểm tính năng: 87.36 / 100**
-
-| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
-|---|---|---|
-| Performance | 0 | 10.0 |
-| Maintainability | 0 | 10.0 |
-| Reliability | -6 | 3.68 |
-| Security | 0 | 10.0 |
-
----
-#### 🔹 Tính năng: `F1_1_Auth` (LOC: 741)
-**Điểm tính năng: 82.38 / 100**
-
-| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
-|---|---|---|
-| Performance | 0 | 10.0 |
-| Maintainability | 0 | 10.0 |
-| Reliability | 0 | 10.0 |
-| Security | -11 | 1.19 |
-
----
-#### 🔹 Tính năng: `F1_5_Site_Management` (LOC: 1269)
-**Điểm tính năng: 100.0 / 100**
-
-| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
-|---|---|---|
-| Performance | 0 | 10.0 |
-| Maintainability | 0 | 10.0 |
-| Reliability | 0 | 10.0 |
-| Security | 0 | 10.0 |
+| Performance | -18 | 9.23 |
+| Maintainability | -830.5 | 2.07 |
+| Reliability | -166 | 5.67 |
+| Security | -90 | 7.07 |
 
 ---
 
 ### 🚨 Top 10 Vi phạm tiêu biểu
-- **[Maintainability]** /tmp/git_audit_ksxhfxj7/repo/source_code/__LP_Library/Utils/Handle/draw_excel_function.py: Function draw_excel_table_only_with_format_and_merge too long > 100 lines (AST) (Trọng số: -2)
-- **[Reliability]** /tmp/git_audit_ksxhfxj7/repo/source_code/__LP_Library/Utils/Handle/draw_excel_function.py: Bare except: block (AST) (Trọng số: -2)
-- **[Reliability]** /tmp/git_audit_ksxhfxj7/repo/source_code/__LP_Library/Utils/Handle/draw_excel_function.py: Bare except: block (AST) (Trọng số: -2)
-- **[Reliability]** /tmp/git_audit_ksxhfxj7/repo/source_code/__LP_Library/Utils/Handle/handle_file.py: Bare except: block (AST) (Trọng số: -2)
-- **[Security]** /tmp/git_audit_ksxhfxj7/repo/source_code/__LP_Library/HTML/read_html_2.py: verify=False detected (Regex) (Trọng số: -3)
-- **[Maintainability]** /tmp/git_audit_ksxhfxj7/repo/source_code/__LP_Library/HTML/read_html_2.py: Function get_page_info_v2 too long > 100 lines (AST) (Trọng số: -2)
-- **[Maintainability]** /tmp/git_audit_ksxhfxj7/repo/source_code/__LP_Library/HTML/read_html_2.py: Function get_page_tree_info too long > 100 lines (AST) (Trọng số: -2)
-- **[Reliability]** /tmp/git_audit_ksxhfxj7/repo/source_code/__LP_Library/HTML/read_html_2.py: Bare except: block (AST) (Trọng số: -2)
-- **[Reliability]** /tmp/git_audit_ksxhfxj7/repo/source_code/__LP_Library/HTML/read_html_2.py: Bare except: block (AST) (Trọng số: -2)
-- **[Reliability]** /tmp/git_audit_ksxhfxj7/repo/source_code/__LP_Library/HTML/read_html_2.py: Bare except: block (AST) (Trọng số: -2)
+- **[Maintainability]** /tmp/git_audit_ue6nqnls/repo/source_code/growme_app/code/F7_2_Dashboard/tests.py: Print statement found (Regex) (Rule: PRINT_STATEMENT) (Trọng số: -0.5)
+- **[Maintainability]** /tmp/git_audit_ue6nqnls/repo/source_code/growme_app/code/F7_2_Dashboard/tests.py: Import 'TestCase' might be unused (AST) (Rule: UNUSED_IMPORT) (Trọng số: -0.5)
+- **[Maintainability]** /tmp/git_audit_ue6nqnls/repo/source_code/growme_app/code/F7_2_Dashboard/tests.py: Import 'DashBoardBoardShared' might be unused (AST) (Rule: UNUSED_IMPORT) (Trọng số: -0.5)
+- **[Maintainability]** /tmp/git_audit_ue6nqnls/repo/source_code/growme_app/code/F7_2_Dashboard/tests.py: Import 'DashBoardReportInfo' might be unused (AST) (Rule: UNUSED_IMPORT) (Trọng số: -0.5)
+- **[Maintainability]** /tmp/git_audit_ue6nqnls/repo/source_code/growme_app/code/F7_2_Dashboard/tests.py: Import 'DashBoardBoardInfo' might be unused (AST) (Rule: UNUSED_IMPORT) (Trọng số: -0.5)
+- **[Maintainability]** /tmp/git_audit_ue6nqnls/repo/source_code/growme_app/code/F7_2_Dashboard/tests.py: Import 'name' might be unused (AST) (Rule: UNUSED_IMPORT) (Trọng số: -0.5)
+- **[Maintainability]** /tmp/git_audit_ue6nqnls/repo/source_code/growme_app/code/F7_2_Dashboard/views.py: Function get too long > 100 lines (AST) (Rule: GOD_OBJECT) (Trọng số: -2)
+- **[Maintainability]** /tmp/git_audit_ue6nqnls/repo/source_code/growme_app/code/F7_2_Dashboard/views.py: Import 'timedelta' might be unused (AST) (Rule: UNUSED_IMPORT) (Trọng số: -0.5)
+- **[Maintainability]** /tmp/git_audit_ue6nqnls/repo/source_code/growme_app/code/F7_2_Dashboard/views.py: Import '*' might be unused (AST) (Rule: UNUSED_IMPORT) (Trọng số: -0.5)
+- **[Maintainability]** /tmp/git_audit_ue6nqnls/repo/source_code/growme_app/code/F7_2_Dashboard/views.py: Import 'datetime' might be unused (AST) (Rule: UNUSED_IMPORT) (Trọng số: -0.5)

@@ -29,20 +29,21 @@ class CodeAuditor:
         self.report_path = os.path.join(report_dir, 'Final_Audit_Report.md')
         self.violations = []
 
-    def log_violation(self, pillar, file, reason, weight, snippet=""):
+    def log_violation(self, pillar, file, reason, weight, snippet="", rule_id=""):
         """Ghi nhận một vi phạm mới và lưu vào danh sách."""
         violation = {
             "pillar": pillar,
             "file": file,
             "reason": reason,
             "weight": weight,
-            "snippet": snippet
+            "snippet": snippet,
+            "rule_id": rule_id
         }
         self.violations.append(violation)
         
         # Ghi nối vào file Ledger (Sổ cái bằng chứng)
         with open(self.ledger_path, 'a') as f:
-            f.write(f"- [{pillar}] | [{file}] | Lý do: {reason} | Trọng số: {weight} | `{snippet}`\n")
+            f.write(f"- [{pillar}] | [{file}] | Lý do: {reason} | Trình bày: {rule_id} | Trọng số: {weight}\n")
 
     def run(self):
         """Thực thi toàn bộ quy trình kiểm toán."""
@@ -67,29 +68,48 @@ class CodeAuditor:
         
         # Lưu kết quả từ bộ máy xác thực tự động
         for v in automated_violations:
-            self.log_violation(v['type'], v['file'], v['reason'], v['weight'])
+            self.log_violation(v['type'], v['file'], v['reason'], v['weight'], rule_id=v.get('rule_id', ''))
 
         # BƯỚC 4: AGGREGATION (Tổng hợp điểm số Phân cấp)
         print("[4/5] Bước 4: Tổng hợp dữ liệu (Aggregation)...")
+        from src.config import RULES_METADATA, WEIGHTS
         
         # Ánh xạ file -> feature
         file_to_feature = {f['path']: f.get('feature', 'unknown') for f in self.discovery_data['files']}
         
         # Khởi tạo bảng điểm phạt: feature -> pillar -> punishment
         feature_punishments = {}
+        feature_meta = {} # {feature: {pillar: {debt: 0, max_sev: 'Info'}}}
+        
         for feature in self.discovery_data['features'].keys():
             feature_punishments[feature] = {p: 0 for p in WEIGHTS.keys()}
+            feature_meta[feature] = {p: {"debt": 0, "max_sev": "Info"} for p in WEIGHTS.keys()}
             
+        sev_levels = ["Info", "Minor", "Major", "Critical", "Blocker"]
+
         for v in self.violations:
-            feat = file_to_feature.get(v['file'], 'unknown')
+            feat = file_to_feature.get(v['file'], 'root')
             if feat not in feature_punishments:
                 feature_punishments[feat] = {p: 0 for p in WEIGHTS.keys()}
-            feature_punishments[feat][v['pillar']] += v['weight']
+                feature_meta[feat] = {p: {"debt": 0, "max_sev": "Info"} for p in WEIGHTS.keys()}
+                
+            pillar = v['pillar']
+            feature_punishments[feat][pillar] += v['weight']
+            
+            # SonarQube Meta
+            rule_id = v.get('rule_id', '')
+            meta = RULES_METADATA.get(rule_id, {"severity": "Minor", "debt": 10})
+            feature_meta[feat][pillar]["debt"] += meta["debt"]
+            
+            # Cập nhật mức độ nghiêm trọng cao nhất
+            if sev_levels.index(meta["severity"]) > sev_levels.index(feature_meta[feat][pillar]["max_sev"]):
+                feature_meta[feat][pillar]["max_sev"] = meta["severity"]
 
         # Tính điểm cho từng Tính năng và Tổng kết dự án
         self.feature_results = {}
         total_features_score = 0
         project_punishments = {p: 0 for p in WEIGHTS.keys()}
+        project_meta = {p: {"debt": 0, "max_sev": "Info"} for p in WEIGHTS.keys()}
         
         for feature, punishments in feature_punishments.items():
             feat_loc = self.discovery_data['features'].get(feature, {}).get('loc', 0)
@@ -97,19 +117,27 @@ class CodeAuditor:
             
             p_scores = {}
             for pillar in WEIGHTS.keys():
+                # Score (0-10)
                 p_scores[pillar] = ScoringEngine.calculate_pillar_score(punishments[pillar], feat_loc)
                 project_punishments[pillar] += punishments[pillar]
+                
+                # Meta (Informational)
+                meta = feature_meta[feature][pillar]
+                project_meta[pillar]["debt"] += meta["debt"]
+                if sev_levels.index(meta["max_sev"]) > sev_levels.index(project_meta[pillar]["max_sev"]):
+                    project_meta[pillar]["max_sev"] = meta["max_sev"]
             
             f_score = ScoringEngine.calculate_final_score(p_scores)
             self.feature_results[feature] = {
                 "pillars": p_scores,
                 "final": f_score,
                 "punishments": punishments,
-                "loc": feat_loc
+                "loc": feat_loc,
+                "debt_mins": sum(m["debt"] for m in feature_meta[feature].values())
             }
             total_features_score += f_score
 
-        # Tính điểm 4 trụ cột cho tổng dự án
+        # Tính điểm 4 trụ cột cho tổng dự án (Numeric)
         self.project_pillars = {}
         for pillar in WEIGHTS.keys():
             self.project_pillars[pillar] = ScoringEngine.calculate_pillar_score(project_punishments[pillar], total_loc)
@@ -122,7 +150,7 @@ class CodeAuditor:
             
         rating = ScoringEngine.get_rating(final_score)
 
-        # BƯỚC 5: REPORTING (Xuất báo cáo theo Tính năng)
+        # BƯỚC 5: REPORTING
         print("[5/5] Bước 5: Xuất báo cáo (Reporting)...")
         self.generate_report(self.feature_results, self.project_pillars, final_score, rating)
         
@@ -147,7 +175,7 @@ class CodeAuditor:
     def generate_report(self, feature_results, project_pillars, final_score, rating):
         """Tạo file báo cáo Markdown chuyên nghiệp phân cấp theo Tính năng."""
         with open(self.report_path, 'w') as f:
-            f.write(f"# BÁO CÁO KIỂM TOÁN PHÂN CẤP (HIERARCHICAL AUDIT REPORT)\n\n")
+            f.write(f"# BÁO CÁO KIỂM TOÁN TỔNG THỂ (OVERALL AUDIT REPORT)\n\n")
             f.write(f"## ĐIỂM TỔNG DỰ ÁN: {final_score} / 100 ({rating})\n\n")
             
             f.write("### 📊 Chỉ số dự án (Project Metrics)\n")
@@ -155,18 +183,18 @@ class CodeAuditor:
             f.write(f"- Tổng số file: {self.discovery_data['total_files']}\n")
             f.write(f"- Tổng số tính năng: {len(feature_results)}\n\n")
 
-            f.write("### 🛡️ Đánh giá Trụ cột Dự án (Overall Project Pillars)\n")
+            f.write("### 🛡️ Đánh giá 4 Trụ cột Dự án\n")
             f.write("| Trụ cột | Điểm (Thang 10) | Trạng thái |\n")
             f.write("|---|---|---|\n")
             for pillar, score in project_pillars.items():
-                status = "✅ Tốt" if score >= 8 else "⚠️ Cần cải thiện" if score >= 5 else "🚨 Nguy cơ"
+                status = "✅ Tốt" if score >= 8.5 else "⚠️ Cần cải thiện" if score >= 6 else "🚨 Nguy cơ"
                 f.write(f"| {pillar} | {score} | {status} |\n")
             f.write("\n")
             
             f.write("### 🧩 Chi tiết theo Tính năng (Feature Breakdown)\n")
             for feature, res in feature_results.items():
                 f.write(f"#### 🔹 Tính năng: `{feature}` (LOC: {res['loc']})\n")
-                f.write(f"**Điểm tính năng: {res['final']} / 100**\n\n")
+                f.write(f"**Điểm tính năng: {res['final']} / 100** (Nợ: {res['debt_mins']}m)\n\n")
                 f.write("| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |\n")
                 f.write("|---|---|---|\n")
                 for pillar, p_score in res['pillars'].items():
@@ -175,7 +203,8 @@ class CodeAuditor:
             
             f.write("\n### 🚨 Top 10 Vi phạm tiêu biểu\n")
             for v in self.violations[:10]:
-                f.write(f"- **[{v['pillar']}]** {v['file']}: {v['reason']} (Trọng số: {v['weight']})\n")
+                rule_info = f" (Rule: {v['rule_id']})" if v.get('rule_id') else ""
+                f.write(f"- **[{v['pillar']}]** {v['file']}: {v['reason']}{rule_info} (Trọng số: {v['weight']})\n")
             
             if not self.violations:
                 f.write("Không tìm thấy vi phạm nào. Mã nguồn đạt chuẩn Gold Standard!\n")

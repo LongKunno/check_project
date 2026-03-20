@@ -21,20 +21,36 @@ SCAN_EXTENSIONS = ['.py']
 # Normalization Factor (K)
 K_FACTOR = 2.0
 
-# Severity Weights (Reference from V3 Framework)
-SEVERITY = {
-    "HARDCODED_SECRET": -5.0,
-    "SQL_INJECTION": -3.0,
-    "N_PLUS_ONE": -3.0,
-    "ITERROWS_USE": -3.0,
-    "BARE_EXCEPT": -2.0,
-    "GOD_OBJECT": -2.0,
-    "DUPLICATION_HIGH": -2.0,
-    "MISSING_TESTS": -3.0,
-    "SELECT_STAR": -2.0,
-    "MISSING_DOCSTRING": -0.3,
-    "PEP8_VIOLATION": -1.0,
+# Rules Metadata (SonarQube Style)
+# severity: Blocker, Critical, Major, Minor, Info
+# debt: remediation effort in minutes
+RULES_METADATA = {
+    "HARDCODED_SECRET": {"category": "Security", "severity": "Blocker", "debt": 60},
+    "SQL_INJECTION": {"category": "Security", "severity": "Critical", "debt": 45},
+    "N_PLUS_ONE": {"category": "Performance", "severity": "Major", "debt": 30},
+    "ITERROWS_USE": {"category": "Performance", "severity": "Minor", "debt": 15},
+    "HARDCODED_SECRET": {"category": "Security", "severity": "Blocker", "debt": 10},
+    "SQL_INJECTION": {"category": "Security", "severity": "Blocker", "debt": 180},
+    "UNRESTRICTED_CORS": {"category": "Security", "severity": "Major", "debt": 20},
+    "UNUSED_IMPORT": {"category": "Maintainability", "severity": "Minor", "debt": 5},
+    "PRINT_STATEMENT": {"category": "Maintainability", "severity": "Info", "debt": 2},
+    "MISSING_TESTS": {"category": "Reliability", "severity": "Critical", "debt": 45},
+    "SELECT_STAR": {"category": "Performance", "severity": "Minor", "debt": 10},
 }
+
+# SonarQube Configuration
+SONAR_CONFIG = {
+    "DEVELOPMENT_COST_PER_LOC_MINS": 30, # Minutes per line of code
+    "RATING_LEVELS": {
+        "A": 0.05,
+        "B": 0.10,
+        "C": 0.20,
+        "D": 0.50
+    }
+}
+
+# Legacy Severity Weights (kept for backward compatibility)
+SEVERITY = {k: -float(v['debt'])/10 for k, v in RULES_METADATA.items()}
 
 import os
 

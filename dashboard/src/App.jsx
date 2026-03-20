@@ -258,6 +258,7 @@ function App() {
     return 'var(--accent-green)';
   };
 
+
   // Tính toán dữ liệu cho các biểu đồ mới
   const getViolationDistributionData = () => {
     if (!data) return null;
@@ -499,20 +500,16 @@ function App() {
                   </div>
                 </div>
 
-                {/* Overall Project Pillars */}
-                <div style={{ marginTop: '2rem', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', width: '100%', background: 'rgba(255,255,255,0.02)', padding: '1.25rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  {data.scores.project_pillars && Object.entries(data.scores.project_pillars).map(([pillar, score]) => (
-                    <div key={pillar} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                         <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{pillar}</span>
-                         <span style={{ fontSize: '0.875rem', fontWeight: 700, color: getScoreColorClass(score) }}>{score}</span>
+                {/* 4 Trụ cột Dự án */}
+                <div style={{ marginTop: '2.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', width: '100%' }}>
+                  {Object.entries(data.scores.project_pillars).map(([pillar, score]) => (
+                    <div key={pillar}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', alignItems: 'flex-end' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{pillar}</span>
+                        <span style={{ fontSize: '1rem', fontWeight: 700, color: getScoreColorClass(score) }}>{score}<span style={{ fontSize: '0.75rem', opacity: 0.6 }}>/10</span></span>
                       </div>
-                      <div className="progress-track" style={{ height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden' }}>
-                        <div className="progress-fill" style={{ 
-                          width: `${score * 10}%`, 
-                          backgroundColor: getScoreColorClass(score),
-                          boxShadow: `0 0 10px ${getScoreColorClass(score)}44`
-                        }}></div>
+                      <div className="progress-track" style={{ height: '6px', background: 'rgba(255,255,255,0.05)' }}>
+                        <div className="progress-fill" style={{ width: `${score * 10}%`, background: getScoreColorClass(score), boxShadow: `0 0 10px ${getScoreColorClass(score)}44` }}></div>
                       </div>
                     </div>
                   ))}
@@ -540,50 +537,27 @@ function App() {
                         {feat.final}<span style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>/100</span>
                     </div>
                     
-                    <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    <div style={{ marginTop: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                         {/* 4 Pillars within feature */}
-                        <div style={{ fontSize: '0.75rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                                <span>Hiệu năng</span>
-                                <span>{feat.pillars.Performance}/10</span>
+                        {Object.entries(feat.pillars).map(([pillar, p_score]) => (
+                            <div key={pillar} style={{ fontSize: '0.75rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.65rem', textTransform: 'uppercase' }}>{pillar}</span>
+                                    <span style={{ fontWeight: 600 }}>{p_score}/10</span>
+                                </div>
+                                <div className="progress-track" style={{ height: '3px' }}>
+                                    <div className="progress-fill" style={{ width: `${p_score * 10}%`, backgroundColor: getScoreColorClass(p_score) }}></div>
+                                </div>
                             </div>
-                            <div className="progress-track" style={{ height: '4px' }}>
-                                <div className="progress-fill" style={{ width: `${feat.pillars.Performance * 10}%`, backgroundColor: getScoreColorClass(feat.pillars.Performance) }}></div>
-                            </div>
-                        </div>
-
-                        <div style={{ fontSize: '0.75rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                                <span>Bảo trì</span>
-                                <span>{feat.pillars.Maintainability}/10</span>
-                            </div>
-                            <div className="progress-track" style={{ height: '4px' }}>
-                                <div className="progress-fill" style={{ width: `${feat.pillars.Maintainability * 10}%`, backgroundColor: getScoreColorClass(feat.pillars.Maintainability) }}></div>
-                            </div>
-                        </div>
-
-                        <div style={{ fontSize: '0.75rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                                <span>Tin cậy</span>
-                                <span>{feat.pillars.Reliability}/10</span>
-                            </div>
-                            <div className="progress-track" style={{ height: '4px' }}>
-                                <div className="progress-fill" style={{ width: `${feat.pillars.Reliability * 10}%`, backgroundColor: getScoreColorClass(feat.pillars.Reliability) }}></div>
-                            </div>
-                        </div>
-
-                        <div style={{ fontSize: '0.75rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-                                <span>Bảo mật</span>
-                                <span>{feat.pillars.Security}/10</span>
-                            </div>
-                            <div className="progress-track" style={{ height: '4px' }}>
-                                <div className="progress-fill" style={{ width: `${feat.pillars.Security * 10}%`, backgroundColor: getScoreColorClass(feat.pillars.Security) }}></div>
-                            </div>
-                        </div>
+                        ))}
                     </div>
-                    <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'right' }}>
-                        {feat.loc.toLocaleString()} LOC
+                    <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                         <div style={{ fontSize: '0.7rem', color: 'var(--text-accent)', fontWeight: 600 }}>
+                            DEBT: {feat.debt_mins}m
+                         </div>
+                         <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                            {feat.loc.toLocaleString()} LOC
+                         </div>
                     </div>
                 </div>
             ))}
