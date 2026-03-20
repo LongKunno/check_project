@@ -46,7 +46,7 @@ ChartJS.register(
 );
 
 function App() {
-  const [activeTab, setActiveTab] = useState('local'); // 'local' or 'remote'
+  const [activeTab, setActiveTab] = useState('remote'); // 'local' or 'remote'
   const [configuredRepos, setConfiguredRepos] = useState([]);
   const [selectedRepoId, setSelectedRepoId] = useState('');
   
@@ -498,6 +498,25 @@ function App() {
                     <div style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>{Object.keys(data.scores.features).length}</div>
                   </div>
                 </div>
+
+                {/* Overall Project Pillars */}
+                <div style={{ marginTop: '2rem', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', width: '100%', background: 'rgba(255,255,255,0.02)', padding: '1.25rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  {data.scores.project_pillars && Object.entries(data.scores.project_pillars).map(([pillar, score]) => (
+                    <div key={pillar} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                         <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{pillar}</span>
+                         <span style={{ fontSize: '0.875rem', fontWeight: 700, color: getScoreColorClass(score) }}>{score}</span>
+                      </div>
+                      <div className="progress-track" style={{ height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden' }}>
+                        <div className="progress-fill" style={{ 
+                          width: `${score * 10}%`, 
+                          backgroundColor: getScoreColorClass(score),
+                          boxShadow: `0 0 10px ${getScoreColorClass(score)}44`
+                        }}></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               <div className="hero-right">
@@ -728,7 +747,12 @@ function App() {
             <Upload size={32} style={{ position: 'absolute', bottom: -10, right: -10 }} />
           </div>
           <p style={{ fontSize: '1.5rem', fontWeight: 500, fontFamily: 'var(--font-display)' }}>Sẵn sàng để đánh giá mã nguồn</p>
-          <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>Chọn thư mục từ máy tính và nhấn nút <strong>Chạy Kiểm Toán</strong></p>
+          <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+            {activeTab === 'local' 
+              ? 'Chọn thư mục từ máy tính và nhấn nút ' 
+              : 'Chọn dự án từ danh sách phía trên và nhấn nút '}
+            <strong>Chạy Kiểm Toán</strong>
+          </p>
         </div>
       )}
 

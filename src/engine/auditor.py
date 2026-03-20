@@ -86,9 +86,10 @@ class CodeAuditor:
                 feature_punishments[feat] = {p: 0 for p in WEIGHTS.keys()}
             feature_punishments[feat][v['pillar']] += v['weight']
 
-        # Tính điểm cho từng Tính năng
+        # Tính điểm cho từng Tính năng và Tổng kết dự án
         self.feature_results = {}
         total_features_score = 0
+        project_punishments = {p: 0 for p in WEIGHTS.keys()}
         
         for feature, punishments in feature_punishments.items():
             feat_loc = self.discovery_data['features'].get(feature, {}).get('loc', 0)
@@ -97,6 +98,7 @@ class CodeAuditor:
             p_scores = {}
             for pillar in WEIGHTS.keys():
                 p_scores[pillar] = ScoringEngine.calculate_pillar_score(punishments[pillar], feat_loc)
+                project_punishments[pillar] += punishments[pillar]
             
             f_score = ScoringEngine.calculate_final_score(p_scores)
             self.feature_results[feature] = {
@@ -106,6 +108,11 @@ class CodeAuditor:
                 "loc": feat_loc
             }
             total_features_score += f_score
+
+        # Tính điểm 4 trụ cột cho tổng dự án
+        self.project_pillars = {}
+        for pillar in WEIGHTS.keys():
+            self.project_pillars[pillar] = ScoringEngine.calculate_pillar_score(project_punishments[pillar], total_loc)
 
         # Điểm tổng kết dự án = Trung bình cộng điểm các tính năng
         if self.feature_results:
@@ -117,7 +124,7 @@ class CodeAuditor:
 
         # BƯỚC 5: REPORTING (Xuất báo cáo theo Tính năng)
         print("[5/5] Bước 5: Xuất báo cáo (Reporting)...")
-        self.generate_report(self.feature_results, final_score, rating)
+        self.generate_report(self.feature_results, self.project_pillars, final_score, rating)
         
         # LƯU VÀO LỊCH SỬ (V2)
         AuditDatabase.save_audit(
@@ -126,7 +133,10 @@ class CodeAuditor:
             rating=rating,
             loc=total_loc,
             violations_count=len(self.violations),
-            pillar_scores=self.feature_results # Lưu object phân cấp
+            pillar_scores={
+                "project": self.project_pillars,
+                "features": self.feature_results
+            }
         )
         
         print(f"\n✅ Kiểm toán hoàn tất!")
@@ -134,7 +144,7 @@ class CodeAuditor:
         print(f"   - Xếp hạng: {rating}")
         print(f"   - Báo cáo chi tiết: {self.report_path}")
 
-    def generate_report(self, feature_results, final_score, rating):
+    def generate_report(self, feature_results, project_pillars, final_score, rating):
         """Tạo file báo cáo Markdown chuyên nghiệp phân cấp theo Tính năng."""
         with open(self.report_path, 'w') as f:
             f.write(f"# BÁO CÁO KIỂM TOÁN PHÂN CẤP (HIERARCHICAL AUDIT REPORT)\n\n")
@@ -144,6 +154,14 @@ class CodeAuditor:
             f.write(f"- Tổng LOC: {self.discovery_data['total_loc']}\n")
             f.write(f"- Tổng số file: {self.discovery_data['total_files']}\n")
             f.write(f"- Tổng số tính năng: {len(feature_results)}\n\n")
+
+            f.write("### 🛡️ Đánh giá Trụ cột Dự án (Overall Project Pillars)\n")
+            f.write("| Trụ cột | Điểm (Thang 10) | Trạng thái |\n")
+            f.write("|---|---|---|\n")
+            for pillar, score in project_pillars.items():
+                status = "✅ Tốt" if score >= 8 else "⚠️ Cần cải thiện" if score >= 5 else "🚨 Nguy cơ"
+                f.write(f"| {pillar} | {score} | {status} |\n")
+            f.write("\n")
             
             f.write("### 🧩 Chi tiết theo Tính năng (Feature Breakdown)\n")
             for feature, res in feature_results.items():

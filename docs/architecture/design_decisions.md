@@ -36,4 +36,21 @@ Brave Shields và các trình duyệt dựa trên Chromium mới thắt chặt c
 Bổ sung `Access-Control-Allow-Private-Network: true` vào header của mọi response và xử lý Preflight (OPTIONS) chính xác.
 
 ---
+
+## ADR-003: Phân vùng đánh giá qua thư mục `source_code`
+
+### Trạng thái (Status)
+**Accepted** (2026-03-20)
+
+### Vấn đề (Problem)
+Ở một số dự án, mã nguồn quan trọng (features) nằm sâu trong thư mục `source_code`, trong khi các thư mục ở root chứa cấu hình, tài liệu hoặc file phụ trợ. Engine Discovery cũ quét toàn bộ root dẫn đến việc nhận diện sai các thư mục không chứa code là "Features".
+
+### Giải pháp (Options & Decision & Why)
+**Quyết định**: Ưu tiên thư mục `source_code` làm gốc nếu nó tồn tại.
+- Nếu thấy `source_code`: Chỉ quét bên trong nó. Feature name = subdirs of `source_code`.
+- Nếu không thấy: Quét như cũ.
+
+**Tại sao?**: Giúp lọc nhiễu tự động và tập trung đánh giá vào đúng khu vực chứa logic nghiệp vụ chính của dự án.
+
+---
 *(Bổ sung các ADR mới khi có quyết định kiến trúc lớn).*

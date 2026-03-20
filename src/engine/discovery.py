@@ -29,23 +29,29 @@ def run_precheck():
         "features": {{}} # Nhóm theo thư mục cấp 1
     }}
     
-    for root, dirs, files in os.walk('.'):
+    # Ưu tiên folder source_code nếu tồn tại
+    use_source_code = os.path.isdir('source_code')
+    base_scan_path = 'source_code' if use_source_code else '.'
+    
+    for root, dirs, files in os.walk(base_scan_path):
         # Lọc thư mục
         dirs[:] = [d for d in dirs if d not in exclude_dirs]
         
-        # Xác định tên tính năng từ root
-        rel_root = os.path.relpath(root, '.')
-        if rel_root == '.':
-            feature_name = "root"
-        else:
-            feature_name = rel_root.split(os.sep)[0]
-            
-        if feature_name not in results["features"]:
-            results["features"][feature_name] = {{"loc": 0, "files_count": 0}}
-            
         for file in files:
             if any(file.endswith(ext) for ext in scan_ext) and file != 'ai_precheck.py':
                 path = os.path.join(root, file)
+                
+                # Tính toán feature_name
+                rel_path = os.path.relpath(path, base_scan_path)
+                parts = rel_path.split(os.sep)
+                if len(parts) > 1:
+                    feature_name = parts[0]
+                else:
+                    feature_name = "source_code_root" if use_source_code else "root"
+
+                if feature_name not in results["features"]:
+                    results["features"][feature_name] = {{"loc": 0, "files_count": 0}}
+
                 try:
                     with open(path, 'r', encoding='utf-8') as f:
                         lines = f.readlines()

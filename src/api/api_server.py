@@ -159,6 +159,7 @@ async def upload_and_audit(files: List[UploadFile] = File(...)):
             "scores": {
                 "final": final_score,
                 "rating": rating,
+                "project_pillars": auditor.project_pillars,
                 "features": auditor.feature_results # Cấu trúc mới: feature -> pillars
             },
             "violations": auditor.violations
@@ -203,6 +204,7 @@ async def run_audit(target: str = Query(".", description="Path to the directory 
             "scores": {
                 "final": final_score,
                 "rating": rating,
+                "project_pillars": auditor.project_pillars,
                 "features": auditor.feature_results
             },
             "violations": auditor.violations
@@ -280,6 +282,7 @@ async def audit_repository(request: RepositoryAuditRequest):
             "scores": {
                 "final": final_score,
                 "rating": rating,
+                "project_pillars": auditor.project_pillars,
                 "features": auditor.feature_results
             },
             "violations": auditor.violations
