@@ -40,12 +40,21 @@ markdown_extensions:
 
 nav:
   - Trang chủ: index.md
-  - Hiện trạng Dự án: current_state.md
+  - Tính năng Hệ thống:
+      - Code Discovery: features/discovery.md
+      - Analysis Auditor: features/auditor.md
+      - Scoring System: features/scoring.md
+      - Interactive Dashboard: features/dashboard.md
   - Kiến trúc hệ thống:
       - Tổng quan: architecture/overview.md
       - Quyết định Thiết kế (ADR): architecture/design_decisions.md
-  - API Specifications: api_specs/endpoints.md
-  - Database Schema: database/schema.md
+  - API Specifications:
+      - Upload File: api_specs/upload.md
+      - Git Audit: api_specs/git.md
+      - Audit History: api_specs/history.md
+  - Database Schema:
+      - Overview: database/overview.md
+      - Audit History Table: database/audit_history.md
   - Quy chuẩn Tech Stack:
       - Python Rules: tech_stack/python_rules.md
-  - Roadmap: roadmap.md
+      - Frontend Rules: tech_stack/frontend_rules.md
