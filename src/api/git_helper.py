@@ -32,20 +32,16 @@ class GitHelper:
                 else:
                     clone_url = f"https://{quoted_username}:{quoted_token}@{clone_url}"
             
-            logger.info(f"Cloning repository into {dest_dir} (Shallow clone, depth=1)...")
+            logger.info(f"Cloning repository into {dest_dir} (Shallow clone, shallow-since=6.months)...")
             
-            # Khởi tạo bản sao (Shallow clone để tốc độ nhanh nhất)
+            # Khởi tạo bản sao (Dùng shallow_since thay vì depth=1 để giữ lịch sử 6 tháng cho Member Scoring)
             # Thiết lập GIT_TERMINAL_PROMPT=0 để ngăn việc Git bị treo khi hỏi password tương tác
             env = os.environ.copy()
             env["GIT_TERMINAL_PROMPT"] = "0"
             
-            Repo.clone_from(clone_url, dest_dir, depth=1, env=env)
+            Repo.clone_from(clone_url, dest_dir, shallow_since="6 months", env=env)
             
-            # Xóa thư mục .git để tránh Engine quét nhầm file lịch sử / config của Git (rất nặng)
-            git_dir = os.path.join(dest_dir, '.git')
-            if os.path.exists(git_dir):
-                shutil.rmtree(git_dir)
-                logger.info("Removed .git directory to save space and prevent indexing.")
+            logger.info("Successfully cloned repository with 6-month history. Kept .git directory for Authorship analysis.")
                 
             return True
             
