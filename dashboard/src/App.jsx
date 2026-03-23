@@ -105,6 +105,8 @@ function App() {
   
   const [folderName, setFolderName] = useState('');
   const [isAuditing, setIsAuditing] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [auditLogs, setAuditLogs] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
@@ -115,6 +117,54 @@ function App() {
   const [isPreparing, setIsPreparing] = useState(false);
   const filesRef = useRef(null);
   const fileInputRef = useRef(null);
+  const logsEndRef = useRef(null);
+
+  // SSE Tự động cuộn terminal
+  useEffect(() => {
+    logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [auditLogs]);
+
+  // Phục hồi trạng thái (State Recovery) & Đồng bộ
+  useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const res = await fetch('/api/audit/status');
+        const d = await res.json();
+        
+        if (d.is_running && !isAuditing) {
+          setIsAuditing(true);
+        } else if (!d.is_running && isAuditing) {
+          setIsAuditing(false);
+          setIsCancelling(false);
+          setIsPreparing(false);
+          setUploadProgress(0);
+        }
+      } catch (err) {
+        // Bỏ qua lỗi kết nối tạm thời
+      }
+    };
+
+    checkStatus();
+    const interval = setInterval(checkStatus, 3000);
+    return () => clearInterval(interval);
+  }, [isAuditing]);
+
+  // Kích hoạt EventSource khi isAuditing = true
+  useEffect(() => {
+    let eventSource;
+    if (isAuditing) {
+      eventSource = new EventSource('/api/audit/logs');
+      eventSource.onmessage = (e) => {
+        setAuditLogs(prev => [...prev, e.data]);
+      };
+      eventSource.onerror = () => {
+        // Tắt log thủ công nếu lỗi (Thường là khi API server khởi động lại)
+      };
+    }
+    return () => {
+      if (eventSource) eventSource.close();
+    };
+  }, [isAuditing]);
 
   const handleFolderSelect = (e) => {
     const files = e.target.files;
@@ -137,6 +187,7 @@ function App() {
         return;
       }
       setIsAuditing(true);
+      setAuditLogs([]);
       setError(null);
       setData(null);
       try {
@@ -169,6 +220,7 @@ function App() {
     
     setIsAuditing(true);
     setIsPreparing(true);
+    setAuditLogs([]);
     setError(null);
     setData(null);
     setUploadProgress(0);
@@ -220,10 +272,11 @@ function App() {
       if (err.message === 'Failed to fetch') {
          setError('Lỗi kết nối: Brave đang chặn yêu cầu. Thử: F12 -> Console để xem chi tiết hoặc Tắt Shields hoàn toàn.');
       } else {
-         setError(err.message);
+         setError(err.message === 'Kiểm toán đã bị hủy bởi người dùng.' ? 'Đã hủy kiểm toán.' : err.message);
       }
     } finally {
       setIsAuditing(false);
+      setIsCancelling(false);
       setUploadProgress(0);
     }
   };
@@ -439,21 +492,47 @@ function App() {
               </div>
             )}
 
-            <button className="btn-audit" onClick={runAudit} disabled={isAuditing || (activeTab === 'local' && fileCount === 0) || (activeTab === 'remote' && !selectedRepoId)}>
-              {isAuditing ? <Zap className="spin" size={20} /> : <Zap size={20} />}
-              {isAuditing 
-                ? (activeTab === 'remote' 
-                  ? 'ĐANG CLONE & PHÂN TÍCH...' 
-                  : (isPreparing 
-                    ? `CHUẨN BỊ ${preparingProgress}%...`
-                    : (uploadProgress > 0 && uploadProgress < 100 
-                        ? `ĐANG UPLOAD ${uploadProgress}%...` 
-                        : 'ĐANG PHÂN TÍCH...'))) 
-                : 'CHẠY KIỂM TOÁN'}
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button className="btn-audit" onClick={runAudit} disabled={isAuditing || (activeTab === 'local' && fileCount === 0) || (activeTab === 'remote' && !selectedRepoId)}>
+                {isAuditing ? <Zap className="spin" size={20} /> : <Zap size={20} />}
+                {isAuditing 
+                  ? (activeTab === 'remote' 
+                    ? 'ĐANG CLONE & PHÂN TÍCH...' 
+                    : (isPreparing 
+                      ? `CHUẨN BỊ ${preparingProgress}%...`
+                      : (uploadProgress > 0 && uploadProgress < 100 
+                          ? `ĐANG UPLOAD ${uploadProgress}%...` 
+                          : 'ĐANG PHÂN TÍCH...'))) 
+                  : 'CHẠY KIỂM TOÁN'}
+              </button>
+              
+              {isAuditing && (
+                <button 
+                  onClick={async () => {
+                    setIsCancelling(true);
+                    try { await fetch('/api/audit/cancel', { method: 'POST' }); } catch(e){}
+                  }} 
+                  disabled={isCancelling}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0 1.25rem', background: isCancelling ? 'rgba(255, 255, 255, 0.1)' : 'rgba(239, 68, 68, 0.15)', color: isCancelling ? 'var(--text-muted)' : 'var(--accent-red)', border: isCancelling ? 'none' : '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', cursor: isCancelling ? 'not-allowed' : 'pointer', fontWeight: 600, transition: 'all 0.2s' }}
+                >
+                  <X size={18} /> {isCancelling ? 'ĐANG HỦY...' : 'DỪNG LẠI'}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </header>
+
+      {/* Terminal Mini (Chỉ hiện khi đang Quét) */}
+      {isAuditing && (
+        <div style={{ background: '#0f172a', padding: '1rem', borderRadius: '8px', border: '1px solid #1e293b', marginBottom: '2rem', height: '180px', overflowY: 'auto', fontFamily: 'monospace', fontSize: '0.85rem', color: '#10b981', boxShadow: 'inset 0 0 10px rgba(0,0,0,0.5)' }}>
+          <div style={{ color: '#64748b', marginBottom: '0.5rem', fontSize: '0.75rem' }}>--- TIẾN TRÌNH KIỂM TOÁN LÕI (CORE AUDITOR LOGS) ---</div>
+          {auditLogs.map((log, idx) => (
+            <div key={idx} style={{ marginBottom: '2px' }}>{log}</div>
+          ))}
+          <div ref={logsEndRef} />
+        </div>
+      )}
 
       {/* Thông báo lỗi */}
       {error && (

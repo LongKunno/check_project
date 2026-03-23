@@ -30,6 +30,12 @@ def test_overall_pillars():
     test_dir = setup_test_project()
     auditor = CodeAuditor(test_dir)
     
+    # Mock AI Service to avoid non-deterministic results in unit tests
+    from unittest.mock import MagicMock
+    from src.engine.ai_service import ai_service
+    ai_service.verify_violations_batch = MagicMock(return_value={})
+    ai_service.deep_audit_batch = MagicMock(return_value=[])
+    
     # Giả lập vi phạm
     # Security violation in auth
     auditor.log_violation('Security', os.path.join(test_dir, 'auth/login.py'), 'HARDCODED_SECRET', -5.0)

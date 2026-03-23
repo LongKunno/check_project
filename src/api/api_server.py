@@ -22,7 +22,8 @@ def _patched_multipart_init(self, *args, **kwargs):
 
 starlette.formparsers.MultiPartParser.__init__ = _patched_multipart_init
 
-from fastapi import FastAPI, HTTPException, Query, UploadFile, File
+from fastapi import FastAPI, HTTPException, Query, UploadFile, File, Request
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import shutil
 import tempfile
@@ -37,10 +38,53 @@ from src.engine.scoring import ScoringEngine
 from src.engine.database import AuditDatabase
 from fastapi.exceptions import RequestValidationError
 from src.api.git_helper import GitHelper
+from src.api.audit_state import AuditState
 import logging
+import asyncio
+import sys
+import io
 
 # Thiết lập logging chi tiết
 logging.basicConfig(level=logging.INFO)
+
+class AuditLogHandler(logging.Handler):
+    """Custom logging handler to intercept all logger outputs and send them to the SSE UI stream."""
+    def emit(self, record):
+        try:
+            msg = self.format(record)
+            if msg.strip():
+                AuditState.log(msg.strip())
+        except Exception:
+            self.handleError(record)
+
+# Cài đặt handler vào root logger để tóm được cả logs của uvicorn và thư viện third-party (như openai)
+audit_log_handler = AuditLogHandler()
+audit_log_handler.setFormatter(logging.Formatter('%(levelname)s:%(name)s:%(message)s'))
+logging.getLogger().addHandler(audit_log_handler)
+logging.getLogger("uvicorn.access").addHandler(audit_log_handler)
+
+def run_auditor_with_capture(target_path):
+    """Wrapper function to capture all sys.stdout during an audit run and send to Frontend."""
+    class AuditLogStream(io.StringIO):
+        def write(self, s):
+            sys.__stdout__.write(s)
+            sys.__stdout__.flush()
+            if s.strip('\n'):
+                AuditState.log(s.strip('\n'))
+        def flush(self):
+            sys.__stdout__.flush()
+            
+    old_stdout = sys.stdout
+    sys.stdout = AuditLogStream()
+    AuditState.is_running = True
+    try:
+        from src.engine.auditor import CodeAuditor
+        auditor = CodeAuditor(target_path)
+        auditor.run()
+        return auditor
+    finally:
+        AuditState.is_running = False
+        sys.stdout = old_stdout
 logger = logging.getLogger(__name__)
 
 # --- CONFIGURATION & BRAVE COMPATIBILITY ---
@@ -89,6 +133,39 @@ async def root():
         "message": "API đang hoạt động ổn định."
     }
 
+@app.get("/audit/logs")
+async def stream_audit_logs(request: Request):
+    """Event-Stream để đẩy log thời gian thực về Frontend."""
+    async def log_generator():
+        last_idx = 0
+        while True:
+            # Nếu người dùng tắt tab hoặc hủy kết nối
+            if await request.is_disconnected():
+                break
+                
+            current_len = len(AuditState.logs)
+            if current_len > last_idx:
+                new_logs = AuditState.logs[last_idx:current_len]
+                last_idx = current_len
+                for line in new_logs:
+                    # Giao thức SSE
+                    yield f"data: {line}\n\n"
+            
+            await asyncio.sleep(0.5)
+
+    return StreamingResponse(log_generator(), media_type="text/event-stream")
+
+@app.get("/audit/status")
+async def get_audit_status():
+    """Kiểm tra trạng thái hệ thống đang chạy hay nghỉ."""
+    return {"is_running": AuditState.is_running}
+
+@app.post("/audit/cancel")
+async def cancel_audit():
+    """Hủy một phiên kiểm toán đang chạy."""
+    AuditState.cancel()
+    return {"status": "success", "message": "Đã gửi tín hiệu hủy quét mã nguồn."}
+
 @app.post("/audit/process")
 async def upload_and_audit(files: List[UploadFile] = File(...)):
     """
@@ -97,6 +174,12 @@ async def upload_and_audit(files: List[UploadFile] = File(...)):
     """
     if not files:
         raise HTTPException(status_code=400, detail="Không có file nào được upload.")
+
+    if AuditState.is_running:
+        raise HTTPException(status_code=409, detail="Một phiên kiểm toán đang chạy. Vui lòng thử lại sau.")
+
+    # Đặt lại trạng thái hủy quét
+    AuditState.reset()
 
     # Tạo thư mục tạm để lưu code được upload
     temp_dir = tempfile.mkdtemp(prefix="audit_upload_")
@@ -140,9 +223,8 @@ async def upload_and_audit(files: List[UploadFile] = File(...)):
         if not os.path.isdir(target_path):
             target_path = temp_dir  # fallback nếu không có thư mục gốc
 
-        # Chạy kiểm toán
-        auditor = CodeAuditor(target_path)
-        auditor.run()
+        # Chạy kiểm toán bằng thread nền để không block async event loop
+        auditor = await asyncio.to_thread(run_auditor_with_capture, target_path)
 
         total_loc = auditor.discovery_data['total_loc']
         final_score = ScoringEngine.calculate_final_score_from_features(auditor.feature_results)
@@ -184,10 +266,15 @@ async def run_audit(target: str = Query(".", description="Path to the directory 
             detail=f"Không tìm thấy thư mục: {target}"
         )
 
+    if AuditState.is_running:
+        raise HTTPException(status_code=409, detail="Một phiên kiểm toán đang chạy. Vui lòng thử lại sau.")
+
     try:
+        # Đặt lại trạng thái hủy quét
+        AuditState.reset()
+
         # Chạy kiểm toán
-        auditor = CodeAuditor(target_path)
-        auditor.run()
+        auditor = await asyncio.to_thread(run_auditor_with_capture, target_path)
 
         total_loc = auditor.discovery_data['total_loc']
         final_score = ScoringEngine.calculate_final_score_from_features(auditor.feature_results)
@@ -239,6 +326,9 @@ async def audit_repository(request: RepositoryAuditRequest):
     username = request.username
     token = request.token
 
+    if AuditState.is_running:
+        raise HTTPException(status_code=409, detail="Một phiên kiểm toán đang chạy. Vui lòng thử lại sau.")
+
     if request.id:
         # Nếu có gửi ID, lấy thông tin từ cấu hình
         config_repo = next((r for r in CONFIGURED_REPOSITORIES if r["id"] == request.id), None)
@@ -264,8 +354,8 @@ async def audit_repository(request: RepositoryAuditRequest):
         )
         
         # Chạy kiểm toán
-        auditor = CodeAuditor(target_path)
-        auditor.run()
+        AuditState.reset()
+        auditor = await asyncio.to_thread(run_auditor_with_capture, target_path)
 
         total_loc = auditor.discovery_data['total_loc']
         final_score = ScoringEngine.calculate_final_score_from_features(auditor.feature_results)

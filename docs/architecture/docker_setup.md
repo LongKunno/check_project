@@ -50,9 +50,33 @@ docker compose exec backend pytest tests/
 > [!IMPORTANT]
 > Luôn đảm bảo container `backend` đang chạy trước khi thực hiện lệnh test.
 
+## Quy định Môi trường Bắt buộc (Mandatory)
+
+> [!IMPORTANT]
+> **Dự án AI Static Analysis CHỈ được hỗ trợ chạy trong môi trường Docker.** 
+> Việc chạy trực tiếp trên máy host (Local Python) có thể dẫn đến sai lệch về phiên bản thư viện và cấu hình môi trường, gây ra các lỗi không mong muốn.
+
+## Xử lý khi thay đổi Dependency
+
+Khi có bất kỳ thay đổi nào trong `requirements.txt` hoặc `Dockerfile.backend`, bạn **BẮT BUỘC** phải rebuild lại container để cập nhật thư viện:
+
+```bash
+./manage.sh rebuild
+```
+
+## Troubleshooting (Xử lý sự cố)
+
+### 1. Lỗi `ModuleNotFoundError: No module named '...'`
+- **Nguyên nhân**: Container hiện tại đang dùng ảnh (image) cũ chưa có thư viện mới.
+- **Giải pháp**: Chạy `./manage.sh rebuild`.
+
+### 2. Lỗi kết nối AI (Timeout/403)
+- **Nguyên nhân**: API Key trong `.env` sai hoặc Proxy/Network gặp sự cố.
+- **Giải pháp**: Kiểm tra lại `.env` và chạy `./manage.sh logs` để xem chi tiết phản hồi từ AI Service.
+
 ## Cấu hình Môi trường (.env)
 
-Các biến môi trường quan trọng được định nghĩa trong file `.env`:
+Các biến môi trường quan trọng:
 - `PYTHONUNBUFFERED=1`: Đảm bảo log Python được xuất ngay lập tức.
 - `MAX_MULTIPART_FILES`: Giới hạn số lượng file upload.
 - `UVICORN_TIMEOUT_KEEP_ALIVE`: Timeout cho các tác vụ phân tích dài.

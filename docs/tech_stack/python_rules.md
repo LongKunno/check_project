@@ -47,5 +47,10 @@ def calculate_score(punishment: float, loc: int) -> float:
 - Mọi logic tính toán (Scoring, Discovery) phải có unit test đi kèm.
 - Sử dụng `pytest` làm framework kiểm thử chính.
 
+## 7. Môi trường thực thi (Execution Environment)
+- **Bắt buộc**: Toàn bộ code Python phải được chạy bên trong Docker Container (service `backend`).
+- **Lý do**: Đảm bảo tính nhất quán (Consistency) của điểm số và tránh xung đột thư viện giữa các máy (Environment Parity).
+- **Hành động**: Luôn chạy `./manage.sh rebuild` sau khi chỉnh sửa `requirements.txt`.
+
 ---
 *Duy trì bởi Technical Architect.*

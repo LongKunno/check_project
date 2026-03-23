@@ -12,6 +12,12 @@ from src.engine.verification import VerificationStep
 from src.engine.scoring import ScoringEngine
 from src.engine.database import AuditDatabase
 
+try:
+    from src.api.audit_state import AuditState
+except ImportError:
+    class AuditState:
+        is_cancelled = False
+
 class CodeAuditor:
     def __init__(self, target_dir='.'):
         """
@@ -66,9 +72,79 @@ class CodeAuditor:
         verifier = VerificationStep(self.target_dir, self.discovery_data['files'])
         automated_violations = verifier.run_verification()
         
-        # Lưu kết quả từ bộ máy xác thực tự động
-        for v in automated_violations:
-            self.log_violation(v['type'], v['file'], v['reason'], v['weight'], rule_id=v.get('rule_id', ''))
+        # BƯỚC 3.5: AI HYBRID VALIDATION (Xác thực AI theo Batch)
+        print("[3.5/5] Bước 3.5: Xác thực AI (AI Hybrid Validation - Batching)...")
+        from src.engine.ai_service import ai_service
+        
+        # Chia violations thành từng nhóm 10 cái (Batch size = 10)
+        batch_size = 10
+        for i in range(0, len(automated_violations), batch_size):
+            if AuditState.is_cancelled:
+                print("\n❌ CẢNH BÁO: Kiểm toán đã bị hủy bởi người dùng.")
+                raise Exception("Kiểm toán đã bị hủy bởi người dùng.")
+                
+            chunk = automated_violations[i:i + batch_size]
+            print(f"   -> Đang xác thực AI cho nhóm lỗi {i//batch_size + 1} (Size: {len(chunk)})")
+            
+            batch_results = ai_service.verify_violations_batch(chunk)
+            
+            for idx, v in enumerate(chunk):
+                res = batch_results.get(idx, {})
+                is_fp = res.get("is_false_positive", False)
+                ai_reason = res.get("explanation", "")
+                conf = res.get("confidence", 1.0)
+                
+                if is_fp and conf > 0.7:
+                    print(f"   ✨ AI đã loại bỏ False Positive: {v['reason']} tại {v['file']} (Độ tin cậy: {conf})")
+                    continue
+                
+                final_reason = f"{v['reason']}. AI Note: {ai_reason}" if ai_reason else v['reason']
+                self.log_violation(v['type'], v['file'], final_reason, v['weight'], snippet=v.get('snippet', ''), rule_id=v.get('rule_id', ''))
+
+        # BƯỚC 3.6: AI REASONING AUDIT (Quét sâu)
+        print("[3.6/5] Bước 3.6: AI Reasoning Audit (Full Code Coverage)...")
+        
+        audit_files = self.discovery_data['files']
+        deep_batch_size = 5
+        for i in range(0, len(audit_files), deep_batch_size):
+            if AuditState.is_cancelled:
+                print("\n❌ CẢNH BÁO: Kiểm toán đã bị hủy bởi người dùng.")
+                raise Exception("Kiểm toán đã bị hủy bởi người dùng.")
+                
+            chunk_files = audit_files[i:i + deep_batch_size]
+            chunk_data = []
+            for f in chunk_files:
+                try:
+                    # Chỉ quét các file nguồn chính, bỏ qua thư mục tests nếu muốn thu hẹp, 
+                    # nhưng ở đây tuân thủ "toàn bộ code" của user.
+                    with open(f['path'], 'r', encoding='utf-8') as file_obj:
+                        chunk_data.append({"path": f['path'], "content": file_obj.read()})
+                except Exception:
+                    continue
+            
+            if not chunk_data: continue
+            
+            print(f"   -> Đang thực hiện Deep Audit nhóm {i//deep_batch_size + 1}...")
+            reasoning_violations = ai_service.deep_audit_batch(chunk_data)
+            
+            for rv in reasoning_violations:
+                # Đảm bảo trọng số âm cho điểm phạt
+                weight = float(rv.get('weight', -3.0))
+                if weight > 0: weight = -weight
+                
+                # Ánh xạ pillar về các trụ cột hợp lệ
+                pillar = rv.get('type', 'Maintainability')
+                from src.config import WEIGHTS
+                if pillar not in WEIGHTS:
+                    pillar = 'Maintainability' # Default
+                
+                self.log_violation(
+                    pillar, 
+                    rv.get('file', 'unknown'), 
+                    rv.get('reason', 'AI Logic Audit'), 
+                    weight,
+                    rule_id='AI_REASONING'
+                )
 
         # BƯỚC 4: AGGREGATION (Tổng hợp điểm số Phân cấp)
         print("[4/5] Bước 4: Tổng hợp dữ liệu (Aggregation)...")

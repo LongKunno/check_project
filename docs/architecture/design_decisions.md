@@ -75,4 +75,30 @@ Mô hình rating A-E của SonarQube tuy chuyên nghiệp nhưng có thể gây 
 - **Thử thách**: Duy trì sự cân bằng giữa điểm phạt (Punishment) và Nợ kỹ thuật (Debt) để điểm số phản ánh đúng thực tế.
 
 ---
+
+## ADR-005: Tích hợp AI Hybrid & Ổn định điểm số (Score Stability)
+
+### Trạng thái (Status)
+**Proposed** (2026-03-20)
+
+### Vấn đề (Problem)
+Việc sử dụng trực tiếp AI (LLM) để chấm điểm code (ví dụ: "Cho tôi biết điểm số bảo mật của file này") thường dẫn đến sự thiếu ổn định: cùng một file có thể nhận các điểm số khác nhau trong các lần quét khác nhau. Điều này vi phạm tính tin cậy của một công cụ quản lý chất lượng.
+
+### Giải pháp (Options & Decision & Why)
+**Quyết định**: Áp dụng mô hình **Hybrid AI-Static Analysis**.
+
+1. **Static Analysis as Primary (Xương sống)**: Các công cụ deterministic (AST, Regex) vẫn là nguồn phát hiện lỗi chính. Mỗi lỗi được gán một "Trọng số âm" (Penalty Weight) cố định.
+2. **AI as Contextual Validator (Bộ lọc ngữ cảnh)**: AI không trực tiếp đưa ra điểm số. AI chỉ trả lời câu hỏi: *"Dựa trên ngữ cảnh này, vi phạm Static Analysis vừa tìm thấy có phải là False Positive không?"*.
+3. **Cơ chế ổn định (Stability Mechanism)**:
+   - Nếu AI xác nhận là lỗi thật: Áp dụng 100% trọng số phạt.
+   - Nếu AI xác định là False Positive: Giảm trọng số phạt về 0 hoặc một mức tối thiểu.
+   - **Calibration (Hiệu chuẩn)**: Sử dụng JSON Schema (Instructor/Pydantic) để ép AI phân loại lỗi vào các nhóm Severity (Critical, High, Medium, Low) đã được định nghĩa điểm phạt sẵn trong hệ thống.
+
+**Tại sao?**: Giữ được sự chính xác nhờ AI (giảm nhiễu) nhưng vẫn duy trì tính ổn định tuyệt đối của công thức toán học đằng sau điểm số.
+
+### Hệ quả (Consequences)
+- **Tích cực**: Điểm số ổn định, giảm tỷ lệ báo cáo sai (False Positive Rate).
+- **Thử thách**: Tăng độ trễ (Latency) của quá trình quét do phải gọi API AI và tăng chi phí vận hành (Token usage).
+
+---
 *(Bổ sung các ADR mới khi có quyết định kiến trúc lớn).*

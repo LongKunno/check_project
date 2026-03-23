@@ -1,0 +1,91 @@
+{
+  "regex_rules": [
+    {
+      "id": "HARDCODED_SECRET",
+      "pattern": "(?i)(password|secret|api_key|token)\\s*[:=]\\s*['\"][^'\"]+['\"]",
+      "pillar": "Security",
+      "reason": "Hardcoded Secret detected",
+      "weight": -10.0
+    },
+    {
+      "id": "VERIFY_FALSE",
+      "pattern": "verify\\s*=\\s*False",
+      "pillar": "Security",
+      "reason": "verify=False detected (disables SSL verification)",
+      "weight": -5.0
+    },
+    {
+      "id": "SELECT_STAR",
+      "pattern": "SELECT\\s+\\*",
+      "pillar": "Performance",
+      "reason": "SELECT * in BigQuery/SQL (anti-pattern)",
+      "weight": -2.0
+    },
+    {
+      "id": "ITERROWS_USE",
+      "pattern": "\\.iterrows\\(\\)",
+      "pillar": "Performance",
+      "reason": "Pandas .iterrows() detected (slow)",
+      "weight": -3.0
+    },
+    {
+      "id": "UNRESTRICTED_CORS",
+      "pattern": "allow_origins\\s*=\\s*\\[\\s*['\"]\\*['\"]\\s*\\]",
+      "pillar": "Security",
+      "reason": "Unrestricted CORS (allow_origins='*')",
+      "weight": -3.0
+    },
+    {
+      "id": "PRINT_STATEMENT",
+      "pattern": "print\\(.+\\)",
+      "pillar": "Maintainability",
+      "reason": "Print statement found in production code",
+      "weight": -0.5
+    }
+  ],
+  "ast_rules": {
+    "bare_except": {
+      "id": "BARE_EXCEPT",
+      "pillar": "Reliability",
+      "reason": "Bare except: block detected",
+      "weight": -2.0
+    },
+    "max_function_length": {
+      "id": "GOD_OBJECT",
+      "pillar": "Maintainability",
+      "reason": "Function too long",
+      "limit": 100,
+      "weight": -2.0
+    },
+    "complexity": {
+      "id": "HIGH_COMPLEXITY",
+      "pillar": "Performance",
+      "reason": "Cyclomatic Complexity too high",
+      "limit": 10,
+      "weight": -5.0
+    },
+    "dangerous_functions": [
+      {
+        "id": "DANGEROUS_FUNC",
+        "name": "eval",
+        "pillar": "Security",
+        "reason": "Dangerous function 'eval' detected",
+        "weight": -8.0
+      },
+      {
+        "id": "DANGEROUS_FUNC",
+        "name": "exec",
+        "pillar": "Security",
+        "reason": "Dangerous function 'exec' detected",
+        "weight": -8.0
+      },
+      {
+        "id": "DANGEROUS_FUNC",
+        "name": "os.system",
+        "pillar": "Security",
+        "reason": "Dangerous function 'os.system' detected",
+        "weight": -5.0
+      }
+    ]
+  }
+}
