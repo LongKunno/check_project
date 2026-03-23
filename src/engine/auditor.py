@@ -74,47 +74,56 @@ class CodeAuditor:
         automated_violations = verifier.run_verification()
         
         # BƯỚC 3.5: AI HYBRID VALIDATION (Xác thực AI theo Batch)
-        print("[3.5/5] Bước 3.5: Xác thực AI (AI Hybrid Validation - Batching)...")
+        print("[3.5/5] Bước 3.5: Xác thực AI (AI Hybrid Validation - Batching) với Async I/O...")
         from src.engine.ai_service import ai_service
-        from concurrent.futures import ThreadPoolExecutor, as_completed
+        import asyncio
         
-        # Chia violations thành từng nhóm 10 cái (Batch size = 10)
-        batch_size = 10
+        # Chia violations thành từng nhóm 5 cái (Batch size = 5 để ổn định hơn)
+        batch_size = 5
         chunks = [automated_violations[i:i + batch_size] for i in range(0, len(automated_violations), batch_size)]
         
-        def process_validation_chunk(idx, chunk):
-            if AuditState.is_cancelled:
-                return idx, chunk, {}
-            return idx, chunk, ai_service.verify_violations_batch(chunk)
+        sem_val = asyncio.Semaphore(20)
+        async def process_validation_chunk(idx, chunk):
+            if AuditState.is_cancelled: return idx, chunk, {}
+            async with sem_val:
+                return idx, chunk, await ai_service.verify_violations_batch(chunk)
 
         if chunks:
-            print(f"   -> Đang xác thực AI song song cho {len(chunks)} nhóm lỗi (Batch size: {batch_size})")
-            from concurrent.futures import wait, FIRST_COMPLETED
-            with ThreadPoolExecutor(max_workers=3) as executor:
-                futures = [executor.submit(process_validation_chunk, idx, chunk) for idx, chunk in enumerate(chunks)]
-                pending = set(futures)
-                
-                while pending:
+            print(f"   -> Đang xác thực AI song song (Async I/O) cho {len(chunks)} nhóm lỗi (Batch size: {batch_size})")
+            
+            async def run_all_validations():
+                tasks = [process_validation_chunk(idx, chunk) for idx, chunk in enumerate(chunks)]
+                results = []
+                for f in asyncio.as_completed(tasks):
                     if AuditState.is_cancelled:
                         print("\n❌ CẢNH BÁO: Kiểm toán đã bị hủy bởi người dùng.")
-                        executor.shutdown(wait=False, cancel_futures=True)
                         raise Exception("Kiểm toán đã bị hủy bởi người dùng.")
-                        
-                    done, pending = wait(pending, timeout=0.5, return_when=FIRST_COMPLETED)
-                    for future in done:
-                        idx, chunk, batch_results = future.result()
-                        for i_in_chunk, v in enumerate(chunk):
-                            res = batch_results.get(i_in_chunk, {})
-                            is_fp = res.get("is_false_positive", False)
-                            ai_reason = res.get("explanation", "")
-                            conf = res.get("confidence", 1.0)
-                            
-                            if is_fp and conf > 0.7:
-                                print(f"   ✨ AI đã loại bỏ False Positive: {v['reason']} tại {v['file']} (Độ tin cậy: {conf})")
-                                continue
-                            
-                            final_reason = f"{v['reason']}. AI Note: {ai_reason}" if ai_reason else v['reason']
-                            self.log_violation(v['type'], v['file'], final_reason, v['weight'], snippet=v.get('snippet', ''), rule_id=v.get('rule_id', ''), line=v.get('line', 0))
+                    res = await f
+                    results.append(res)
+                return results
+
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_closed(): loop = asyncio.new_event_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                
+            completed_results = loop.run_until_complete(run_all_validations())
+            
+            for idx, chunk, batch_results in completed_results:
+                for i_in_chunk, v in enumerate(chunk):
+                    res = batch_results.get(i_in_chunk, {})
+                    is_fp = res.get("is_false_positive", False)
+                    ai_reason = res.get("explanation", "")
+                    conf = res.get("confidence", 1.0)
+                    
+                    if is_fp and conf > 0.7:
+                        print(f"   ✨ AI đã loại bỏ False Positive: {v['reason']} tại {v['file']} (Độ tin cậy: {conf})")
+                        continue
+                    
+                    final_reason = f"{v['reason']}. AI Note: {ai_reason}" if ai_reason else v['reason']
+                    self.log_violation(v['type'], v['file'], final_reason, v['weight'], snippet=v.get('snippet', ''), rule_id=v.get('rule_id', ''), line=v.get('line', 0))
 
         # BƯỚC 3.6: AI REASONING AUDIT (Quét sâu)
         print("[3.6/5] Bước 3.6: AI Reasoning Audit (Full Code Coverage)...")
@@ -136,44 +145,53 @@ class CodeAuditor:
             if chunk_data:
                 deep_chunks.append(chunk_data)
 
-        def process_deep_chunk(idx, chunk_data):
-            if AuditState.is_cancelled:
-                return []
-            return ai_service.deep_audit_batch(chunk_data)
+        sem_deep = asyncio.Semaphore(10)
+        async def process_deep_chunk(idx, chunk_data):
+            if AuditState.is_cancelled: return []
+            async with sem_deep:
+                return await ai_service.deep_audit_batch(chunk_data)
 
         if deep_chunks:
-            print(f"   -> Bắt đầu Deep Audit song song cho {len(deep_chunks)} nhóm file (Batch size: {deep_batch_size})...")
-            from concurrent.futures import wait, FIRST_COMPLETED
-            with ThreadPoolExecutor(max_workers=3) as executor:
-                futures = [executor.submit(process_deep_chunk, idx, c) for idx, c in enumerate(deep_chunks)]
-                pending = set(futures)
-                
-                while pending:
+            print(f"   -> Bắt đầu Deep Audit song song (Async I/O) cho {len(deep_chunks)} nhóm file (Batch size: {deep_batch_size})...")
+            
+            async def run_all_deep_audits():
+                tasks = [process_deep_chunk(idx, c) for idx, c in enumerate(deep_chunks)]
+                results = []
+                for f in asyncio.as_completed(tasks):
                     if AuditState.is_cancelled:
                         print("\n❌ CẢNH BÁO: Kiểm toán đã bị hủy bởi người dùng.")
-                        executor.shutdown(wait=False, cancel_futures=True)
                         raise Exception("Kiểm toán đã bị hủy bởi người dùng.")
-                        
-                    done, pending = wait(pending, timeout=0.5, return_when=FIRST_COMPLETED)
-                    for future in done:
-                        reasoning_violations = future.result()
-                        for rv in reasoning_violations:
-                            weight = float(rv.get('weight', -3.0))
-                            if weight > 0: weight = -weight
-                            
-                            pillar = rv.get('type', 'Maintainability')
-                            from src.config import WEIGHTS
-                            if pillar not in WEIGHTS:
-                                pillar = 'Maintainability' # Default
-                            
-                            self.log_violation(
-                                pillar, 
-                                rv.get('file', 'unknown'), 
-                                rv.get('reason', 'AI Logic Audit'), 
-                                weight,
-                                rule_id='AI_REASONING',
-                                line=rv.get('line', 0)
-                            )
+                    res = await f
+                    results.append(res)
+                return results
+                
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_closed(): loop = asyncio.new_event_loop()
+            except RuntimeError:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                
+            completed_deep_results = loop.run_until_complete(run_all_deep_audits())
+            
+            for reasoning_violations in completed_deep_results:
+                for rv in reasoning_violations:
+                    weight = float(rv.get('weight', -3.0))
+                    if weight > 0: weight = -weight
+                    
+                    pillar = rv.get('type', 'Maintainability')
+                    from src.config import WEIGHTS
+                    if pillar not in WEIGHTS:
+                        pillar = 'Maintainability' # Default
+                    
+                    self.log_violation(
+                        pillar, 
+                        rv.get('file', 'unknown'), 
+                        rv.get('reason', 'AI Logic Audit'), 
+                        weight,
+                        rule_id='AI_REASONING',
+                        line=rv.get('line', 0)
+                    )
 
         # BƯỚC 4: AGGREGATION (Tổng hợp điểm số Phân cấp)
         print("[4/5] Bước 4: Tổng hợp dữ liệu (Aggregation)...")

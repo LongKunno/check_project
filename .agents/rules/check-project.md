@@ -11,7 +11,7 @@ Lúc này, bạn PHẢI tuân thủ QUY TẮC AN TOÀN BẮT BUỘC (ở Trườ
 
 ## QUY TRÌNH CHECK-IN / CHECK-OUT (MEMORY LOOP)
 - **Trước khi code:** TỰ ĐỘNG đọc toàn bộ file trong `docs` để nắm bối cảnh. Cần kiểm tra kĩ nếu dự án có docker thì cần thực hiện các lệnh ở trong docker, trừ các trường hợp bắt buộc chạy ở ngoài.
-- **Sau khi code:** BẮT BUỘC rà soát và cập nhật toàn bộ thư mục `docs/` theo các tiêu chuẩn dưới đây TRƯỚC KHI báo cáo hoàn thành.
+- **Sau khi code (CRITICAL RULE):** NGHIÊM CẤM AI (Assistant) báo cáo "hoàn thành" chức năng hoặc kết thúc giao tiếp nếu chưa thực hiện bước rà soát và update thư mục `docs/`. Bạn PHẢI đối chiếu những thay đổi trong source code với tài liệu hiện tại, sau đó tự động update/tạo mới file `.md` tương ứng. Nếu vi phạm, phiên làm việc sẽ bị đánh giá là THẤT BẠI nghiêm trọng.
 - **Bảo vệ MkDocs:** Khi tạo file `.md` mới, phải cập nhật file `mkdocs.yml` (`nav` section).
 
 ## QUY CHUẨN TÀI LIỆU HÓA (LIVING DOCUMENTATION V4)

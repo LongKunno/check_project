@@ -100,5 +100,25 @@ Việc sử dụng trực tiếp AI (LLM) để chấm điểm code (ví dụ: "
 - **Tích cực**: Điểm số ổn định, giảm tỷ lệ báo cáo sai (False Positive Rate).
 - **Thử thách**: Tăng độ trễ (Latency) của quá trình quét do phải gọi API AI và tăng chi phí vận hành (Token usage).
 
+
+## ADR-006: Nâng cấp xử lý Bất đồng bộ (Async I/O) cho AI Service
+
+### Trạng thái (Status)
+**Accepted** (2026-03-23)
+
+### Vấn đề (Problem)
+Luồng tích hợp AI trước đây sử dụng `ThreadPoolExecutor` với OpenAI Client đồng bộ (Synchronous). Cách tiếp cận này phân bổ các thread lãng phí trong khi chờ I/O mạng từ API, tiềm ẩn nguy cơ thắt cổ chai khi quét dự án lớn, và không tối ưu theo triết lý I/O Bound hiện đại.
+
+### Giải pháp (Options & Decision & Why)
+**Quyết định**: Áp dụng khối cơ chế `asyncio` và thư viện `AsyncOpenAI` cho các xử lý tại AI Service.
+1. Chuyển đổi các API Wrapper thành `async def`.
+2. Tạo Local Event Loop qua `loop.run_until_complete()` bên trong background thread của Auditor.
+**Tại sao?**: Đảm bảo non-blocking tuyệt đối khi giao tiếp với API LLM. Tối thiểu hoá Memory Footprint khi concurrency scale lớn, tránh cấp phát lượng POSIX threads thừa.
+
+### Hệ quả (Consequences)
+- **Tích cực**: Tiết kiệm RAM, CPU; tăng tốc độ kiểm toán sâu (Deep Audit).
+- **Thử thách**: Viết Unit Test (như `test_overall_pillars`) phải chuyển sang dùng `AsyncMock`.
+
 ---
 *(Bổ sung các ADR mới khi có quyết định kiến trúc lớn).*
+

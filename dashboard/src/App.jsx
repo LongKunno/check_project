@@ -100,7 +100,7 @@ function App() {
       // Ignore invalid URLs while typing
     }
   };
-  const [repoUsername, setRepoUsername] = useState('liftsoftvn');
+  const [repoUsername, setRepoUsername] = useState('');
   const [repoToken, setRepoToken] = useState('');
   
   const [folderName, setFolderName] = useState('');
@@ -110,7 +110,6 @@ function App() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
-  const [history, setHistory] = useState([]);
   const [isDragOver, setIsDragOver] = useState(false);
   const [fileCount, setFileCount] = useState(0);
   const [preparingProgress, setPreparingProgress] = useState(0);
@@ -149,13 +148,47 @@ function App() {
     return () => clearInterval(interval);
   }, [isAuditing]);
 
+  // Tự động nạp kết quả kiểm toán gần nhất khi mở trang hoặc thay đổi dự án
+  useEffect(() => {
+    const loadTargetAudit = async () => {
+      let target = null;
+      if (activeTab === 'remote' && selectedRepoId) {
+        const repo = configuredRepos.find(r => r.id === selectedRepoId);
+        if (repo) target = repo.url;
+      } else if (activeTab === 'local' && folderName) {
+        target = folderName;
+      }
+
+      if (!target) return;
+
+      try {
+        const response = await fetch(`/api/history?target=${encodeURIComponent(target)}`);
+        if (response.ok) {
+          const result = await response.json();
+          if (result && result.length > 0 && result[0].full_json) {
+            setData(result[0].full_json);
+          } else {
+            setData(null); // Reset nếu chưa bao giờ audit dự án này
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load target audit:", err);
+      }
+    };
+    loadTargetAudit();
+  }, [selectedRepoId, folderName, activeTab, configuredRepos]);
+
   // Kích hoạt EventSource khi isAuditing = true
   useEffect(() => {
     let eventSource;
     if (isAuditing) {
       eventSource = new EventSource('/api/audit/logs');
       eventSource.onmessage = (e) => {
-        setAuditLogs(prev => [...prev, e.data]);
+        setAuditLogs(prev => {
+           const newLogs = [...prev, e.data];
+           // Chỉ giữ lại tối đa 300 dòng cuối để tránh crash trình duyệt
+           return newLogs.length > 300 ? newLogs.slice(newLogs.length - 300) : newLogs;
+        });
       };
       eventSource.onerror = () => {
         // Tắt log thủ công nếu lỗi (Thường là khi API server khởi động lại)
@@ -692,52 +725,7 @@ function App() {
             </div>
           </div>
 
-          {/* Biểu đồ xu hướng */}
-          {history.length > 1 && (
-            <div className="glass-card" style={{ marginBottom: '2.5rem', padding: '1.5rem', animation: 'fadeIn 0.5s ease-out' }}>
-              <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '1rem', color: '#94a3b8' }}>
-                <Activity size={18} color="var(--accent-blue)" /> XU HƯỚNG SỨC KHỎE DỰ ÁN (HISTORICAL TRENDS)
-              </h3>
-              <div style={{ height: '220px' }}>
-                <Line 
-                  data={{
-                    labels: history.map(h => new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })),
-                    datasets: [{
-                      label: 'Audit Score',
-                      data: history.map(h => h.score),
-                      borderColor: '#3b82f6',
-                      backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                      fill: true,
-                      tension: 0.4,
-                      pointRadius: 4,
-                      pointHoverRadius: 6,
-                      pointBackgroundColor: '#3b82f6',
-                      pointBorderColor: '#fff',
-                    }]
-                  }}
-                  options={{
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { 
-                      legend: { display: false },
-                      tooltip: {
-                        mode: 'index',
-                        intersect: false,
-                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
-                        padding: 12,
-                        cornerRadius: 8
-                      }
-                    },
-                    scales: {
-                      y: { min: 0, max: 100, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#64748b' } },
-                      x: { grid: { display: false }, ticks: { color: '#64748b' } }
-                    }
-                  }}
-                />
-              </div>
-            </div>
-          )}
-
+          {/* Dashboard Main Content */}
           <div className="main-grid">
             {/* Danh sách vi phạm chi tiết */}
             <div className="glass-card" style={{ overflow: 'hidden' }}>

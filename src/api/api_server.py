@@ -230,9 +230,10 @@ async def upload_and_audit(files: List[UploadFile] = File(...)):
         final_score = ScoringEngine.calculate_final_score_from_features(auditor.feature_results)
         rating = ScoringEngine.get_rating(final_score)
 
-        return {
+        # Chuẩn bị kết quả trả về
+        result = {
             "status": "success",
-            "target": target_path,
+            "target": project_name, # Trả về project_name để UI gọi lấy history theo name
             "project_name": project_name,
             "metrics": {
                 "total_loc": total_loc,
@@ -242,11 +243,25 @@ async def upload_and_audit(files: List[UploadFile] = File(...)):
                 "final": final_score,
                 "rating": rating,
                 "project_pillars": auditor.project_pillars,
-                "features": auditor.feature_results, # Cấu trúc mới: feature -> pillars
+                "features": auditor.feature_results,
                 "members": getattr(auditor, 'member_results', {})
             },
             "violations": auditor.violations
         }
+
+        # Lưu lịch sử Audit - Sử dụng project_name thay vì đường dẫn tạm để history trùng khớp
+        # Lưu kèm full_json để có thể xem lại chi tiết
+        AuditDatabase.save_audit(
+            target=project_name,
+            score=final_score,
+            rating=rating,
+            loc=total_loc,
+            violations_count=len(auditor.violations),
+            pillar_scores=auditor.project_pillars,
+            full_json=result
+        )
+
+        return result
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {str(e)}")
@@ -281,7 +296,8 @@ async def run_audit(target: str = Query(".", description="Path to the directory 
         final_score = ScoringEngine.calculate_final_score_from_features(auditor.feature_results)
         rating = ScoringEngine.get_rating(final_score)
 
-        return {
+        # Chuẩn bị kết quả trả về
+        result = {
             "status": "success",
             "target": target_path,
             "project_name": os.path.basename(target_path),
@@ -298,6 +314,19 @@ async def run_audit(target: str = Query(".", description="Path to the directory 
             },
             "violations": auditor.violations
         }
+
+        # Lưu lịch sử Audit
+        AuditDatabase.save_audit(
+            target=target_path,
+            score=final_score,
+            rating=rating,
+            loc=total_loc,
+            violations_count=len(auditor.violations),
+            pillar_scores=auditor.project_pillars,
+            full_json=result
+        )
+
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {str(e)}")
 
@@ -363,7 +392,8 @@ async def audit_repository(request: RepositoryAuditRequest):
         final_score = ScoringEngine.calculate_final_score_from_features(auditor.feature_results)
         rating = ScoringEngine.get_rating(final_score)
 
-        return {
+        # Chuẩn bị kết quả trả về
+        result = {
             "status": "success",
             "target": repo_url,
             "project_name": repo_url.split('/')[-1].replace('.git', ''),
@@ -380,6 +410,19 @@ async def audit_repository(request: RepositoryAuditRequest):
             },
             "violations": auditor.violations
         }
+
+        # Lưu lịch sử Audit
+        AuditDatabase.save_audit(
+            target=repo_url,
+            score=final_score,
+            rating=rating,
+            loc=total_loc,
+            violations_count=len(auditor.violations),
+            pillar_scores=auditor.project_pillars,
+            full_json=result
+        )
+
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {str(e)}")
     finally:

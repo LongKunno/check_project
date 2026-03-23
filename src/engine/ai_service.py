@@ -1,5 +1,6 @@
 import os
-from openai import OpenAI
+import asyncio
+from openai import AsyncOpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -10,13 +11,13 @@ class AiService:
         self.api_key = os.getenv("AI_API_KEY", "xxxxxxx")
         self.model = os.getenv("AI_MODEL", "gemini-3-flash")
         
-        self.client = OpenAI(
+        self.client = AsyncOpenAI(
             base_url=self.base_url,
             api_key=self.api_key,
             timeout=60.0
         )
 
-    def deep_audit_batch(self, files_chunk):
+    async def deep_audit_batch(self, files_chunk):
         """
         Thực hiện quét sâu một nhóm file để tìm các lỗi logic/kiến trúc mà Static Scan bỏ sót.
         files_chunk: List[Dict] chứa {path, content}
@@ -54,18 +55,29 @@ Yêu cầu trả về kết quả dưới dạng một MẢNG JSON các vi phạ
 Nếu không thấy lỗi nào, trả về mảng rỗng [].
 """
         max_retries = 3
-        import time
+        
         import json
         import re
 
         for attempt in range(max_retries):
             try:
-                response = self.client.chat.completions.create(
+                messages = [
+                    {"role": "system", "content": "You are a senior auditor. Respond with raw JSON array only."},
+                    {"role": "user", "content": prompt}
+                ]
+                response = await self.client.chat.completions.create(
                     model=self.model,
-                    messages=[{"role": "user", "content": prompt}]
+                    messages=messages,
+                    response_format={"type": "json_object"} if "gemini" not in self.model.lower() else None
                 )
                 content = response.choices[0].message.content
                 
+                if not content or not content.strip():
+                    if hasattr(response.choices[0].message, 'tool_calls') and response.choices[0].message.tool_calls:
+                        content = response.choices[0].message.tool_calls[0].function.arguments
+                    else:
+                        raise ValueError("AI returned empty content")
+
                 json_match = re.search(r'\[.*\]', content, re.DOTALL)
                 if json_match:
                     return json.loads(json_match.group(0))
@@ -76,14 +88,14 @@ Nếu không thấy lỗi nào, trả về mảng rỗng [].
                 snippet = content[:150].replace('\n', ' ') if 'content' in locals() and content else "No content"
                 print(f"⚠️ AI Deep Audit Attempt {attempt + 1} failed: {e}. Output: {snippet}")
                 if attempt < max_retries - 1:
-                    time.sleep(1)
+                    await asyncio.sleep(2)
                 else:
                     print(f"❌ AI Deep Audit failed after {max_retries} retries.")
                     return []
 
         return []
 
-    def verify_violations_batch(self, violations_chunk):
+    async def verify_violations_batch(self, violations_chunk):
         """
         Xác thực một nhóm các vi phạm trong một request duy nhất.
         violations_chunk: List[Dict] chứa {file, snippet, reason, type, id}
@@ -124,18 +136,33 @@ Yêu cầu trả về kết quả dưới dạng một MẢNG JSON duy nhất, m
 ]
 """
         max_retries = 3
-        import time
+        
         import json
         import re
 
         for attempt in range(max_retries):
             try:
-                response = self.client.chat.completions.create(
+                # Thêm hướng dẫn nghiêm ngặt để tránh Tool Calls
+                messages = [
+                    {"role": "system", "content": "You are a code reviewer. Always respond with raw JSON. Do not use tools."},
+                    {"role": "user", "content": prompt}
+                ]
+                
+                response = await self.client.chat.completions.create(
                     model=self.model,
-                    messages=[{"role": "user", "content": prompt}]
+                    messages=messages,
+                    response_format={"type": "json_object"} if "gemini" not in self.model.lower() else None
                 )
+                
+                # Ưu tiên lấy content, nếu rỗng thì kiểm tra tool_calls
                 content = response.choices[0].message.content
                 
+                if not content or not content.strip():
+                    if hasattr(response.choices[0].message, 'tool_calls') and response.choices[0].message.tool_calls:
+                        content = response.choices[0].message.tool_calls[0].function.arguments
+                    else:
+                        raise ValueError("AI returned empty content and no tool_calls")
+
                 # Tìm kiếm khối JSON trong markdown nếu có
                 json_match = re.search(r'\[.*\]', content, re.DOTALL)
                 if json_match:
@@ -148,16 +175,17 @@ Yêu cầu trả về kết quả dưới dạng một MẢNG JSON duy nhất, m
             
             except Exception as e:
                 snippet = content[:150].replace('\n', ' ') if 'content' in locals() and content else "No content"
-                print(f"⚠️ AI Batch Service Attempt {attempt + 1} failed: {e}. Output: {snippet}")
+                payload_info = f" (Items: {len(violations_chunk)})" if 'violations_chunk' in locals() else ""
+                print(f"⚠️ AI Batch Service Attempt {attempt + 1} failed{payload_info}: {e}. Output: {snippet}")
                 if attempt < max_retries - 1:
-                    time.sleep(1)
+                    await asyncio.sleep(2) # Tăng thời gian chờ
                 else:
                     print(f"❌ AI Batch Service failed after {max_retries} retries.")
                     return {}
 
         return {}
 
-    def verify_violation(self, file_path, code_snippet, reason, pillar):
+    async def verify_violation(self, file_path, code_snippet, reason, pillar):
         """
         Xác thực xem một vi phạm tìm thấy bởi Static Analysis có phải là thật không.
         Trả về: (is_false_positive, explanation, confidence)
@@ -181,19 +209,30 @@ Trả về kết quả dưới dạng JSON:
   "confidence": float (0.0 to 1.0)
 }}
 """
+        messages = [
+            {"role": "system", "content": "You are a code reviewer. Respond with raw JSON object only."},
+            {"role": "user", "content": prompt}
+        ]
         max_retries = 3
-        import time
+        
         import json
         import re
 
         for attempt in range(max_retries):
             try:
-                response = self.client.chat.completions.create(
+                response = await self.client.chat.completions.create(
                     model=self.model,
-                    messages=[{"role": "user", "content": prompt}]
+                    messages=messages,
+                    response_format={"type": "json_object"} if "gemini" not in self.model.lower() else None
                 )
                 content = response.choices[0].message.content
                 
+                if not content or not content.strip():
+                    if hasattr(response.choices[0].message, 'tool_calls') and response.choices[0].message.tool_calls:
+                        content = response.choices[0].message.tool_calls[0].function.arguments
+                    else:
+                        raise ValueError("AI returned empty content")
+
                 # Tìm kiếm khối JSON trong markdown nếu có
                 json_match = re.search(r'\{.*\}', content, re.DOTALL)
                 if json_match:
@@ -206,7 +245,7 @@ Trả về kết quả dưới dạng JSON:
             except Exception as e:
                 print(f"⚠️ AI Service Attempt {attempt + 1} failed: {e}")
                 if attempt < max_retries - 1:
-                    time.sleep(1) # Chờ 1 giây trước khi thử lại
+                    await asyncio.sleep(1) # Chờ 1 giây trước khi thử lại
                 else:
                     print(f"❌ AI Service failed after {max_retries} retries.")
                     return False, f"AI Error after retries: {str(e)}", 0.0

@@ -27,22 +27,30 @@ class AuditDatabase:
                 rating TEXT NOT NULL,
                 total_loc INTEGER NOT NULL,
                 violations_count INTEGER NOT NULL,
-                pillar_scores TEXT NOT NULL -- Store JSON string of pillar scores
+                pillar_scores TEXT NOT NULL, -- Store JSON string of pillar scores
+                full_json TEXT -- Store the entire result JSON for re-viewing
             )
         ''')
+        
+        # Kiểm tra và thêm cột nếu nâng cấp từ bản cũ
+        cursor.execute("PRAGMA table_info(audit_history)")
+        columns = [col[1] for col in cursor.fetchall()]
+        if 'full_json' not in columns:
+            cursor.execute('ALTER TABLE audit_history ADD COLUMN full_json TEXT')
+            
         conn.commit()
         conn.close()
 
     @staticmethod
-    def save_audit(target, score, rating, loc, violations_count, pillar_scores):
+    def save_audit(target, score, rating, loc, violations_count, pillar_scores, full_json=None):
         """Saves a new audit session to the database."""
         import json
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         cursor.execute('''
-            INSERT INTO audit_history (target, score, rating, total_loc, violations_count, pillar_scores)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ''', (target, score, rating, loc, violations_count, json.dumps(pillar_scores)))
+            INSERT INTO audit_history (target, score, rating, total_loc, violations_count, pillar_scores, full_json)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ''', (target, score, rating, loc, violations_count, json.dumps(pillar_scores), json.dumps(full_json) if full_json else None))
         conn.commit()
         conn.close()
 
@@ -66,6 +74,12 @@ class AuditDatabase:
         for row in rows:
             d = dict(row)
             d['pillar_scores'] = json.loads(d['pillar_scores'])
+            # Parse full_json if available
+            if d.get('full_json'):
+                try:
+                    d['full_json'] = json.loads(d['full_json'])
+                except:
+                    d['full_json'] = None
             results.append(d)
         return results
 
