@@ -11,7 +11,7 @@ Bảng `audit_history` lưu trữ toàn bộ các lần quét mã nguồn.
 | `rating` | TEXT | Xếp hạng (A, B, C...). |
 | `total_loc` | INTEGER | Tổng số dòng code. |
 | `violations_count` | INTEGER | Tổng lỗi. |
-| `pillar_scores` | JSON | Chi tiết điểm số Feature/Pillar. |
+| `pillar_scores` | JSON | Chi tiết điểm số Feature/Pillar. Chứa thông tin xếp hạng dự án (`project`), tính năng (`features`), và thành viên (`members` - trong vòng 6 tháng gần nhất). |
 
 ---
 *Duy trì bởi Technical Architect.*

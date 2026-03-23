@@ -35,7 +35,7 @@ class CodeAuditor:
         self.report_path = os.path.join(report_dir, 'Final_Audit_Report.md')
         self.violations = []
 
-    def log_violation(self, pillar, file, reason, weight, snippet="", rule_id=""):
+    def log_violation(self, pillar, file, reason, weight, snippet="", rule_id="", line=0):
         """Ghi nhận một vi phạm mới và lưu vào danh sách."""
         violation = {
             "pillar": pillar,
@@ -43,13 +43,14 @@ class CodeAuditor:
             "reason": reason,
             "weight": weight,
             "snippet": snippet,
-            "rule_id": rule_id
+            "rule_id": rule_id,
+            "line": line
         }
         self.violations.append(violation)
         
         # Ghi nối vào file Ledger (Sổ cái bằng chứng)
         with open(self.ledger_path, 'a') as f:
-            f.write(f"- [{pillar}] | [{file}] | Lý do: {reason} | Trình bày: {rule_id} | Trọng số: {weight}\n")
+            f.write(f"- [{pillar}] | [{file}:{line}] | Lý do: {reason} | Trình bày: {rule_id} | Trọng số: {weight}\n")
 
     def run(self):
         """Thực thi toàn bộ quy trình kiểm toán."""
@@ -75,42 +76,53 @@ class CodeAuditor:
         # BƯỚC 3.5: AI HYBRID VALIDATION (Xác thực AI theo Batch)
         print("[3.5/5] Bước 3.5: Xác thực AI (AI Hybrid Validation - Batching)...")
         from src.engine.ai_service import ai_service
+        from concurrent.futures import ThreadPoolExecutor, as_completed
         
         # Chia violations thành từng nhóm 10 cái (Batch size = 10)
         batch_size = 10
-        for i in range(0, len(automated_violations), batch_size):
+        chunks = [automated_violations[i:i + batch_size] for i in range(0, len(automated_violations), batch_size)]
+        
+        def process_validation_chunk(idx, chunk):
             if AuditState.is_cancelled:
-                print("\n❌ CẢNH BÁO: Kiểm toán đã bị hủy bởi người dùng.")
-                raise Exception("Kiểm toán đã bị hủy bởi người dùng.")
+                return idx, chunk, {}
+            return idx, chunk, ai_service.verify_violations_batch(chunk)
+
+        if chunks:
+            print(f"   -> Đang xác thực AI song song cho {len(chunks)} nhóm lỗi (Batch size: {batch_size})")
+            from concurrent.futures import wait, FIRST_COMPLETED
+            with ThreadPoolExecutor(max_workers=3) as executor:
+                futures = [executor.submit(process_validation_chunk, idx, chunk) for idx, chunk in enumerate(chunks)]
+                pending = set(futures)
                 
-            chunk = automated_violations[i:i + batch_size]
-            print(f"   -> Đang xác thực AI cho nhóm lỗi {i//batch_size + 1} (Size: {len(chunk)})")
-            
-            batch_results = ai_service.verify_violations_batch(chunk)
-            
-            for idx, v in enumerate(chunk):
-                res = batch_results.get(idx, {})
-                is_fp = res.get("is_false_positive", False)
-                ai_reason = res.get("explanation", "")
-                conf = res.get("confidence", 1.0)
-                
-                if is_fp and conf > 0.7:
-                    print(f"   ✨ AI đã loại bỏ False Positive: {v['reason']} tại {v['file']} (Độ tin cậy: {conf})")
-                    continue
-                
-                final_reason = f"{v['reason']}. AI Note: {ai_reason}" if ai_reason else v['reason']
-                self.log_violation(v['type'], v['file'], final_reason, v['weight'], snippet=v.get('snippet', ''), rule_id=v.get('rule_id', ''))
+                while pending:
+                    if AuditState.is_cancelled:
+                        print("\n❌ CẢNH BÁO: Kiểm toán đã bị hủy bởi người dùng.")
+                        executor.shutdown(wait=False, cancel_futures=True)
+                        raise Exception("Kiểm toán đã bị hủy bởi người dùng.")
+                        
+                    done, pending = wait(pending, timeout=0.5, return_when=FIRST_COMPLETED)
+                    for future in done:
+                        idx, chunk, batch_results = future.result()
+                        for i_in_chunk, v in enumerate(chunk):
+                            res = batch_results.get(i_in_chunk, {})
+                            is_fp = res.get("is_false_positive", False)
+                            ai_reason = res.get("explanation", "")
+                            conf = res.get("confidence", 1.0)
+                            
+                            if is_fp and conf > 0.7:
+                                print(f"   ✨ AI đã loại bỏ False Positive: {v['reason']} tại {v['file']} (Độ tin cậy: {conf})")
+                                continue
+                            
+                            final_reason = f"{v['reason']}. AI Note: {ai_reason}" if ai_reason else v['reason']
+                            self.log_violation(v['type'], v['file'], final_reason, v['weight'], snippet=v.get('snippet', ''), rule_id=v.get('rule_id', ''), line=v.get('line', 0))
 
         # BƯỚC 3.6: AI REASONING AUDIT (Quét sâu)
         print("[3.6/5] Bước 3.6: AI Reasoning Audit (Full Code Coverage)...")
         
         audit_files = self.discovery_data['files']
         deep_batch_size = 5
+        deep_chunks = []
         for i in range(0, len(audit_files), deep_batch_size):
-            if AuditState.is_cancelled:
-                print("\n❌ CẢNH BÁO: Kiểm toán đã bị hủy bởi người dùng.")
-                raise Exception("Kiểm toán đã bị hủy bởi người dùng.")
-                
             chunk_files = audit_files[i:i + deep_batch_size]
             chunk_data = []
             for f in chunk_files:
@@ -121,34 +133,54 @@ class CodeAuditor:
                         chunk_data.append({"path": f['path'], "content": file_obj.read()})
                 except Exception:
                     continue
-            
-            if not chunk_data: continue
-            
-            print(f"   -> Đang thực hiện Deep Audit nhóm {i//deep_batch_size + 1}...")
-            reasoning_violations = ai_service.deep_audit_batch(chunk_data)
-            
-            for rv in reasoning_violations:
-                # Đảm bảo trọng số âm cho điểm phạt
-                weight = float(rv.get('weight', -3.0))
-                if weight > 0: weight = -weight
+            if chunk_data:
+                deep_chunks.append(chunk_data)
+
+        def process_deep_chunk(idx, chunk_data):
+            if AuditState.is_cancelled:
+                return []
+            return ai_service.deep_audit_batch(chunk_data)
+
+        if deep_chunks:
+            print(f"   -> Bắt đầu Deep Audit song song cho {len(deep_chunks)} nhóm file (Batch size: {deep_batch_size})...")
+            from concurrent.futures import wait, FIRST_COMPLETED
+            with ThreadPoolExecutor(max_workers=3) as executor:
+                futures = [executor.submit(process_deep_chunk, idx, c) for idx, c in enumerate(deep_chunks)]
+                pending = set(futures)
                 
-                # Ánh xạ pillar về các trụ cột hợp lệ
-                pillar = rv.get('type', 'Maintainability')
-                from src.config import WEIGHTS
-                if pillar not in WEIGHTS:
-                    pillar = 'Maintainability' # Default
-                
-                self.log_violation(
-                    pillar, 
-                    rv.get('file', 'unknown'), 
-                    rv.get('reason', 'AI Logic Audit'), 
-                    weight,
-                    rule_id='AI_REASONING'
-                )
+                while pending:
+                    if AuditState.is_cancelled:
+                        print("\n❌ CẢNH BÁO: Kiểm toán đã bị hủy bởi người dùng.")
+                        executor.shutdown(wait=False, cancel_futures=True)
+                        raise Exception("Kiểm toán đã bị hủy bởi người dùng.")
+                        
+                    done, pending = wait(pending, timeout=0.5, return_when=FIRST_COMPLETED)
+                    for future in done:
+                        reasoning_violations = future.result()
+                        for rv in reasoning_violations:
+                            weight = float(rv.get('weight', -3.0))
+                            if weight > 0: weight = -weight
+                            
+                            pillar = rv.get('type', 'Maintainability')
+                            from src.config import WEIGHTS
+                            if pillar not in WEIGHTS:
+                                pillar = 'Maintainability' # Default
+                            
+                            self.log_violation(
+                                pillar, 
+                                rv.get('file', 'unknown'), 
+                                rv.get('reason', 'AI Logic Audit'), 
+                                weight,
+                                rule_id='AI_REASONING',
+                                line=rv.get('line', 0)
+                            )
 
         # BƯỚC 4: AGGREGATION (Tổng hợp điểm số Phân cấp)
         print("[4/5] Bước 4: Tổng hợp dữ liệu (Aggregation)...")
         from src.config import RULES_METADATA, WEIGHTS
+        from src.engine.authorship import AuthorshipTracker
+        
+        auth_tracker = AuthorshipTracker(self.target_dir)
         
         # Ánh xạ file -> feature
         file_to_feature = {f['path']: f.get('feature', 'unknown') for f in self.discovery_data['files']}
@@ -156,6 +188,9 @@ class CodeAuditor:
         # Khởi tạo bảng điểm phạt: feature -> pillar -> punishment
         feature_punishments = {}
         feature_meta = {} # {feature: {pillar: {debt: 0, max_sev: 'Info'}}}
+        
+        member_punishments = {}
+        member_meta = {}
         
         for feature in self.discovery_data['features'].keys():
             feature_punishments[feature] = {p: 0 for p in WEIGHTS.keys()}
@@ -180,6 +215,17 @@ class CodeAuditor:
             # Cập nhật mức độ nghiêm trọng cao nhất
             if sev_levels.index(meta["severity"]) > sev_levels.index(feature_meta[feat][pillar]["max_sev"]):
                 feature_meta[feat][pillar]["max_sev"] = meta["severity"]
+                
+            # Cập nhật điểm thành viên (Membership Tracking)
+            author_info = auth_tracker.get_author_info(v['file'], v.get('line', 0))
+            if not author_info['boundary']:
+                author = author_info['author']
+                if author not in member_punishments:
+                    member_punishments[author] = {p: 0 for p in WEIGHTS.keys()}
+                    member_meta[author] = {p: {"debt": 0, "max_sev": "Info"} for p in WEIGHTS.keys()}
+                
+                member_punishments[author][pillar] += v['weight']
+                member_meta[author][pillar]['debt'] += meta['debt']
 
         # Tính điểm cho từng Tính năng và Tổng kết dự án
         self.feature_results = {}
@@ -226,6 +272,26 @@ class CodeAuditor:
             
         rating = ScoringEngine.get_rating(final_score)
 
+        # Tính toán kết quả cho từng Member
+        self.member_results = {}
+        member_locs = auth_tracker.get_all_member_loc()
+        for author, punishments in member_punishments.items():
+            author_loc = member_locs.get(author, 0)
+            if author_loc == 0: continue
+            
+            p_scores = {}
+            for pillar in WEIGHTS.keys():
+                p_scores[pillar] = ScoringEngine.calculate_pillar_score(punishments[pillar], author_loc)
+                
+            f_score = ScoringEngine.calculate_final_score(p_scores)
+            self.member_results[author] = {
+                "pillars": p_scores,
+                "final": f_score,
+                "punishments": punishments,
+                "loc": author_loc,
+                "debt_mins": sum(m["debt"] for m in member_meta[author].values())
+            }
+
         # BƯỚC 5: REPORTING
         print("[5/5] Bước 5: Xuất báo cáo (Reporting)...")
         self.generate_report(self.feature_results, self.project_pillars, final_score, rating)
@@ -239,7 +305,8 @@ class CodeAuditor:
             violations_count=len(self.violations),
             pillar_scores={
                 "project": self.project_pillars,
-                "features": self.feature_results
+                "features": self.feature_results,
+                "members": self.member_results
             }
         )
         
@@ -284,6 +351,13 @@ class CodeAuditor:
             
             if not self.violations:
                 f.write("Không tìm thấy vi phạm nào. Mã nguồn đạt chuẩn Gold Standard!\n")
+
+            if hasattr(self, 'member_results') and self.member_results:
+                f.write("\n### 👥 Đánh giá theo Thành viên (Last 6 Months)\n")
+                f.write("| Thành viên | Tổng LOC | Điểm | Nợ kỹ thuật |\n")
+                f.write("|---|---|---|---|\n")
+                for author, res in sorted(self.member_results.items(), key=lambda x: x[1]['final'], reverse=True):
+                    f.write(f"| {author} | {res['loc']} | {res['final']} | {res['debt_mins']}m |\n")
 
 if __name__ == "__main__":
     # Điểm vào chính của script

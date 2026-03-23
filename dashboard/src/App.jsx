@@ -14,8 +14,8 @@ import {
   Upload,
   X,
   Wrench,
-  ShieldCheck,
-  CheckSquare
+  CheckSquare,
+  Users
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -640,6 +640,39 @@ function App() {
                     </div>
                 </div>
             ))}
+            
+            {/* DANH SÁCH THÀNH VIÊN (MEMBER LEADERBOARD) */}
+            {data.scores.members && Object.keys(data.scores.members).length > 0 && (
+                <div className="glass-card col-span-4" style={{ marginTop: '0.5rem', animation: 'fadeIn 0.5s ease-out' }}>
+                    <div className="metric-label" style={{ color: 'var(--accent-green)', fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                        <Users size={20} /> BẢNG XẾP HẠNG THÀNH VIÊN (TRONG 6 THÁNG GẦN NHẤT)
+                    </div>
+                    <div style={{ overflowX: 'auto' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                            <thead>
+                                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-muted)', fontSize: '0.85rem', textTransform: 'uppercase' }}>
+                                    <th style={{ padding: '0.75rem 1rem' }}>Thành viên</th>
+                                    <th style={{ padding: '0.75rem 1rem' }}>Tổng LOC</th>
+                                    <th style={{ padding: '0.75rem 1rem' }}>Điểm / 100</th>
+                                    <th style={{ padding: '0.75rem 1rem' }}>Nợ kỹ thuật</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {Object.entries(data.scores.members)
+                                  .sort((a, b) => b[1].final - a[1].final)
+                                  .map(([author, res], idx) => (
+                                    <tr key={author} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: idx % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent' }}>
+                                        <td style={{ padding: '1rem', fontWeight: 600, color: '#e2e8f0' }}>{author}</td>
+                                        <td style={{ padding: '1rem', color: '#94a3b8' }}>{res.loc.toLocaleString()} lines</td>
+                                        <td style={{ padding: '1rem', color: getScoreColorClass(res.final / 10), fontWeight: 'bold', fontSize: '1.1rem' }}>{res.final}</td>
+                                        <td style={{ padding: '1rem', color: 'var(--accent-yellow)' }}>{res.debt_mins} phút</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
           </div>
 
           {/* Hàng biểu đồ phân tích mới */}

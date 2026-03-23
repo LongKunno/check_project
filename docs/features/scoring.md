@@ -18,5 +18,10 @@ Hệ thống đánh giá dự án dựa trên:
 ## 3. Thông tin bổ trợ (Technical Debt)
 Bên cạnh điểm số 0-10, hệ thống còn cung cấp chỉ số **Nợ kỹ thuật (Technical Debt)** tính bằng phút để giúp đội ngũ kỹ thuật ước lượng nỗ lực cần thiết để cải thiện mã nguồn.
 
+## 4. Đặc tả tính điểm theo Thành viên (Member Scoring)
+Hệ thống tính toán riêng biệt hiệu suất cá nhân của từng thành viên:
+- Chỉ đánh giá mã nguồn được viết trong **6 tháng gần nhất** (sử dụng `git blame --since="6 months"`). Lỗi trên code cũ sẽ được bỏ qua cho member nhưng vẫn tính cho toàn dự án.
+- **Điểm cá nhân** được chuẩn hóa theo tỷ lệ Tổng dòng code (LOC) mà thành viên đó đóng góp trong kỳ tính toán.
+
 ---
 *Duy trì bởi Technical Architect.*

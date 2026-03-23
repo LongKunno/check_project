@@ -73,7 +73,8 @@ Nếu không thấy lỗi nào, trả về mảng rỗng [].
                     return json.loads(content)
             
             except Exception as e:
-                print(f"⚠️ AI Deep Audit Attempt {attempt + 1} failed: {e}")
+                snippet = content[:150].replace('\n', ' ') if 'content' in locals() and content else "No content"
+                print(f"⚠️ AI Deep Audit Attempt {attempt + 1} failed: {e}. Output: {snippet}")
                 if attempt < max_retries - 1:
                     time.sleep(1)
                 else:
@@ -146,7 +147,8 @@ Yêu cầu trả về kết quả dưới dạng một MẢNG JSON duy nhất, m
                 return {res.get("index", i): res for i, res in enumerate(results)}
             
             except Exception as e:
-                print(f"⚠️ AI Batch Service Attempt {attempt + 1} failed: {e}")
+                snippet = content[:150].replace('\n', ' ') if 'content' in locals() and content else "No content"
+                print(f"⚠️ AI Batch Service Attempt {attempt + 1} failed: {e}. Output: {snippet}")
                 if attempt < max_retries - 1:
                     time.sleep(1)
                 else:
