@@ -39,9 +39,19 @@ class GitHelper:
             env = os.environ.copy()
             env["GIT_TERMINAL_PROMPT"] = "0"
             
-            Repo.clone_from(clone_url, dest_dir, shallow_since="6 months", env=env)
-            
-            logger.info("Successfully cloned repository with 6-month history. Kept .git directory for Authorship analysis.")
+            try:
+                Repo.clone_from(clone_url, dest_dir, shallow_since="6 months", env=env)
+                logger.info("Successfully cloned repository with 6-month history. Kept .git directory for Authorship analysis.")
+            except GitCommandError as shallow_err:
+                if "error processing shallow info" in str(shallow_err.stderr):
+                    logger.warning("Shallow clone failed. Falling back to full clone...")
+                    # Remove the failed clone directory if it was created
+                    if os.path.exists(dest_dir):
+                        shutil.rmtree(dest_dir)
+                    Repo.clone_from(clone_url, dest_dir, env=env)
+                    logger.info("Successfully performed a full clone as a fallback.")
+                else:
+                    raise shallow_err
                 
             return True
             

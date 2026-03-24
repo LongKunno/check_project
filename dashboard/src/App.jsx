@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { 
   Activity, 
   Shield, 
@@ -45,8 +45,57 @@ ChartJS.register(
   Legend
 );
 
+// --- COMPONENT: TerminalLogs ---
+// Tách biệt Terminal để tránh re-render toàn bộ App mỗi khi có log mới từ SSE
+const TerminalLogs = React.memo(({ isAuditing }) => {
+  const [auditLogs, setAuditLogs] = useState([]);
+  const logsEndRef = useRef(null);
+  const terminalRef = useRef(null);
+
+  useEffect(() => {
+    let eventSource;
+    if (isAuditing) {
+      setAuditLogs([]);
+      eventSource = new EventSource('/api/audit/logs');
+      eventSource.onmessage = (e) => {
+        setAuditLogs(prev => {
+           const newLogs = [...prev, e.data];
+           // Chỉ giữ lại tối đa 300 dòng cuối để tránh crash trình duyệt
+           return newLogs.length > 300 ? newLogs.slice(newLogs.length - 300) : newLogs;
+        });
+      };
+      eventSource.onerror = () => {
+        // Silent error
+      };
+    }
+    return () => {
+      if (eventSource) eventSource.close();
+    };
+  }, [isAuditing]);
+
+  useEffect(() => {
+    logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [auditLogs]);
+
+  if (!isAuditing) return null;
+
+  return (
+    <div ref={terminalRef} style={{ background: '#0f172a', padding: '1.5rem', borderRadius: '12px', border: '1px solid #1e293b', marginBottom: '2rem', height: '65vh', minHeight: '500px', overflowY: 'auto', fontFamily: 'monospace', fontSize: '0.85rem', color: '#10b981', boxShadow: 'inset 0 0 15px rgba(0,0,0,0.8)' }}>
+      <div style={{ color: '#64748b', marginBottom: '1rem', fontSize: '0.8rem', letterSpacing: '0.05em' }}>--- TIẾN TRÌNH KIỂM TOÁN LÕI (CORE AUDITOR LOGS) ---</div>
+      {auditLogs.map((log, idx) => (
+        <div key={idx} style={{ marginBottom: '4px', lineHeight: '1.5' }}>{log}</div>
+      ))}
+      <div ref={logsEndRef} />
+    </div>
+  );
+});
+
 function App() {
   const [activeTab, setActiveTab] = useState('remote'); // 'local' or 'remote'
+  const [reportView, setReportView] = useState('project'); // 'project' or 'member'
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [activeLedgerTab, setActiveLedgerTab] = useState('project'); // legacy, kept for safety
+  const [expandedMember, setExpandedMember] = useState(null);
   const [configuredRepos, setConfiguredRepos] = useState([]);
   const [selectedRepoId, setSelectedRepoId] = useState('');
   
@@ -106,7 +155,7 @@ function App() {
   const [folderName, setFolderName] = useState('');
   const [isAuditing, setIsAuditing] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
-  const [auditLogs, setAuditLogs] = useState([]);
+  const [visibleLimit, setVisibleLimit] = useState(50);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
@@ -116,12 +165,28 @@ function App() {
   const [isPreparing, setIsPreparing] = useState(false);
   const filesRef = useRef(null);
   const fileInputRef = useRef(null);
-  const logsEndRef = useRef(null);
 
-  // SSE Tự động cuộn terminal
+  // Reset visible limit on view change
   useEffect(() => {
-    logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [auditLogs]);
+    setVisibleLimit(50);
+  }, [data, reportView, selectedMember]);
+
+  // Đồng bộ selectedMember khi data thay đổi (tránh lỗi stale author từ dự án cũ)
+  useEffect(() => {
+    if (data?.scores?.members) {
+      const memberKeys = Object.keys(data.scores.members);
+      if (memberKeys.length > 0) {
+        // Nếu member cũ không còn tồn tại trong list mới -> reset về người đầu tiên
+        if (!selectedMember || !memberKeys.includes(selectedMember)) {
+          setSelectedMember(memberKeys[0]);
+        }
+      } else {
+        setSelectedMember(null);
+      }
+    } else {
+      setSelectedMember(null);
+    }
+  }, [data]);
 
   // Phục hồi trạng thái (State Recovery) & Đồng bộ
   useEffect(() => {
@@ -178,26 +243,7 @@ function App() {
     loadTargetAudit();
   }, [selectedRepoId, folderName, activeTab, configuredRepos]);
 
-  // Kích hoạt EventSource khi isAuditing = true
-  useEffect(() => {
-    let eventSource;
-    if (isAuditing) {
-      eventSource = new EventSource('/api/audit/logs');
-      eventSource.onmessage = (e) => {
-        setAuditLogs(prev => {
-           const newLogs = [...prev, e.data];
-           // Chỉ giữ lại tối đa 300 dòng cuối để tránh crash trình duyệt
-           return newLogs.length > 300 ? newLogs.slice(newLogs.length - 300) : newLogs;
-        });
-      };
-      eventSource.onerror = () => {
-        // Tắt log thủ công nếu lỗi (Thường là khi API server khởi động lại)
-      };
-    }
-    return () => {
-      if (eventSource) eventSource.close();
-    };
-  }, [isAuditing]);
+  // Xoá logic EventSource bên trong App vì đã chuyển sang TerminalLogs
 
   const handleFolderSelect = (e) => {
     const files = e.target.files;
@@ -220,7 +266,6 @@ function App() {
         return;
       }
       setIsAuditing(true);
-      setAuditLogs([]);
       setError(null);
       setData(null);
       try {
@@ -253,7 +298,6 @@ function App() {
     
     setIsAuditing(true);
     setIsPreparing(true);
-    setAuditLogs([]);
     setError(null);
     setData(null);
     setUploadProgress(0);
@@ -346,10 +390,10 @@ function App() {
 
 
   // Tính toán dữ liệu cho các biểu đồ mới
-  const getViolationDistributionData = () => {
-    if (!data) return null;
+  const getViolationDistributionData = (violationsList) => {
+    if (!violationsList) return null;
     const counts = { Performance: 0, Maintainability: 0, Reliability: 0, Security: 0 };
-    data.violations.forEach(v => {
+    violationsList.forEach(v => {
       if (counts[v.pillar] !== undefined) counts[v.pillar]++;
     });
     return {
@@ -367,10 +411,10 @@ function App() {
     };
   };
 
-  const getSeverityDistributionData = () => {
-    if (!data) return null;
+  const getSeverityDistributionData = (violationsList) => {
+    if (!violationsList) return null;
     let high = 0, medium = 0, low = 0;
-    data.violations.forEach(v => {
+    violationsList.forEach(v => {
       if (v.weight <= -5) high++;
       else if (v.weight <= -3) medium++;
       else low++;
@@ -389,10 +433,10 @@ function App() {
     };
   };
 
-  const getTopProblematicFiles = () => {
-    if (!data) return [];
+  const getTopProblematicFiles = (violationsList) => {
+    if (!violationsList) return [];
     const fileCounts = {};
-    data.violations.forEach(v => {
+    violationsList.forEach(v => {
       fileCounts[v.file] = (fileCounts[v.file] || 0) + 1;
     });
     return Object.entries(fileCounts)
@@ -400,20 +444,43 @@ function App() {
       .slice(0, 5);
   };
 
-  // Tính toán dữ liệu cho biểu đồ Radar (Theo từng Tính năng)
-  const chartData = data ? {
-    labels: Object.keys(data.scores.features),
-    datasets: [
-      {
-        label: 'Feature Score',
-        data: Object.values(data.scores.features).map(f => f.final),
-        backgroundColor: 'rgba(59, 130, 246, 0.2)',
-        borderColor: '#3b82f6',
-        borderWidth: 2,
-        pointBackgroundColor: '#3b82f6',
-      },
-    ],
-  } : null;
+  // Tính toán dữ liệu cho biểu đồ Radar (Theo từng Tính năng hoặc Trụ cột Thành viên)
+  const getRadarChartData = () => {
+    if (!data || !data.scores) return null;
+    if (reportView === 'project') {
+      if (!data.scores.features) return null;
+      return {
+        labels: Object.keys(data.scores.features),
+        datasets: [
+          {
+            label: 'Feature Score',
+            data: Object.values(data.scores.features).map(f => f.final),
+            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+            borderColor: '#3b82f6',
+            borderWidth: 2,
+            pointBackgroundColor: '#3b82f6',
+          },
+        ],
+      };
+    } else if (reportView === 'member' && selectedMember && data.scores.members?.[selectedMember]) {
+      const mbr = data.scores.members[selectedMember];
+      if (!mbr.pillars) return null;
+      return {
+        labels: Object.keys(mbr.pillars),
+        datasets: [
+          {
+            label: 'Pillar Score',
+            data: Object.values(mbr.pillars).map(s => s * 10), // quy đổi base 10 thành 100
+            backgroundColor: 'rgba(16, 185, 129, 0.2)',
+            borderColor: '#10b981',
+            borderWidth: 2,
+            pointBackgroundColor: '#10b981',
+          },
+        ],
+      };
+    }
+    return null;
+  };
 
   const chartOptions = {
     scales: {
@@ -438,6 +505,18 @@ function App() {
       }
     }
   };
+
+  // ----- TỐI ƯU HÓA HIỆU NĂNG BIỂU ĐỒ (MEMOIZATION) & AN TOÀN DỮ LIỆU -----
+  const chartCurrentViolations = useMemo(() => {
+    if (!data) return [];
+    if (reportView === 'project') return data.violations || [];
+    return data.scores?.members?.[selectedMember]?.violations || [];
+  }, [data, reportView, selectedMember]);
+
+  const memoizedViolationDistData = useMemo(() => getViolationDistributionData(chartCurrentViolations), [chartCurrentViolations]);
+  const memoizedSeverityDistData = useMemo(() => getSeverityDistributionData(chartCurrentViolations), [chartCurrentViolations]);
+  const memoizedTopFiles = useMemo(() => getTopProblematicFiles(chartCurrentViolations), [chartCurrentViolations]);
+  const memoizedRadarData = useMemo(() => getRadarChartData(), [data, reportView, selectedMember]);
 
   return (
     <div className="dashboard-container">
@@ -557,15 +636,7 @@ function App() {
       </header>
 
       {/* Terminal Mini (Chỉ hiện khi đang Quét) */}
-      {isAuditing && (
-        <div style={{ background: '#0f172a', padding: '1rem', borderRadius: '8px', border: '1px solid #1e293b', marginBottom: '2rem', height: '180px', overflowY: 'auto', fontFamily: 'monospace', fontSize: '0.85rem', color: '#10b981', boxShadow: 'inset 0 0 10px rgba(0,0,0,0.5)' }}>
-          <div style={{ color: '#64748b', marginBottom: '0.5rem', fontSize: '0.75rem' }}>--- TIẾN TRÌNH KIỂM TOÁN LÕI (CORE AUDITOR LOGS) ---</div>
-          {auditLogs.map((log, idx) => (
-            <div key={idx} style={{ marginBottom: '2px' }}>{log}</div>
-          ))}
-          <div ref={logsEndRef} />
-        </div>
-      )}
+      <TerminalLogs isAuditing={isAuditing} />
 
       {/* Thông báo lỗi */}
       {error && (
@@ -579,42 +650,88 @@ function App() {
 
       {data ? (
         <>
+          {/* TOP LEVEL TOGGLE */}
+          <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '1rem' }}>
+            <button 
+              onClick={() => setReportView('project')}
+              style={{ padding: '0.75rem 1.5rem', background: reportView === 'project' ? 'rgba(59, 130, 246, 0.15)' : 'transparent', color: reportView === 'project' ? '#60a5fa' : 'var(--text-muted)', border: reportView === 'project' ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid transparent', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, transition: 'all 0.2s', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+            >
+              <Activity size={18} /> BÁO CÁO DỰ ÁN
+            </button>
+            <button 
+              onClick={() => {
+                 setReportView('member');
+                 if (!selectedMember && data.scores.members && Object.keys(data.scores.members).length > 0) {
+                   setSelectedMember(Object.keys(data.scores.members)[0]);
+                 }
+              }}
+              style={{ padding: '0.75rem 1.5rem', background: reportView === 'member' ? 'rgba(16, 185, 129, 0.15)' : 'transparent', color: reportView === 'member' ? '#34d399' : 'var(--text-muted)', border: reportView === 'member' ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid transparent', borderRadius: '8px', cursor: 'pointer', fontWeight: 600, transition: 'all 0.2s', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+              disabled={!data.scores.members || Object.keys(data.scores.members).length === 0}
+            >
+              <Users size={18} /> BÁO CÁO THÀNH VIÊN
+            </button>
+          </div>
+
+          {/* Member Selector when in Member Report mode */}
+          {reportView === 'member' && data.scores.members && Object.keys(data.scores.members).length > 0 && (
+            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', alignItems: 'center' }}>
+              <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Tác giả:</span>
+              <select 
+                value={selectedMember}
+                onChange={(e) => setSelectedMember(e.target.value)}
+                style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0.5rem 1rem', borderRadius: '6px', outline: 'none', fontSize: '1rem', cursor: 'pointer', minWidth: '200px' }}
+              >
+                {Object.keys(data.scores.members).map(m => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {/* Khối các chỉ số tổng quan (Hero Card + Features) */}
           <div className="stats-grid">
             {/* --- HERO CARD (Spans 4 columns) --- */}
-            <div className="glass-card hero-card col-span-4">
+            <div className="glass-card hero-card col-span-4" style={{ borderColor: reportView === 'member' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(59, 130, 246, 0.2)' }}>
               <div className="hero-left">
-                <div className="metric-label" style={{ fontSize: '1rem', color: '#e2e8f0' }}><Activity size={20} /> TỔNG QUAN DỰ ÁN</div>
+                <div className="metric-label" style={{ fontSize: '1rem', color: '#e2e8f0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  {reportView === 'member' ? <><Users size={20} color="#10b981" /> TỔNG QUAN THÀNH VIÊN: {selectedMember}</> : <><Activity size={20} color="#3b82f6" /> TỔNG QUAN DỰ ÁN</>}
+                </div>
                 
                 <div style={{ display: 'flex', alignItems: 'baseline', marginTop: '1rem' }}>
                   <div className="metric-value" style={{ 
                     fontSize: '4.5rem',
                     lineHeight: '1',
-                    color: data.scores.final >= 80 ? 'var(--accent-green)' : data.scores.final >= 50 ? 'var(--accent-yellow)' : 'var(--accent-red)' 
+                    color: (reportView === 'project' ? data?.scores?.final : (data?.scores?.members?.[selectedMember]?.final || 0)) >= 80 ? 'var(--accent-green)' : (reportView === 'project' ? data?.scores?.final : (data?.scores?.members?.[selectedMember]?.final || 0)) >= 50 ? 'var(--accent-yellow)' : 'var(--accent-red)' 
                   }}>
-                    {data.scores.final}
+                    {reportView === 'project' ? data?.scores?.final : (data?.scores?.members?.[selectedMember]?.final || 0)}
                   </div>
                   <span style={{ fontSize: '1.5rem', color: 'var(--text-muted)', marginLeft: '0.5rem' }}>/ 100</span>
                 </div>
                 
-                <div style={{ marginTop: '1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  XẾP HẠNG: <span className="status-badge" style={{ fontSize: '1.25rem', padding: '0.5rem 1rem' }}>{data.scores.rating}</span>
-                </div>
+                {reportView === 'project' && (
+                  <div style={{ marginTop: '1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    XẾP HẠNG: <span className="status-badge" style={{ fontSize: '1.25rem', padding: '0.5rem 1rem' }}>{data.scores.rating}</span>
+                  </div>
+                )}
 
                 <div style={{ display: 'flex', gap: '2rem', marginTop: '2rem', paddingTop: '1.5rem', borderTop: '1px solid var(--glass-border)' }}>
                   <div>
                     <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Tổng số dòng Code</div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>{data.metrics.total_loc.toLocaleString()}</div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>
+                      {reportView === 'project' ? data?.metrics?.total_loc?.toLocaleString() : (data?.scores?.members?.[selectedMember]?.loc || 0).toLocaleString()}
+                    </div>
                   </div>
                   <div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Số lượng tính năng</div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>{Object.keys(data.scores.features).length}</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>{reportView === 'project' ? 'Số lượng tính năng' : 'Nợ kỹ thuật'}</div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: reportView === 'member' ? 'var(--accent-yellow)' : 'inherit' }}>
+                      {reportView === 'project' ? Object.keys(data?.scores?.features || {}).length : `${data?.scores?.members?.[selectedMember]?.debt_mins || 0} phút`}
+                    </div>
                   </div>
                 </div>
 
-                {/* 4 Trụ cột Dự án */}
+                {/* 4 Trụ cột Dự án / Thành viên */}
                 <div style={{ marginTop: '2.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', width: '100%' }}>
-                  {Object.entries(data.scores.project_pillars).map(([pillar, score]) => (
+                  {Object.entries(reportView === 'project' ? (data?.scores?.project_pillars || {}) : (data?.scores?.members?.[selectedMember]?.pillars || {})).map(([pillar, score]) => (
                     <div key={pillar}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', alignItems: 'flex-end' }}>
                         <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{pillar}</span>
@@ -631,7 +748,7 @@ function App() {
               <div className="hero-right">
                 <div style={{ width: '100%', height: '100%', maxWidth: '350px' }}>
                   <Radar 
-                    data={chartData} 
+                    data={memoizedRadarData} 
                     options={chartOptions} 
                   />
                 </div>
@@ -640,7 +757,7 @@ function App() {
             {/* --- END HERO CARD --- */}
             
             {/* DANH SÁCH TÍNH NĂNG */}
-            {Object.entries(data.scores.features).map(([name, feat]) => (
+            {reportView === 'project' && Object.entries(data.scores.features).map(([name, feat]) => (
                 <div key={name} className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     <div className="metric-label" style={{ color: 'var(--accent-blue)', fontWeight: 'bold', fontSize: '1rem' }}>
                         <FolderOpen size={16} /> {name.toUpperCase()}
@@ -675,7 +792,7 @@ function App() {
             ))}
             
             {/* DANH SÁCH THÀNH VIÊN (MEMBER LEADERBOARD) */}
-            {data.scores.members && Object.keys(data.scores.members).length > 0 && (
+            {reportView === 'project' && data.scores.members && Object.keys(data.scores.members).length > 0 && (
                 <div className="glass-card col-span-4" style={{ marginTop: '0.5rem', animation: 'fadeIn 0.5s ease-out' }}>
                     <div className="metric-label" style={{ color: 'var(--accent-green)', fontWeight: 'bold', fontSize: '1.1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                         <Users size={20} /> BẢNG XẾP HẠNG THÀNH VIÊN (TRONG 6 THÁNG GẦN NHẤT)
@@ -691,8 +808,8 @@ function App() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {Object.entries(data.scores.members)
-                                  .sort((a, b) => b[1].final - a[1].final)
+                                {Object.entries(data?.scores?.members || {})
+                                  .sort((a, b) => (b[1]?.final || 0) - (a[1]?.final || 0))
                                   .map(([author, res], idx) => (
                                     <tr key={author} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: idx % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent' }}>
                                         <td style={{ padding: '1rem', fontWeight: 600, color: '#e2e8f0' }}>{author}</td>
@@ -713,14 +830,14 @@ function App() {
             <div className="chart-card">
               <h3 className="chart-title"><Activity size={18} color="var(--accent-blue)" /> Phân Bố Vi Phạm</h3>
               <div className="chart-container">
-                <Doughnut data={getViolationDistributionData()} options={{ maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#e2e8f0' } } } }} />
+                {memoizedViolationDistData && <Doughnut data={memoizedViolationDistData} options={{ maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { color: '#e2e8f0' } } } }} />}
               </div>
             </div>
             
             <div className="chart-card">
               <h3 className="chart-title"><Shield size={18} color="var(--accent-red)" /> Mức Độ Nghiêm Trọng</h3>
               <div className="chart-container">
-                <Bar data={getSeverityDistributionData()} options={{ maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { color: '#94a3b8' } }, x: { ticks: { color: '#94a3b8' } } }, plugins: { legend: { display: false } } }} />
+                {memoizedSeverityDistData && <Bar data={memoizedSeverityDistData} options={{ maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { color: '#94a3b8' } }, x: { ticks: { color: '#94a3b8' } } }, plugins: { legend: { display: false } } }} />}
               </div>
             </div>
           </div>
@@ -729,44 +846,74 @@ function App() {
           <div className="main-grid">
             {/* Danh sách vi phạm chi tiết */}
             <div className="glass-card" style={{ overflow: 'hidden' }}>
-              <div className="metric-label" style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Code2 size={16} /> SỔ CÁI VI PHẠM (VIOLATION LEDGER)</span>
-                <span>{data.violations.length} vần đề</span>
+              <div className="metric-label" style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Code2 size={16} /> SỔ CÁI VI PHẠM (VIOLATION LEDGER)</span>
+                  <span>{activeLedgerTab === 'project' ? (data?.violations?.length || 0) : (data?.scores?.members ? Object.keys(data.scores.members).length : 0)} {activeLedgerTab === 'project' ? 'vấn đề' : 'thành viên'}</span>
+                </div>
+                {/* 2 Tabs Removed */}
               </div>
               
               <div className="violation-list" style={{ maxHeight: '600px', overflowY: 'auto', paddingRight: '0.5rem' }}>
-                {data.violations.map((v, i) => (
-                  <div key={i} className="violation-item" style={{ borderLeftColor: v.weight <= -5 ? 'var(--accent-red)' : v.weight <= -3 ? 'var(--accent-yellow)' : 'var(--accent-blue)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                      <span className="violation-title">{v.reason}</span>
-                      <span className={`status-badge ${getSeverityClass(v.weight)}`}>
-                        {v.pillar} | {v.weight >= 0 ? `+${v.weight}` : v.weight}
-                      </span>
-                    </div>
-                    <div className="violation-meta" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                      <Search size={12} /> {v.file}
-                    </div>
-                    {v.snippet && (
-                      <pre style={{ 
-                        marginTop: '0.75rem', 
-                        padding: '0.75rem', 
-                        background: 'rgba(0,0,0,0.4)', 
-                        borderRadius: '8px', 
-                        fontSize: '0.85rem', 
-                        overflowX: 'auto',
-                        border: '1px solid rgba(255,255,255,0.05)'
-                      }}>
-                        <code style={{ color: '#bae6fd' }}>{v.snippet}</code>
-                      </pre>
-                    )}
-                  </div>
-                ))}
-                {data.violations.length === 0 && (
-                  <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '4rem 0' }}>
-                    <CheckCircle size={48} style={{ marginBottom: '1rem', color: 'var(--accent-green)', opacity: 0.5 }} />
-                    <p>Chúc mừng! Không tìm thấy vi phạm nào. Mã nguồn đạt chuẩn tuyệt đối.</p>
-                  </div>
-                )}
+                {(() => {
+                  const currentViolations = reportView === 'project' ? (data?.violations || []) : (data?.scores?.members?.[selectedMember]?.violations || []);
+                  const displayedViolations = currentViolations.slice(0, visibleLimit);
+                  
+                  return (
+                    <>
+                      {displayedViolations.map((v, i) => (
+                        <div key={i} className="violation-item" style={{ borderLeftColor: v.weight <= -5 ? 'var(--accent-red)' : v.weight <= -3 ? 'var(--accent-yellow)' : 'var(--accent-blue)' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                            <span className="violation-title">{v.reason}</span>
+                            <span className={`status-badge ${getSeverityClass(v.weight)}`}>
+                              {v.pillar} | {v.weight >= 0 ? `+${v.weight}` : v.weight}
+                            </span>
+                          </div>
+                          <div className="violation-meta" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <Search size={12} /> {v.file}{v.line ? `:${v.line}` : ''}
+                          </div>
+                          {v.snippet && (
+                            <pre style={{ 
+                              marginTop: '0.75rem', 
+                              padding: '0.75rem', 
+                              background: 'rgba(0,0,0,0.4)', 
+                              borderRadius: '8px', 
+                              fontSize: '0.85rem', 
+                              overflowX: 'auto',
+                              border: '1px solid rgba(255,255,255,0.05)'
+                            }}>
+                              <code style={{ color: '#bae6fd' }}>{v.snippet}</code>
+                            </pre>
+                          )}
+                        </div>
+                      ))}
+                      
+                      {currentViolations.length > visibleLimit && (
+                        <div style={{ textAlign: 'center', margin: '1.5rem 0' }}>
+                           <button 
+                             onClick={() => setVisibleLimit(prev => prev + 50)}
+                             style={{ padding: '0.5rem 1.5rem', background: 'rgba(59, 130, 246, 0.15)', border: '1px solid rgba(59, 130, 246, 0.3)', color: '#60a5fa', borderRadius: '6px', cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.9rem', fontWeight: 500 }}
+                           >
+                              Hiển thị thêm (Còn {currentViolations.length - visibleLimit} lỗi)
+                           </button>
+                        </div>
+                      )}
+                      
+                      {currentViolations.length === 0 && reportView === 'project' && (
+                        <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '4rem 0' }}>
+                          <CheckCircle size={48} style={{ marginBottom: '1rem', color: 'var(--accent-green)', opacity: 0.5 }} />
+                          <p>Chúc mừng! Không tìm thấy vi phạm nào.</p>
+                        </div>
+                      )}
+                      
+                      {reportView === 'member' && currentViolations.length === 0 && (!data.scores.members || Object.keys(data.scores.members).length === 0) && (
+                         <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem 0' }}>
+                           <p>Lịch sử Git rỗng. Báo cáo thành viên không khả dụng.</p>
+                         </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </div>
 
@@ -777,11 +924,11 @@ function App() {
                 <div style={{ fontSize: '0.875rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ color: 'var(--text-muted)' }}>Project:</span>
-                    <span style={{ fontWeight: 600 }}>{data.project_name}</span>
+                    <span style={{ fontWeight: 600 }}>{data?.project_name || 'N/A'}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ color: 'var(--text-muted)' }}>Số lượng file:</span>
-                    <span>{data.metrics.total_files} files</span>
+                    <span>{data?.metrics?.total_files || 0} files</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ color: 'var(--text-muted)' }}>Tiêu chuẩn:</span>
@@ -794,13 +941,13 @@ function App() {
                   </div>
                 </div>
                 {/* Widget Top Problematic Files */}
-                {getTopProblematicFiles().length > 0 && (
+                {memoizedTopFiles.length > 0 && (
                   <div className="glass-card" style={{ marginTop: '1.5rem', animation: 'fadeIn 0.6s ease-out' }}>
                     <h3 style={{ marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '1rem', color: 'var(--text-main)' }}>
                       <FolderOpen size={18} color="var(--accent-yellow)" /> TOP FILE LỖI NHIỀU NHẤT
                     </h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                      {getTopProblematicFiles().map(([filename, count], idx) => (
+                      {memoizedTopFiles.map(([filename, count], idx) => (
                         <div key={idx} style={{ background: 'rgba(255,255,255,0.03)', padding: '0.75rem 1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span style={{ fontSize: '0.85rem', wordBreak: 'break-all', paddingRight: '1rem' }}>{filename}</span>
                           <span className="status-badge" style={{ background: 'rgba(239, 68, 68, 0.1)', color: 'var(--accent-red)', whiteSpace: 'nowrap' }}>{count} lỗi</span>
@@ -813,7 +960,7 @@ function App() {
             </div>
           </div>
         </>
-      ) : (
+      ) : !isAuditing ? (
         /* Trạng thái trống */
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '8rem 0', opacity: 0.4 }}>
           <div style={{ position: 'relative', marginBottom: '2rem' }}>
@@ -828,7 +975,7 @@ function App() {
             <strong>Chạy Kiểm Toán</strong>
           </p>
         </div>
-      )}
+      ) : null}
 
       {/* Animation */}
       <style>{`

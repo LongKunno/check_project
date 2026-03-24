@@ -1,5 +1,5 @@
 # Configuration for AI Static Analysis Auditor
-
+import os
 # Pillar Weights
 WEIGHTS = {
     "Performance": 0.35,
@@ -20,6 +20,10 @@ SCAN_EXTENSIONS = ['.py']
 
 # Normalization Factor (K)
 K_FACTOR = 2.0
+
+# TEST MODE: Giới hạn số file được phân tích để tiết kiệm Token (chỉ phân tích tối đa N file)
+# Đặt thành 0 hoặc xóa khỏi .env để tắt Test Mode và quét toàn bộ dự án
+TEST_MODE_LIMIT_FILES = int(os.getenv("TEST_MODE_LIMIT_FILES", 0))
 
 # Rules Metadata (SonarQube Style)
 # severity: Blocker, Critical, Major, Minor, Info

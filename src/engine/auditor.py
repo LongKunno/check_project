@@ -64,6 +64,18 @@ class CodeAuditor:
         print("[1/5] Bước 1: Khám phá tài nguyên (Discovery)...")
         discovery = DiscoveryStep(self.target_dir)
         self.discovery_data = discovery.run_discovery()
+        
+        # Áp dụng TEST_MODE để cắt giảm số lượng file xử lý
+        try:
+            from src.config import TEST_MODE_LIMIT_FILES
+            if TEST_MODE_LIMIT_FILES and TEST_MODE_LIMIT_FILES > 0:
+                original_count = len(self.discovery_data['files'])
+                if original_count > TEST_MODE_LIMIT_FILES:
+                    self.discovery_data['files'] = self.discovery_data['files'][:TEST_MODE_LIMIT_FILES]
+                    print(f"⚠️ [TEST MODE] Đã giới hạn phân tích: {TEST_MODE_LIMIT_FILES}/{original_count} files để tiết kiệm Token!")
+        except ImportError:
+            pass
+
         total_loc = self.discovery_data['total_loc']
         print(f"   - Tổng số dòng code (LOC): {total_loc}")
         print(f"   - Tổng số file: {self.discovery_data['total_files']}")
@@ -82,9 +94,11 @@ class CodeAuditor:
         batch_size = 5
         chunks = [automated_violations[i:i + batch_size] for i in range(0, len(automated_violations), batch_size)]
         
-        sem_val = asyncio.Semaphore(20)
+        sem_val = asyncio.Semaphore(25)
         async def process_validation_chunk(idx, chunk):
             if AuditState.is_cancelled: return idx, chunk, {}
+            # Thêm sleep để stagger (giảm burst lúc đầu) - tránh lỗi 502
+            await asyncio.sleep(idx * 0.1)
             async with sem_val:
                 return idx, chunk, await ai_service.verify_violations_batch(chunk)
 
@@ -145,9 +159,11 @@ class CodeAuditor:
             if chunk_data:
                 deep_chunks.append(chunk_data)
 
-        sem_deep = asyncio.Semaphore(10)
+        sem_deep = asyncio.Semaphore(25)
         async def process_deep_chunk(idx, chunk_data):
             if AuditState.is_cancelled: return []
+            # Deep Audit tốn tài nguyên hơn, stagger 0.2s mỗi chunk
+            await asyncio.sleep(idx * 0.2)
             async with sem_deep:
                 return await ai_service.deep_audit_batch(chunk_data)
 
@@ -209,6 +225,7 @@ class CodeAuditor:
         
         member_punishments = {}
         member_meta = {}
+        member_violations = {}
         
         for feature in self.discovery_data['features'].keys():
             feature_punishments[feature] = {p: 0 for p in WEIGHTS.keys()}
@@ -241,9 +258,11 @@ class CodeAuditor:
                 if author not in member_punishments:
                     member_punishments[author] = {p: 0 for p in WEIGHTS.keys()}
                     member_meta[author] = {p: {"debt": 0, "max_sev": "Info"} for p in WEIGHTS.keys()}
+                    member_violations[author] = []
                 
                 member_punishments[author][pillar] += v['weight']
                 member_meta[author][pillar]['debt'] += meta['debt']
+                member_violations[author].append(v)
 
         # Tính điểm cho từng Tính năng và Tổng kết dự án
         self.feature_results = {}
@@ -307,7 +326,8 @@ class CodeAuditor:
                 "final": f_score,
                 "punishments": punishments,
                 "loc": author_loc,
-                "debt_mins": sum(m["debt"] for m in member_meta[author].values())
+                "debt_mins": sum(m["debt"] for m in member_meta[author].values()),
+                "violations": member_violations.get(author, [])
             }
 
         # BƯỚC 5: REPORTING
@@ -375,7 +395,17 @@ class CodeAuditor:
                 f.write("| Thành viên | Tổng LOC | Điểm | Nợ kỹ thuật |\n")
                 f.write("|---|---|---|---|\n")
                 for author, res in sorted(self.member_results.items(), key=lambda x: x[1]['final'], reverse=True):
-                    f.write(f"| {author} | {res['loc']} | {res['final']} | {res['debt_mins']}m |\n")
+                    f.write(f"| **{author}** | {res['loc']} | {res['final']} | {res['debt_mins']}m |\n")
+                
+                f.write("\n#### 🔍 Chi tiết lỗi theo Thành viên\n")
+                for author, res in sorted(self.member_results.items(), key=lambda x: x[1]['final'], reverse=True):
+                    if res['violations']:
+                        f.write(f"\n**{author}** (Top 5 vi phạm nặng nhất):\n")
+                        # Sort violations by weight (most penalty first)
+                        top_v = sorted(res['violations'], key=lambda x: x['weight'])[:5]
+                        for v in top_v:
+                            rule_info = f" (Rule: {v['rule_id']})" if v.get('rule_id') else ""
+                            f.write(f"- [{v['pillar']}] {v['file']}:{v.get('line', 0)} - {v['reason']}{rule_info}\n")
 
 if __name__ == "__main__":
     # Điểm vào chính của script

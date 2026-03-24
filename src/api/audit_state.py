@@ -20,6 +20,3 @@ class AuditState:
     def log(cls, message: str):
         # Lưu log để SSE đẩy xuống Frontend
         cls.logs.append(message)
-        # Giữ log không quá dài (tối đa 500 dòng)
-        if len(cls.logs) > 500:
-            cls.logs.pop(0)
