@@ -120,5 +120,23 @@ Luồng tích hợp AI trước đây sử dụng `ThreadPoolExecutor` với Ope
 - **Thử thách**: Viết Unit Test (như `test_overall_pillars`) phải chuyển sang dùng `AsyncMock`.
 
 ---
-*(Bổ sung các ADR mới khi có quyết định kiến trúc lớn).*
+## ADR-007: Kiến trúc Modular Scanner cho Bước Xác thực (Verification)
+
+### Trạng thái (Status)
+**Accepted** (2026-03-24)
+
+### Vấn đề (Problem)
+`VerificationStep` (Bước 3) trước đây chứa logic quét Regex và AST trộn lẫn trong một hàm duy nhất. Điều này gây khó khăn khi muốn mở rộng bộ quy tắc cho các ngôn ngữ khác hoặc thêm các phương pháp quét mới (ví dụ: Dependency check, Secret scanning) mà không làm phình to code logic chính.
+
+### Giải pháp (Options & Decision & Why)
+**Quyết định**: Tách biệt logic quét thành các lớp Scanner chuyên biệt kế thừa từ `BaseScanner`.
+1. `RegexScanner`: Xử lý các quy tắc dựa trên biểu thức chính quy.
+2. `PythonASTScanner`: Xử lý các quy tắc dựa trên cây cú pháp AST của Python (Complexity, Length, Dangerous funcs).
+3. **Modular Rule Loading**: `rules.json` được cấu trúc lại để phân loại quy tắc cho từng Scanner.
+
+**Tại sao?**: Đảm bảo tính Single Responsibility (SRP) và cho phép dễ dàng "cắm thêm" (plug-in) các bộ quét mới trong tương lai mà không ảnh hưởng đến luồng điều phối chính.
+
+### Hệ quả (Consequences)
+- **Tích cực**: Code sạch hơn, dễ viết Unit Test cho từng Scanner riêng biệt.
+- **Thử thách**: Cần quản lý cấu trúc `rules.json` chặt chẽ hơn để các Scanner nhận diện đúng quy tắc thuộc về mình.
 

@@ -34,10 +34,12 @@ class CodeAuditor:
         self.ledger_path = os.path.join(report_dir, 'ai_violation_ledger.md')
         self.report_path = os.path.join(report_dir, 'Final_Audit_Report.md')
         self.violations = []
+        self.violation_counter = 0
 
     def log_violation(self, pillar, file, reason, weight, snippet="", rule_id="", line=0):
         """Ghi nhận một vi phạm mới và lưu vào danh sách."""
         violation = {
+            "id": f"v_{self.violation_counter}",
             "pillar": pillar,
             "file": file,
             "reason": reason,
@@ -46,6 +48,7 @@ class CodeAuditor:
             "rule_id": rule_id,
             "line": line
         }
+        self.violation_counter += 1
         self.violations.append(violation)
         
         # Ghi nối vào file Ledger (Sổ cái bằng chứng)

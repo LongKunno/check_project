@@ -15,8 +15,10 @@ import {
   X,
   Wrench,
   CheckSquare,
-  Users
+  Users,
+  Wand2
 } from 'lucide-react';
+
 import {
   Chart as ChartJS,
   RadialLinearScale,
@@ -163,8 +165,59 @@ function App() {
   const [fileCount, setFileCount] = useState(0);
   const [preparingProgress, setPreparingProgress] = useState(0);
   const [isPreparing, setIsPreparing] = useState(false);
+  const [aiHealth, setAiHealth] = useState({ status: 'checking', model: '' });
+  const [history, setHistory] = useState([]);
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareData, setCompareData] = useState(null);
+  const [fixingId, setFixingId] = useState(null);
+  const [suggestions, setSuggestions] = useState({});
+
   const filesRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  // Check AI Health on mount
+  useEffect(() => {
+    const checkAi = async () => {
+      try {
+        const res = await fetch('/api/health/ai');
+        if (res.ok) {
+          const d = await res.json();
+          setAiHealth(d);
+        } else {
+          setAiHealth({ status: 'unhealthy', reason: 'Server error' });
+        }
+      } catch (err) {
+        setAiHealth({ status: 'unhealthy', reason: err.message });
+      }
+    };
+    checkAi();
+  }, []);
+
+  const fetchFixSuggestion = async (violation) => {
+    if (fixingId === violation.id) return;
+    setFixingId(violation.id);
+    try {
+      const res = await fetch('/api/audit/fix-suggestion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          file_path: violation.file,
+          snippet: violation.snippet,
+          reason: violation.reason
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSuggestions(prev => ({ ...prev, [violation.id]: data.suggestion }));
+      }
+    } catch (err) {
+      console.error("Fix error:", err);
+    } finally {
+      setFixingId(null);
+    }
+  };
+
+
 
   // Reset visible limit on view change
   useEffect(() => {
@@ -520,41 +573,36 @@ function App() {
 
   return (
     <div className="dashboard-container">
-      <header>
-        <div>
+      <header className="dashboard-header">
+        <div className="header-left">
           <h1>SOFTWARE AUDIT ENGINE</h1>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Hệ thống Kiểm toán Mã nguồn Tự động (Phân loại theo Tính năng)</p>
+          <div className="header-subtitle">
+            <p>Hệ thống Kiểm toán Tự động (Framework V3)</p>
+            <div className={`ai-status-container ai-status-${aiHealth.status}`}>
+              <div className="status-dot"></div>
+              AI {aiHealth.status.toUpperCase()}
+            </div>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignItems: 'flex-end' }}>
-          
-          <div style={{ display: 'flex', gap: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.25rem', borderRadius: '8px' }}>
-            <button 
-              onClick={() => setActiveTab('local')}
-              style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: 'none', background: activeTab === 'local' ? 'var(--accent-blue)' : 'transparent', color: 'white', cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.875rem', fontWeight: 500 }}
-            >
-              Local Folder
-            </button>
-            <button 
-              onClick={() => setActiveTab('remote')}
-              style={{ padding: '0.5rem 1rem', borderRadius: '6px', border: 'none', background: activeTab === 'remote' ? 'var(--accent-blue)' : 'transparent', color: 'white', cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.875rem', fontWeight: 500 }}
-            >
-              Remote Repository
-            </button>
+        <div className="header-right">
+          <div className="tab-switcher">
+            {['local', 'remote'].map(tab => (
+              <button 
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`tab-btn ${activeTab === tab ? 'active' : ''}`}
+              >
+                {tab === 'local' ? 'Local' : 'Remote'}
+              </button>
+            ))}
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <div className="header-controls">
             {activeTab === 'local' ? (
               <div
-                className={`upload-zone ${isDragOver ? 'drag-over' : ''} ${folderName ? 'has-folder' : ''}`}
+                className={`upload-zone ${folderName ? 'has-folder' : ''}`}
                 onClick={() => fileInputRef.current?.click()}
-                onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
-                onDragLeave={() => setIsDragOver(false)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setIsDragOver(false);
-                  fileInputRef.current?.click();
-                }}
               >
                 <input
                   ref={fileInputRef}
@@ -565,75 +613,58 @@ function App() {
                   style={{ display: 'none' }}
                   onChange={handleFolderSelect}
                 />
-                {folderName ? (
-                  <>
-                    <FolderOpen size={16} color="var(--accent-blue)" />
-                    <span className="upload-folder-name">{folderName}</span>
-                    <span className="upload-file-count">({fileCount} files)</span>
-                    <button
-                      className="upload-clear"
-                      onClick={(e) => { 
-                        e.stopPropagation(); 
-                        filesRef.current = null; 
-                        setFileCount(0);
-                        setFolderName(''); 
-                        setData(null); 
-                      }}
-                    >
-                      <X size={14} />
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <Upload size={16} color="var(--text-muted)" />
-                    <span>Chọn thư mục để kiểm toán</span>
-                  </>
+                <FolderOpen size={14} />
+                <span className="upload-folder-name">{folderName || "Chọn thư mục"}</span>
+                {folderName && <span className="upload-file-count">({fileCount})</span>}
+                {folderName && (
+                  <button className="upload-clear" onClick={(e) => { e.stopPropagation(); setFolderName(''); setData(null); }}>
+                    <X size={12} />
+                  </button>
                 )}
               </div>
             ) : (
-              <div style={{ display: 'flex', gap: '0.5rem', background: 'var(--card-bg)', padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', alignItems: 'center' }}>
-                <select 
-                  value={selectedRepoId}
-                  onChange={(e) => setSelectedRepoId(e.target.value)}
-                  style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', color: 'white', padding: '0.25rem 0.5rem', borderRadius: '4px', outline: 'none', fontSize: '0.875rem', cursor: 'pointer', minWidth: '300px' }}
-                >
-                  {configuredRepos.map(repo => (
-                    <option key={repo.id} value={repo.id}>{repo.name}</option>
-                  ))}
-                </select>
-              </div>
+              <select 
+                value={selectedRepoId}
+                onChange={(e) => setSelectedRepoId(e.target.value)}
+                className="repo-select"
+              >
+                {configuredRepos.map(repo => (
+                  <option key={repo.id} value={repo.id}>{repo.name}</option>
+                ))}
+              </select>
             )}
 
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button className="btn-audit" onClick={runAudit} disabled={isAuditing || (activeTab === 'local' && fileCount === 0) || (activeTab === 'remote' && !selectedRepoId)}>
-                {isAuditing ? <Zap className="spin" size={20} /> : <Zap size={20} />}
+            <button 
+              className="btn-audit" 
+              onClick={runAudit} 
+              disabled={isAuditing || (activeTab === 'local' && fileCount === 0) || (activeTab === 'remote' && !selectedRepoId)}
+            >
+              {isAuditing ? <Zap className="spin" size={16} /> : <Zap size={16} />}
+              <span>
                 {isAuditing 
-                  ? (activeTab === 'remote' 
-                    ? 'ĐANG CLONE & PHÂN TÍCH...' 
-                    : (isPreparing 
-                      ? `CHUẨN BỊ ${preparingProgress}%...`
-                      : (uploadProgress > 0 && uploadProgress < 100 
-                          ? `ĐANG UPLOAD ${uploadProgress}%...` 
-                          : 'ĐANG PHÂN TÍCH...'))) 
-                  : 'CHẠY KIỂM TOÁN'}
+                  ? (isCancelling ? 'ĐANG HỦY...' : 'AUDITING...') 
+                  : (activeTab === 'local' ? 'PHÂN TÍCH LOCAL' : 'PHÂN TÍCH REPO')}
+              </span>
+            </button>
+            
+            {isAuditing && (
+              <button 
+                onClick={async () => {
+                  setIsCancelling(true);
+                  try { await fetch('/api/audit/cancel', { method: 'POST' }); } catch(e){}
+                }} 
+                disabled={isCancelling}
+                className="btn-stop"
+                title="Hủy kiểm toán"
+              >
+                <X size={18} />
               </button>
-              
-              {isAuditing && (
-                <button 
-                  onClick={async () => {
-                    setIsCancelling(true);
-                    try { await fetch('/api/audit/cancel', { method: 'POST' }); } catch(e){}
-                  }} 
-                  disabled={isCancelling}
-                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0 1.25rem', background: isCancelling ? 'rgba(255, 255, 255, 0.1)' : 'rgba(239, 68, 68, 0.15)', color: isCancelling ? 'var(--text-muted)' : 'var(--accent-red)', border: isCancelling ? 'none' : '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', cursor: isCancelling ? 'not-allowed' : 'pointer', fontWeight: 600, transition: 'all 0.2s' }}
-                >
-                  <X size={18} /> {isCancelling ? 'ĐANG HỦY...' : 'DỪNG LẠI'}
-                </button>
-              )}
-            </div>
+            )}
           </div>
         </div>
       </header>
+
+
 
       {/* Terminal Mini (Chỉ hiện khi đang Quét) */}
       <TerminalLogs isAuditing={isAuditing} />
@@ -873,18 +904,42 @@ function App() {
                             <Search size={12} /> {v.file}{v.line ? `:${v.line}` : ''}
                           </div>
                           {v.snippet && (
-                            <pre style={{ 
-                              marginTop: '0.75rem', 
-                              padding: '0.75rem', 
-                              background: 'rgba(0,0,0,0.4)', 
-                              borderRadius: '8px', 
-                              fontSize: '0.85rem', 
-                              overflowX: 'auto',
-                              border: '1px solid rgba(255,255,255,0.05)'
-                            }}>
-                              <code style={{ color: '#bae6fd' }}>{v.snippet}</code>
-                            </pre>
+                            <>
+                              <pre style={{ 
+                                marginTop: '0.75rem', 
+                                padding: '1rem', 
+                                background: 'rgba(0,0,0,0.4)', 
+                                borderRadius: '8px', 
+                                fontSize: '0.85rem', 
+                                overflowX: 'auto',
+                                border: '1px solid rgba(255,255,255,0.05)'
+                              }}>
+                                <code style={{ color: '#bae6fd' }}>{v.snippet}</code>
+                              </pre>
+                              
+                              <div className="violation-footer">
+                                <button 
+                                  className="btn-fix"
+                                  onClick={() => fetchFixSuggestion(v)}
+                                  disabled={fixingId === v.id}
+                                >
+                                  <Wand2 size={14} /> 
+                                  {fixingId === v.id ? 'Thinking...' : suggestions[v.id] ? 'Regenerate Fix' : 'Suggest AI Fix'}
+                                </button>
+                              </div>
+
+                              {suggestions[v.id] && (
+                                <div className="fix-suggestion-block">
+                                  <div className="suggestion-header">AI SUGGESTED FIX</div>
+                                  <div style={{ color: '#94a3b8', fontSize: '0.8rem', marginBottom: '0.5rem' }}>
+                                    Based on best practices and security standards.
+                                  </div>
+                                  <code>{suggestions[v.id]}</code>
+                                </div>
+                              )}
+                            </>
                           )}
+
                         </div>
                       ))}
                       

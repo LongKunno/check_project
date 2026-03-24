@@ -56,6 +56,9 @@ nav:
       - Git Audit: api_specs/git.md
       - Audit History: api_specs/history.md
       - SSE Stream: api_specs/stream.md
+      - AI Health check: api_specs/ai_health.md
+      - AI Fix Suggestion: api_specs/fix_suggestion.md
+
   - Database Schema:
       - Overview: database/overview.md
       - Audit History Table: database/audit_history.md

@@ -8,6 +8,27 @@
       "weight": -10.0
     },
     {
+      "id": "SQL_INJECTION",
+      "pattern": "(?i)(\\.execute\\(.*[f\"'].*\\{.*\\}.*[\"']\\))",
+      "pillar": "Security",
+      "reason": "Potential SQL Injection (f-string in .execute())",
+      "weight": -8.0
+    },
+    {
+      "id": "INSECURE_HASH",
+      "pattern": "hashlib\\.(md5|sha1)\\(",
+      "pillar": "Security",
+      "reason": "Insecure hashing algorithm (MD5/SHA1)",
+      "weight": -5.0
+    },
+    {
+      "id": "XSS_DANGER",
+      "pattern": "(?i)(\\.innerHTML\\s*=)",
+      "pillar": "Security",
+      "reason": "Potential XSS via .innerHTML",
+      "weight": -5.0
+    },
+    {
       "id": "VERIFY_FALSE",
       "pattern": "verify\\s*=\\s*False",
       "pillar": "Security",
@@ -20,6 +41,13 @@
       "pillar": "Performance",
       "reason": "SELECT * in BigQuery/SQL (anti-pattern)",
       "weight": -2.0
+    },
+    {
+      "id": "N_PLUS_ONE",
+      "pattern": "for\\s+.*\\sin\\s+.*:\\s+.*\\.objects\\.get\\(",
+      "pillar": "Performance",
+      "reason": "Potential N+1 Query pattern",
+      "weight": -5.0
     },
     {
       "id": "ITERROWS_USE",
@@ -85,7 +113,15 @@
         "pillar": "Security",
         "reason": "Dangerous function 'os.system' detected",
         "weight": -5.0
+      },
+      {
+        "id": "DANGEROUS_FUNC",
+        "name": "pickle.loads",
+        "pillar": "Security",
+        "reason": "Unsafe deserialization with 'pickle.loads'",
+        "weight": -8.0
       }
     ]
   }
+
 }

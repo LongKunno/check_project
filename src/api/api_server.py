@@ -430,8 +430,62 @@ async def audit_repository(request: RepositoryAuditRequest):
         if os.path.exists(temp_dir):
             shutil.rmtree(temp_dir)
 
+@app.get("/health/ai")
+async def health_ai():
+    """Kiểm tra kết nối và tính sẵn sàng của AI Service."""
+    from src.engine.ai_service import ai_service
+    try:
+        # Thử một test đơn giản
+        test_prompt = "Say 'OK'"
+        messages = [{"role": "user", "content": test_prompt}]
+        response = await ai_service.client.chat.completions.create(
+            model=ai_service.model,
+            messages=messages,
+            max_tokens=5
+        )
+        if response.choices[0].message.content:
+            return {"status": "healthy", "model": ai_service.model}
+        return {"status": "unhealthy", "reason": "Empty response"}
+    except Exception as e:
+        return {"status": "unhealthy", "reason": str(e)}
+
+class FixSuggestionRequest(BaseModel):
+    file_path: str
+    snippet: str
+    reason: str
+
+@app.post("/audit/fix-suggestion")
+async def get_fix_suggestion(request: FixSuggestionRequest):
+    """Yêu cầu AI đưa ra gợi ý sửa lỗi cho một vi phạm cụ thể."""
+    from src.engine.ai_service import ai_service
+    
+    prompt = f"""
+Bạn là một chuyên gia sửa lỗi code. Hãy đưa ra gợi ý sửa lỗi cho vi phạm sau:
+File: {request.file_path}
+Lỗi: {request.reason}
+Đoạn mã hiện tại:
+```python
+{request.snippet}
+```
+
+Hãy trả về mã nguồn đã sửa đổi (chỉ mã nguồn, trong block markdown) và một giải thích cực kỳ ngắn gọn.
+"""
+    try:
+        messages = [
+            {"role": "system", "content": "You are a helpful code fixer. Provide concise code fixes."},
+            {"role": "user", "content": prompt}
+        ]
+        response = await ai_service.client.chat.completions.create(
+            model=ai_service.model,
+            messages=messages
+        )
+        return {"suggestion": response.choices[0].message.content}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/history")
 async def get_audit_history(target: str = None):
+
     """Lấy danh sách lịch sử các lần kiểm toán."""
     try:
         history = AuditDatabase.get_history(target)

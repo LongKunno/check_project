@@ -1,9 +1,37 @@
 import os
 import asyncio
+import json
+import re
+from typing import List, Optional, Dict, Any
+from pydantic import BaseModel, Field, ValidationError
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# --- PYDANTIC MODELS FOR SCHEMA VALIDATION ---
+
+class DeepAuditViolation(BaseModel):
+    file: str = Field(..., description="Đường dẫn file vi phạm")
+    type: str = Field(..., description="Trụ cột: Performance, Maintainability, Reliability, Security")
+    reason: str = Field(..., description="Giải thích chi tiết lỗi logic/kiến trúc")
+    weight: float = Field(..., description="Trọng số phạt (ví dụ: -3.0 hoặc -5.0)")
+    confidence: float = Field(..., description="Độ tin cậy từ 0.0 đến 1.0")
+    line: int = Field(default=0, description="Dòng code xảy ra lỗi (nếu xác định được)")
+
+class DeepAuditResponse(BaseModel):
+    violations: List[DeepAuditViolation]
+
+class ViolationValidation(BaseModel):
+    index: int = Field(..., description="Số thứ tự của vi phạm trong danh sách đầu vào")
+    is_false_positive: bool = Field(..., description="True nếu là báo lỗi sai, False nếu là lỗi thật")
+    explanation: str = Field(..., description="Giải thích ngắn gọn")
+    confidence: float = Field(..., description="Độ tin cậy 0.0 - 1.0")
+
+class ValidationResponse(BaseModel):
+    results: List[ViolationValidation]
+
+# --- AI SERVICE IMPLEMENTATION ---
 
 class AiService:
     def __init__(self):
@@ -17,52 +45,65 @@ class AiService:
             timeout=60.0
         )
 
-    async def deep_audit_batch(self, files_chunk):
+    def _extract_json(self, content: str) -> str:
+        """Trích xuất khối JSON từ nội dung trả về của AI (xử lý Markdown code blocks)."""
+        json_match = re.search(r'```json\s*(.*?)\s*```', content, re.DOTALL)
+        if json_match:
+            return json_match.group(1)
+        # Tìm kiếm khối mảng [ ] hoặc đối tượng { } nếu không có code block
+        json_match = re.search(r'(\[.*\]|\{.*\})', content, re.DOTALL)
+        if json_match:
+            return json_match.group(1)
+        return content
+
+    async def deep_audit_batch(self, files_chunk: List[Dict[str, str]]) -> List[Dict[str, Any]]:
         """
-        Thực hiện quét sâu một nhóm file để tìm các lỗi logic/kiến trúc mà Static Scan bỏ sót.
-        files_chunk: List[Dict] chứa {path, content}
-        Trả về: List[Dict] các vi phạm tìm thấy.
+        Thực hiện quét sâu một nhóm file để tìm các lỗi logic/kiến trúc.
         """
         if not files_chunk:
             return []
 
         files_prompt = ""
-        for i, f in enumerate(files_chunk):
+        for f in files_chunk:
             files_prompt += f"\n--- FILE: {f['path']} ---\n{f['content']}\n"
 
+        # Tự động phát hiện Tech Stack dựa trên file extensions (đơn giản)
+        extensions = {os.path.splitext(f['path'])[1] for f in files_chunk}
+        tech_context = f"Dự án đang sử dụng các ngôn ngữ/format: {', '.join(extensions)}"
+
         prompt = f"""
-Bạn là một Auditor Senior. Hãy thực hiện quét sâu danh sách mã nguồn dưới đây để tìm các lỗi tiềm ẩn mà các công cụ quét tĩnh thông thường (Regex/AST) không thể bắt được.
+Bạn là một Auditor Senior chuyên sâu về: {tech_context}.
+Hãy thực hiện quét sâu danh sách mã nguồn dưới đây để tìm các lỗi tiềm ẩn mà các công cụ quét tĩnh thông thường (Regex/AST) không thể bắt được.
 
 DANH SÁCH MÃ NGUỒN:
 {files_prompt}
 
 TẬP TRUNG VÀO:
-1. Lỗi logic luồng xử lý (Logic flaws).
-2. Lỗi thiết kế/Kiến trúc (Architectural smells, God objects, Circular dependencies).
-3. Nguy cơ bảo mật tiềm ẩn (Race conditions, Insecure data flow).
-4. Khả năng bảo trì (Clean code violations).
+1. Lỗi logic luồng xử lý (Logic flaws, race conditions, improper error handling).
+2. Lỗi kiến trúc (Circular dependencies, God objects, violation of Separation of Concerns).
+3. Nguy cơ bảo mật tiềm ẩn (Insecure data flow, business logic vulnerabilities).
+4. Khả năng bảo trì (Clean code, adherence to best practices for {tech_context}).
 
-Yêu cầu trả về kết quả dưới dạng một MẢNG JSON các vi phạm:
-[
-  {{
-    "file": "đường dẫn file",
-    "type": "Performance" | "Maintainability" | "Reliability" | "Security",
-    "reason": "Giải thích chi tiết lỗi",
-    "weight": -3.0 (cho lỗi logic/duy trì) hoặc -5.0 (cho lỗi bảo mật/kiến trúc),
-    "confidence": 0.0 -> 1.0
-  }}
-]
-Nếu không thấy lỗi nào, trả về mảng rỗng [].
+Yêu cầu trả về kết quả dưới dạng đối tượng JSON với key 'violations' là một mảng:
+{{
+  "violations": [
+    {{
+      "file": "path/to/file.py",
+      "type": "Security",
+      "reason": "Giải thích chi tiết...",
+      "weight": -5.0,
+      "confidence": 0.95,
+      "line": 12
+    }}
+  ]
+}}
+Nếu không thấy lỗi nào, trả về {{"violations": []}}.
 """
         max_retries = 3
-        
-        import json
-        import re
-
         for attempt in range(max_retries):
             try:
                 messages = [
-                    {"role": "system", "content": "You are a senior auditor. Respond with raw JSON array only."},
+                    {"role": "system", "content": "You are a senior auditor. Respond with strictly valid JSON matching the requested schema."},
                     {"role": "user", "content": prompt}
                 ]
                 response = await self.client.chat.completions.create(
@@ -71,185 +112,87 @@ Nếu không thấy lỗi nào, trả về mảng rỗng [].
                     response_format={"type": "json_object"} if "gemini" not in self.model.lower() else None
                 )
                 content = response.choices[0].message.content
-                
-                if not content or not content.strip():
-                    if hasattr(response.choices[0].message, 'tool_calls') and response.choices[0].message.tool_calls:
-                        content = response.choices[0].message.tool_calls[0].function.arguments
-                    else:
-                        raise ValueError("AI returned empty content")
+                if not content: raise ValueError("Empty AI response")
 
-                json_match = re.search(r'\[.*\]', content, re.DOTALL)
-                if json_match:
-                    return json.loads(json_match.group(0))
-                else:
-                    return json.loads(content)
+                json_str = self._extract_json(content)
+                data = json.loads(json_str)
+                validated_data = DeepAuditResponse.model_validate(data)
+                return [v.model_dump() for v in validated_data.violations]
             
-            except Exception as e:
-                snippet = content[:150].replace('\n', ' ') if 'content' in locals() and content else "No content"
-                print(f"⚠️ AI Deep Audit Attempt {attempt + 1} failed: {e}. Output: {snippet}")
+            except (ValidationError, json.JSONDecodeError, Exception) as e:
+                print(f"⚠️ AI Deep Audit Attempt {attempt + 1} failed: {e}")
                 if attempt < max_retries - 1:
-                    await asyncio.sleep(2)
+                    await asyncio.sleep(2 * (attempt + 1))
                 else:
-                    print(f"❌ AI Deep Audit failed after {max_retries} retries.")
                     return []
-
         return []
 
-    async def verify_violations_batch(self, violations_chunk):
+    async def verify_violations_batch(self, violations_chunk: List[Dict[str, Any]]) -> Dict[int, Dict[str, Any]]:
         """
         Xác thực một nhóm các vi phạm trong một request duy nhất.
-        violations_chunk: List[Dict] chứa {file, snippet, reason, type, id}
-        Trả về: Dict[int, Dict] mapping index -> {is_fp, reason, conf}
         """
         if not violations_chunk:
             return {}
 
         items_prompt = ""
         for i, v in enumerate(violations_chunk):
-            items_prompt += f"""
---- Vi phạm #{i} ---
-File: {v['file']}
-Lỗi: {v['reason']}
-Trụ cột: {v['type']}
-Đoạn mã:
-```
-{v.get('snippet', '')}
-```
-"""
+            items_prompt += f"\n--- Vi phạm #{i} ---\nFile: {v['file']}\nLỗi: {v['reason']}\nTrụ cột: {v['type']}\nĐoạn mã:\n```\n{v.get('snippet', '')}\n```\n"
 
         prompt = f"""
-Bạn là một chuyên gia Review Code. Hệ thống Static Analysis của tôi vừa phát hiện một danh sách các lỗi tiềm tàng.
-Nhiệm vụ của bạn là kiểm tra từng lỗi một và xác định xem đó là lỗi thật (True Positive) hay báo lỗi sai (False Positive).
+Bạn là một chuyên gia Review Code. Hãy xác định xem các lỗi dưới đây là lỗi thật (True Positive) hay báo lỗi sai (False Positive).
 
 DANH SÁCH VI PHẠM:
 {items_prompt}
 
-Yêu cầu trả về kết quả dưới dạng một MẢNG JSON duy nhất, mỗi phần tử tương ứng với một vi phạm theo đúng thứ tự:
-[
-  {{
-    "index": 0,
-    "is_false_positive": boolean,
-    "explanation": "Giải thích ngắn gọn",
-    "confidence": float
-  }},
-  ...
-]
+Yêu cầu trả về kết quả dưới dạng đối tượng JSON với key 'results' là một mảng, mỗi phần tử tương ứng với một vi phạm theo đúng thứ tự 'index':
+{{
+  "results": [
+    {{
+      "index": 0,
+      "is_false_positive": boolean,
+      "explanation": "Giải thích...",
+      "confidence": 0.9
+    }}
+  ]
+}}
 """
         max_retries = 3
-        
-        import json
-        import re
-
         for attempt in range(max_retries):
             try:
-                # Thêm hướng dẫn nghiêm ngặt để tránh Tool Calls
                 messages = [
-                    {"role": "system", "content": "You are a code reviewer. Always respond with raw JSON. Do not use tools."},
+                    {"role": "system", "content": "You are a code reviewer. Respond with strictly valid JSON matching the requested schema."},
                     {"role": "user", "content": prompt}
                 ]
-                
                 response = await self.client.chat.completions.create(
                     model=self.model,
                     messages=messages,
                     response_format={"type": "json_object"} if "gemini" not in self.model.lower() else None
                 )
-                
-                # Ưu tiên lấy content, nếu rỗng thì kiểm tra tool_calls
                 content = response.choices[0].message.content
-                
-                if not content or not content.strip():
-                    if hasattr(response.choices[0].message, 'tool_calls') and response.choices[0].message.tool_calls:
-                        content = response.choices[0].message.tool_calls[0].function.arguments
-                    else:
-                        raise ValueError("AI returned empty content and no tool_calls")
+                if not content: raise ValueError("Empty AI response")
 
-                # Tìm kiếm khối JSON trong markdown nếu có
-                json_match = re.search(r'\[.*\]', content, re.DOTALL)
-                if json_match:
-                    results = json.loads(json_match.group(0))
-                else:
-                    results = json.loads(content)
-                
-                # Chuyển đổi sang dict để dễ truy xuất
-                return {res.get("index", i): res for i, res in enumerate(results)}
+                json_str = self._extract_json(content)
+                data = json.loads(json_str)
+                validated_data = ValidationResponse.model_validate(data)
+                return {res.index: res.model_dump() for res in validated_data.results}
             
-            except Exception as e:
-                snippet = content[:150].replace('\n', ' ') if 'content' in locals() and content else "No content"
-                payload_info = f" (Items: {len(violations_chunk)})" if 'violations_chunk' in locals() else ""
-                print(f"⚠️ AI Batch Service Attempt {attempt + 1} failed{payload_info}: {e}. Output: {snippet}")
+            except (ValidationError, json.JSONDecodeError, Exception) as e:
+                print(f"⚠️ AI Batch Service Attempt {attempt + 1} failed: {e}")
                 if attempt < max_retries - 1:
-                    await asyncio.sleep(2) # Tăng thời gian chờ
+                    await asyncio.sleep(2 * (attempt + 1))
                 else:
-                    print(f"❌ AI Batch Service failed after {max_retries} retries.")
                     return {}
-
         return {}
 
     async def verify_violation(self, file_path, code_snippet, reason, pillar):
         """
-        Xác thực xem một vi phạm tìm thấy bởi Static Analysis có phải là thật không.
-        Trả về: (is_false_positive, explanation, confidence)
+        Xác thực xem một vi phạm tìm thấy bởi Static Analysis có phải là thật không (Single Item).
         """
-        prompt = f"""
-Bạn là một chuyên gia Review Code. Hệ thống Static Analysis của tôi vừa phát hiện một lỗi trong file: {file_path}.
-Trạng thái lỗi: {reason}
-Trụ cột chất lượng: {pillar}
-
-Đoạn mã liên quan:
-```
-{code_snippet}
-```
-
-Nhiệm vụ:
-Hãy xác định xem đây có phải là lỗi thật (True Positive) hay là báo cáo sai (False Positive).
-Trả về kết quả dưới dạng JSON:
-{{
-  "is_false_positive": boolean,
-  "explanation": "Giải thích ngắn gọn tại sao",
-  "confidence": float (0.0 to 1.0)
-}}
-"""
-        messages = [
-            {"role": "system", "content": "You are a code reviewer. Respond with raw JSON object only."},
-            {"role": "user", "content": prompt}
-        ]
-        max_retries = 3
-        
-        import json
-        import re
-
-        for attempt in range(max_retries):
-            try:
-                response = await self.client.chat.completions.create(
-                    model=self.model,
-                    messages=messages,
-                    response_format={"type": "json_object"} if "gemini" not in self.model.lower() else None
-                )
-                content = response.choices[0].message.content
-                
-                if not content or not content.strip():
-                    if hasattr(response.choices[0].message, 'tool_calls') and response.choices[0].message.tool_calls:
-                        content = response.choices[0].message.tool_calls[0].function.arguments
-                    else:
-                        raise ValueError("AI returned empty content")
-
-                # Tìm kiếm khối JSON trong markdown nếu có
-                json_match = re.search(r'\{.*\}', content, re.DOTALL)
-                if json_match:
-                    result = json.loads(json_match.group(0))
-                else:
-                    result = json.loads(content)
-                    
-                return result.get("is_false_positive", False), result.get("explanation", ""), result.get("confidence", 1.0)
-            
-            except Exception as e:
-                print(f"⚠️ AI Service Attempt {attempt + 1} failed: {e}")
-                if attempt < max_retries - 1:
-                    await asyncio.sleep(1) # Chờ 1 giây trước khi thử lại
-                else:
-                    print(f"❌ AI Service failed after {max_retries} retries.")
-                    return False, f"AI Error after retries: {str(e)}", 0.0
-
-        return False, "AI Service unexpected end of loop", 0.0
+        res = await self.verify_violations_batch([{"file": file_path, "snippet": code_snippet, "reason": reason, "type": pillar}])
+        if 0 in res:
+            v = res[0]
+            return v['is_false_positive'], v['explanation'], v['confidence']
+        return False, "AI failed to respond", 0.0
 
 ai_service = AiService()
+
