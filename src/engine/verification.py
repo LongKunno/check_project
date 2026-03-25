@@ -56,22 +56,40 @@ class PythonASTScanner(BaseScanner):
         imported_names = set()
         used_names = set()
         
+        # Bổ sung quan hệ Parent-Child cho cây AST (Rất hữu ích để check context như "with open")
+        for parent_node in ast.walk(tree):
+            for child in ast.iter_child_nodes(parent_node):
+                child.parent = parent_node
+        
         for node in ast.walk(tree):
-            # Bare Except
-            if isinstance(node, ast.ExceptHandler) and node.type is None:
-                rule = ast_cfg.get('bare_except', {})
-                snippet = "\n".join(lines[max(0, node.lineno-2):min(len(lines), node.lineno+1)])
-                violations.append({
-                    "file": file_path, "type": rule.get('pillar', 'Reliability'), 
-                    "reason": rule.get('reason', 'Bare except'), "weight": rule.get('weight', -2), 
-                    "rule_id": rule.get('id', 'BARE_EXCEPT'), "line": node.lineno, "snippet": snippet
-                })
+            # Bare Except & Swallowed Exceptions
+            if isinstance(node, ast.ExceptHandler):
+                if node.type is None:
+                    rule = ast_cfg.get('bare_except', {})
+                    if rule:
+                        snippet = "\n".join(lines[max(0, node.lineno-2):min(len(lines), node.lineno+1)])
+                        violations.append({
+                            "file": file_path, "type": rule.get('pillar', 'Reliability'), 
+                            "reason": rule.get('reason', 'Bare except'), "weight": rule.get('weight', -2), 
+                            "rule_id": rule.get('id', 'BARE_EXCEPT'), "line": node.lineno, "snippet": snippet
+                        })
+                
+                # Swallowed Exception (Nuốt lỗi ngầm)
+                if len(node.body) == 1 and isinstance(node.body[0], ast.Pass):
+                    sw_rule = ast_cfg.get('swallowed_exception', {})
+                    if sw_rule:
+                        snippet = "\n".join(lines[max(0, node.lineno-2):min(len(lines), node.lineno+1)])
+                        violations.append({
+                            "file": file_path, "type": sw_rule.get('pillar', 'Reliability'), 
+                            "reason": sw_rule.get('reason', 'Swallowed exception'), "weight": sw_rule.get('weight', -5), 
+                            "rule_id": sw_rule.get('id', 'SWALLOWED_EXCEPTION'), "line": node.lineno, "snippet": snippet
+                        })
             
-            # Function length & Complexity
+            # Function length, Complexity & Parameters
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 # Function length
                 len_rule = ast_cfg.get('max_function_length', {})
-                if node.end_lineno - node.lineno > len_rule.get('limit', 100):
+                if len_rule and node.end_lineno - node.lineno > len_rule.get('limit', 100):
                     snippet = "\n".join(lines[max(0, node.lineno-1):min(len(lines), node.lineno+2)])
                     violations.append({
                         "file": file_path, "type": len_rule.get('pillar', 'Maintainability'), 
@@ -82,15 +100,31 @@ class PythonASTScanner(BaseScanner):
                 
                 # Complexity
                 comp_rule = ast_cfg.get('complexity', {})
-                complexity = self.calculate_complexity(node)
-                if complexity > comp_rule.get('limit', 10):
-                    snippet = "\n".join(lines[max(0, node.lineno-1):min(len(lines), node.lineno+2)])
-                    violations.append({
-                        "file": file_path, "type": comp_rule.get('pillar', 'Performance'), 
-                        "reason": f"{comp_rule.get('reason')}: {node.name} (Complexity: {complexity} > {comp_rule.get('limit')})", 
-                        "weight": comp_rule.get('weight', -5), "rule_id": comp_rule.get('id', 'HIGH_COMPLEXITY'), 
-                        "line": node.lineno, "snippet": snippet
-                    })
+                if comp_rule:
+                    complexity = self.calculate_complexity(node)
+                    if complexity > comp_rule.get('limit', 10):
+                        snippet = "\n".join(lines[max(0, node.lineno-1):min(len(lines), node.lineno+2)])
+                        violations.append({
+                            "file": file_path, "type": comp_rule.get('pillar', 'Performance'), 
+                            "reason": f"{comp_rule.get('reason')}: {node.name} (Complexity: {complexity} > {comp_rule.get('limit')})", 
+                            "weight": comp_rule.get('weight', -5), "rule_id": comp_rule.get('id', 'HIGH_COMPLEXITY'), 
+                            "line": node.lineno, "snippet": snippet
+                        })
+                
+                # Parameters limit
+                param_rule = ast_cfg.get('max_parameters', {})
+                if 'limit' in param_rule:
+                    num_args = len(node.args.args) + len(node.args.kwonlyargs)
+                    if getattr(node.args, 'vararg', None): num_args += 1
+                    if getattr(node.args, 'kwarg', None): num_args += 1
+                    if num_args > param_rule['limit']:
+                        snippet = "\n".join(lines[max(0, node.lineno-1):min(len(lines), node.lineno+2)])
+                        violations.append({
+                            "file": file_path, "type": param_rule.get('pillar', 'Maintainability'), 
+                            "reason": f"{param_rule.get('reason')}: {node.name} ({num_args} > {param_rule.get('limit')})", 
+                            "weight": param_rule.get('weight', -3), "rule_id": param_rule.get('id', 'TOO_MANY_PARAMS'), 
+                            "line": node.lineno, "snippet": snippet
+                        })
 
             # Dangerous functions
             if isinstance(node, ast.Call):
@@ -109,6 +143,74 @@ class PythonASTScanner(BaseScanner):
                         "reason": df['reason'], "weight": df['weight'], 
                         "rule_id": df['id'], "line": node.lineno, "snippet": snippet
                     })
+                    
+                # Cảnh báo thiếu vòng With cho tài nguyên (Memory Leak Guard)
+                if func_name == 'open':
+                    open_rule = ast_cfg.get('missing_with_open', {})
+                    if open_rule:
+                        is_with = False
+                        curr = node
+                        for _ in range(5):
+                            if hasattr(curr, 'parent'):
+                                if isinstance(curr.parent, ast.With):
+                                    is_with = True
+                                    break
+                                curr = curr.parent
+                            else:
+                                break
+                        if not is_with:
+                            snippet = "\n".join(lines[max(0, node.lineno-1):min(len(lines), node.lineno+2)])
+                            violations.append({
+                                "file": file_path, "type": open_rule.get('pillar', 'Performance'), 
+                                "reason": open_rule.get('reason'), "weight": open_rule.get('weight', -4), 
+                                "rule_id": open_rule.get('id', 'MEMORY_LEAK_OPEN'), "line": node.lineno, "snippet": snippet
+                            })
+                            
+                # Cảnh báo gọi API thiếu Timeout (Reliability Network)
+                if func_name in ['requests.get', 'requests.post', 'requests.put', 'requests.delete', 'requests.patch', 'httpx.get']:
+                    timeout_rule = ast_cfg.get('missing_timeout', {})
+                    if timeout_rule:
+                        has_timeout = any(kw.arg == 'timeout' for kw in node.keywords)
+                        if not has_timeout:
+                            snippet = "\n".join(lines[max(0, node.lineno-1):min(len(lines), node.lineno+2)])
+                            violations.append({
+                                "file": file_path, "type": timeout_rule.get('pillar', 'Reliability'), 
+                                "reason": timeout_rule.get('reason'), "weight": timeout_rule.get('weight', -5), 
+                                "rule_id": timeout_rule.get('id', 'NO_TIMEOUT_SET'), "line": node.lineno, "snippet": snippet
+                            })
+            
+            # N+1 Query Flow Detection (V7)
+            if isinstance(node, (ast.For, ast.While, ast.AsyncFor)):
+                n1_rule = ast_cfg.get('n_plus_one_query', {})
+                if n1_rule:
+                    for subnode in ast.walk(node):
+                        if isinstance(subnode, ast.Call):
+                            func_name_parts = []
+                            curr = subnode.func
+                            while isinstance(curr, ast.Attribute):
+                                func_name_parts.insert(0, curr.attr)
+                                curr = curr.value
+                            if isinstance(curr, ast.Name):
+                                func_name_parts.insert(0, curr.id)
+                            
+                            full_call = ".".join(func_name_parts)
+                            
+                            if ("objects.get" in full_call or 
+                                "objects.filter" in full_call or 
+                                "objects.all" in full_call or 
+                                full_call.endswith(".execute") or 
+                                full_call.startswith("requests.") or
+                                full_call.startswith("httpx.")):
+                                
+                                snippet = "\n".join(lines[max(0, subnode.lineno-1):min(len(lines), subnode.lineno+2)])
+                                violations.append({
+                                    "file": file_path, "type": n1_rule.get('pillar', 'Performance'), 
+                                    "reason": f"{n1_rule.get('reason')}. Found '{full_call}()' inside loop.", 
+                                    "weight": n1_rule.get('weight', -5), 
+                                    "rule_id": n1_rule.get('id', 'N_PLUS_ONE'), 
+                                    "line": subnode.lineno, "snippet": snippet
+                                })
+                                break  # Chỉ bắt lỗi 1 lần cho mỗi vòng lặp để tránh spam
             
             # Track Imports & Usage
             if isinstance(node, ast.Import):
@@ -119,13 +221,82 @@ class PythonASTScanner(BaseScanner):
                 used_names.add(node.id)
 
         # Check unused imports
-        used_names_str = set(used_names)
-        for name, line_no in imported_names:
-            if name not in used_names_str and name not in ['os', 'sys', 'json', 'ast', 're']:
-                snippet = lines[line_no-1] if line_no <= len(lines) else ""
-                violations.append({"file": file_path, "type": "Maintainability", "reason": f"Import '{name}' might be unused (AST)", "weight": -0.5, "rule_id": "UNUSED_IMPORT", "line": line_no, "snippet": snippet})
+        disabled_ids = rules.get('disabled_ids', [])
+        if 'UNUSED_IMPORT' not in disabled_ids:
+            used_names_str = set(used_names)
+            for name, line_no in imported_names:
+                if name not in used_names_str and name not in ['os', 'sys', 'json', 'ast', 're']:
+                    snippet = lines[line_no-1] if line_no <= len(lines) else ""
+                    violations.append({"file": file_path, "type": "Maintainability", "reason": f"Import '{name}' might be unused (AST)", "weight": -0.5, "rule_id": "UNUSED_IMPORT", "line": line_no, "snippet": snippet})
         
         return violations
+
+def detect_circular_dependencies(file_list, rules):
+    ast_cfg = rules.get('ast_rules', {})
+    circ_rule = ast_cfg.get('circular_dependency', {})
+    disabled_ids = rules.get('disabled_ids', [])
+    
+    if not circ_rule or 'CIRCULAR_DEPENDENCY' in disabled_ids:
+        return []
+    
+    imports_map = {}
+    file_to_mod = {}
+    mod_to_file = {}
+    
+    for f in file_list:
+        if not f.endswith('.py'): continue
+        mod_name = os.path.splitext(os.path.basename(f))[0]
+        file_to_mod[f] = mod_name
+        mod_to_file[mod_name] = f
+        
+    for f in file_list:
+        if not f.endswith('.py'): continue
+        try:
+            with open(f, 'r', encoding='utf-8') as file:
+                tree = ast.parse(file.read())
+            deps = set()
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    for n in node.names: deps.add(n.name.split('.')[0])
+                elif isinstance(node, ast.ImportFrom):
+                    if node.module: deps.add(node.module.split('.')[0])
+            internal_deps = deps.intersection(set(mod_to_file.keys()))
+            imports_map[file_to_mod[f]] = list(internal_deps)
+        except Exception:
+            pass
+            
+    violations = []
+    visited_fully = set()
+    
+    def dfs(node, path):
+        if node in path:
+            cycle = path[path.index(node):]
+            if len(cycle) > 1:
+                cycle_str = " -> ".join(cycle + [node])
+                v = {
+                    "file": mod_to_file[node],
+                    "type": circ_rule.get('pillar', 'Architecture'),
+                    "reason": f"{circ_rule.get('reason')} ({cycle_str})",
+                    "weight": circ_rule.get('weight', -10),
+                    "rule_id": circ_rule.get('id', 'CIRCULAR_DEPENDENCY'),
+                    "line": 1,
+                    "snippet": cycle_str
+                }
+                if not any(existing["snippet"] == cycle_str for existing in violations):
+                    violations.append(v)
+            return
+            
+        for neighbor in imports_map.get(node, []):
+            if neighbor not in visited_fully:
+                dfs(neighbor, path + [node])
+                
+        visited_fully.add(node)
+
+    for mod in imports_map:
+        if mod not in visited_fully:
+            dfs(mod, [])
+            
+    return violations
 
 def double_check_modular(file_list_json, rules_json):
     with open(rules_json, 'r', encoding='utf-8') as f:
@@ -135,6 +306,15 @@ def double_check_modular(file_list_json, rules_json):
         file_list = json.load(f)
         
     violations = []
+    
+    # 1. Project-level Architecture Scans
+    try:
+        circ_violations = detect_circular_dependencies(file_list, rules)
+        violations.extend(circ_violations)
+    except Exception as e:
+        print(f"Error checking circular dependencies: {e}")
+        
+    # 2. File-level Scans
     scanners = [RegexScanner(), PythonASTScanner()]
     
     id_counter = 0
@@ -182,16 +362,19 @@ class VerificationStep:
     def load_rules(self):
         """Loads and merges default rules with custom rules."""
         with open(self.config_rules_path, 'r', encoding='utf-8') as f:
-            default_rules = json.load(f)
+            merged = json.load(f) # Start with default rules as merged
             
+        disabled_ids = []
+        if self.custom_rules:
+            disabled_ids = self.custom_rules.get('disabled_core_rules', [])
+            
+        merged['disabled_ids'] = disabled_ids # Pass disabled_ids to the merged rules for scanners
+
         if not self.custom_rules:
-            return default_rules
-            
+            return merged # Return default rules if no custom rules
+
         # Merge logic
-        merged = default_rules.copy()
-        
         # Lọc bỏ các luật mặc định bị người dùng cấm (Toggled off)
-        disabled_ids = self.custom_rules.get('disabled_core_rules', [])
         if disabled_ids:
             if 'regex_rules' in merged:
                 merged['regex_rules'] = [r for r in merged['regex_rules'] if r.get('id') not in disabled_ids]
@@ -272,6 +455,7 @@ class VerificationStep:
         script_code = inspect.getsource(BaseScanner) + "\n"
         script_code += inspect.getsource(RegexScanner) + "\n"
         script_code += inspect.getsource(PythonASTScanner) + "\n"
+        script_code += inspect.getsource(detect_circular_dependencies) + "\n"
         script_code += inspect.getsource(double_check_modular) + "\n"
         
         final_script = f"""

@@ -12,7 +12,7 @@ Sử dụng để yêu cầu server clone một Git repository từ xa và tiế
   "repo_url": "https://github.com/user/project",
   "username": "Optional",
   "token": "Optional GitHub PAT",
-  "id": "Optional Pre-configured Repository ID"
+  "id": "Optional Pre-configured Repository ID (Will be used to lookup Custom Rules in DB)"
 }
 ```
 

@@ -33,13 +33,12 @@ RULES_METADATA = {
     "SQL_INJECTION": {"category": "Security", "severity": "Critical", "debt": 45},
     "N_PLUS_ONE": {"category": "Performance", "severity": "Major", "debt": 30},
     "ITERROWS_USE": {"category": "Performance", "severity": "Minor", "debt": 15},
-    "HARDCODED_SECRET": {"category": "Security", "severity": "Blocker", "debt": 10},
-    "SQL_INJECTION": {"category": "Security", "severity": "Blocker", "debt": 180},
     "UNRESTRICTED_CORS": {"category": "Security", "severity": "Major", "debt": 20},
     "UNUSED_IMPORT": {"category": "Maintainability", "severity": "Minor", "debt": 5},
     "PRINT_STATEMENT": {"category": "Maintainability", "severity": "Info", "debt": 2},
     "MISSING_TESTS": {"category": "Reliability", "severity": "Critical", "debt": 45},
     "SELECT_STAR": {"category": "Performance", "severity": "Minor", "debt": 10},
+    "CIRCULAR_DEPENDENCY": {"category": "Architecture", "severity": "Blocker", "debt": 60},
 }
 
 # SonarQube Configuration
@@ -56,8 +55,6 @@ SONAR_CONFIG = {
 # Legacy Severity Weights (kept for backward compatibility)
 SEVERITY = {k: -float(v['debt'])/10 for k, v in RULES_METADATA.items()}
 
-import os
-
 # Hardcoded Repositories for Quick Audit
 BITBUCKET_USER = os.getenv("BITBUCKET_USERNAME", "")
 BITBUCKET_PASS = os.getenv("BITBUCKET_TOKEN", "")
@@ -68,27 +65,31 @@ CONFIGURED_REPOSITORIES = [
         "name": "FastAPI (Public)",
         "url": "https://github.com/fastapi/fastapi.git",
         "username": "",
-        "token": ""
+        "token": "",
+        "branch": "master"
     },
     {
         "id": "liftsoftvn/ana-api",
         "name": "ANA API",
         "url": "https://bitbucket.org/liftsoftvn/lpp_grm_ana_api.git",
         "username": BITBUCKET_USER,
-        "token": BITBUCKET_PASS
+        "token": BITBUCKET_PASS,
+        "branch": "master"
     },
     {
         "id": "liftsoftvn/grm-app",
         "name": "GRM APP",
         "url": "https://bitbucket.org/liftsoftvn/lpp_grm_app.git",
         "username": BITBUCKET_USER,
-        "token": BITBUCKET_PASS
+        "token": BITBUCKET_PASS,
+        "branch": "master"
     },
     {
         "id": "liftsoftvn/sp-integrate",
         "name": "SP Integrate API",
         "url": "https://bitbucket.org/liftsoftvn/sp-integrate.git",
         "username": BITBUCKET_USER,
-        "token": BITBUCKET_PASS
+        "token": BITBUCKET_PASS,
+        "branch": "master"
     },
 ]

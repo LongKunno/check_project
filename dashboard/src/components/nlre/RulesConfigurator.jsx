@@ -250,9 +250,9 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
     if (isCustomRule) {
       if (!compiledJson) return;
       const updatedJson = JSON.parse(JSON.stringify(compiledJson));
-      if (customRuleType === 'regex' && updatedJson.regex_rules) {
+      if (customRuleType === 'regex' && Array.isArray(updatedJson.regex_rules)) {
         updatedJson.regex_rules[customRuleIdx].weight = val;
-      } else if (customRuleType === 'ast' && updatedJson.ast_rules && updatedJson.ast_rules.dangerous_functions) {
+      } else if (customRuleType === 'ast' && updatedJson.ast_rules && Array.isArray(updatedJson.ast_rules.dangerous_functions)) {
         updatedJson.ast_rules.dangerous_functions[customRuleIdx].weight = val;
       }
       setCompiledJson(updatedJson);
@@ -291,9 +291,9 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
 
   const handleDeleteCustomRule = async (type, index) => {
     const newJson = JSON.parse(JSON.stringify(compiledJson));
-    if (type === 'regex') {
+    if (type === 'regex' && Array.isArray(newJson.regex_rules)) {
         newJson.regex_rules.splice(index, 1);
-    } else if (type === 'ast') {
+    } else if (type === 'ast' && newJson.ast_rules && Array.isArray(newJson.ast_rules.dangerous_functions)) {
         newJson.ast_rules.dangerous_functions.splice(index, 1);
     }
     
@@ -426,14 +426,14 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
             <div className="flex flex-col gap-3 pb-8">
                {activeTab === 'custom' && (
                    <div className="mb-2">
-                       {(!compiledJson || (Object.keys(compiledJson.ast_rules || {}).length === 0 && (compiledJson.regex_rules || []).length === 0)) && (
+                       {(!compiledJson || (!Array.isArray(compiledJson?.ast_rules?.dangerous_functions) || compiledJson.ast_rules.dangerous_functions.length === 0) && (!Array.isArray(compiledJson?.regex_rules) || compiledJson.regex_rules.length === 0)) && (
                            <div className="text-xs text-slate-500 italic bg-black/20 p-4 rounded-xl border border-white/5 text-center flex flex-col items-center justify-center gap-2 h-32">
                                <Wand2 size={24} className="opacity-50" />
                                Chưa có luật tùy chỉnh nào được cấu hình.<br/>Hãy tạo ở Wizard bên cạnh.
                            </div>
                        )}
                        
-                       {compiledJson && compiledJson.regex_rules && compiledJson.regex_rules.map((r, idx) => (
+                       {compiledJson && Array.isArray(compiledJson.regex_rules) && compiledJson.regex_rules.map((r, idx) => (
                            <div key={`regex-${idx}`} className="bg-violet-900/10 border border-violet-500/20 rounded-xl p-4 flex flex-col gap-2 mb-2 relative group transition-all hover:bg-violet-900/20">
                                <div className="flex justify-between items-start">
                                    <span className="font-bold text-violet-300 text-sm">REGEX: {r.id}</span>
@@ -461,7 +461,7 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
                            </div>
                        ))}
                        
-                       {compiledJson && compiledJson.ast_rules && compiledJson.ast_rules.dangerous_functions && compiledJson.ast_rules.dangerous_functions.map((df, idx) => (
+                       {compiledJson && compiledJson.ast_rules && Array.isArray(compiledJson.ast_rules.dangerous_functions) && compiledJson.ast_rules.dangerous_functions.map((df, idx) => (
                            <div key={`ast-${idx}`} className="bg-violet-900/10 border border-violet-500/20 rounded-xl p-4 flex flex-col gap-2 mb-2 relative group transition-all hover:bg-violet-900/20">
                                <div className="flex justify-between items-start">
                                    <span className="font-bold text-violet-300 text-sm">AST FORBIDDEN: {df.name}</span>

@@ -22,7 +22,7 @@ def _patched_multipart_init(self, *args, **kwargs):
 
 starlette.formparsers.MultiPartParser.__init__ = _patched_multipart_init
 
-from fastapi import FastAPI, HTTPException, Query, UploadFile, File, Request
+from fastapi import FastAPI, HTTPException, Query, UploadFile, File, Request, BackgroundTasks
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import shutil
@@ -38,7 +38,7 @@ from src.engine.scoring import ScoringEngine
 from src.engine.database import AuditDatabase
 from fastapi.exceptions import RequestValidationError
 from src.api.git_helper import GitHelper
-from src.api.audit_state import AuditState
+from src.api.audit_state import AuditState, JobManager
 import logging
 import asyncio
 import sys
@@ -63,14 +63,17 @@ audit_log_handler.setFormatter(logging.Formatter('%(levelname)s:%(name)s:%(messa
 logging.getLogger().addHandler(audit_log_handler)
 logging.getLogger("uvicorn.access").addHandler(audit_log_handler)
 
-def run_auditor_with_capture(target_path, target_id=None):
+def run_auditor_with_capture(target_path, target_id=None, job_id=None):
     """Wrapper function to capture all sys.stdout during an audit run and send to Frontend."""
     class AuditLogStream(io.StringIO):
         def write(self, s):
             sys.__stdout__.write(s)
             sys.__stdout__.flush()
             if s.strip('\n'):
-                AuditState.log(s.strip('\n'))
+                if job_id:
+                    JobManager.log(job_id, s.strip('\n'))
+                else:
+                    AuditState.log(s.strip('\n'))
         def flush(self):
             sys.__stdout__.flush()
             
@@ -175,10 +178,9 @@ async def cancel_audit():
     return {"status": "success", "message": "Đã gửi tín hiệu hủy quét mã nguồn."}
 
 @app.post("/audit/process")
-async def upload_and_audit(files: List[UploadFile] = File(...)):
+async def upload_and_audit(background_tasks: BackgroundTasks, files: List[UploadFile] = File(...)):
     """
-    Nhận các file được upload từ trình duyệt (webkitdirectory),
-    lưu vào thư mục tạm, chạy kiểm toán, rồi dọn dẹp.
+    Nhận các file được upload tự động, lưu vào thư mục tạm, và giao Job cho Background xử lý.
     """
     if not files:
         raise HTTPException(status_code=400, detail="Không có file nào được upload.")
@@ -230,46 +232,54 @@ async def upload_and_audit(files: List[UploadFile] = File(...)):
         target_path = os.path.join(temp_dir, project_name)
         if not os.path.isdir(target_path):
             target_path = temp_dir  # fallback nếu không có thư mục gốc
+            
+        job_id = JobManager.create_job(project_name)
 
-        # Chạy kiểm toán bằng thread nền để không block async event loop
-        auditor = await asyncio.to_thread(run_auditor_with_capture, target_path, project_name)
+        def background_audit(job_id, target_path, project_name, temp_dir):
+            JobManager.update_job(job_id, "RUNNING", "Bắt đầu kiểm toán mã nguồn...")
+            try:
+                auditor = run_auditor_with_capture(target_path, project_name, job_id)
+        
+                total_loc = auditor.discovery_data['total_loc']
+                final_score = ScoringEngine.calculate_final_score_from_features(auditor.feature_results)
+                rating = ScoringEngine.get_rating(final_score)
+        
+                result = {
+                    "status": "success",
+                    "target": project_name,
+                    "project_name": project_name,
+                    "metrics": {
+                        "total_loc": total_loc,
+                        "total_files": auditor.discovery_data['total_files']
+                    },
+                    "scores": {
+                        "final": final_score,
+                        "rating": rating,
+                        "project_pillars": auditor.project_pillars,
+                        "features": auditor.feature_results,
+                        "members": getattr(auditor, 'member_results', {})
+                    },
+                    "violations": auditor.violations
+                }
+        
+                AuditDatabase.save_audit(
+                    target=project_name,
+                    score=final_score,
+                    rating=rating,
+                    loc=total_loc,
+                    violations_count=len(auditor.violations),
+                    pillar_scores=auditor.project_pillars,
+                    full_json=result
+                )
+                JobManager.update_job(job_id, "COMPLETED", result=result)
+            except Exception as e:
+                JobManager.update_job(job_id, "FAILED", message=str(e))
+            finally:
+                if os.path.exists(temp_dir):
+                    shutil.rmtree(temp_dir)
 
-        total_loc = auditor.discovery_data['total_loc']
-        final_score = ScoringEngine.calculate_final_score_from_features(auditor.feature_results)
-        rating = ScoringEngine.get_rating(final_score)
-
-        # Chuẩn bị kết quả trả về
-        result = {
-            "status": "success",
-            "target": project_name, # Trả về project_name để UI gọi lấy history theo name
-            "project_name": project_name,
-            "metrics": {
-                "total_loc": total_loc,
-                "total_files": auditor.discovery_data['total_files']
-            },
-            "scores": {
-                "final": final_score,
-                "rating": rating,
-                "project_pillars": auditor.project_pillars,
-                "features": auditor.feature_results,
-                "members": getattr(auditor, 'member_results', {})
-            },
-            "violations": auditor.violations
-        }
-
-        # Lưu lịch sử Audit - Sử dụng project_name thay vì đường dẫn tạm để history trùng khớp
-        # Lưu kèm full_json để có thể xem lại chi tiết
-        AuditDatabase.save_audit(
-            target=project_name,
-            score=final_score,
-            rating=rating,
-            loc=total_loc,
-            violations_count=len(auditor.violations),
-            pillar_scores=auditor.project_pillars,
-            full_json=result
-        )
-
-        return result
+        background_tasks.add_task(background_audit, job_id, target_path, project_name, temp_dir)
+        return {"status": "started", "job_id": job_id, "message": "Tiến trình kiểm toán đã được khởi tạo thành công."}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {str(e)}")
@@ -355,15 +365,17 @@ class RepositoryAuditRequest(BaseModel):
     repo_url: Optional[str] = None
     username: Optional[str] = None
     token: Optional[str] = None
+    branch: Optional[str] = None
 
 @app.post("/audit/repository")
-async def audit_repository(request: RepositoryAuditRequest):
+async def audit_repository(request: RepositoryAuditRequest, background_tasks: BackgroundTasks):
     """
-    Nhận id (repo cấu hình sẵn) hoặc URL Repository, clone về thư mục tạm, chạy kiểm toán rồi dọn dẹp.
+    Giao việc (Background Task): Clone Repository và chạy kiểm toán.
     """
     repo_url = request.repo_url
     username = request.username
     token = request.token
+    branch = request.branch
 
     if AuditState.is_running:
         raise HTTPException(status_code=409, detail="Một phiên kiểm toán đang chạy. Vui lòng thử lại sau.")
@@ -376,67 +388,113 @@ async def audit_repository(request: RepositoryAuditRequest):
         repo_url = config_repo["url"]
         username = config_repo["username"]
         token = config_repo["token"]
+        branch = request.branch or config_repo.get("branch")
         
     if not repo_url:
         raise HTTPException(status_code=400, detail="Thiếu cấu hình ID dự án hoặc URL Repository.")
 
     temp_dir = tempfile.mkdtemp(prefix="git_audit_")
+    job_id = JobManager.create_job(repo_url)
     
-    try:
-        # Clone repo
-        target_path = os.path.join(temp_dir, "repo")
-        GitHelper.clone_repository(
-            repo_url=repo_url, 
-            dest_dir=target_path, 
-            username=username, 
-            token=token
-        )
+    def background_git_audit(job_id, repo_url, username, token, branch, temp_dir, target_id):
+        JobManager.update_job(job_id, "RUNNING", "Đang tải mã nguồn từ Git...")
+        try:
+            target_path = os.path.join(temp_dir, "repo")
+            GitHelper.clone_repository(
+                repo_url=repo_url, 
+                dest_dir=target_path, 
+                username=username, 
+                token=token,
+                branch=branch
+            )
+            
+            JobManager.update_job(job_id, "RUNNING", "Đang phân tích tĩnh và áp dụng AI...")
+            auditor = run_auditor_with_capture(target_path, target_id, job_id)
+    
+            total_loc = auditor.discovery_data['total_loc']
+            final_score = ScoringEngine.calculate_final_score_from_features(auditor.feature_results)
+            rating = ScoringEngine.get_rating(final_score)
+    
+            result = {
+                "status": "success",
+                "target": repo_url,
+                "project_name": repo_url.split('/')[-1].replace('.git', ''),
+                "metrics": {
+                    "total_loc": total_loc,
+                    "total_files": auditor.discovery_data['total_files']
+                },
+                "scores": {
+                    "final": final_score,
+                    "rating": rating,
+                    "project_pillars": auditor.project_pillars,
+                    "features": auditor.feature_results,
+                    "members": getattr(auditor, 'member_results', {})
+                },
+                "violations": auditor.violations
+            }
+    
+            AuditDatabase.save_audit(
+                target=repo_url,
+                score=final_score,
+                rating=rating,
+                loc=total_loc,
+                violations_count=len(auditor.violations),
+                pillar_scores=auditor.project_pillars,
+                full_json=result
+            )
+            JobManager.update_job(job_id, "COMPLETED", result=result)
+            
+        except Exception as e:
+            JobManager.update_job(job_id, "FAILED", message=str(e))
+        finally:
+            if os.path.exists(temp_dir):
+                shutil.rmtree(temp_dir)
+
+    background_tasks.add_task(background_git_audit, job_id, repo_url, username, token, branch, temp_dir, request.id or repo_url)
+    return {"status": "started", "job_id": job_id, "message": "Quá trình lấy mã nguồn từ Git và kiểm toán đã bắt đầu ngầm."}
+
+@app.get("/audit/jobs/{job_id}")
+async def get_job_status(job_id: str):
+    """Lấy trạng thái tiến trình Audit (Dùng cho Long-Polling Frontend)"""
+    job = JobManager.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Không tìm thấy Job ID trong hệ thống (Đã quá hạn hoặc không tồn tại).")
+    return job
+
+@app.get("/audit/jobs/{job_id}/logs")
+async def stream_job_logs(job_id: str, request: Request):
+    """Event-Stream để đẩy log thời gian thực riêng biệt cho từng Job."""
+    job = JobManager.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Không tìm thấy Job ID.")
         
-        # Chạy kiểm toán
-        AuditState.reset()
-        auditor = await asyncio.to_thread(run_auditor_with_capture, target_path, repo_url)
+    async def log_generator():
+        last_idx = 0
+        while True:
+            if await request.is_disconnected():
+                break
+                
+            job_status = JobManager.get_job(job_id)
+            if not job_status:
+                break
+                
+            logs = JobManager.get_logs(job_id)
+            current_len = len(logs)
+            if current_len > last_idx:
+                new_logs = logs[last_idx:current_len]
+                last_idx = current_len
+                for line in new_logs:
+                    yield f"data: {line}\n\n"
+            
+            # Nếu Job đã Xong hoặc Fail, đóng Stream
+            if job_status.status in ["COMPLETED", "FAILED"]:
+                await asyncio.sleep(1) # Chờ 1 nhịp để tránh sót log cuối
+                yield f"data: [END_OF_STREAM]\n\n"
+                break
+                
+            await asyncio.sleep(0.5)
 
-        total_loc = auditor.discovery_data['total_loc']
-        final_score = ScoringEngine.calculate_final_score_from_features(auditor.feature_results)
-        rating = ScoringEngine.get_rating(final_score)
-
-        # Chuẩn bị kết quả trả về
-        result = {
-            "status": "success",
-            "target": repo_url,
-            "project_name": repo_url.split('/')[-1].replace('.git', ''),
-            "metrics": {
-                "total_loc": total_loc,
-                "total_files": auditor.discovery_data['total_files']
-            },
-            "scores": {
-                "final": final_score,
-                "rating": rating,
-                "project_pillars": auditor.project_pillars,
-                "features": auditor.feature_results,
-                "members": getattr(auditor, 'member_results', {})
-            },
-            "violations": auditor.violations
-        }
-
-        # Lưu lịch sử Audit
-        AuditDatabase.save_audit(
-            target=repo_url,
-            score=final_score,
-            rating=rating,
-            loc=total_loc,
-            violations_count=len(auditor.violations),
-            pillar_scores=auditor.project_pillars,
-            full_json=result
-        )
-
-        return result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {str(e)}")
-    finally:
-        # Luôn dọn dẹp thư mục tạm
-        if os.path.exists(temp_dir):
-            shutil.rmtree(temp_dir)
+    return StreamingResponse(log_generator(), media_type="text/event-stream")
 
 class SaveRulesRequest(BaseModel):
     target: str

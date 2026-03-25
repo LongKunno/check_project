@@ -33,21 +33,37 @@ def run_precheck():
     use_source_code = os.path.isdir('source_code')
     base_scan_path = 'source_code' if use_source_code else '.'
     
-    for root, dirs, files in os.walk(base_scan_path):
-        # Lọc thư mục
+    app_indicators = ['__init__.py', 'models.py', 'views.py', 'apps.py']
+    
+    for root, dirs, files in os.walk(base_scan_path, followlinks=True):
+        # Lọc thư mục rác ở mọi cấp độ
         dirs[:] = [d for d in dirs if d not in exclude_dirs]
         
+        # BẮT BUỘC Sắp xếp dirs và files theo Alphabet (Deterministic Order)
+        # Điều này khóa cứng thứ tự file được ném vào Prompt AI, ngăn AI bị bối rối và cho ra điểm số chênh lệch
+        dirs.sort()
+        files.sort()
+        
+        # Xác định xem root hiện tại hoặc cha của nó có phải là App không
+        rel_to_base = os.path.relpath(root, base_scan_path)
+        parts = rel_to_base.split(os.sep)
+        
+        current_feature = None
+        if rel_to_base == '.':
+            current_feature = "source_code_root" if use_source_code else "root"
+        else:
+            # Lấy folder cấp 1 làm mặc định nếu chưa tìm thấy app
+            current_feature = parts[0]
+            
         for file in files:
             if any(file.endswith(ext) for ext in scan_ext) and file != 'ai_precheck.py':
                 path = os.path.join(root, file)
                 
-                # Tính toán feature_name
-                rel_path = os.path.relpath(path, base_scan_path)
-                parts = rel_path.split(os.sep)
-                if len(parts) > 1:
-                    feature_name = parts[0]
-                else:
-                    feature_name = "source_code_root" if use_source_code else "root"
+                # Logic gán Feature chi tiết hơn:
+                # Nếu file nằm trong subfolder của 1 App, nó vẫn thuộc App đó.
+                # Ở đây ta giữ đơn giản: Thư mục con trực tiếp của base_scan_path là 1 Feature.
+                # Nhưng nhờ followlinks=True, các folder ảo sẽ được quét.
+                feature_name = current_feature
 
                 if feature_name not in results["features"]:
                     results["features"][feature_name] = {{"loc": 0, "files_count": 0}}

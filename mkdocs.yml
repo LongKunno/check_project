@@ -61,6 +61,7 @@ nav:
     
   - API Specifications:
     - Real-time Stream: api_specs/stream.md
+    - Background Jobs (V6): api_specs/audit_jobs.md
     - Upload Project: api_specs/upload.md
     - Health Checks: api_specs/ai_health.md
     - Fix Suggestion: api_specs/fix_suggestion.md

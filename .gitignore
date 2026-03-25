@@ -48,3 +48,4 @@ reports/ai_audit_report.json
 ai_precheck.py
 ai_double_check.py
 dashboard/dist/
+auditor_v2.db

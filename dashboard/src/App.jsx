@@ -43,6 +43,7 @@ import {
 } from 'chart.js';
 import { Radar, Line, Doughnut, Bar } from 'react-chartjs-2';
 import RulesConfigurator from './components/nlre/RulesConfigurator';
+import { useAuditJob } from './hooks/useAuditJob';
 
 ChartJS.register(
   RadialLinearScale,
@@ -59,17 +60,21 @@ ChartJS.register(
 
 // --- COMPONENT: TerminalLogs ---
 // Tách biệt Terminal để tránh re-render toàn bộ App mỗi khi có log mới từ SSE
-const TerminalLogs = React.memo(({ isAuditing }) => {
+const TerminalLogs = React.memo(({ isAuditing, jobId }) => {
   const [auditLogs, setAuditLogs] = useState([]);
   const logsEndRef = useRef(null);
   const terminalRef = useRef(null);
 
   useEffect(() => {
     let eventSource;
-    if (isAuditing) {
+    if (isAuditing && jobId) {
       setAuditLogs([]);
-      eventSource = new EventSource('/api/audit/logs');
+      eventSource = new EventSource(`/api/audit/jobs/${jobId}/logs`);
       eventSource.onmessage = (e) => {
+        if (e.data === '[END_OF_STREAM]') {
+            eventSource.close();
+            return;
+        }
         setAuditLogs(prev => {
            const newLogs = [...prev, e.data];
            // Chỉ giữ lại tối đa 300 dòng cuối để tránh crash trình duyệt
@@ -83,7 +88,7 @@ const TerminalLogs = React.memo(({ isAuditing }) => {
     return () => {
       if (eventSource) eventSource.close();
     };
-  }, [isAuditing]);
+  }, [isAuditing, jobId]);
 
   useEffect(() => {
     logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -270,13 +275,39 @@ function App() {
   const [repoUsername, setRepoUsername] = useState('');
   const [repoToken, setRepoToken] = useState('');
   
+  // TÍCH HỢP HOOK KIỂM TOÁN V6 (BACKGROUND JOBS)
+  const { 
+      status: auditStatus, 
+      error: auditError, 
+      result: auditResult, 
+      jobId, 
+      message: auditMessage, 
+      startAudit, 
+      stopAudit 
+  } = useAuditJob();
+  
+  const isAuditing = auditStatus === 'starting' || auditStatus === 'running';
+
   const [folderName, setFolderName] = useState('');
-  const [isAuditing, setIsAuditing] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [visibleLimit, setVisibleLimit] = useState(50);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
+  
+  // Đồng bộ kết quả (result) và lỗi (error) từ Hook sang State nội bộ do History cần dùng chung biến data
+  useEffect(() => {
+     if (auditResult) {
+         setData(auditResult);
+     }
+  }, [auditResult]);
+
+  useEffect(() => {
+     if (auditError) {
+         setError(auditError);
+     }
+  }, [auditError]);
+
   const [isDragOver, setIsDragOver] = useState(false);
   const [fileCount, setFileCount] = useState(0);
   const [preparingProgress, setPreparingProgress] = useState(0);
@@ -434,28 +465,11 @@ function App() {
         setError('Vui lòng chọn một dự án từ danh sách.');
         return;
       }
-      setIsAuditing(true);
       setError(null);
       setData(null);
-      try {
-        const response = await fetch('/api/audit/repository', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: selectedRepoId
-          })
-        });
-        if (!response.ok) {
-          const errData = await response.json();
-          throw new Error(errData.detail || `Server error: ${response.status}`);
-        }
-        const result = await response.json();
-        setData(result);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setIsAuditing(false);
-      }
+      
+      // Khởi động bằng Hook
+      startAudit({ id: selectedRepoId }, false);
       return;
     }
 
@@ -465,7 +479,6 @@ function App() {
       return;
     }
     
-    setIsAuditing(true);
     setIsPreparing(true);
     setError(null);
     setData(null);
@@ -477,15 +490,13 @@ function App() {
       const total = files.length;
       const batchSize = 5000;
       
-      // Xử lý theo đợt để không treo Main Thread
+      // Xử lý theo đợt để không treo Main Thread (Hàng chục ngàn file)
       for (let i = 0; i < total; i += batchSize) {
-        // Sử dụng Array.from chỉ cho phần chunk để tránh tạo mảng khổng lồ cùng lúc
         for (let j = i; j < Math.min(i + batchSize, total); j++) {
           const file = files[j];
           formData.append('files', file, file.webkitRelativePath || file.name);
         }
         
-        // Cập nhật tiến trình chuẩn bị
         const currentCount = Math.min(i + batchSize, total);
         const progress = Math.min(Math.round((currentCount / total) * 100), 100);
         setPreparingProgress(progress);
@@ -495,35 +506,16 @@ function App() {
       }
 
       setIsPreparing(false);
-      setUploadProgress(10); // Bắt đầu upload
+      setUploadProgress(100); // Ảo upload progress xí cho vui vì background lo
       
-      console.log("Bắt đầu Audit với fetch tới /api/audit/process...");
-      const response = await fetch('/api/audit/process', {
-        method: 'POST',
-        body: formData
-      });
-
-      console.log("Phản hồi từ server:", response.status);
-      if (!response.ok) {
-        const errData = await response.json();
-        throw new Error(errData.detail || `Server error: ${response.status}`);
-      }
-
-      setUploadProgress(100);
-      const result = await response.json();
-      setData(result);
+      startAudit(formData, true);
+      
     } catch (err) {
-      console.error("CHI TIẾT LỖI AUDIT:", err);
-      // Xử lý lỗi đặc thù cho Brave Shields/Network
-      if (err.message === 'Failed to fetch') {
-         setError('Lỗi kết nối: Brave đang chặn yêu cầu. Thử: F12 -> Console để xem chi tiết hoặc Tắt Shields hoàn toàn.');
-      } else {
-         setError(err.message === 'Kiểm toán đã bị hủy bởi người dùng.' ? 'Đã hủy kiểm toán.' : err.message);
-      }
+      console.error("CHI TIẾT LỖI TẠO UPLOAD:", err);
+      setError(err.message);
     } finally {
-      setIsAuditing(false);
-      setIsCancelling(false);
-      setUploadProgress(0);
+      setIsPreparing(false);
+      setTimeout(() => setUploadProgress(0), 1000);
     }
   };
 
@@ -899,7 +891,7 @@ function App() {
       ) : (
         <>
       {/* Terminal Mini (Chỉ hiện khi đang Quét) */}
-      <TerminalLogs isAuditing={isAuditing} />
+      <TerminalLogs isAuditing={isAuditing} jobId={jobId} />
 
       {/* Thông báo lỗi */}
       {error && (
@@ -1012,7 +1004,7 @@ function App() {
                   <span style={{ fontSize: '1.5rem', color: '#64748b', marginLeft: '0.75rem', fontWeight: 700 }}>/ 100</span>
                 </div>
                 
-                {reportView === 'project' && (
+                {reportView === 'project' && data?.scores?.rating && (
                   <div style={{ marginTop: '1.25rem', fontWeight: 800, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '1rem' }}>
                     XẾP HẠNG: <span className="status-badge" style={{ fontSize: '1.25rem', padding: '0.6rem 1.25rem', background: 'rgba(255, 255, 255, 0.1)', border: '1px solid rgba(255, 255, 255, 0.2)', borderRadius: '14px', color: '#f8fafc' }}>{data.scores.rating}</span>
                   </div>
@@ -1051,17 +1043,19 @@ function App() {
 
               <div className="hero-right">
                 <div style={{ width: '100%', height: '100%', maxWidth: '380px', filter: 'drop-shadow(0 15px 30px rgba(0,0,0,0.06))' }}>
-                  <Radar 
-                    data={memoizedRadarData} 
-                    options={chartOptions} 
-                  />
+                  {memoizedRadarData && (
+                    <Radar 
+                      data={memoizedRadarData} 
+                      options={chartOptions} 
+                    />
+                  )}
                 </div>
               </div>
             </motion.div>
             {/* --- END HERO CARD --- */}
             
             {/* DANH SÁCH TÍNH NĂNG */}
-            {reportView === 'project' && Object.entries(data.scores.features).map(([name, feat]) => (
+            {reportView === 'project' && Object.entries(data?.scores?.features || {}).map(([name, feat]) => (
                 <div 
                     key={name} 
                     className="glass-card" 
@@ -1108,7 +1102,7 @@ function App() {
             ))}
             
             {/* DANH SÁCH THÀNH VIÊN (MEMBER LEADERBOARD) */}
-            {reportView === 'project' && data.scores.members && Object.keys(data.scores.members).length > 0 && (
+            {reportView === 'project' && data?.scores?.members && Object.keys(data.scores.members).length > 0 && (
                 <div 
                     className="glass-card col-span-4" 
                     style={{ 

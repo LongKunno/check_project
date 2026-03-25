@@ -125,6 +125,7 @@ AI cũng có trách nhiệm phát hiện xem một lỗi có vi phạm TRỰC TI
                 response = await self.client.chat.completions.create(
                     model=self.model,
                     messages=messages,
+                    temperature=0.0,
                     response_format={"type": "json_object"} if "gemini" not in self.model.lower() else None
                 )
                 content = response.choices[0].message.content
@@ -182,6 +183,7 @@ Yêu cầu trả về kết quả dưới dạng đối tượng JSON với key 
                 response = await self.client.chat.completions.create(
                     model=self.model,
                     messages=messages,
+                    temperature=0.0,
                     response_format={"type": "json_object"} if "gemini" not in self.model.lower() else None
                 )
                 content = response.choices[0].message.content

@@ -2,16 +2,23 @@
   "regex_rules": [
     {
       "id": "HARDCODED_SECRET",
-      "pattern": "(?i)(password|secret|api_key|token)\\s*[:=]\\s*['\"][^'\"]+['\"]",
+      "pattern": "(?i)(password|secret|api_key|token|auth_key|access_key|private_key|aws_access_key_id|gcp_key|jwt)\\s*[:=]\\s*['\"][A-Za-z0-9\\-_=]{10,}['\"]",
       "pillar": "Security",
-      "reason": "Hardcoded Secret detected",
+      "reason": "Hardcoded Secret/Token/Password detected",
+      "weight": -10.0
+    },
+    {
+      "id": "DJANGO_DEBUG",
+      "pattern": "^\\s*DEBUG\\s*=\\s*True\\s*",
+      "pillar": "Security",
+      "reason": "Django DEBUG = True in source code (Very Dangerous for Production)",
       "weight": -10.0
     },
     {
       "id": "SQL_INJECTION",
-      "pattern": "(?i)(\\.execute\\(.*[f\"'].*\\{.*\\}.*[\"']\\))",
+      "pattern": "(?i)(\\.execute\\(.*[f\"'].*\\{.*\\}.*[\"']\\)|\\.execute\\(.*%s.*\\s*%.*\\))",
       "pillar": "Security",
-      "reason": "Potential SQL Injection (f-string in .execute())",
+      "reason": "Potential SQL Injection (Insecure string interpolation in DB query)",
       "weight": -8.0
     },
     {
@@ -43,13 +50,6 @@
       "weight": -2.0
     },
     {
-      "id": "N_PLUS_ONE",
-      "pattern": "for\\s+.*\\sin\\s+.*:\\s+.*\\.objects\\.get\\(",
-      "pillar": "Performance",
-      "reason": "Potential N+1 Query pattern",
-      "weight": -5.0
-    },
-    {
       "id": "ITERROWS_USE",
       "pattern": "\\.iterrows\\(\\)",
       "pillar": "Performance",
@@ -75,29 +75,66 @@
     "bare_except": {
       "id": "BARE_EXCEPT",
       "pillar": "Reliability",
-      "reason": "Bare except: block detected",
+      "reason": "Bare except: block detected (Catches SystemExit/KeyboardInterrupt)",
       "weight": -2.0
+    },
+    "swallowed_exception": {
+      "id": "SWALLOWED_EXCEPTION",
+      "pillar": "Reliability",
+      "reason": "Swallowed exception (except block has only 'pass')",
+      "weight": -5.0
     },
     "max_function_length": {
       "id": "GOD_OBJECT",
       "pillar": "Maintainability",
       "reason": "Function too long",
-      "limit": 100,
+      "limit": 80,
       "weight": -2.0
     },
     "complexity": {
       "id": "HIGH_COMPLEXITY",
       "pillar": "Performance",
-      "reason": "Cyclomatic Complexity too high",
-      "limit": 10,
+      "reason": "Cyclomatic Complexity too high (Too many nested loops/branches)",
+      "limit": 12,
       "weight": -5.0
+    },
+    "max_parameters": {
+      "id": "TOO_MANY_PARAMS",
+      "pillar": "Maintainability",
+      "reason": "Function has too many parameters (Consider DTO/Dict)",
+      "limit": 7,
+      "weight": -3.0
+    },
+    "n_plus_one_query": {
+      "id": "N_PLUS_ONE",
+      "pillar": "Performance",
+      "reason": "N+1 Query Pattern Detected (DB/API Call inside a loop)",
+      "weight": -5.0
+    },
+    "circular_dependency": {
+      "id": "CIRCULAR_DEPENDENCY",
+      "pillar": "Architecture",
+      "reason": "Circular Import Dependency Detected (A imports B, B imports A)",
+      "weight": -10.0
+    },
+    "missing_timeout": {
+      "id": "NO_TIMEOUT_SET",
+      "pillar": "Reliability",
+      "reason": "External API call without timeout parameter",
+      "weight": -5.0
+    },
+    "missing_with_open": {
+      "id": "MEMORY_LEAK_OPEN",
+      "pillar": "Performance",
+      "reason": "Usage of open() outside a 'with' context manager (Risk of File Handle Leak)",
+      "weight": -4.0
     },
     "dangerous_functions": [
       {
         "id": "DANGEROUS_FUNC",
         "name": "eval",
         "pillar": "Security",
-        "reason": "Dangerous function 'eval' detected",
+        "reason": "Dangerous function 'eval' detected (Arbitary Code Execution)",
         "weight": -8.0
       },
       {
@@ -111,7 +148,7 @@
         "id": "DANGEROUS_FUNC",
         "name": "os.system",
         "pillar": "Security",
-        "reason": "Dangerous function 'os.system' detected",
+        "reason": "Dangerous function 'os.system' detected (OS Command Injection)",
         "weight": -5.0
       },
       {
