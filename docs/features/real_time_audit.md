@@ -6,7 +6,7 @@ Tính năng Real-time Audit cho phép người dùng theo dõi tiến độ và 
 
 Hệ thống sử dụng giao thức **SSE (Server-Sent Events)** để đẩy log từ Server xuống Client một chiều (unidirectional):
 
-1. **Khởi tạo kết nối**: Khi quá trình audit bắt đầu (qua Upload hoặc Git Repository), Frontend kết nối tới endpoint SSE (`/api/audit/logs`) thông qua đối tượng `EventSource`.
+1. **Khởi tạo kết nối**: Khi quá trình audit bắt đầu (qua Remote Git Repository), Frontend kết nối tới endpoint SSE (`/api/audit/logs`) thông qua đối tượng `EventSource`.
 2. **Góp nhặt Log (Log Intercepting)**: Tại `src/api/api_server.py`, một `AuditLogHandler` (custom logging handler) được gắn vào root logger. Handler này bắt toàn bộ output từ hệ thống phân tích và đẩy vào một bộ đệm vòng (ring buffer) `AuditState.logs` (chứa tối đa 500 dòng).
 3. **Streaming Data**: Hàm generator `stream_audit_logs` liên tục quét mảng `AuditState.logs` mỗi 0.5s. Nếu có log mới, nó đóng gói dưới dạng bản tin SSE (`data: <message>\n\n`) và gửi xuống Client.
 4. **Hiển thị**: Client (Dashboard) nhận dữ liệu qua `onmessage` và cập nhật giao diện Termnial UI theo thời gian thực.

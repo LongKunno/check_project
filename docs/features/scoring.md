@@ -26,7 +26,6 @@ Hệ thống tính toán riêng biệt hiệu suất cá nhân của từng thà
 > [!WARNING]
 > **Edge Cases & Gotchas về Member Scoring**
 > Tính năng tính điểm thành viên **bắt buộc** phải đọc dữ liệu từ thư mục `.git` (Git History). 
-> - Nếu sử dụng chức năng Upload Local Folder trên Dashboard, do trình duyệt web bỏ qua thư mục ẩn `.git`, thông tin đánh giá Member sẽ tự động bị rỗng (ẩn form).
 > - Tính năng Remote Repository Clone đã được cấu hình lệnh `--shallow-since=6.months` để chứa đủ thông tin chạy lệnh `git blame`. KHÔNG ĐƯỢC CHỦ ĐỘNG xóa thư mục `.git` này trong script. Thư mục `.git` đã được tự động loại trừ khỏi việc quét file ở `ai_precheck.py` để tối ưu tài nguyên.
 
 ---

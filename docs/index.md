@@ -1,11 +1,11 @@
-# AI Static Analysis - Framework V3
+# AI Static Analysis - Framework V4
 
 Chào mừng bạn đến với hệ thống **AI Static Analysis Documentation**. Dự án này cung cấp một nền tảng phân tích mã nguồn thông minh, tự động đánh giá kiến trúc, bảo mật và chất lượng code.
 
 ## 🚀 Mục tiêu Dự án
 - **Tự động hóa**: Giảm thiểu việc rà soát code thủ công bằng AI.
 - **Tiêu chuẩn hóa**: Áp dụng các quy tắc lập trình nghiêm ngặt cho toàn dự án.
-- **Định lượng**: Chuyển đổi các vi phạm thành điểm số để dễ dàng quản lý chất lượng (Framework V3).
+- **Định lượng**: Chuyển đổi các vi phạm thành điểm số để dễ dàng quản lý chất lượng (Framework V4).
 
 ## 🧩 Cấu trúc Tài liệu
 Hệ thống tài liệu bao gồm các phần chính sau:

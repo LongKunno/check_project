@@ -170,17 +170,100 @@ class VerificationStep:
     Verification Phase (Step 3):
     Performs deep analysis using AST and Regex to confirm violations.
     """
-    def __init__(self, target_dir, file_list):
+    def __init__(self, target_dir, file_list, custom_rules=None):
         self.target_dir = target_dir
         self.file_list = file_list
+        self.custom_rules = custom_rules
         self.verification_script = os.path.join(target_dir, 'ai_double_check.py')
         self.file_list_json = os.path.join(target_dir, 'audit_files.json')
         self.rules_json_path = os.path.join(target_dir, 'audit_rules.json')
         self.config_rules_path = os.path.join(os.path.dirname(__file__), 'rules.json')
 
     def load_rules(self):
+        """Loads and merges default rules with custom rules."""
         with open(self.config_rules_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
+            default_rules = json.load(f)
+            
+        if not self.custom_rules:
+            return default_rules
+            
+        # Merge logic
+        merged = default_rules.copy()
+        
+        # Lọc bỏ các luật mặc định bị người dùng cấm (Toggled off)
+        disabled_ids = self.custom_rules.get('disabled_core_rules', [])
+        if disabled_ids:
+            if 'regex_rules' in merged:
+                merged['regex_rules'] = [r for r in merged['regex_rules'] if r.get('id') not in disabled_ids]
+            if 'ast_rules' in merged:
+                if 'dangerous_functions' in merged['ast_rules']:
+                    merged['ast_rules']['dangerous_functions'] = [r for r in merged['ast_rules']['dangerous_functions'] if r.get('id') not in disabled_ids]
+                for k in list(merged['ast_rules'].keys()):
+                    if k != 'dangerous_functions':
+                        r = merged['ast_rules'][k]
+                        if isinstance(r, dict) and r.get('id') in disabled_ids:
+                            del merged['ast_rules'][k]
+
+        custom = self.custom_rules.get('compiled_json')
+        if custom:
+            # Merge Regex Rules
+            if 'regex_rules' in custom:
+                if isinstance(custom['regex_rules'], list):
+                    merged.setdefault('regex_rules', []).extend(custom['regex_rules'])
+            
+            # Merge AST Rules
+            # AI output format often has ast_rules as a list of rule objects.
+            # Default engine expects a dict with specific keys.
+            if 'ast_rules' in custom:
+                # If AI sent a list of rules like [{"name": "eval", "pillar": "Security", ...}]
+                if isinstance(custom['ast_rules'], list):
+                    # We map these to 'dangerous_functions' for the PythonASTScanner
+                    merged_ast = merged.setdefault('ast_rules', {})
+                    if not isinstance(merged_ast, dict):
+                        merged_ast = {}
+                        merged['ast_rules'] = merged_ast
+                    
+                    merged_df = merged_ast.setdefault('dangerous_functions', [])
+                    for r in custom['ast_rules']:
+                        # Map rule name to 'name' for the scanner
+                        node_name = r.get('name') or r.get('id')
+                        if node_name:
+                            merged_df.append({
+                                "name": node_name,
+                                "pillar": r.get('pillar', 'Maintainability'),
+                                "reason": r.get('reason', 'Custom AI Rule'),
+                                "weight": r.get('weight', -2.0),
+                                "id": r.get('id') or f"CUSTOM_{node_name.upper()}"
+                            })
+                elif isinstance(custom['ast_rules'], dict):
+                    # Deep merge dicts
+                    for k, v in custom['ast_rules'].items():
+                        if isinstance(v, list) and k in merged.get('ast_rules', {}):
+                            merged['ast_rules'][k].extend(v)
+                        else:
+                            merged.setdefault('ast_rules', {})[k] = v
+                        
+        # Apply Custom Weights overrides
+        custom_weights = self.custom_rules.get('custom_weights', {})
+        if custom_weights:
+            if 'regex_rules' in merged:
+                for r in merged['regex_rules']:
+                    r_id = r.get('id')
+                    if r_id and r_id in custom_weights:
+                        r['weight'] = float(custom_weights[r_id])
+            if 'ast_rules' in merged:
+                if 'dangerous_functions' in merged['ast_rules']:
+                    for r in merged['ast_rules']['dangerous_functions']:
+                        r_id = r.get('id')
+                        if r_id and r_id in custom_weights:
+                            r['weight'] = float(custom_weights[r_id])
+                for k, v in merged['ast_rules'].items():
+                    if k != 'dangerous_functions' and isinstance(v, dict):
+                        v_id = v.get('id')
+                        if v_id and v_id in custom_weights:
+                            v['weight'] = float(custom_weights[v_id])
+                            
+        return merged
 
     def generate_verification_script(self):
         # We reuse the logic but wrap it for the subprocess

@@ -9,5 +9,15 @@ Dữ liệu được tổ chức theo mô hình thiết kế phẳng (Flat archi
 Trong môi trường Docker: `/app/auditor_v2.db`
 Trên máy Host: `./auditor_v2.db`
 
+## Các cấu trúc bảng (Schema) mới
+Hệ thống hiện tại lưu trữ 2 bảng chính:
+1. `audit_history`: Lưu trữ lịch sử tất cả các phiên kiểm toán thành công (Bao gồm file diff, logs lỗi).
+2. `project_rules`: Lưu trữ các luật cấu hình được người dùng chỉ định qua tính năng Ngôn ngữ tự nhiên. 
+   - `target_id` (TEXT) - Primary lookup key.
+   - `natural_text` (TEXT) - Yêu cầu bằng ngôn ngữ tự nhiên.
+   - `compiled_json` (TEXT) - Lưu trữ dưới dạng JSON string.
+   - `disabled_core_rules` (TEXT) - JSON Array lưu danh sách ID Core Rule bị tắt.
+   - `custom_weights` (TEXT) - JSON Dictionary lưu trữ trọng số (Weight Override) của từng luật cụ thể.
+
 ---
 *Duy trì bởi Technical Architect.*

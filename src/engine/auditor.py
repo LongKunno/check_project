@@ -19,11 +19,12 @@ except ImportError:
         is_cancelled = False
 
 class CodeAuditor:
-    def __init__(self, target_dir='.'):
+    def __init__(self, target_dir='.', custom_rules=None):
         """
         Khởi tạo Auditor cho một thư mục cụ thể.
         """
         self.target_dir = os.path.abspath(target_dir)
+        self.custom_rules = custom_rules
         self.discovery_data = None
         
         # Đường dẫn xuất báo cáo (luôn nằm trong thư mục 'reports' của project hiện tại)
@@ -36,7 +37,7 @@ class CodeAuditor:
         self.violations = []
         self.violation_counter = 0
 
-    def log_violation(self, pillar, file, reason, weight, snippet="", rule_id="", line=0):
+    def log_violation(self, pillar, file, reason, weight, snippet="", rule_id="", line=0, is_custom=False):
         """Ghi nhận một vi phạm mới và lưu vào danh sách."""
         violation = {
             "id": f"v_{self.violation_counter}",
@@ -46,7 +47,8 @@ class CodeAuditor:
             "weight": weight,
             "snippet": snippet,
             "rule_id": rule_id,
-            "line": line
+            "line": line,
+            "is_custom": is_custom
         }
         self.violation_counter += 1
         self.violations.append(violation)
@@ -85,7 +87,7 @@ class CodeAuditor:
 
         # BƯỚC 2 & 3: SCANNING & VERIFICATION (Quét và Xác thực)
         print("[2-3/5] Bước 2 & 3: Quét và Xác thực lỗi (Scanning & Verification)...")
-        verifier = VerificationStep(self.target_dir, self.discovery_data['files'])
+        verifier = VerificationStep(self.target_dir, self.discovery_data['files'], custom_rules=self.custom_rules)
         automated_violations = verifier.run_verification()
         
         # BƯỚC 3.5: AI HYBRID VALIDATION (Xác thực AI theo Batch)
@@ -135,12 +137,17 @@ class CodeAuditor:
                     ai_reason = res.get("explanation", "")
                     conf = res.get("confidence", 1.0)
                     
+                    # Cho phép AI loại bỏ cả các luật Tùy chỉnh (Custom Rules) bị sai (False Positive)
+                    # vì Static analysis Regex do AI sinh ra rất hay match nhầm context.
+                    is_custom = v.get('rule_id', '').startswith('CUSTOM_') or v.get('rule_id', '').startswith('FORBIDDEN')
+                    
                     if is_fp and conf > 0.7:
-                        print(f"   ✨ AI đã loại bỏ False Positive: {v['reason']} tại {v['file']} (Độ tin cậy: {conf})")
+                        lbl = "Tùy chỉnh (AI-Gen)" if is_custom else "Mặc định (Core)"
+                        print(f"   ✨ AI Gác cổng đã loại bỏ False Positive [{lbl}]: {v['reason']} tại {v['file']} (Độ tin cậy: {conf})")
                         continue
                     
                     final_reason = f"{v['reason']}. AI Note: {ai_reason}" if ai_reason else v['reason']
-                    self.log_violation(v['type'], v['file'], final_reason, v['weight'], snippet=v.get('snippet', ''), rule_id=v.get('rule_id', ''), line=v.get('line', 0))
+                    self.log_violation(v['type'], v['file'], final_reason, v['weight'], snippet=v.get('snippet', ''), rule_id=v.get('rule_id', ''), line=v.get('line', 0), is_custom=is_custom)
 
         # BƯỚC 3.6: AI REASONING AUDIT (Quét sâu)
         print("[3.6/5] Bước 3.6: AI Reasoning Audit (Full Code Coverage)...")
@@ -168,7 +175,7 @@ class CodeAuditor:
             # Deep Audit tốn tài nguyên hơn, stagger 0.2s mỗi chunk
             await asyncio.sleep(idx * 0.2)
             async with sem_deep:
-                return await ai_service.deep_audit_batch(chunk_data)
+                return await ai_service.deep_audit_batch(chunk_data, self.custom_rules)
 
         if deep_chunks:
             print(f"   -> Bắt đầu Deep Audit song song (Async I/O) cho {len(deep_chunks)} nhóm file (Batch size: {deep_batch_size})...")
@@ -209,7 +216,8 @@ class CodeAuditor:
                         rv.get('reason', 'AI Logic Audit'), 
                         weight,
                         rule_id='AI_REASONING',
-                        line=rv.get('line', 0)
+                        line=rv.get('line', 0),
+                        is_custom=rv.get('is_custom', False)
                     )
 
         # BƯỚC 4: AGGREGATION (Tổng hợp điểm số Phân cấp)

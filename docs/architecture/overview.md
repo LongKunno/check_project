@@ -52,7 +52,7 @@ sequenceDiagram
     participant A as AuditState (Singleton)
     participant E as CodeAuditor (Background Thread)
 
-    C->>S: Yêu cầu phân tích mã nguồn (Tải file/Git)
+    C->>S: Yêu cầu phân tích mã nguồn (Remote Git Repository)
     S->>A: `AuditState.reset()`
     S->>E: Khởi chạy quá trình phân tích ở luồng phụ (asyncio.to_thread / run_auditor_with_capture)
     C->>S: GET `/audit/logs` (Khởi tạo SSE EventSource)

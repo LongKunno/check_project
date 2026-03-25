@@ -22,7 +22,7 @@ Server trả về các khối dữ liệu dưới dạng plain text tuân thủ 
 
 **Ví dụ một luồng sự kiện (Event Stream):**
 ```text
-data: INFO:root:Bắt đầu quét thư mục /tmp/audit_upload_xyz
+data: INFO:root:Bắt đầu quét thư mục /tmp/audit_repo_xyz
 
 data: INFO:src.engine.discovery:Tìm thấy 125 file mã nguồn.
 

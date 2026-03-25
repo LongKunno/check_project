@@ -63,7 +63,7 @@ audit_log_handler.setFormatter(logging.Formatter('%(levelname)s:%(name)s:%(messa
 logging.getLogger().addHandler(audit_log_handler)
 logging.getLogger("uvicorn.access").addHandler(audit_log_handler)
 
-def run_auditor_with_capture(target_path):
+def run_auditor_with_capture(target_path, target_id=None):
     """Wrapper function to capture all sys.stdout during an audit run and send to Frontend."""
     class AuditLogStream(io.StringIO):
         def write(self, s):
@@ -79,7 +79,15 @@ def run_auditor_with_capture(target_path):
     AuditState.is_running = True
     try:
         from src.engine.auditor import CodeAuditor
-        auditor = CodeAuditor(target_path)
+        from src.engine.database import AuditDatabase
+        
+        custom_rules = None
+        if target_id:
+            db_rules = AuditDatabase.get_project_rules(target_id)
+            if db_rules:
+                custom_rules = db_rules
+                
+        auditor = CodeAuditor(target_path, custom_rules=custom_rules)
         auditor.run()
         return auditor
     finally:
@@ -224,7 +232,7 @@ async def upload_and_audit(files: List[UploadFile] = File(...)):
             target_path = temp_dir  # fallback nếu không có thư mục gốc
 
         # Chạy kiểm toán bằng thread nền để không block async event loop
-        auditor = await asyncio.to_thread(run_auditor_with_capture, target_path)
+        auditor = await asyncio.to_thread(run_auditor_with_capture, target_path, project_name)
 
         total_loc = auditor.discovery_data['total_loc']
         final_score = ScoringEngine.calculate_final_score_from_features(auditor.feature_results)
@@ -290,7 +298,7 @@ async def run_audit(target: str = Query(".", description="Path to the directory 
         AuditState.reset()
 
         # Chạy kiểm toán
-        auditor = await asyncio.to_thread(run_auditor_with_capture, target_path)
+        auditor = await asyncio.to_thread(run_auditor_with_capture, target_path, target_path)
 
         total_loc = auditor.discovery_data['total_loc']
         final_score = ScoringEngine.calculate_final_score_from_features(auditor.feature_results)
@@ -386,7 +394,7 @@ async def audit_repository(request: RepositoryAuditRequest):
         
         # Chạy kiểm toán
         AuditState.reset()
-        auditor = await asyncio.to_thread(run_auditor_with_capture, target_path)
+        auditor = await asyncio.to_thread(run_auditor_with_capture, target_path, repo_url)
 
         total_loc = auditor.discovery_data['total_loc']
         final_score = ScoringEngine.calculate_final_score_from_features(auditor.feature_results)
@@ -429,6 +437,148 @@ async def audit_repository(request: RepositoryAuditRequest):
         # Luôn dọn dẹp thư mục tạm
         if os.path.exists(temp_dir):
             shutil.rmtree(temp_dir)
+
+class SaveRulesRequest(BaseModel):
+    target: str
+    natural_text: str = ""
+    compiled_json: Optional[dict] = None
+    custom_weights: dict = {}
+
+@app.get("/rules")
+async def get_rules(target: str = Query(..., description="Target ID (project name or repo URL)")):
+    from src.config import RULES_METADATA
+    import json
+    
+    # Đọc cấu hình weight mặc định từ file rules.json
+    default_rules_with_weight = {}
+    for k, v in RULES_METADATA.items():
+        default_rules_with_weight[k] = v.copy()
+        default_rules_with_weight[k]['weight'] = -2.0 # Fallback
+        
+    try:
+        rules_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'engine', 'rules.json')
+        with open(rules_path, 'r', encoding='utf-8') as f:
+            engine_rules = json.load(f)
+            for r in engine_rules.get('regex_rules', []):
+                if r['id'] in default_rules_with_weight:
+                    default_rules_with_weight[r['id']]['weight'] = r.get('weight', -2.0)
+            ast_r = engine_rules.get('ast_rules', {})
+            for r in ast_r.get('dangerous_functions', []):
+                if r['id'] in default_rules_with_weight:
+                    default_rules_with_weight[r['id']]['weight'] = r.get('weight', -2.0)
+            for k, v in ast_r.items():
+                if k != 'dangerous_functions' and isinstance(v, dict):
+                    if v['id'] in default_rules_with_weight:
+                        default_rules_with_weight[v['id']]['weight'] = v.get('weight', -2.0)
+    except Exception:
+        pass
+
+    rules = AuditDatabase.get_project_rules(target)
+    
+    response_data = {
+        "default_rules": default_rules_with_weight
+    }
+    
+    if rules:
+        response_data.update(rules)
+        
+    return {"status": "success", "data": response_data}
+
+@app.post("/rules/save")
+async def save_rules(request: SaveRulesRequest):
+    try:
+        AuditDatabase.save_project_rules(
+            target_id=request.target, 
+            natural_text=request.natural_text, 
+            compiled_json=request.compiled_json
+        )
+        AuditDatabase.save_custom_weights(
+            target_id=request.target,
+            custom_weights=request.custom_weights
+        )
+        return {"status": "success", "message": "Rules saved successfully."}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/rules")
+async def delete_rules(target: str = Query(..., description="Target ID to delete rules for")):
+    try:
+        AuditDatabase.delete_project_rules(target)
+        return {"status": "success", "message": "Rules deleted successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+class ToggleRuleRequest(BaseModel):
+    target: str
+    rule_id: str
+    is_disabled: bool
+
+@app.post("/rules/toggle")
+async def toggle_rule(request: ToggleRuleRequest):
+    try:
+        AuditDatabase.toggle_core_rule(request.target, request.rule_id, request.is_disabled)
+        return {"status": "success", "message": f"Rule {request.rule_id} toggled successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+class CompileRulesRequest(BaseModel):
+    natural_text: str
+
+@app.post("/rules/compile")
+async def compile_rules(request: CompileRulesRequest):
+    from src.engine.natural_rules_compiler import NaturalRulesCompiler
+    compiler = NaturalRulesCompiler()
+    
+    async def log_generator():
+        try:
+            async for chunk in compiler.compile_rules_stream(request.natural_text):
+                yield chunk
+        except Exception as e:
+            yield f"\\n\\n[LỖI]: {str(e)}"
+
+    return StreamingResponse(log_generator(), media_type="text/plain")
+
+class TestRuleRequest(BaseModel):
+    code_snippet: str
+    compiled_json: dict
+
+def _run_scanners_sync(content, rules):
+    from src.engine.verification import RegexScanner, PythonASTScanner
+    import ast
+    file_path = "sandbox.py"
+    lines = content.splitlines()
+    tree = None
+    try:
+        tree = ast.parse(content)
+    except Exception:
+        pass
+        
+    violations = []
+    scanners = [RegexScanner(), PythonASTScanner()]
+    for scanner in scanners:
+        try:
+            results = scanner.scan(file_path, content, lines, tree, rules)
+            violations.extend(results)
+        except Exception:
+            pass
+    return violations
+
+@app.post("/rules/test")
+async def test_rule(request: TestRuleRequest):
+    """API để chạy thử nghiệm Luật trên Sandbox của Dashboard."""
+    try:
+        # Chạy scanner trong ThreadPool để không block Event Loop, ngắt Timeout sau 5s nếu Regex dính ReDoS
+        violations = await asyncio.wait_for(
+            asyncio.to_thread(_run_scanners_sync, request.code_snippet, request.compiled_json),
+            timeout=5.0
+        )
+        return {"status": "success", "violations": violations}
+    except asyncio.TimeoutError:
+        return {"status": "error", "message": "Quá thời gian (Timeout). Luật Regex quá phức tạp hoặc gây vòng lặp vô hạn (ReDoS)!"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 @app.get("/health/ai")
 async def health_ai():
