@@ -694,7 +694,7 @@ function App() {
   const cn = (...classes) => classes.filter(Boolean).join(' ');
 
   return (
-    <div className="flex h-screen w-screen bg-[#020617] overflow-hidden select-none font-sans text-slate-200">
+    <div className="flex h-screen w-screen bg-[#020617] overflow-hidden font-sans text-slate-200">
       
       {/* SIDEBAR */}
       <motion.div 

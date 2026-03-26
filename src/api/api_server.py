@@ -1,5 +1,5 @@
 """
-API Server for AI Static Analysis Engine (V3).
+API Server for AI Static Analysis Engine (V1.0.0).
 Provides a RESTful interface to trigger code audits and retrieve results.
 """
 
@@ -41,7 +41,6 @@ from src.api.git_helper import GitHelper
 from src.api.audit_state import AuditState, JobManager
 import logging
 import asyncio
-import sys
 import io
 
 # Thiết lập logging chi tiết
@@ -81,9 +80,6 @@ def run_auditor_with_capture(target_path, target_id=None, job_id=None):
     sys.stdout = AuditLogStream()
     AuditState.is_running = True
     try:
-        from src.engine.auditor import CodeAuditor
-        from src.engine.database import AuditDatabase
-        
         custom_rules = None
         if target_id:
             db_rules = AuditDatabase.get_project_rules(target_id)
@@ -101,7 +97,7 @@ logger = logging.getLogger(__name__)
 # --- CONFIGURATION & BRAVE COMPATIBILITY ---
 app = FastAPI(
     title="AI Static Analysis API (V1)",
-    description="Hệ thống cung cấp API cho việc kiểm toán mã nguồn tự động dựa trên Framework V3.",
+    description="Hệ thống cung cấp API cho việc kiểm toán mã nguồn tự động dựa trên Framework V1.0.0.",
     version="1.0.0"
 )
 
@@ -140,7 +136,7 @@ async def root():
     """Kiểm tra trạng thái hoạt động của API."""
     return {
         "status": "ready",
-        "engine": "AI Static Analysis V3",
+        "engine": "AI Static Analysis V1.0.0",
         "message": "API đang hoạt động ổn định."
     }
 

@@ -1,5 +1,5 @@
 """
-Database Layer (V2)
+Database Layer (V1.0.0)
 Handles persistence of audit sessions using SQLite.
 """
 

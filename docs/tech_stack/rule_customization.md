@@ -1,6 +1,6 @@
 # Hướng dẫn Tùy chỉnh Quy tắc (Rule Customization)
 
-Hệ thống AI Static Analysis (V3) cho phép bạn tùy chỉnh các quy tắc kiểm tra thông qua file cấu hình `src/engine/rules.json`.
+Hệ thống AI Static Analysis (V1.0.0) cho phép bạn tùy chỉnh các quy tắc kiểm tra thông qua file cấu hình `src/engine/rules.json`.
 
 ## 1. Cấu trúc file rules.json
 

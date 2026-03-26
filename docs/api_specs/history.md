@@ -12,4 +12,4 @@ Lấy danh sách các lần kiểm toán đã được thực hiện trong quá 
 Trả về một mảng chứa chi tiết các lần kiểm toán bao gồm: `score`, `rating`, `timestamp` và `violations_count`.
 
 ---
-*Duy trì bởi Technical Architect.*
+*Duy trì bởi LongDD.*

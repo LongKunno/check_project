@@ -27,4 +27,4 @@ Sử dụng để thực hiện việc upload trực tiếp các file từ máy 
 ```
 
 ---
-*Duy trì bởi Technical Architect.*
+*Duy trì bởi LongDD.*

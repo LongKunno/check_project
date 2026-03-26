@@ -20,4 +20,4 @@ Hệ thống hiện tại lưu trữ 2 bảng chính:
    - `custom_weights` (TEXT) - JSON Dictionary lưu trữ trọng số (Weight Override) của từng luật cụ thể.
 
 ---
-*Duy trì bởi Technical Architect.*
+*Duy trì bởi LongDD.*

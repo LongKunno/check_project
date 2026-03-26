@@ -2,15 +2,16 @@
 
 Đây là trung tâm xử lý, thực hiện việc quét và phát hiện các vi phạm quy chuẩn chất lượng.
 
-## Cách hoạt động
-1. **AST & Regex Analysis (V5)**:
-    - **Python (Node Lineage & Context Aware)**: Sử dụng cây cú pháp trừu tượng (AST) có gán `parent` node để phân tích cấu trúc logic. Cho phép kiểm tra ngữ cảnh sâu như: "Một Exception bị nuốt (`try/except pass`), File mở ra nhưng không có block `with` hay `close()` (Leak Memory), và gọi API HTTP mà không set hàm `timeout`." Suy luận phức tạp này chỉ có V5 mới làm được mà không dùng đến AI.
-    - **JavaScript/React**: Sử dụng biểu thức chính quy (Regex) tối ưu để tìm kiếm pattern lỗi.
-2. **Các trụ cột kiểm tra**:
-    - **Syntax**: Đảm bảo mã nguồn không có lỗi biên dịch cơ bản.
-    - **Complexity & Clean Code V5**: Đo lường độ phức tạp (ngưỡng 12), giới hạn kích thước hàm (80 dòng), và số tham số đầu vào tối đa (7 tham số).
-    - **Security V5**: Tìm kiếm secrets (JWT, AWS, GCP token rò rỉ), chặn đứng `DEBUG=True` trên Django Cấu hình, và cấm các hàm nguy hiểm (`eval`).
-    - **Documentation**: Kiểm tra sự tồn tại của Docstrings và comments.
+## Quá trình Thực thi (5 Bước)
+1. **BƯỚC 1: Khám phá tài nguyên (Discovery)**: Lọc dự án thành các Features dựa trên cấu trúc thư mục (VD ưu tiên `source_code`).
+2. **BƯỚC 2 & 3: Quét và Xác thực lỗi (Scanning & Verification)**: 
+    - Xử lý qua kiến trúc **Modular Scanners**, bao gồm `RegexScanner` (trực quan hóa bằng Regex) và `PythonASTScanner` (mở rộng phân tích độ phức tạp, Node Lineage).
+3. **BƯỚC 3.5: Xác thực AI (AI Hybrid Validation - Batching)**: Gửi các lỗi (Violations) tìm được cho AI phân loại False Positive thông qua Async I/O (đồng thời 25 luồng để ổn định tốc độ báo lỗi).
+4. **BƯỚC 3.6: AI Reasoning Audit (Deep Audit)**: Áp dụng Deep File Scan để tìm kiếm các lỗi hệ thống dạng logic tiềm ẩn (Architectural / Security Logical Flaws).
+5. **BƯỚC 4: Tổng hợp dữ liệu (Aggregation)**: 
+    - Tính toán điểm số theo Từng Tính năng (Feature-based).
+    - Đánh giá Điểm thành viên (Member Performance) giới hạn trong 6 tháng thông qua `--since=6.months` blame data.
+6. **BƯỚC 5: Xuất báo cáo (Reporting)**: Lưu toàn bộ lịch sử vi phạm vào DB và tổng hợp Markdown Report tổng thể.
 
 ---
-*Duy trì bởi Technical Architect.*
+*Duy trì bởi LongDD.*

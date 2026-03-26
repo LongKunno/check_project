@@ -45,3 +45,8 @@ eventSource.onerror = function(err) {
     eventSource.close();
 };
 ```
+
+## GET `/audit/jobs/{job_id}/logs`
+
+Cung cấp đường dẫn SSE thứ hai dùng riêng cho một phiên bản **Auditing theo Job ID**.
+Cách thức truyền tải (Message Format), Headers tương đồng API gốc nhưng đảm bảo cách ly (Isolated Logging Stream) cho Frontend đang trực tiếp theo dõi một Project Audit Session riêng lẻ trên Background Tasks.

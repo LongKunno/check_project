@@ -9,11 +9,17 @@ Hệ thống đánh giá dự án dựa trên:
 - **Reliability (Độ tin cậy)**: Khả năng xử lý lỗi và độ ổn định.
 - **Security (Bảo mật)**: Các nguy cơ về hổng bảo mật và dữ liệu nhạy cảm.
 
-## 2. Cách tính điểm (Thang điểm 10)
+## 2. Cách tính điểm (Thang điểm 10 - V1.0.0 Architecture)
 1. **Trọng số (Weighting)**: Mỗi loại vi phạm được gán một trọng số âm (ví dụ: Hardcoded Secret -5, Print statement -0.5).
 2. **Điểm số trụ cột (Pillar Score)**:
-   Công thức: `Điểm = 10 / (1 + (|Tổng trọng số| / K_FACTOR))`
-   *(K_FACTOR được chuẩn hóa theo số dòng code để đảm bảo công bằng).*
+   - Công thức: `Điểm = 10 / (1 + (Điểm phạt chuẩn hóa / K_FACTOR))`
+   - *Điểm phạt chuẩn hóa* được chia cho số ngàn dòng code (LOC / 1000) để đảm bảo công bằng quy mô.
+   - **K_FACTOR Động (Dynamic):** Hệ thống áp dụng độ nhạy khác nhau tùy tính chất trụ cột:
+     - `Security`: K = 0.5 (Trừ điểm cực nhanh nếu có lỗi)
+     - `Reliability` / `Performance`: K = 2.0 (Tiêu chuẩn)
+     - `Maintainability`: K = 4.0 (Độ dung sai lớn hơn với các lỗi chuẩn mực code)
+3. **Điểm Tổng kết Dự án (Final Score)**: 
+   - Không dùng trung bình cộng đơn thuần. Điểm tổng là **Trung bình có trọng số theo Kích thước Tính năng (Weighted Average by LOC)**. Một module 10,000 dòng code sẽ có sức ảnh hưởng lên điểm dự án gấp 100 lần một thư mục 100 dòng.
 
 ## 3. Thông tin bổ trợ (Technical Debt)
 Bên cạnh điểm số 0-10, hệ thống còn cung cấp chỉ số **Nợ kỹ thuật (Technical Debt)** tính bằng phút để giúp đội ngũ kỹ thuật ước lượng nỗ lực cần thiết để cải thiện mã nguồn.
@@ -29,4 +35,4 @@ Hệ thống tính toán riêng biệt hiệu suất cá nhân của từng thà
 > - Tính năng Remote Repository Clone đã được cấu hình lệnh `--shallow-since=6.months` để chứa đủ thông tin chạy lệnh `git blame`. KHÔNG ĐƯỢC CHỦ ĐỘNG xóa thư mục `.git` này trong script. Thư mục `.git` đã được tự động loại trừ khỏi việc quét file ở `ai_precheck.py` để tối ưu tài nguyên.
 
 ---
-*Duy trì bởi Technical Architect.*
+*Duy trì bởi LongDD.*

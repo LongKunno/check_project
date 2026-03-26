@@ -28,4 +28,4 @@ Dự án được quản lý hoàn toàn qua Docker Compose:
 - **Hệ thống Tài liệu**: [http://localhost:8001](http://localhost:8001)
 
 ---
-*Duy trì bởi Antigravity (Memory Loop System).*
+*Duy trì bởi LongDD.*

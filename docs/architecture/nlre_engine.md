@@ -25,8 +25,8 @@ sequenceDiagram
     Dashboard (React)->>API Server: POST /api/rules/toggle & /api/rules/save (chỉnh Weight bằng Wheel Event)
     API Server->>SQLite DB: Cập nhật `project_rules` (Toggled Rules, Compiled_json & Custom Weights)
 
-    %% Flow kiểm toán Two-stage (Asynchronous V6)
-    Note over User, Auditor Engine: Luồng Thực thi Bất Đồng Bộ (Background Job V6)
+    %% Flow kiểm toán Two-stage (Asynchronous V1.0.0)
+    Note over User, Auditor Engine: Luồng Thực thi Bất Đồng Bộ (Background Job V1.0.0)
     User->>Dashboard (React): Bấm Chạy Audit (Ví dụ: Dự án 100k dòng code)
     Dashboard (React)->>API Server: POST /api/audit/repository
     API Server->>API Server: Sinh `job_id` (UUID), lưu trạng thái PENDING vào `JobManager`
@@ -35,7 +35,7 @@ sequenceDiagram
     par Luồng Nền (Background Tasks)
         API Server->>SQLite DB: Trích xuất `get_project_rules` 
         API Server->>Auditor Engine: Khởi tạo CodeAuditor(custom_rules)
-        Auditor Engine->>Auditor Engine: (Stage 1) Quét Tĩnh cực nhanh bằng AST V5 (Node Lineage) + Regex
+        Auditor Engine->>Auditor Engine: (Stage 1) Quét Tĩnh cực nhanh bằng AST V1.0.0 (Node Lineage) + Regex
         Auditor Engine->>AI Service: (Stage 2) Xác thực tập tin vi phạm bằng Prompt Review batching
         AI Service-->>Auditor Engine: Loại bỏ False Positives
         Auditor Engine->>API Server: Tổng hợp điểm chuẩn xác
@@ -53,8 +53,8 @@ sequenceDiagram
 
 ## 2. API & Data Contract
 - `Database`: Entity `project_rules` lưu `target_id`, `compiled_json` (chứa array custom rules), và `disabled_core_rules` (array các ID của luật mặc định bị người dùng cấm).
-- `JobManager (V6)`: Quản lý biến trạng thái tiến trình nền. Tách biệt hoàn toàn `logs` và `data` cho từng `job_id`.
-- `VerificationStep (V5)`: Bổ sung khả năng lội ngược dòng cấu trúc Cây cú pháp (`parent` node lineage) để bắt lỗi Ngữ nghĩa phức tạp (vd: `with open`). Sẽ loại bỏ các luật tĩnh nằm trong danh sách `disabled_core_rules` trước khi chạy.
+- `JobManager (V1.0.0)`: Quản lý biến trạng thái tiến trình nền. Tách biệt hoàn toàn `logs` và `data` cho từng `job_id`.
+- `VerificationStep (V1.0.0)`: Bổ sung khả năng lội ngược dòng cấu trúc Cây cú pháp (`parent` node lineage) để bắt lỗi Ngữ nghĩa phức tạp (vd: `with open`). Sẽ loại bỏ các luật tĩnh nằm trong danh sách `disabled_core_rules` trước khi chạy.
 - `Interactive Sandbox API (/api/rules/test)`: Nhận đoạn mã tạm thời và `compiled_json`, dựng AST parser tức thời trên RAM để mô phỏng hoạt động của luật. Cực kỳ hiệu quả cho việc thử nghiệm.
 
 ## 3. ADR (Architecture Decision Record)
@@ -64,7 +64,7 @@ sequenceDiagram
 - **Decision & Why**: Chọn Dùng AI sinh luật kết hợp Sandbox + AI Pruning ở giai đoạn Audit. Phân tầng thành Two-Stage pipeline.
 - **Consequences**: Trở thành Engine hoàn thiện, giảm 90% lỗi False Positive, nhưng tăng Cost API giai đoạn Stage-2.
 
-### Quyết định 2: Chống ngắt kết nối (HTTP Timeout) bằng FastAPI BackgroundTasks (V6)
+### Quyết định 2: Chống ngắt kết nối (HTTP Timeout) bằng FastAPI BackgroundTasks (V1.0.0)
 - **Problem**: API `/audit` chạy đồng bộ. Các siêu dự án (VD: 100k LOC) mất 3-4 phút để AI duyệt. Trình duyệt hoặc Reverse Proxy (Nginx) sẽ cắt đứt mạng ở giây 60 (HTTP 504 Timeout).
 - **Options**: Cài Celery + Redis + WebSocket vs Sử dụng `FastAPI BackgroundTasks` + `Long Polling` (Hook React).
 - **Decision & Why**: Dùng `BackgroundTasks` kết hợp `JobManager` Pydantic lưu trên RAM. Frontend gọi API qua Hook `useAuditJob` cứ 3 giây 1 lần. Lý do: Giữ cấu trúc ứng dụng Zero-Dependencies (không bắt User cài thêm Redis, tốn tài nguyên), vừa đủ mạnh cho Dashboard.

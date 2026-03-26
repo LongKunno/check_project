@@ -6,7 +6,7 @@ Quản lý luồng thực thi 5 bước: Discovery, Scanning, Verification, Aggr
 import os
 import json
 import sys
-from src.config import WEIGHTS, K_FACTOR
+from src.config import WEIGHTS
 from src.engine.discovery import DiscoveryStep
 from src.engine.verification import VerificationStep
 from src.engine.scoring import ScoringEngine
@@ -288,7 +288,7 @@ class CodeAuditor:
             p_scores = {}
             for pillar in WEIGHTS.keys():
                 # Score (0-10)
-                p_scores[pillar] = ScoringEngine.calculate_pillar_score(punishments[pillar], feat_loc)
+                p_scores[pillar] = ScoringEngine.calculate_pillar_score(punishments[pillar], feat_loc, pillar)
                 project_punishments[pillar] += punishments[pillar]
                 
                 # Meta (Informational)
@@ -310,13 +310,10 @@ class CodeAuditor:
         # Tính điểm 4 trụ cột cho tổng dự án (Numeric)
         self.project_pillars = {}
         for pillar in WEIGHTS.keys():
-            self.project_pillars[pillar] = ScoringEngine.calculate_pillar_score(project_punishments[pillar], total_loc)
+            self.project_pillars[pillar] = ScoringEngine.calculate_pillar_score(project_punishments[pillar], total_loc, pillar)
 
-        # Điểm tổng kết dự án = Trung bình cộng điểm các tính năng
-        if self.feature_results:
-            final_score = round(total_features_score / len(self.feature_results), 2)
-        else:
-            final_score = 100.0
+        # Điểm tổng kết dự án = Trung bình có trọng số theo Kích thước (Weighted Average by LOC)
+        final_score = ScoringEngine.calculate_final_score_from_features(self.feature_results)
             
         rating = ScoringEngine.get_rating(final_score)
 
@@ -329,7 +326,7 @@ class CodeAuditor:
             
             p_scores = {}
             for pillar in WEIGHTS.keys():
-                p_scores[pillar] = ScoringEngine.calculate_pillar_score(punishments[pillar], author_loc)
+                p_scores[pillar] = ScoringEngine.calculate_pillar_score(punishments[pillar], author_loc, pillar)
                 
             f_score = ScoringEngine.calculate_final_score(p_scores)
             self.member_results[author] = {
@@ -345,19 +342,9 @@ class CodeAuditor:
         print("[5/5] Bước 5: Xuất báo cáo (Reporting)...")
         self.generate_report(self.feature_results, self.project_pillars, final_score, rating)
         
-        # LƯU VÀO LỊCH SỬ (V2)
-        AuditDatabase.save_audit(
-            target=self.target_dir,
-            score=final_score,
-            rating=rating,
-            loc=total_loc,
-            violations_count=len(self.violations),
-            pillar_scores={
-                "project": self.project_pillars,
-                "features": self.feature_results,
-                "members": self.member_results
-            }
-        )
+        # LƯU VÀO LỊCH SỬ
+        # Ghi chú: Việc lưu AuditDB (Database) được quản lý ở Backend API `api_server.py`
+        # để tránh tạo records rác đối với các phân tích bằng /tmp/ thư mục git.
         
         print(f"\n✅ Kiểm toán hoàn tất!")
         print(f"   - Điểm tổng thể: {final_score}/100")

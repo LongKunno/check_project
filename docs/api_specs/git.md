@@ -20,4 +20,4 @@ Sử dụng để yêu cầu server clone một Git repository từ xa và tiế
 Hệ thống sẽ clone project vào thư mục `/tmp/` của server, thực hiện kiểm toán và sau đó tự động dọn dẹp để đảm bảo an ninh và hiệu năng.
 
 ---
-*Duy trì bởi Technical Architect.*
+*Duy trì bởi LongDD.*

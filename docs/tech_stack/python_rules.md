@@ -1,6 +1,6 @@
 # Python Coding Rules & Standards
 
-Chào mừng bạn đến với bộ quy chuẩn lập trình Python (V3) của dự án. Đây là các quy tắc bắt buộc để đảm bảo mã nguồn luôn đạt chất lượng cao nhất.
+Chào mừng bạn đến với bộ quy chuẩn lập trình Python (V1.0.0) của dự án. Đây là các quy tắc bắt buộc để đảm bảo mã nguồn luôn đạt chất lượng cao nhất.
 
 ## 1. Nguyên tắc Tổng quát (General Principles)
 - **Zen of Python**: Tuân thủ triết lý `import this`.
@@ -53,4 +53,4 @@ def calculate_score(punishment: float, loc: int) -> float:
 - **Hành động**: Luôn chạy `./manage.sh rebuild` sau khi chỉnh sửa `requirements.txt`.
 
 ---
-*Duy trì bởi Technical Architect.*
+*Duy trì bởi LongDD.*

@@ -1,25 +1,32 @@
 """
 Scoring Engine (V1)
-Implementation of the normalized scoring formula and rating system for the V3 Framework.
+Implementation of the normalized scoring formula and rating system for the V1.0.0 Framework.
 """
 
-import math
+
 
 class ScoringEngine:
     """
-    Static methods for calculating audit scores based on the V3 framework formula.
+    Static methods for calculating audit scores based on the V1.0.0 framework formula.
     """
     @staticmethod
-    def calculate_pillar_score(punishment, total_loc):
+    def calculate_pillar_score(punishment, total_loc, pillar='Maintainability'):
         """
-        Calculates a score from 0 to 10 for a specific pillar.
-        Formula: Điểm = 10 / (1 + (|Trọng số| / 2))
+        Calculates a score from 0 to 10 for a specific pillar using Dynamic K-Factors.
         """
         if total_loc == 0:
             return 10.0
         
+        # Dynamic K-Factor mapping based on pillar sensitivity
+        k_factors = {
+            'Maintainability': 4.0,
+            'Security': 0.5,
+            'Reliability': 2.0,
+            'Performance': 2.0
+        }
+        k_factor = k_factors.get(pillar, 2.0)
+        
         # Normalize punishment based on project size (per 1000 lines)
-        k_factor = 2.0
         normalized_punishment = abs(punishment) / (total_loc / 1000)
         
         score = 10 / (1 + (normalized_punishment / k_factor))
@@ -44,6 +51,11 @@ class ScoringEngine:
         if not feature_results:
             return 100.0
         
+        total_weight = sum(res.get('loc', 0) for res in feature_results.values())
+        if total_weight > 0:
+            total_weighted_score = sum(res['final'] * res.get('loc', 0) for res in feature_results.values())
+            return round(total_weighted_score / total_weight, 2)
+            
         total = sum(f['final'] for f in feature_results.values())
         return round(total / len(feature_results), 2)
 
