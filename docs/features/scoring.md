@@ -10,6 +10,32 @@ Hệ thống đánh giá dự án dựa trên:
 - **Security (Bảo mật)**: Các nguy cơ về hổng bảo mật và dữ liệu nhạy cảm.
 
 ## 2. Cách tính điểm (Thang điểm 10 - V1.0.0 Architecture)
+
+Sự chuyển đổi từ lỗi kỹ thuật sang điểm số được thực hiện thông qua quy trình gồm 3 bước nghiêm ngặt:
+
+```mermaid
+flowchart TD
+    A[Mã nguồn dự án] --> B{Phân tách theo Tính Năng / Feature}
+    B --> C[Phát hiện Vi phạm thô]
+    C --> D(Gán trọng số lỗi âm\nVD: -5, -0.5)
+    
+    D --> E{Phân bổ theo\n4 Trụ Cột}
+    E --> F[Performance]
+    E --> G[Maintainability]
+    E --> H[Reliability]
+    E --> I[Security]
+    
+    F -->|K=2.0| J(Quy chuẩn K-Factor)
+    G -->|K=4.0| J
+    H -->|K=2.0| J
+    I -->|K=0.5| J
+    
+    J --> K[Điểm Trụ cột = 10 / 1 + Phạt/K]
+    K --> L[Trung bình 4 Trụ cột = Điểm Tính Năng]
+    L --> M((Weighted Average\ntheo File LOC))
+    M --> N[🚀 Điểm Tổng Thể Dự Án]
+```
+
 1. **Trọng số (Weighting)**: Mỗi loại vi phạm được gán một trọng số âm (ví dụ: Hardcoded Secret -5, Print statement -0.5).
 2. **Điểm số trụ cột (Pillar Score)**:
    - Công thức: `Điểm = 10 / (1 + (Điểm phạt chuẩn hóa / K_FACTOR))`

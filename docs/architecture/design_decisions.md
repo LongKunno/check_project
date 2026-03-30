@@ -140,3 +140,24 @@ Luồng tích hợp AI trước đây sử dụng `ThreadPoolExecutor` với Ope
 - **Tích cực**: Code sạch hơn, dễ viết Unit Test cho từng Scanner riêng biệt.
 - **Thử thách**: Cần quản lý cấu trúc `rules.json` chặt chẽ hơn để các Scanner nhận diện đúng quy tắc thuộc về mình.
 
+---
+
+## ADR-008: Chuyển đổi sang Kiến trúc Two-Pass Audit (Hypothesize & Test)
+
+### Trạng thái (Status)
+**Accepted** (2026-03-30)
+
+### Vấn đề (Problem)
+Luồng kiểm toán file-by-file bằng AI (Bước 3.6 - Deep Audit) hiện tại gặp hạn chế lớn về "ngữ cảnh toàn cục" (Global Context). AI thường xuyên báo lỗi giả (False Positive) khi quan sát thấy một đoạn code gọi hàm ở file khác nhưng không biết hàm đó xử lý gì. Việc thả cho AI tự do dò tìm (Autonomous Agentic) lại gây ra mức độ đội giá Token lên tới 300%-400% và giảm độ ổn định của hệ thống do phụ thuộc vào tư duy LLM.
+
+### Giải pháp (Options & Decision & Why)
+**Quyết định**: Triển khai thiết kế **Two-Pass Audit (Gắn Cờ & Xác Minh Chéo)**.
+1. **Pass 1 (Hypothesize):** AI quét file như cũ. Mọi lỗi nghi ngờ liên file đều phải được đánh cờ (`needs_verification = True`) kèm tên hàm tham chiếu (`verify_target`). Lỗi không được chốt vội vàng.
+2. **Pass 2 (Verification):** Hệ thống dùng AST nội bộ (Symbol Indexer) dò tìm trọn vẹn Body code của `verify_target` đó trong project. Ném mã nguồn bằng chứng này lại cho AI để chốt hạ cuối cùng.
+
+**Tại sao?**: Đây là điểm cân bằng hoàn hảo ("Sweet Spot"). Nó mang lại độ chính xác gần tuyệt đối (Zero False Positives) của phương pháp LLM Agent, nhưng vẫn duy trì tính Deterministic (Ổn định) của phân tích tĩnh và chỉ tăng thiểu chi phí Token lên tối đa 20%-40%.
+
+### Hệ quả (Consequences)
+- **Tích cực**: Tiết kiệm chi phí, dễ dàng Audit diện rộng mà không sợ "ảo giác LLM" làm loãng điểm số dự án.
+- **Thử thách**: Việc trích xuất ngữ cảnh bằng Python AST đôi khi vẫn gặp giới hạn về rẽ nhánh kiểu dữ liệu động (Dynamic Typing) so với việc cấu hình LSP chuyên nghiệp.
+

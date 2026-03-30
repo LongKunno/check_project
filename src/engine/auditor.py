@@ -200,25 +200,49 @@ class CodeAuditor:
                 
             completed_deep_results = loop.run_until_complete(run_all_deep_audits())
             
+            confirmed_violations = []
+            flagged_violations = []
             for reasoning_violations in completed_deep_results:
                 for rv in reasoning_violations:
-                    weight = float(rv.get('weight', -3.0))
-                    if weight > 0: weight = -weight
-                    
-                    pillar = rv.get('type', 'Maintainability')
-                    from src.config import WEIGHTS
-                    if pillar not in WEIGHTS:
-                        pillar = 'Maintainability' # Default
-                    
-                    self.log_violation(
-                        pillar, 
-                        rv.get('file', 'unknown'), 
-                        rv.get('reason', 'AI Logic Audit'), 
-                        weight,
-                        rule_id='AI_REASONING',
-                        line=rv.get('line', 0),
-                        is_custom=rv.get('is_custom', False)
-                    )
+                    if rv.get('needs_verification'):
+                        flagged_violations.append(rv)
+                    else:
+                        confirmed_violations.append(rv)
+                        
+            # BƯỚC 3.7: CROSS-CHECK FLAGGED ISSUES (TWO-PASS AUDIT)
+            if flagged_violations:
+                print(f"[3.7/5] Bước 3.7: Xác minh chéo (Cross-Check) {len(flagged_violations)} lỗi bị AI cắm cờ...")
+                from src.engine.symbol_indexer import AstContextExtractor
+                indexer = AstContextExtractor(self.target_dir)
+                indexer.index_project()
+                
+                context_cache = {}
+                for fv in flagged_violations:
+                    target = fv.get('verify_target')
+                    if target and target not in context_cache:
+                        context_cache[target] = indexer.get_symbol_snippet(target)
+                        
+                verified_issues = loop.run_until_complete(ai_service.verify_flagged_issues(flagged_violations, context_cache))
+                confirmed_violations.extend(verified_issues)
+                
+            for rv in confirmed_violations:
+                weight = float(rv.get('weight', -3.0))
+                if weight > 0: weight = -weight
+                
+                pillar = rv.get('type', 'Maintainability')
+                from src.config import WEIGHTS
+                if pillar not in WEIGHTS:
+                    pillar = 'Maintainability' # Default
+                
+                self.log_violation(
+                    pillar, 
+                    rv.get('file', 'unknown'), 
+                    rv.get('reason', 'AI Logic Audit'), 
+                    weight,
+                    rule_id='AI_REASONING',
+                    line=rv.get('line', 0),
+                    is_custom=rv.get('is_custom', False)
+                )
 
         # BƯỚC 4: AGGREGATION (Tổng hợp điểm số Phân cấp)
         print("[4/5] Bước 4: Tổng hợp dữ liệu (Aggregation)...")

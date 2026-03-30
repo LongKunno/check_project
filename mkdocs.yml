@@ -42,8 +42,7 @@ nav:
   - Trang chủ: index.md
   - Tính năng Hệ thống:
       - Code Discovery: features/discovery.md
-      - Analysis Auditor: features/auditor.md
-      - AI-Assisted Review: features/ai_review.md
+      - Core Audit Engine: features/core_auditor_engine.md
       - Real-time Streaming: features/real_time_audit.md
       - Scoring System: features/scoring.md
       - Interactive Dashboard: features/dashboard.md
@@ -70,9 +69,7 @@ nav:
     - Git Configuration: api_specs/git.md
     - Rules Compiler: api_specs/rules.md
 
-  - Database Schema:
-      - Overview: database/overview.md
-      - Audit History Table: database/audit_history.md
+
   - Quy chuẩn Tech Stack:
       - Python Rules: tech_stack/python_rules.md
       - Frontend Rules: tech_stack/frontend_rules.md

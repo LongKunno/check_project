@@ -19,6 +19,8 @@ class DeepAuditViolation(BaseModel):
     confidence: float = Field(..., description="Độ tin cậy từ 0.0 đến 1.0")
     line: int = Field(default=0, description="Dòng code xảy ra lỗi (nếu xác định được)")
     is_custom: bool = Field(default=False, description="True nếu vi phạm bộ quy tắc tùy chỉnh của người dùng")
+    needs_verification: bool = Field(default=False, description="True nếu lỗi này liên kết đến logic ở file khác và bạn không chắc chắn. Hãy cảnh báo thay vì phán xét bừa.")
+    verify_target: str = Field(default="", description="Nếu needs_verification=True, hãy cung cấp TÊN HÀM hoặc TÊN CLASS ở file khác mà bạn cần hệ thống tìm mã nguồn cho bạn xem để xác minh lỗi này. Ví dụ: 'get_user_profile'")
 
 class DeepAuditResponse(BaseModel):
     violations: List[DeepAuditViolation]
@@ -108,12 +110,15 @@ Yêu cầu trả về kết quả dưới dạng đối tượng JSON với key 
       "weight": -5.0,
       "confidence": 0.95,
       "line": 12,
-      "is_custom": true
+      "is_custom": true,
+      "needs_verification": true,
+      "verify_target": "get_user"
     }}
   ]
 }}
 Nếu không thấy lỗi nào, trả về {{"violations": []}}.
 AI cũng có trách nhiệm phát hiện xem một lỗi có vi phạm TRỰC TIẾP 'USER DEFINED PROJECT RULES' hay không để đặt 'is_custom' = true.
+QUAN TRỌNG: NGUYÊN TẮC 'TWO-PASS AUDIT'. Nếu bạn nghi ngờ một lời gọi hàm dẫn đến lỗi logic chéo file (vd: N+1 query lấp lửng từ 1 API trả về), TUYỆT ĐỐI KHÔNG SUY ĐOÁN. Hãy bật `needs_verification: true` và gõ tên hàm đó vào `verify_target`. Hệ thống sẽ đi móc code nguyên thủy của hàm đó ở file khác ném trả lại cho bạn ở lần Review thứ 2.
 """
         max_retries = 3
         for attempt in range(max_retries):
@@ -211,6 +216,88 @@ Yêu cầu trả về kết quả dưới dạng đối tượng JSON với key 
             v = res[0]
             return v['is_false_positive'], v['explanation'], v['confidence']
         return False, "AI failed to respond", 0.0
+
+    async def verify_flagged_issues(self, flagged_violations: List[Dict[str, Any]], context_cache: Dict[str, str]) -> List[Dict[str, Any]]:
+        """
+        [TWO-PASS AUDIT] Xác minh (Cross-check) các lỗi đã bị AI tự tay cắm cờ nghi ngờ ở Bước 1.
+        Truyền đoạn mã nguồn 'bằng chứng' (context snippet) của hàm mục tiêu vào gỡ lỗi.
+        """
+        if not flagged_violations: return []
+        
+        items_prompt = ""
+        for i, v in enumerate(flagged_violations):
+            target = v.get('verify_target', '')
+            found_context = context_cache.get(target, 'Code not found')
+            
+            items_prompt += f"\n--- Cờ nghi vấn #{i} ---\n"
+            items_prompt += f"Bối cảnh lỗi ban đầu ở File: {v['file']}\n"
+            items_prompt += f"Lý do bạn nghi ngờ: {v['reason']}\n"
+            items_prompt += f"Trụ cột: {v['type']}\n"
+            items_prompt += f"BẰNG CHỨNG HỆ THỐNG CUNG CẤP TỪ {target}:\n{found_context}\n"
+            
+        prompt = f"""
+        GIÁM ĐỐC KỸ THUẬT QUY ĐỊNH (PHASE 2 CROSS-CHECK):
+        Dưới đây là các 'Cờ Nghi Vấn' (False Positive Suspicions) do chính bạn cắm cờ ở đợt review trước do thiếu ngữ cảnh liên kết.
+        Hệ thống Python AST hiện tại đã dò tìm và đính kèm Bằng Chứng Ngữ Cảnh thực tế để bạn đối chiếu.
+        
+        DANH SÁCH CỜ:
+        {items_prompt}
+        
+        NHIỆM VỤ: Hãy nhìn vào Nội dung Bằng chứng.
+        - Nếu bằng chứng chỉ ra code được viết an toàn, không có lỗi như bạn tưởng -> Lỗi này là Báo cáo sai (False Positive). Đánh dấu is_false_positive = true.
+        - Nếu bằng chứng cho thấy có lỗi thật (vd: DB chưa dọn, không gọi cache ngầm) -> Đánh dấu is_false_positive = false.
+        
+        Trả về JSON:
+        {{
+            "results": [
+                {{
+                    "index": 0,
+                    "is_false_positive": boolean,
+                    "explanation": "Lý giải ngắn gọn sau khi soi bằng chứng...",
+                    "confidence": 0.95
+                }}
+            ]
+        }}
+        """
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                messages = [
+                    {"role": "system", "content": "You are a lead auditor. Resolve flagged suspicions with evidence. Return strict JSON."},
+                    {"role": "user", "content": prompt}
+                ]
+                response = await self.client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    temperature=0.0,
+                    response_format={"type": "json_object"} if "gemini" not in self.model.lower() else None
+                )
+                content = response.choices[0].message.content
+                if not content: raise ValueError("Empty AI response")
+
+                json_str = self._extract_json(content)
+                data = json.loads(json_str)
+                validated_data = ValidationResponse.model_validate(data)
+                
+                # Cập nhật kết quả vào danh sách cờ gốc
+                verified_violations = []
+                for res in validated_data.results:
+                    idx = res.index
+                    if 0 <= idx < len(flagged_violations):
+                        if not res.is_false_positive:
+                            # Vẫn là lỗi thật, kèm theo chú thích giải thích từ Cross-Check
+                            bug = flagged_violations[idx]
+                            bug['reason'] = f"{bug['reason']} [Cross-Checked: {res.explanation}]"
+                            verified_violations.append(bug)
+                        else:
+                            print(f"   🛡️ Đã gỡ cờ một False Positive: {flagged_violations[idx]['reason']} nhờ đối chiếu bằng chứng.")
+                            
+                return verified_violations
+                
+            except Exception as e:
+                print(f"⚠️ AI Cross-Check Attempt {attempt + 1} failed: {e}")
+                if attempt < max_retries - 1: await asyncio.sleep(2 * (attempt + 1))
+        return []
 
 ai_service = AiService()
 
