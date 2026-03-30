@@ -9,7 +9,7 @@ Hệ thống đánh giá dự án dựa trên:
 - **Reliability (Độ tin cậy)**: Khả năng xử lý lỗi và độ ổn định.
 - **Security (Bảo mật)**: Các nguy cơ về hổng bảo mật và dữ liệu nhạy cảm.
 
-## 2. Cách tính điểm (Thang điểm 10 - V1.0.0 Architecture)
+## 2. Cách tính điểm (Thang điểm 10 - V1.1.0 Architecture)
 
 Sự chuyển đổi từ lỗi kỹ thuật sang điểm số được thực hiện thông qua quy trình gồm 3 bước nghiêm ngặt:
 
@@ -31,20 +31,23 @@ flowchart TD
     I -->|K=0.5| J
     
     J --> K[Điểm Trụ cột = 10 / 1 + Phạt/K]
-    K --> L[Trung bình 4 Trụ cột = Điểm Tính Năng]
-    L --> M((Weighted Average\ntheo File LOC))
-    M --> N[🚀 Điểm Tổng Thể Dự Án]
+    K --> L[Cân Bằng Trọng Khối 4 Trụ Cột\n(Pillars Normalization)]
+    L --> M[Tổng hợp = Điểm Tính Năng]
+    M --> N((Weighted Average\ntheo File LOC))
+    N --> O[🚀 Điểm Tổng Thể Dự Án]
 ```
 
 1. **Trọng số (Weighting)**: Mỗi loại vi phạm được gán một trọng số âm (ví dụ: Hardcoded Secret -5, Print statement -0.5).
 2. **Điểm số trụ cột (Pillar Score)**:
    - Công thức: `Điểm = 10 / (1 + (Điểm phạt chuẩn hóa / K_FACTOR))`
-   - *Điểm phạt chuẩn hóa* được chia cho số ngàn dòng code (LOC / 1000) để đảm bảo công bằng quy mô.
+   - *Điểm phạt chuẩn hóa* được tính bằng cách chia điểm phạt tuyệt đối cho **Số ngàn dòng code an toàn (Effective LOC/1000)**.
+   - **Màng lọc Laplace Smoothing:** Để ngăn chặn lỗi "chia cho 0 tiệm cận" khiến điểm sập mạch vô lý, hệ thống quy định một giới hạn ngầm định: `effective_loc = max(total_loc, 500)`. Dù file chỉ có 5 dòng, nó vẫn sở hữu dung sai lỗi của một file 500 dòng code.
    - **K_FACTOR Động (Dynamic):** Hệ thống áp dụng độ nhạy khác nhau tùy tính chất trụ cột:
      - `Security`: K = 0.5 (Trừ điểm cực nhanh nếu có lỗi)
      - `Reliability` / `Performance`: K = 2.0 (Tiêu chuẩn)
      - `Maintainability`: K = 4.0 (Độ dung sai lớn hơn với các lỗi chuẩn mực code)
 3. **Điểm Tổng kết Dự án (Final Score)**: 
+   - **Pillars Normalization:** Khối lượng 4 Trụ cột theo khai báo trong Cấu hình (`src/config.py`) luôn được chuẩn hóa (chia tỷ lệ) để chắc chắn Tổng bằng `1.0`. Cho dù User phá hỏng cấu hình (Ví dụ: Đẩy tự do cả 4 trụ cột lên 1.0 = Tổng 4.0), tính toán trần điểm 10 của Dashboard hoàn toàn không bị ảnh hưởng.
    - Không dùng trung bình cộng đơn thuần. Điểm tổng là **Trung bình có trọng số theo Kích thước Tính năng (Weighted Average by LOC)**. Một module 10,000 dòng code sẽ có sức ảnh hưởng lên điểm dự án gấp 100 lần một thư mục 100 dòng.
 
 ## 3. Thông tin bổ trợ (Technical Debt)

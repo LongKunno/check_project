@@ -76,15 +76,18 @@ class AuditDatabase:
 
     @staticmethod
     def get_history(target_path=None):
-        """Retrieves history, optionally filtered by target path."""
+        """Retrieves lightweight history, optionally filtered by target path."""
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         
+        # Chỉ lấy các trường cần thiết dùng hiển thị danh sách để tăng tốc độ load, KHÔNG lấy full_json (chứa hàng MB dữ liệu)
+        query_cols = "id, timestamp, target, score, rating, total_loc, violations_count, pillar_scores"
+        
         if target_path:
-            cursor.execute('SELECT * FROM audit_history WHERE target = ? ORDER BY timestamp DESC', (target_path,))
+            cursor.execute(f'SELECT {query_cols} FROM audit_history WHERE target = ? ORDER BY timestamp DESC', (target_path,))
         else:
-            cursor.execute('SELECT * FROM audit_history ORDER BY timestamp DESC LIMIT 50')
+            cursor.execute(f'SELECT {query_cols} FROM audit_history ORDER BY timestamp DESC LIMIT 50')
             
         rows = cursor.fetchall()
         conn.close()
@@ -93,15 +96,40 @@ class AuditDatabase:
         results = []
         for row in rows:
             d = dict(row)
-            d['pillar_scores'] = json.loads(d['pillar_scores'])
-            # Parse full_json if available
-            if d.get('full_json'):
-                try:
-                    d['full_json'] = json.loads(d['full_json'])
-                except:
-                    d['full_json'] = None
+            try:
+                d['pillar_scores'] = json.loads(d.get('pillar_scores', '{}'))
+            except:
+                d['pillar_scores'] = {}
             results.append(d)
         return results
+
+    @staticmethod
+    def get_audit_by_id(audit_id):
+        """Retrieves details of a single audit including the full JSON payload by ID."""
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        cursor.execute('SELECT * FROM audit_history WHERE id = ?', (audit_id,))
+        row = cursor.fetchone()
+        conn.close()
+        
+        if not row:
+            return None
+            
+        import json
+        d = dict(row)
+        try:
+            d['pillar_scores'] = json.loads(d.get('pillar_scores', '{}'))
+        except:
+            d['pillar_scores'] = {}
+            
+        if d.get('full_json'):
+            try:
+                d['full_json'] = json.loads(d['full_json'])
+            except:
+                d['full_json'] = None
+        return d
 
     @staticmethod
     def save_project_rules(target_id, natural_text, compiled_json, disabled_core_rules="[]"):

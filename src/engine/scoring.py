@@ -14,8 +14,9 @@ class ScoringEngine:
         """
         Calculates a score from 0 to 10 for a specific pillar using Dynamic K-Factors.
         """
-        if total_loc == 0:
-            return 10.0
+        # Áp dụng Laplace Smoothing (Base Threshold) cho các file hoặc feature quá nhỏ
+        # để ngăn chặn việc lỗi bị khuếch đại vô lý. Tối thiểu là 500 dòng code.
+        effective_loc = max(total_loc, 500)
         
         # Dynamic K-Factor mapping based on pillar sensitivity
         k_factors = {
@@ -27,7 +28,7 @@ class ScoringEngine:
         k_factor = k_factors.get(pillar, 2.0)
         
         # Normalize punishment based on project size (per 1000 lines)
-        normalized_punishment = abs(punishment) / (total_loc / 1000)
+        normalized_punishment = abs(punishment) / (effective_loc / 1000)
         
         score = 10 / (1 + (normalized_punishment / k_factor))
         return round(score, 2)
@@ -39,8 +40,14 @@ class ScoringEngine:
         """
         from src.config import WEIGHTS
         final = 0
+        total_config_weight = sum(WEIGHTS.values())
+        if total_config_weight == 0:
+            total_config_weight = 1.0 # Fallback an toàn
+            
         for pillar, score in pillar_scores.items():
-            final += score * WEIGHTS.get(pillar, 0.25)
+            # Chuẩn hóa về thang 100% để chống việc user config tổng WEIGHTS != 1.0
+            actual_weight = WEIGHTS.get(pillar, 0.25) / total_config_weight
+            final += score * actual_weight
         return round(final * 10, 2)
 
     @staticmethod

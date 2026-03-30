@@ -689,11 +689,23 @@ Hãy trả về mã nguồn đã sửa đổi (chỉ mã nguồn, trong block ma
 
 @app.get("/history")
 async def get_audit_history(target: str = None):
-
-    """Lấy danh sách lịch sử các lần kiểm toán."""
+    """Lấy danh sách lịch sử các lần kiểm toán (Không kèm payload JSON vi phạm)."""
     try:
         history = AuditDatabase.get_history(target)
         return history
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/history/{audit_id}")
+async def get_audit_detail(audit_id: int):
+    """Lấy chi tiết 1 lần kiểm toán bằng ID (Kèm toàn bộ payload vi phạm)."""
+    try:
+        detail = AuditDatabase.get_audit_by_id(audit_id)
+        if not detail:
+            raise HTTPException(status_code=404, detail="Không tìm thấy lịch sử kiểm toán.")
+        return detail
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
