@@ -76,7 +76,12 @@ Khi có bất kỳ thay đổi nào trong `requirements.txt` hoặc `Dockerfile.
 
 ## Cấu hình Môi trường (.env)
 
-Các biến môi trường quan trọng:
+Các biến khởi tạo cần thiết cho ứng dụng AI (có thể copy từ `.env.example`):
+- `BITBUCKET_USERNAME`, `BITBUCKET_TOKEN`: Truy cập kho lưu trữ Git/Bitbucket.
+- `AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL`: Thông tin cấu hình LLM Service/Proxy.
+- `TEST_MODE_LIMIT_FILES`: Cấu hình số file tối đa phân tích để tiết kiệm Token trên môi trường test.
+
+Các biến dành cho Container (thường nằm ở môi trường của `docker-compose.yml`):
 - `PYTHONUNBUFFERED=1`: Đảm bảo log Python được xuất ngay lập tức.
 - `MAX_MULTIPART_FILES`: Giới hạn số lượng file upload.
 - `UVICORN_TIMEOUT_KEEP_ALIVE`: Timeout cho các tác vụ phân tích dài.
