@@ -113,7 +113,7 @@
     },
     "circular_dependency": {
       "id": "CIRCULAR_DEPENDENCY",
-      "pillar": "Architecture",
+      "pillar": "Maintainability",
       "reason": "Circular Import Dependency Detected (A imports B, B imports A)",
       "weight": -10.0
     },

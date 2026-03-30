@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Save, Settings2, FileText, CheckCircle2, ChevronRight, Wand2, Terminal, AlertTriangle, Trash2, Box, ShieldCheck, Database, Beaker, XCircle } from 'lucide-react';
+import { Play, Save, Settings2, FileText, CheckCircle2, ChevronRight, ChevronDown, Search, Filter, Wand2, Terminal, AlertTriangle, Trash2, Box, ShieldCheck, Database, Beaker, XCircle } from 'lucide-react';
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -98,6 +98,49 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
   const [activeTab, setActiveTab] = useState('core');
   const [isTestRun, setIsTestRun] = useState(false);
   const [sandboxTab, setSandboxTab] = useState('code');
+
+  // Search & Filter state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterPillar, setFilterPillar] = useState('ALL');
+  const [expandedCategories, setExpandedCategories] = useState({});
+
+  const filteredCoreRules = useMemo(() => {
+      return Object.entries(defaultRules).filter(([key, meta]) => {
+          if (filterPillar !== 'ALL' && (meta.category || 'Uncategorized') !== filterPillar) return false;
+          if (searchTerm) {
+              const searchLower = searchTerm.toLowerCase();
+              if (!key.toLowerCase().includes(searchLower) && 
+                  !(meta.reason || '').toLowerCase().includes(searchLower) &&
+                  !(meta.category || '').toLowerCase().includes(searchLower)) {
+                  return false;
+              }
+          }
+          return true;
+      });
+  }, [defaultRules, filterPillar, searchTerm]);
+
+  const availableCategories = useMemo(() => {
+      const cats = new Set();
+      Object.values(defaultRules).forEach(meta => cats.add(meta.category || 'Uncategorized'));
+      return Array.from(cats).sort();
+  }, [defaultRules]);
+
+  const groupedRules = useMemo(() => {
+      const groups = {};
+      filteredCoreRules.forEach(([key, meta]) => {
+          const cat = meta.category || 'Uncategorized';
+          if (!groups[cat]) groups[cat] = [];
+          groups[cat].push([key, meta]);
+      });
+      return groups;
+  }, [filteredCoreRules]);
+
+  const toggleCategory = (cat) => {
+      setExpandedCategories(prev => ({
+          ...prev,
+          [cat]: prev[cat] === undefined ? false : !prev[cat]
+      }));
+  };
 
   const codeTextareaRef = useRef(null);
   const jsonTextareaRef = useRef(null);
@@ -490,55 +533,123 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
                    </div>
                )}
 
-               {activeTab === 'core' && Object.entries(defaultRules).map(([ruleKey, meta]) => {
-                  const isDisabled = disabledCoreRules.includes(ruleKey);
-                  return (
-                  <div key={ruleKey} className={cn("border rounded-xl p-4 flex flex-col gap-3 transition-all", isDisabled ? "bg-slate-900/30 border-slate-800 opacity-60 grayscale" : "bg-black/40 border-white/10")}>
-                    <div className="flex justify-between items-start">
-                       <span className="font-mono text-[0.8rem] font-bold text-slate-200 bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-lg">
-                          {ruleKey}
-                       </span>
+               {activeTab === 'core' && (
+                   <div className="flex flex-col gap-4 mb-4">
                        <div className="flex items-center gap-3">
-                          <span className={cn(
-                             "text-[10px] font-bold px-2.5 py-1 rounded-full uppercase border",
-                             severityColors[meta.severity] || severityColors.Info
-                          )}>{meta.severity}</span>
-                           <div className="flex items-center gap-2 bg-black/20 p-1 pr-2 rounded-full border border-white/5">
-                               <button
-                                   onClick={() => handleToggleRule(ruleKey, !isDisabled)}
-                                   className={cn(
-                                       "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out outline-none shadow-inner",
-                                       !isDisabled ? "bg-emerald-500" : "bg-slate-700"
-                                   )}
-                                   role="switch"
-                                   aria-checked={!isDisabled}
-                               >
-                                   <span
-                                       aria-hidden="true"
-                                       className={cn(
-                                           "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out",
-                                           !isDisabled ? "translate-x-4" : "translate-x-0.5"
-                                       )}
-                                   />
-                               </button>
-                               <span className={cn("text-[9px] font-black w-6 text-center tracking-widest select-none", !isDisabled ? "text-emerald-400" : "text-slate-500")}>
-                                  {!isDisabled ? "ON" : "OFF"}
-                               </span>
+                           <div className="flex-1 relative">
+                               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                               <input 
+                                   type="text" 
+                                   placeholder="Tìm kiếm theo ID, mô tả..." 
+                                   value={searchTerm}
+                                   onChange={(e) => setSearchTerm(e.target.value)}
+                                   className="w-full bg-black/40 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-sm text-slate-200 focus:border-violet-500/50 outline-none transition-colors"
+                               />
                            </div>
-                        </div>
-                     </div>
-                     <div className="flex items-center justify-between mt-1">
-                        <div className="text-[11px] text-slate-400">{meta.category} | Nợ KH: {meta.debt}m</div>
-                        <div className="flex items-center gap-2">
-                           <span className="text-[10px] text-slate-500 font-medium">TRỌNG SỐ:</span>
-                           <WeightInput 
-                              value={customWeights[ruleKey] !== undefined ? customWeights[ruleKey] : (meta.weight !== undefined ? meta.weight : -2.0)}
-                              onChange={(val) => handleWeightChange(ruleKey, val)}
-                              disabled={isDisabled}
-                              className={!isDisabled ? "text-emerald-400 field-sizing-content" : ""}
-                           />
-                        </div>
-                     </div>
+                           <div className="relative shrink-0">
+                               <select 
+                                   value={filterPillar}
+                                   onChange={(e) => setFilterPillar(e.target.value)}
+                                   className="appearance-none bg-black/40 border border-white/10 rounded-xl py-2 pl-4 pr-10 text-sm text-slate-200 focus:border-violet-500/50 outline-none transition-colors font-bold cursor-pointer"
+                               >
+                                   <option value="ALL">Tất cả Pillars ({Object.keys(defaultRules).length})</option>
+                                   {availableCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                               </select>
+                               <Filter size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                           </div>
+                       </div>
+                   </div>
+               )}
+
+               {activeTab === 'core' && Object.keys(groupedRules).length === 0 && (
+                   <div className="text-sm text-slate-500 italic bg-black/20 p-6 rounded-xl border border-white/5 text-center mt-4">
+                       Không tìm thấy luật nào phù hợp với bộ lọc hiện tại.
+                   </div>
+               )}
+
+               {activeTab === 'core' && Object.entries(groupedRules).map(([category, rules]) => {
+                  const isExpanded = expandedCategories[category] !== false; // true or undefined
+                  return (
+                  <div key={category} className="mb-4 bg-black/20 border border-white/5 rounded-2xl shadow-sm">
+                      <button 
+                          onClick={() => toggleCategory(category)}
+                          className="w-full flex items-center justify-between p-4 bg-white/[0.02] hover:bg-white/[0.05] transition-colors rounded-2xl"
+                      >
+                          <div className="flex items-center gap-3">
+                              {isExpanded ? <ChevronDown size={18} className="text-violet-400 transition-transform" /> : <ChevronRight size={18} className="text-slate-500 transition-transform" />}
+                              <span className="font-extrabold text-sm tracking-wide text-slate-200 uppercase flex items-center gap-2">
+                                 <Box size={16} className="text-violet-400 opacity-70" /> {category}
+                              </span>
+                              <span className="bg-violet-500/10 text-violet-300 px-2.5 py-0.5 rounded-full text-[10px] font-black">{rules.length} LUẬT</span>
+                          </div>
+                      </button>
+                      
+                      <AnimatePresence>
+                          {isExpanded && (
+                              <motion.div 
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: 'auto', opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  transition={{ duration: 0.2 }}
+                                  className="overflow-hidden"
+                              >
+                                  <div className="p-4 pt-1 gap-3 flex flex-col">
+                                      {rules.map(([ruleKey, meta]) => {
+                                          const isDisabled = disabledCoreRules.includes(ruleKey);
+                                          return (
+                                          <div key={ruleKey} className={cn("border rounded-xl p-4 flex flex-col gap-3 transition-all", isDisabled ? "bg-slate-900/30 border-slate-800 opacity-60 grayscale" : "bg-black/40 border-white/10")}>
+                                            <div className="flex justify-between items-start">
+                                               <span className="font-mono text-[0.8rem] font-bold text-slate-200 bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-lg break-all">
+                                                  {ruleKey}
+                                               </span>
+                                               <div className="flex items-center gap-3 shrink-0">
+                                                  <span className={cn(
+                                                     "text-[10px] font-bold px-2.5 py-1 rounded-full uppercase border whitespace-nowrap",
+                                                     severityColors[meta.severity] || severityColors.Info
+                                                  )}>{meta.severity}</span>
+                                                   <div className="flex items-center gap-2 bg-black/20 p-1 pr-2 rounded-full border border-white/5">
+                                                       <button
+                                                           onClick={() => handleToggleRule(ruleKey, !isDisabled)}
+                                                           className={cn(
+                                                               "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out outline-none shadow-inner",
+                                                               !isDisabled ? "bg-emerald-500" : "bg-slate-700"
+                                                           )}
+                                                           role="switch"
+                                                           aria-checked={!isDisabled}
+                                                       >
+                                                           <span
+                                                               aria-hidden="true"
+                                                               className={cn(
+                                                                   "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out",
+                                                                   !isDisabled ? "translate-x-4" : "translate-x-0.5"
+                                                               )}
+                                                           />
+                                                       </button>
+                                                       <span className={cn("text-[9px] font-black w-6 text-center tracking-widest select-none", !isDisabled ? "text-emerald-400" : "text-slate-500")}>
+                                                          {!isDisabled ? "ON" : "OFF"}
+                                                       </span>
+                                                   </div>
+                                                </div>
+                                             </div>
+                                             <div className="flex items-center justify-between mt-1">
+                                                <div className="text-[11px] text-slate-400 line-clamp-2" title={meta.reason || meta.category}>{meta.reason ? `${meta.reason}` : meta.category} | Nợ KH: {meta.debt}m</div>
+                                                <div className="flex items-center gap-2 shrink-0">
+                                                   <span className="text-[10px] text-slate-500 font-medium whitespace-nowrap">TRỌNG SỐ:</span>
+                                                   <WeightInput 
+                                                      value={customWeights[ruleKey] !== undefined ? customWeights[ruleKey] : (meta.weight !== undefined ? meta.weight : -2.0)}
+                                                      onChange={(val) => handleWeightChange(ruleKey, val)}
+                                                      disabled={isDisabled}
+                                                      className={!isDisabled ? "text-emerald-400 field-sizing-content" : "field-sizing-content"}
+                                                   />
+                                                </div>
+                                             </div>
+                                          </div>
+                                          )
+                                      })}
+                                  </div>
+                              </motion.div>
+                          )}
+                      </AnimatePresence>
                   </div>
                )})}
             </div>

@@ -38,7 +38,7 @@ RULES_METADATA = {
     "PRINT_STATEMENT": {"category": "Maintainability", "severity": "Info", "debt": 2},
     "MISSING_TESTS": {"category": "Reliability", "severity": "Critical", "debt": 45},
     "SELECT_STAR": {"category": "Performance", "severity": "Minor", "debt": 10},
-    "CIRCULAR_DEPENDENCY": {"category": "Architecture", "severity": "Blocker", "debt": 60},
+    "CIRCULAR_DEPENDENCY": {"category": "Maintainability", "severity": "Blocker", "debt": 60},
 }
 
 # SonarQube Configuration
