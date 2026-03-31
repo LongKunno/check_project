@@ -44,3 +44,5 @@ Các phần bạn NÊN chủ động bổ sung khi thấy cần thiết:
 - **Code Snippets / Examples:** Thêm các đoạn code mẫu (Usage Examples) minh họa cách gọi một Service, cách dùng một hàm tiện ích (Utils), hoặc cách chạy test.
 - **Troubleshooting / FAQ:** Cách debug nếu service này chết, hoặc cách kiểm tra log trên server.
 - **Sơ đồ bổ trợ:** Nếu logic quá phức tạp, đừng ngại vẽ thêm nhiều sơ đồ Mermaid (State Diagram, Class Diagram) để giải thích từng bước.
+
+Note: Dự án hiện tại đang được build và chạy trong docker

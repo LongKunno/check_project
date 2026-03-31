@@ -25,21 +25,7 @@ K_FACTOR = 2.0
 # Đặt thành 0 hoặc xóa khỏi .env để tắt Test Mode và quét toàn bộ dự án
 TEST_MODE_LIMIT_FILES = int(os.getenv("TEST_MODE_LIMIT_FILES", 0))
 
-# Rules Metadata (SonarQube Style)
-# severity: Blocker, Critical, Major, Minor, Info
-# debt: remediation effort in minutes
-RULES_METADATA = {
-    "HARDCODED_SECRET": {"category": "Security", "severity": "Blocker", "debt": 60},
-    "SQL_INJECTION": {"category": "Security", "severity": "Critical", "debt": 45},
-    "N_PLUS_ONE": {"category": "Performance", "severity": "Major", "debt": 30},
-    "ITERROWS_USE": {"category": "Performance", "severity": "Minor", "debt": 15},
-    "UNRESTRICTED_CORS": {"category": "Security", "severity": "Major", "debt": 20},
-    "UNUSED_IMPORT": {"category": "Maintainability", "severity": "Minor", "debt": 5},
-    "PRINT_STATEMENT": {"category": "Maintainability", "severity": "Info", "debt": 2},
-    "MISSING_TESTS": {"category": "Reliability", "severity": "Critical", "debt": 45},
-    "SELECT_STAR": {"category": "Performance", "severity": "Minor", "debt": 10},
-    "CIRCULAR_DEPENDENCY": {"category": "Maintainability", "severity": "Blocker", "debt": 60},
-}
+# [DEPRECATED] RULES_METADATA & SEVERITY have been moved to: src/engine/rules.json
 
 # SonarQube Configuration
 SONAR_CONFIG = {
@@ -51,9 +37,6 @@ SONAR_CONFIG = {
         "D": 0.50
     }
 }
-
-# Legacy Severity Weights (kept for backward compatibility)
-SEVERITY = {k: -float(v['debt'])/10 for k, v in RULES_METADATA.items()}
 
 # Hardcoded Repositories for Quick Audit
 BITBUCKET_USER = os.getenv("BITBUCKET_USERNAME", "")

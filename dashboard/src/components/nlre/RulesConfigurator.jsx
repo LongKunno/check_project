@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Save, Settings2, FileText, CheckCircle2, ChevronRight, ChevronDown, Search, Filter, Wand2, Terminal, AlertTriangle, Trash2, Box, ShieldCheck, Database, Beaker, XCircle } from 'lucide-react';
+import { Play, Save, Settings2, FileText, CheckCircle2, ChevronRight, ChevronDown, Search, Filter, Wand2, Terminal, AlertTriangle, Trash2, Box, ShieldCheck, Database, Beaker, XCircle, Info } from 'lucide-react';
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -103,6 +103,7 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPillar, setFilterPillar] = useState('ALL');
   const [expandedCategories, setExpandedCategories] = useState({});
+  const [expandedRules, setExpandedRules] = useState({});
 
   const filteredCoreRules = useMemo(() => {
       return Object.entries(defaultRules).filter(([key, meta]) => {
@@ -596,12 +597,22 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
                                   <div className="p-4 pt-1 gap-3 flex flex-col">
                                       {rules.map(([ruleKey, meta]) => {
                                           const isDisabled = disabledCoreRules.includes(ruleKey);
+                                          const isRuleExpanded = expandedRules[ruleKey];
                                           return (
                                           <div key={ruleKey} className={cn("border rounded-xl p-4 flex flex-col gap-3 transition-all", isDisabled ? "bg-slate-900/30 border-slate-800 opacity-60 grayscale" : "bg-black/40 border-white/10")}>
                                             <div className="flex justify-between items-start">
-                                               <span className="font-mono text-[0.8rem] font-bold text-slate-200 bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-lg break-all">
-                                                  {ruleKey}
-                                               </span>
+                                               <div className="flex items-center gap-2">
+                                                   <span className="font-mono text-[0.8rem] font-bold text-slate-200 bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-lg break-all">
+                                                      {ruleKey}
+                                                   </span>
+                                                   <button
+                                                      onClick={() => setExpandedRules(prev => ({...prev, [ruleKey]: !prev[ruleKey]}))}
+                                                      className="text-slate-500 hover:text-violet-400 hover:bg-violet-500/10 p-1.5 rounded-lg transition-colors border border-transparent hover:border-violet-500/20"
+                                                      title="Xem chi tiết luật"
+                                                   >
+                                                      <Info size={16} />
+                                                   </button>
+                                               </div>
                                                <div className="flex items-center gap-3 shrink-0">
                                                   <span className={cn(
                                                      "text-[10px] font-bold px-2.5 py-1 rounded-full uppercase border whitespace-nowrap",
@@ -643,6 +654,52 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
                                                    />
                                                 </div>
                                              </div>
+                                              
+                                             {/* Rule Details Panel */}
+                                             <AnimatePresence>
+                                               {isRuleExpanded && (
+                                                  <motion.div
+                                                     initial={{ height: 0, opacity: 0 }}
+                                                     animate={{ height: 'auto', opacity: 1 }}
+                                                     exit={{ height: 0, opacity: 0 }}
+                                                     transition={{ duration: 0.2 }}
+                                                     className="overflow-hidden mt-2 border-t border-white/5 pt-3"
+                                                  >
+                                                     <div className="flex flex-col gap-3 text-sm">
+                                                         {meta.reason && (
+                                                             <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+                                                                 <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Mô tả</span>
+                                                                 <span className="text-slate-300">{meta.reason}</span>
+                                                             </div>
+                                                         )}
+                                                         {meta.regex && typeof meta.regex === 'object' && meta.regex.pattern && (
+                                                             <div className="bg-white/5 rounded-lg p-3 border border-emerald-500/20">
+                                                                 <span className="text-[10px] font-bold text-emerald-500 uppercase block mb-1">Regex Pattern</span>
+                                                                 <code className="text-[11px] text-emerald-400 font-mono break-all leading-loose">{meta.regex.pattern}</code>
+                                                             </div>
+                                                         )}
+                                                         {meta.ast && typeof meta.ast === 'object' && meta.ast.type && (
+                                                             <div className="bg-white/5 rounded-lg p-3 border border-blue-500/20">
+                                                                 <span className="text-[10px] font-bold text-blue-500 uppercase flex items-center gap-2 mb-1">AST Properties</span>
+                                                                 <div className="text-[11px] text-blue-300">
+                                                                     <strong>Type:</strong> {meta.ast.type}
+                                                                     {meta.ast.limit && <span className="ml-3"><strong>Limit:</strong> {meta.ast.limit}</span>}
+                                                                 </div>
+                                                             </div>
+                                                         )}
+                                                         {meta.ai && typeof meta.ai === 'object' && meta.ai.prompt && (
+                                                             <div className="bg-white/5 rounded-lg p-3 border border-violet-500/20">
+                                                                 <span className="text-[10px] font-bold text-violet-500 uppercase flex items-center gap-2 mb-1"><Wand2 size={12}/> AI Prompt</span>
+                                                                 <span className="text-[11px] text-violet-300 block leading-relaxed">{meta.ai.prompt}</span>
+                                                             </div>
+                                                         )}
+                                                         {!meta.regex && !meta.ast && !meta.ai && (
+                                                             <div className="text-xs text-slate-500 italic">Không có metadata chi tiết cho luật này.</div>
+                                                         )}
+                                                     </div>
+                                                  </motion.div>
+                                               )}
+                                             </AnimatePresence>
                                           </div>
                                           )
                                       })}

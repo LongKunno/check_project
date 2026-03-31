@@ -1,164 +1,313 @@
 {
-  "regex_rules": [
+  "rules": [
     {
       "id": "HARDCODED_SECRET",
-      "pattern": "(?i)(password|secret|api_key|token|auth_key|access_key|private_key|aws_access_key_id|gcp_key|jwt)\\s*[:=]\\s*['\"][A-Za-z0-9\\-_=]{10,}['\"]",
       "pillar": "Security",
+      "category": "Security",
+      "severity": "Blocker",
+      "debt": 60,
       "reason": "Hardcoded Secret/Token/Password detected",
-      "weight": -10.0
+      "weight": -10.0,
+      "regex": {
+        "pattern": "(?i)(password|secret|api_key|token|auth_key|access_key|private_key|aws_access_key_id|gcp_key|jwt)\\s*[:=]\\s*['\"][^'\"]{10,}['\"]"
+      },
+      "ast": null,
+      "ai": {
+        "prompt": "Kiểm tra xem đây có phải là một secret/password/token thật sự được hardcode vào code hay không (không phải test, không phải placeholder như 'your_key_here'). Nếu là giá trị thật, hãy xác nhận vi phạm."
+      }
     },
     {
       "id": "DJANGO_DEBUG",
-      "pattern": "^\\s*DEBUG\\s*=\\s*True\\s*",
       "pillar": "Security",
+      "category": "Security",
+      "severity": "Blocker",
+      "debt": 60,
       "reason": "Django DEBUG = True in source code (Very Dangerous for Production)",
-      "weight": -10.0
+      "weight": -10.0,
+      "regex": {
+        "pattern": "^\\s*DEBUG\\s*=\\s*True\\s*"
+      },
+      "ast": null,
+      "ai": null
     },
     {
       "id": "SQL_INJECTION",
-      "pattern": "(?i)(\\.execute\\(.*[f\"'].*\\{.*\\}.*[\"']\\)|\\.execute\\(.*%s.*\\s*%.*\\))",
       "pillar": "Security",
+      "category": "Security",
+      "severity": "Critical",
+      "debt": 45,
       "reason": "Potential SQL Injection (Insecure string interpolation in DB query)",
-      "weight": -8.0
+      "weight": -8.0,
+      "regex": {
+        "pattern": "(?i)(\\.execute\\(.*[f\"'].*\\{.*\\}.*[\"']\\)|\\.execute\\(.*%s.*\\s*%.*\\)|\\.execute\\(.*\\.format\\(.*\\))"
+      },
+      "ast": null,
+      "ai": {
+        "prompt": "Phân tích đoạn code có thể dính SQL Injection. Xác nhận xem có dữ liệu người dùng (user input) được nối trực tiếp vào câu lệnh SQL mà không qua parameterized query/ORM không."
+      }
     },
     {
       "id": "INSECURE_HASH",
-      "pattern": "hashlib\\.(md5|sha1)\\(",
       "pillar": "Security",
+      "category": "Security",
+      "severity": "Major",
+      "debt": 30,
       "reason": "Insecure hashing algorithm (MD5/SHA1)",
-      "weight": -5.0
+      "weight": -5.0,
+      "regex": {
+        "pattern": "hashlib\\.(md5|sha1)\\("
+      },
+      "ast": null,
+      "ai": {
+        "prompt": "Kiểm tra xem MD5/SHA1 được dùng cho mục đích bảo mật nhạy cảm (hash mật khẩu, ký dữ liệu) hay chỉ cho mục đích checksum thông thường (không nhạy cảm). Chỉ xác nhận vi phạm nếu dùng cho mục đích bảo mật."
+      }
     },
     {
       "id": "XSS_DANGER",
-      "pattern": "(?i)(\\.innerHTML\\s*=)",
       "pillar": "Security",
+      "category": "Security",
+      "severity": "Major",
+      "debt": 30,
       "reason": "Potential XSS via .innerHTML",
-      "weight": -5.0
+      "weight": -5.0,
+      "regex": {
+        "pattern": "(?i)(\\.innerHTML\\s*=)"
+      },
+      "ast": null,
+      "ai": {
+        "prompt": "Kiểm tra xem giá trị gán vào .innerHTML có phải là dữ liệu từ người dùng (user-controlled) hay không. Nếu là chuỗi tĩnh hoặc đã được sanitize, có thể loại bỏ vi phạm."
+      }
     },
     {
       "id": "VERIFY_FALSE",
-      "pattern": "verify\\s*=\\s*False",
       "pillar": "Security",
+      "category": "Security",
+      "severity": "Major",
+      "debt": 30,
       "reason": "verify=False detected (disables SSL verification)",
-      "weight": -5.0
-    },
-    {
-      "id": "SELECT_STAR",
-      "pattern": "SELECT\\s+\\*",
-      "pillar": "Performance",
-      "reason": "SELECT * in BigQuery/SQL (anti-pattern)",
-      "weight": -2.0
-    },
-    {
-      "id": "ITERROWS_USE",
-      "pattern": "\\.iterrows\\(\\)",
-      "pillar": "Performance",
-      "reason": "Pandas .iterrows() detected (slow)",
-      "weight": -3.0
+      "weight": -5.0,
+      "regex": {
+        "pattern": "verify\\s*=\\s*False"
+      },
+      "ast": null,
+      "ai": {
+        "prompt": "Xác nhận xem đoạn chữ verify=False có thực sự đang nằm trong một câu lệnh lập trình cấu hình SSL hay không. Nếu đoạn đó chỉ đơn giản là đang nằm bên trong một chuỗi bình luận (comment) hoặc docstring giải thích, hãy gỡ bỏ vi phạm này để tránh nhận diện sai."
+      }
     },
     {
       "id": "UNRESTRICTED_CORS",
-      "pattern": "allow_origins\\s*=\\s*\\[\\s*['\"]\\*['\"]\\s*\\]",
       "pillar": "Security",
+      "category": "Security",
+      "severity": "Major",
+      "debt": 20,
       "reason": "Unrestricted CORS (allow_origins='*')",
-      "weight": -3.0
+      "weight": -3.0,
+      "regex": {
+        "pattern": "allow_origins\\s*=\\s*\\[\\s*['\"]\\*['\"]\\s*\\]"
+      },
+      "ast": null,
+      "ai": null
+    },
+    {
+      "id": "DANGEROUS_FUNC",
+      "pillar": "Security",
+      "category": "Security",
+      "severity": "Critical",
+      "debt": 45,
+      "reason": "Dangerous function detected (Arbitrary Code Execution / OS Command Injection)",
+      "weight": -8.0,
+      "regex": null,
+      "ast": {
+        "type": "dangerous_functions",
+        "targets": [
+          { "name": "eval",       "reason": "Dangerous function 'eval' detected (Arbitrary Code Execution)" },
+          { "name": "exec",       "reason": "Dangerous function 'exec' detected (Arbitrary Code Execution)" },
+          { "name": "os.system",  "reason": "Dangerous function 'os.system' detected (OS Command Injection)", "weight": -5.0 },
+          { "name": "pickle.loads","reason": "Unsafe deserialization with 'pickle.loads'" }
+        ]
+      },
+      "ai": {
+        "prompt": "Kiểm tra xem hàm nguy hiểm này (eval/exec/os.system/pickle.loads) có đang xử lý dữ liệu đầu vào không rõ nguồn gốc từ người dùng (user input) hay không. Nếu chỉ xử lý hằng số tĩnh thì có thể loại bỏ."
+      }
+    },
+    {
+      "id": "SELECT_STAR",
+      "pillar": "Performance",
+      "category": "Performance",
+      "severity": "Minor",
+      "debt": 10,
+      "reason": "SELECT * in BigQuery/SQL (anti-pattern)",
+      "weight": -2.0,
+      "regex": {
+        "pattern": "SELECT\\s+\\*"
+      },
+      "ast": null,
+      "ai": null
+    },
+    {
+      "id": "ITERROWS_USE",
+      "pillar": "Performance",
+      "category": "Performance",
+      "severity": "Minor",
+      "debt": 15,
+      "reason": "Pandas .iterrows() detected (slow, prefer vectorized operations)",
+      "weight": -3.0,
+      "regex": {
+        "pattern": "\\.iterrows\\(\\)"
+      },
+      "ast": null,
+      "ai": null
     },
     {
       "id": "PRINT_STATEMENT",
-      "pattern": "print\\(.+\\)",
       "pillar": "Maintainability",
+      "category": "Maintainability",
+      "severity": "Info",
+      "debt": 2,
       "reason": "Print statement found in production code",
-      "weight": -0.5
-    }
-  ],
-  "ast_rules": {
-    "bare_except": {
+      "weight": -0.5,
+      "regex": null,
+      "ast": {
+        "type": "dangerous_functions",
+        "targets": [{"name": "print", "reason": "Print statement found in production code. Use logger instead."}]
+      },
+      "ai": null
+    },
+    {
       "id": "BARE_EXCEPT",
       "pillar": "Reliability",
+      "category": "Reliability",
+      "severity": "Minor",
+      "debt": 10,
       "reason": "Bare except: block detected (Catches SystemExit/KeyboardInterrupt)",
-      "weight": -2.0
+      "weight": -2.0,
+      "regex": null,
+      "ast": {
+        "type": "bare_except"
+      },
+      "ai": null
     },
-    "swallowed_exception": {
+    {
       "id": "SWALLOWED_EXCEPTION",
       "pillar": "Reliability",
+      "category": "Reliability",
+      "severity": "Major",
+      "debt": 30,
       "reason": "Swallowed exception (except block has only 'pass')",
-      "weight": -5.0
+      "weight": -5.0,
+      "regex": null,
+      "ast": {
+        "type": "swallowed_exception"
+      },
+      "ai": {
+        "prompt": "Xác nhận xem đây có phải là trường hợp exception bị nuốt im lặng (không log, không raise lại) hay là ý định có chủ đích (như bỏ qua lỗi không quan trọng). Nếu là intentional thì loại bỏ."
+      }
     },
-    "max_function_length": {
+    {
       "id": "GOD_OBJECT",
       "pillar": "Maintainability",
-      "reason": "Function too long",
+      "category": "Maintainability",
+      "severity": "Minor",
+      "debt": 15,
+      "reason": "Function too long (God Object anti-pattern)",
+      "weight": -2.0,
       "limit": 80,
-      "weight": -2.0
+      "regex": null,
+      "ast": {
+        "type": "max_function_length",
+        "limit": 80
+      },
+      "ai": null
     },
-    "complexity": {
+    {
       "id": "HIGH_COMPLEXITY",
       "pillar": "Performance",
+      "category": "Performance",
+      "severity": "Major",
+      "debt": 30,
       "reason": "Cyclomatic Complexity too high (Too many nested loops/branches)",
+      "weight": -5.0,
       "limit": 12,
-      "weight": -5.0
+      "regex": null,
+      "ast": {
+        "type": "complexity",
+        "limit": 12
+      },
+      "ai": null
     },
-    "max_parameters": {
+    {
       "id": "TOO_MANY_PARAMS",
       "pillar": "Maintainability",
+      "category": "Maintainability",
+      "severity": "Minor",
+      "debt": 15,
       "reason": "Function has too many parameters (Consider DTO/Dict)",
+      "weight": -3.0,
       "limit": 7,
-      "weight": -3.0
+      "regex": null,
+      "ast": {
+        "type": "max_parameters",
+        "limit": 7
+      },
+      "ai": null
     },
-    "n_plus_one_query": {
+    {
       "id": "N_PLUS_ONE",
       "pillar": "Performance",
+      "category": "Performance",
+      "severity": "Major",
+      "debt": 30,
       "reason": "N+1 Query Pattern Detected (DB/API Call inside a loop)",
-      "weight": -5.0
+      "weight": -5.0,
+      "regex": null,
+      "ast": {
+        "type": "n_plus_one_query"
+      },
+      "ai": {
+        "prompt": "Xác nhận xem đây có phải N+1 Query thực sự không: DB/API call có bên trong vòng lặp và phụ thuộc vào biến lặp không? Hay chỉ là gọi hàm thông thường trùng lặp không liên quan đến dữ liệu vòng lặp?"
+      }
     },
-    "circular_dependency": {
+    {
       "id": "CIRCULAR_DEPENDENCY",
       "pillar": "Maintainability",
+      "category": "Maintainability",
+      "severity": "Blocker",
+      "debt": 60,
       "reason": "Circular Import Dependency Detected (A imports B, B imports A)",
-      "weight": -10.0
+      "weight": -10.0,
+      "regex": null,
+      "ast": {
+        "type": "circular_dependency"
+      },
+      "ai": null
     },
-    "missing_timeout": {
+    {
       "id": "NO_TIMEOUT_SET",
       "pillar": "Reliability",
+      "category": "Reliability",
+      "severity": "Major",
+      "debt": 30,
       "reason": "External API call without timeout parameter",
-      "weight": -5.0
+      "weight": -5.0,
+      "regex": null,
+      "ast": {
+        "type": "missing_timeout"
+      },
+      "ai": null
     },
-    "missing_with_open": {
+    {
       "id": "MEMORY_LEAK_OPEN",
       "pillar": "Performance",
+      "category": "Performance",
+      "severity": "Major",
+      "debt": 20,
       "reason": "Usage of open() outside a 'with' context manager (Risk of File Handle Leak)",
-      "weight": -4.0
-    },
-    "dangerous_functions": [
-      {
-        "id": "DANGEROUS_FUNC",
-        "name": "eval",
-        "pillar": "Security",
-        "reason": "Dangerous function 'eval' detected (Arbitary Code Execution)",
-        "weight": -8.0
+      "weight": -4.0,
+      "regex": null,
+      "ast": {
+        "type": "missing_with_open"
       },
-      {
-        "id": "DANGEROUS_FUNC",
-        "name": "exec",
-        "pillar": "Security",
-        "reason": "Dangerous function 'exec' detected",
-        "weight": -8.0
-      },
-      {
-        "id": "DANGEROUS_FUNC",
-        "name": "os.system",
-        "pillar": "Security",
-        "reason": "Dangerous function 'os.system' detected (OS Command Injection)",
-        "weight": -5.0
-      },
-      {
-        "id": "DANGEROUS_FUNC",
-        "name": "pickle.loads",
-        "pillar": "Security",
-        "reason": "Unsafe deserialization with 'pickle.loads'",
-        "weight": -8.0
-      }
-    ]
-  }
-
+      "ai": null
+    }
+  ]
 }

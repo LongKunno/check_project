@@ -11,7 +11,21 @@ Lấy quy tắc đã lưu của dự án.
 {
   "status": "success",
   "data": {
-    "default_rules": { ... },
+    "default_rules": {
+      "RULE_ID": {
+         "category": "Maintainability",
+         "severity": "Minor",
+         "debt": 10,
+         "weight": -2.0,
+         "reason": "Mô tả vi phạm",
+         "has_regex": true,
+         "has_ast": false,
+         "has_ai": false,
+         "regex": { "pattern": "..." },
+         "ast": null,
+         "ai": null
+      }
+    },
     "target_id": "test_target",
     "natural_text": "Cấm dùng eval",
     "compiled_json": { ... },

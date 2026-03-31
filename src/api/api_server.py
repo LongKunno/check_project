@@ -500,42 +500,43 @@ class SaveRulesRequest(BaseModel):
 
 @app.get("/rules")
 async def get_rules(target: str = Query(..., description="Target ID (project name or repo URL)")):
-    from src.config import RULES_METADATA
     import json
-    
-    # Đọc cấu hình weight mặc định từ file rules.json
+
     default_rules_with_weight = {}
-    for k, v in RULES_METADATA.items():
-        default_rules_with_weight[k] = v.copy()
-        default_rules_with_weight[k]['weight'] = -2.0 # Fallback
-        
     try:
         rules_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'engine', 'rules.json')
         with open(rules_path, 'r', encoding='utf-8') as f:
             engine_rules = json.load(f)
-            for r in engine_rules.get('regex_rules', []):
-                if r['id'] in default_rules_with_weight:
-                    default_rules_with_weight[r['id']]['weight'] = r.get('weight', -2.0)
-            ast_r = engine_rules.get('ast_rules', {})
-            for r in ast_r.get('dangerous_functions', []):
-                if r['id'] in default_rules_with_weight:
-                    default_rules_with_weight[r['id']]['weight'] = r.get('weight', -2.0)
-            for k, v in ast_r.items():
-                if k != 'dangerous_functions' and isinstance(v, dict):
-                    if v['id'] in default_rules_with_weight:
-                        default_rules_with_weight[v['id']]['weight'] = v.get('weight', -2.0)
-    except Exception:
-        pass
+
+        # Unified Schema: chỉ 1 vòng lặp duy nhất qua mảng 'rules'
+        for r in engine_rules.get('rules', []):
+            rule_id = r.get('id')
+            if rule_id:
+                default_rules_with_weight[rule_id] = {
+                    "category": r.get('category', 'Maintainability'),
+                    "severity": r.get('severity', 'Minor'),
+                    "debt": r.get('debt', 10),
+                    "weight": r.get('weight', -2.0),
+                    "reason": r.get('reason', ''),
+                    "has_regex": r.get('regex') is not None,
+                    "has_ast": r.get('ast') is not None,
+                    "has_ai": r.get('ai') is not None,
+                    "regex": r.get('regex'),
+                    "ast": r.get('ast'),
+                    "ai": r.get('ai')
+                }
+    except Exception as e:
+        logger.error(f"Error reading rules.json: {e}")
 
     rules = AuditDatabase.get_project_rules(target)
-    
+
     response_data = {
         "default_rules": default_rules_with_weight
     }
-    
+
     if rules:
         response_data.update(rules)
-        
+
     return {"status": "success", "data": response_data}
 
 @app.post("/rules/save")

@@ -90,6 +90,9 @@ class CodeAuditor:
         verifier = VerificationStep(self.target_dir, self.discovery_data['files'], custom_rules=self.custom_rules)
         automated_violations = verifier.run_verification()
         
+        # Load merged rules for metadata (severity, debt) later in Aggregation
+        self.merged_rules = verifier.load_rules()
+        
         # BƯỚC 3.5: AI HYBRID VALIDATION (Xác thực AI theo Batch)
         print("[3.5/5] Bước 3.5: Xác thực AI (AI Hybrid Validation - Batching) với Async I/O...")
         from src.engine.ai_service import ai_service
@@ -246,7 +249,7 @@ class CodeAuditor:
 
         # BƯỚC 4: AGGREGATION (Tổng hợp điểm số Phân cấp)
         print("[4/5] Bước 4: Tổng hợp dữ liệu (Aggregation)...")
-        from src.config import RULES_METADATA, WEIGHTS
+        from src.config import WEIGHTS
         from src.engine.authorship import AuthorshipTracker
         
         auth_tracker = AuthorshipTracker(self.target_dir)
@@ -277,9 +280,16 @@ class CodeAuditor:
             pillar = v['pillar']
             feature_punishments[feat][pillar] += v['weight']
             
+            # Chuẩn bị Metadata dạng phẳng từ mảng rules nguyên khối
+            flat_meta = {r.get('id'): r for r in getattr(self, 'merged_rules', {}).get('rules', [])}
+
             # SonarQube Meta
             rule_id = v.get('rule_id', '')
-            meta = RULES_METADATA.get(rule_id, {"severity": "Minor", "debt": 10})
+            meta_rule = flat_meta.get(rule_id, {})
+            meta = {
+                "severity": meta_rule.get("severity", "Minor"),
+                "debt": meta_rule.get("debt", 10)
+            }
             feature_meta[feat][pillar]["debt"] += meta["debt"]
             
             # Cập nhật mức độ nghiêm trọng cao nhất
