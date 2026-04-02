@@ -60,6 +60,62 @@ CONFIGURED_REPOSITORIES = [
         "branch": "master"
     },
     {
+        "id": "liftsoftvn/lift_wky_api",
+        "name": "WKY API",
+        "url": "https://bitbucket.org/liftsoftvn/lift_wky_api.git",
+        "username": BITBUCKET_USER,
+        "token": BITBUCKET_PASS,
+        "branch": "main"
+    },
+    {
+        "id": "liftsoftvn/lpp_grm_crb",
+        "name": "GRM CRB",
+        "url": "https://bitbucket.org/liftsoftvn/lpp_grm_crb.git",
+        "username": BITBUCKET_USER,
+        "token": BITBUCKET_PASS,
+        "branch": "master"
+    },
+    {
+        "id": "liftsoftvn/lpp_lap_api",
+        "name": "LAP",
+        "url": "https://bitbucket.org/liftsoftvn/lpp_lap_api.git",
+        "username": BITBUCKET_USER,
+        "token": BITBUCKET_PASS,
+        "branch": "master"
+    },
+    {
+        "id": "liftsoftvn/mpf_mobile_api",
+        "name": "MPF Mobile API",
+        "url": "https://bitbucket.org/liftsoftvn/mpf_mobile_api.git",
+        "username": BITBUCKET_USER,
+        "token": BITBUCKET_PASS,
+        "branch": "master"
+    },
+    {
+        "id": "liftsoftvn/mpf_api",
+        "name": "MPF API",
+        "url": "https://bitbucket.org/liftsoftvn/mpf_api.git",
+        "username": BITBUCKET_USER,
+        "token": BITBUCKET_PASS,
+        "branch": "master"
+    },
+    {
+        "id": "liftsoftvn/lpp_msp_app",
+        "name": "MSP APP",
+        "url": "https://bitbucket.org/liftsoftvn/lpp_msp_app.git",
+        "username": BITBUCKET_USER,
+        "token": BITBUCKET_PASS,
+        "branch": "master"
+    },
+    {
+        "id": "liftsoftvn/adcom_api",
+        "name": "Adcom API",
+        "url": "https://bitbucket.org/liftsoftvn/adcom_api.git",
+        "username": BITBUCKET_USER,
+        "token": BITBUCKET_PASS,
+        "branch": "master"
+    },
+    {
         "id": "liftsoftvn/grm-app",
         "name": "GRM APP",
         "url": "https://bitbucket.org/liftsoftvn/lpp_grm_app.git",
