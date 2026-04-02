@@ -341,7 +341,9 @@
         "pattern": "#\\s*(TODO|FIXME|HACK)(\\s|:)?"
       },
       "ast": null,
-      "ai": null
+      "ai": {
+        "prompt": "Kiểm tra xem đây có thực sự là một đoạn comment TODO/FIXME lỗi thời hay lãng quên không. Nếu comment có chứa mã số Ticket/Issue rõ ràng (VD: FIXME(PROJ-123)), đánh giá rằng nó đang được theo dõi và loại bỏ vi phạm (False Positive). Nếu chỉ là ghi chú tạm thời và không có dấu hiệu được tracking, hãy đánh dấu vi phạm."
+      }
     },
     {
       "id": "COMMENTED_OUT_CODE",
@@ -421,6 +423,90 @@
       "ast": null,
       "ai": {
         "prompt": "Xác nhận xem địa chỉ IP này có phải cố định (Hardcoded) trong logic/config không. Nếu IP là `127.0.0.1`, `0.0.0.0`, nằm trong comment văn bản, hoặc là version number trùng hợp, thì loại bỏ chặn nhầm (False Positive). Chỉ bắt các IP môi trường (ví dụ 192.168.x.x, 10.x.x.x...)"
+      }
+    },
+    {
+      "id": "UNCHECKED_NONE_RETURN",
+      "pillar": "Reliability",
+      "category": "Reliability",
+      "severity": "Major",
+      "debt": 25,
+      "reason": "Function call that may return None is used without null-check, risking AttributeError at runtime.",
+      "weight": -5.0,
+      "regex": null,
+      "ast": null,
+      "ai": {
+        "prompt": "Tìm các trường hợp gọi hàm có thể trả về None (ví dụ: dict.get(), list.find(), DB query .first(), re.match()) nhưng kết quả được sử dụng trực tiếp mà KHÔNG kiểm tra None trước. Ví dụ: `user = db.query(User).first()` rồi ngay sau đó `user.name` mà không có `if user:`. Bỏ qua nếu đã có guard clause (if/assert/or default)."
+      }
+    },
+    {
+      "id": "SILENT_DATA_CORRUPTION",
+      "pillar": "Reliability",
+      "category": "Reliability",
+      "severity": "Major",
+      "debt": 30,
+      "reason": "Unsafe type coercion on external/user input without validation. May silently corrupt data.",
+      "weight": -5.0,
+      "regex": null,
+      "ast": null,
+      "ai": {
+        "prompt": "Tìm các trường hợp ép kiểu ngầm (int(), float(), bool(), json.loads()) trên dữ liệu đến từ bên ngoài (request params, form data, file input, API response, environment variable) mà KHÔNG có try/except hoặc validation trước. Ví dụ: `page = int(request.args.get('page'))` — nếu 'page' là 'abc' sẽ crash. Bỏ qua nếu dữ liệu đến từ internal/hardcoded hoặc đã có Pydantic/serializer validate."
+      }
+    },
+    {
+      "id": "INCONSISTENT_RETURN_TYPE",
+      "pillar": "Reliability",
+      "category": "Reliability",
+      "severity": "Major",
+      "debt": 25,
+      "reason": "Function returns different types across branches (e.g., dict vs None vs string), making caller error-prone.",
+      "weight": -4.0,
+      "regex": null,
+      "ast": null,
+      "ai": {
+        "prompt": "Phân tích tất cả các nhánh return trong hàm. Nếu hàm trả về kiểu dữ liệu KHÔNG NHẤT QUÁN giữa các nhánh (ví dụ: branch A return dict, branch B return None, branch C return string), thì đánh dấu vi phạm. Bỏ qua nếu: (1) hàm có type hint Optional[X] và trả về X hoặc None, (2) hàm rõ ràng là factory/dispatcher pattern có chủ đích trả về nhiều kiểu."
+      }
+    },
+    {
+      "id": "REDUNDANT_DB_QUERY",
+      "pillar": "Performance",
+      "category": "Performance",
+      "severity": "Major",
+      "debt": 20,
+      "reason": "Same or equivalent database query executed multiple times within the same request handler without caching.",
+      "weight": -4.0,
+      "regex": null,
+      "ast": null,
+      "ai": {
+        "prompt": "Trong cùng một hàm xử lý request (route handler, view function, API endpoint), tìm các trường hợp gọi cùng một DB query (hoặc query tương đương về ngữ nghĩa) 2 lần trở lên mà kết quả không được cache vào biến. Ví dụ: gọi `User.objects.get(id=user_id)` ở dòng 10 và lại gọi lại ở dòng 25. Bỏ qua nếu query có điều kiện khác nhau hoặc dữ liệu có thể thay đổi giữa 2 lần gọi."
+      }
+    },
+    {
+      "id": "MISLEADING_NAME",
+      "pillar": "Maintainability",
+      "category": "Maintainability",
+      "severity": "Minor",
+      "debt": 15,
+      "reason": "Function/variable name contradicts its actual behavior, making code deceptive to readers.",
+      "weight": -3.0,
+      "regex": null,
+      "ast": null,
+      "ai": {
+        "prompt": "Tìm các hàm hoặc biến có TÊN GỌI MÂU THUẪN với HÀNH VI THỰC TẾ. Ví dụ: (1) hàm `get_user()` nhưng bên trong lại TẠO MỚI user, (2) biến `is_valid` nhưng chứa string thay vì boolean, (3) hàm `calculate_total()` nhưng lại ghi dữ liệu vào DB (side effect ẩn), (4) hàm `delete_item()` nhưng chỉ soft-delete mà tên không phản ánh. CHỈ báo cáo khi tên thực sự gây hiểu lầm nghiêm trọng, KHÔNG báo cáo các trường hợp tên chỉ hơi mơ hồ."
+      }
+    },
+    {
+      "id": "INSECURE_RANDOM",
+      "pillar": "Security",
+      "category": "Security",
+      "severity": "Critical",
+      "debt": 30,
+      "reason": "Using `random` module for security-sensitive purposes (tokens, OTP, session IDs). Use `secrets` module instead.",
+      "weight": -6.0,
+      "regex": null,
+      "ast": null,
+      "ai": {
+        "prompt": "Tìm các trường hợp sử dụng module `random` (random.randint, random.choice, random.sample, random.getrandbits) cho mục đích BẢO MẬT — sinh OTP, token, session ID, password reset code, verification code, API key. Module `random` dùng PRNG không an toàn, phải dùng `secrets` hoặc `os.urandom()`. Bỏ qua nếu `random` được dùng cho mục đích phi bảo mật (shuffle UI, test data, game logic, sampling thống kê)."
       }
     }
   ]

@@ -50,8 +50,11 @@ flowchart TD
    - **Pillars Normalization:** Khối lượng 4 Trụ cột theo khai báo trong Cấu hình (`src/config.py`) luôn được chuẩn hóa (chia tỷ lệ) để chắc chắn Tổng bằng `1.0`. Cho dù User phá hỏng cấu hình (Ví dụ: Đẩy tự do cả 4 trụ cột lên 1.0 = Tổng 4.0), tính toán trần điểm 10 của Dashboard hoàn toàn không bị ảnh hưởng.
    - Không dùng trung bình cộng đơn thuần. Điểm tổng là **Trung bình có trọng số theo Kích thước Tính năng (Weighted Average by LOC)**. Một module 10,000 dòng code sẽ có sức ảnh hưởng lên điểm dự án gấp 100 lần một thư mục 100 dòng.
 
-## 3. Thông tin bổ trợ (Technical Debt)
-Bên cạnh điểm số 0-10, hệ thống còn cung cấp chỉ số **Nợ kỹ thuật (Technical Debt)** tính bằng phút để giúp đội ngũ kỹ thuật ước lượng nỗ lực cần thiết để cải thiện mã nguồn.
+## 3. Thông tin bổ trợ Khấu trừ và Thống kê (Technical Debt & Statistics)
+Bên cạnh điểm số 0-10, hệ thống xuất báo cáo cung cấp các chỉ số quan trọng sau để team có Action Item:
+- **Nợ kỹ thuật (Technical Debt):** Tính bằng đơn vị "phút" (minutes), giúp đội ngũ ước lượng thời gian cần thiết để cải thiện mã nguồn.
+- **Phân bổ Mức độ Nghiêm trọng (Severity Distribution):** Phân loại các lỗi thành 5 cấp độ: `Blocker`, `Critical`, `Major`, `Minor`, `Info`. Lỗi mang cấp độ Blocker/Critical yêu cầu khắc phục ngay lập tức trước khi deploy.
+- **Thống kê Mức phạt theo Luật (Rule Breakdown):** Liệt kê chi tiết lỗi nào vi phạm nhiều nhất và tốn bao nhiêu điểm phạt, qua đó giúp team nhận dạng tư duy lập trình sai lệch phổ biến nhất hiện tại.
 
 ## 4. Đặc tả tính điểm theo Thành viên (Member Scoring)
 Hệ thống tính toán riêng biệt hiệu suất cá nhân của từng thành viên:

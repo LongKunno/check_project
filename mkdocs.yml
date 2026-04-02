@@ -51,6 +51,7 @@ nav:
       - UI Text Selection Fix: features/ui_text_selection.md
   - Kiến trúc hệ thống:
     - Tổng quan: architecture/overview.md
+    - Kiến trúc Module: architecture/module_architecture.md
     - Quyết định thiết kế (ADR): architecture/design_decisions.md
     - NLRE Engine: architecture/nlre_engine.md
     - Docker Setup: architecture/docker_setup.md

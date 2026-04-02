@@ -18,6 +18,7 @@ class DeepAuditViolation(BaseModel):
     weight: float = Field(..., description="Trọng số phạt (ví dụ: -3.0 hoặc -5.0)")
     confidence: float = Field(..., description="Độ tin cậy từ 0.0 đến 1.0")
     line: int = Field(default=0, description="Dòng code xảy ra lỗi (nếu xác định được)")
+    rule_id: str = Field(default="AI_REASONING", description="Rule ID cụ thể nếu vi phạm khớp với một luật AI-only đã định nghĩa (vd: UNCHECKED_NONE_RETURN). Nếu không khớp luật nào, để 'AI_REASONING'.")
     is_custom: bool = Field(default=False, description="True nếu vi phạm bộ quy tắc tùy chỉnh của người dùng")
     needs_verification: bool = Field(default=False, description="True nếu lỗi này liên kết đến logic ở file khác và bạn không chắc chắn. Hãy cảnh báo thay vì phán xét bừa.")
     verify_target: str = Field(default="", description="Nếu needs_verification=True, hãy cung cấp TÊN HÀM hoặc TÊN CLASS ở file khác mà bạn cần hệ thống tìm mã nguồn cho bạn xem để xác minh lỗi này. Ví dụ: 'get_user_profile'")
@@ -59,6 +60,41 @@ class AiService:
             return json_match.group(1)
         return content
 
+    def _load_ai_only_rules(self) -> str:
+        """Load các rules AI-only từ rules.json để inject vào prompt AI.
+        Quy tắc tự nhận diện: regex=null AND ast=null AND ai≠null → AI-only rule.
+        Không cần thêm flag gì, chỉ cần thêm rule vào rules.json là tự động hoạt động.
+        """
+        rules_path = os.path.join(os.path.dirname(__file__), 'rules.json')
+        try:
+            with open(rules_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            ai_rules = []
+            for r in data.get('rules', []):
+                # Tự nhận diện: không có regex, không có AST, nhưng CÓ ai prompt
+                has_regex = r.get('regex') is not None
+                has_ast = r.get('ast') is not None
+                has_ai = r.get('ai') is not None and r.get('ai', {}).get('prompt')
+                if not has_regex and not has_ast and has_ai:
+                    ai_rules.append({
+                        'id': r['id'],
+                        'pillar': r['pillar'],
+                        'severity': r['severity'],
+                        'weight': r['weight'],
+                        'description': r['reason'],
+                        'detect_instruction': r['ai']['prompt']
+                    })
+            if not ai_rules:
+                return ""
+            rules_text = "\n".join(
+                f"- **{r['id']}** [{r['pillar']}/{r['severity']}] (weight: {r['weight']}): {r['description']}\n  HƯỚNG DẪN PHÁT HIỆN: {r['detect_instruction']}"
+                for r in ai_rules
+            )
+            rule_ids = ', '.join(r['id'] for r in ai_rules)
+            return f"\n## DANH SÁCH LUẬT AI-ONLY (BẮT BUỘC KIỂM TRA):\nCác luật dưới đây CHỈ có thể được phát hiện bởi AI (không có Regex/AST). Hãy ĐẶC BIỆT chú ý kiểm tra từng luật.\nKhi phát hiện vi phạm khớp với luật nào, hãy đặt `rule_id` = ID tương ứng ({rule_ids}).\nNếu vi phạm không khớp luật nào trong danh sách, đặt `rule_id` = 'AI_REASONING'.\n\n{rules_text}\n"
+        except Exception:
+            return ""
+
     async def deep_audit_batch(self, files_chunk: List[Dict[str, str]], custom_rules: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         """
         Thực hiện quét sâu một nhóm file để tìm các lỗi logic/kiến trúc.
@@ -84,6 +120,9 @@ class AiService:
         extensions = {os.path.splitext(f['path'])[1] for f in files_chunk}
         tech_context = f"Dự án đang sử dụng các ngôn ngữ/format: {', '.join(extensions)}"
 
+        # Load AI-only rules để inject vào prompt
+        ai_only_rules_prompt = self._load_ai_only_rules()
+
         prompt = f"""
 Bạn là một Auditor Senior chuyên sâu về: {tech_context}.
 Hãy thực hiện quét sâu danh sách mã nguồn dưới đây để tìm các lỗi tiềm ẩn mà các công cụ quét tĩnh thông thường (Regex/AST) không thể bắt được.
@@ -92,13 +131,15 @@ DANH SÁCH MÃ NGUỒN:
 {files_prompt}
 
 {custom_rules_prompt}
+{ai_only_rules_prompt}
 
 TẬP TRUNG VÀO:
-1. Các vi phạm đối với TẬP LUẬT TÙY CHỈNH CỦA NGƯỜI DÙNG (nếu có ở trên).
-2. Lỗi logic luồng xử lý (Logic flaws, race conditions, improper error handling).
-3. Lỗi kiến trúc (Circular dependencies, God objects, violation of Separation of Concerns).
-4. Nguy cơ bảo mật tiềm ẩn (Insecure data flow, business logic vulnerabilities).
-5. Khả năng bảo trì (Clean code, adherence to best practices for {tech_context}).
+1. Các vi phạm đối với DANH SÁCH LUẬT AI-ONLY ở trên (BẮT BUỘC kiểm tra từng luật).
+2. Các vi phạm đối với TẬP LUẬT TÙY CHỈNH CỦA NGƯỜI DÙNG (nếu có ở trên).
+3. Lỗi logic luồng xử lý (Logic flaws, race conditions, improper error handling).
+4. Lỗi kiến trúc (Circular dependencies, God objects, violation of Separation of Concerns).
+5. Nguy cơ bảo mật tiềm ẩn (Insecure data flow, business logic vulnerabilities).
+6. Khả năng bảo trì (Clean code, adherence to best practices for {tech_context}).
 
 Yêu cầu trả về kết quả dưới dạng đối tượng JSON với key 'violations' là một mảng:
 {{
@@ -110,6 +151,7 @@ Yêu cầu trả về kết quả dưới dạng đối tượng JSON với key 
       "weight": -5.0,
       "confidence": 0.95,
       "line": 12,
+      "rule_id": "INSECURE_RANDOM",
       "is_custom": true,
       "needs_verification": true,
       "verify_target": "get_user"
@@ -117,6 +159,7 @@ Yêu cầu trả về kết quả dưới dạng đối tượng JSON với key 
   ]
 }}
 Nếu không thấy lỗi nào, trả về {{"violations": []}}.
+QUY TẮC rule_id: Nếu vi phạm khớp với một luật AI-ONLY đã liệt kê ở trên, BẮT BUỘC đặt `rule_id` = ID của luật đó. Nếu không khớp luật nào, đặt `rule_id` = 'AI_REASONING'.
 AI cũng có trách nhiệm phát hiện xem một lỗi có vi phạm TRỰC TIẾP 'USER DEFINED PROJECT RULES' hay không để đặt 'is_custom' = true.
 QUAN TRỌNG: NGUYÊN TẮC 'TWO-PASS AUDIT'. Nếu bạn nghi ngờ một lời gọi hàm dẫn đến lỗi logic chéo file (vd: N+1 query lấp lửng từ 1 API trả về), TUYỆT ĐỐI KHÔNG SUY ĐOÁN. Hãy bật `needs_verification: true` và gõ tên hàm đó vào `verify_target`. Hệ thống sẽ đi móc code nguyên thủy của hàm đó ở file khác ném trả lại cho bạn ở lần Review thứ 2.
 """
@@ -158,7 +201,8 @@ QUAN TRỌNG: NGUYÊN TẮC 'TWO-PASS AUDIT'. Nếu bạn nghi ngờ một lời
 
         items_prompt = ""
         for i, v in enumerate(violations_chunk):
-            items_prompt += f"\n--- Vi phạm #{i} ---\nFile: {v['file']}\nLỗi: {v['reason']}\nTrụ cột: {v['type']}\nĐoạn mã:\n```\n{v.get('snippet', '')}\n```\n"
+            ai_instruction = f"\nCHỈ ĐẠO CỤ THỂ CHO LỖI NÀY: {v['ai_prompt']}" if v.get('ai_prompt') else ""
+            items_prompt += f"\n--- Vi phạm #{i} ---\nFile: {v['file']}\nLỗi: {v['reason']}\nTrụ cột: {v['type']}\nĐoạn mã:\n```\n{v.get('snippet', '')}\n```\n{ai_instruction}\n"
 
         prompt = f"""
 Bạn là một chuyên gia Review Code. Hãy xác định xem các lỗi dưới đây là lỗi thật (True Positive) hay báo lỗi sai (False Positive).

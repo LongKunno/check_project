@@ -1,41 +1,430 @@
 # BÁO CÁO KIỂM TOÁN TỔNG THỂ (OVERALL AUDIT REPORT)
 
-## ĐIỂM TỔNG DỰ ÁN: 11.74 / 100 (🚨 Cần cải thiện ngay)
+**Thời gian báo cáo:** 2026-04-02 03:15:43
+
+## ĐIỂM TỔNG DỰ ÁN: 99.9 / 100 (🏆 Xuất sắc)
 
 ### 📊 Chỉ số dự án (Project Metrics)
-- Tổng LOC: 866
-- Tổng số file: 3
-- Tổng số tính năng: 1
+- Tổng LOC: 148294
+- Tổng số file: 1085
+- Tổng số tính năng: 35
+
+### 🚨 Phân bổ Mức độ Nghiêm trọng (Severity Distribution)
+| Mức độ | Số lượng |
+|---|---|
+| 🔥 Blocker | 0 |
+| 🔥 Critical | 0 |
+| ⚠️ Major | 2 |
+| ℹ️ Minor | 2 |
+| ℹ️ Info | 1 |
 
 ### 🛡️ Đánh giá 4 Trụ cột Dự án
 | Trụ cột | Điểm (Thang 10) | Trạng thái |
 |---|---|---|
-| Performance | 1.48 | 🚨 Nguy cơ |
-| Maintainability | 0.8 | 🚨 Nguy cơ |
-| Reliability | 1.48 | 🚨 Nguy cơ |
-| Security | 0.8 | 🚨 Nguy cơ |
+| Performance | 10.0 | ✅ Tốt |
+| Maintainability | 9.94 | ✅ Tốt |
+| Reliability | 9.55 | ✅ Tốt |
+| Security | 10.0 | ✅ Tốt |
 
 ### 🧩 Chi tiết theo Tính năng (Feature Breakdown)
-#### 🔹 Tính năng: `root` (LOC: 866)
-**Điểm tính năng: 11.74 / 100** (Nợ: 250m)
+#### 🔹 Tính năng: `source_code_root` (LOC: 438)
+**Điểm tính năng: 65.44 / 100** (Nợ: 87m)
 
 | Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
 |---|---|---|
-| Performance | -10.0 | 1.48 |
-| Maintainability | -40.0 | 0.8 |
-| Reliability | -10.0 | 1.48 |
-| Security | -5.0 | 0.8 |
+| Performance | 0 | 10.0 |
+| Maintainability | -3.5 | 3.64 |
+| Reliability | -14.0 | 0.67 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `Ad_Group` (LOC: 1306)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `Auto_Pacing` (LOC: 8773)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `Budget_Group_Management` (LOC: 5408)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `Bundle_Management` (LOC: 16979)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `Campaingns` (LOC: 2816)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `Edit_History` (LOC: 2582)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `F1_1_Auth` (LOC: 1425)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `Locale_BE` (LOC: 1567)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `My_Business` (LOC: 2299)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `Notify` (LOC: 3591)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `Phone_Provision` (LOC: 6197)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `Portfolio_Budget` (LOC: 1493)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `Portfolio_Edit_Publish_Setting` (LOC: 456)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `Portfolio_Kpi` (LOC: 249)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `Portfolio_Management` (LOC: 8323)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `Portfolio_Pause_Schedule` (LOC: 2218)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `Publisher_Account` (LOC: 1169)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `Redirect` (LOC: 60)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `Rsa` (LOC: 2658)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `Setting_Column` (LOC: 122)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `Shared_Management` (LOC: 686)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `Version_Management` (LOC: 343)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `__Common` (LOC: 2475)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `__LP_Library` (LOC: 28176)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `batchedit` (LOC: 6331)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `crm_bridge` (LOC: 1792)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `data_sync` (LOC: 2788)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `external_sources` (LOC: 1623)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `gcloud_function` (LOC: 168)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `message_queue_service` (LOC: 2605)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `publisher_wrappers` (LOC: 25852)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `publisher_wrappers_v2` (LOC: 2139)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `sp_integrate` (LOC: 1634)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
+
+---
+#### 🔹 Tính năng: `task_configuration` (LOC: 1553)
+**Điểm tính năng: 100.0 / 100** (Nợ: 0m)
+
+| Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
+|---|---|---|
+| Performance | 0 | 10.0 |
+| Maintainability | 0 | 10.0 |
+| Reliability | 0 | 10.0 |
+| Security | 0 | 10.0 |
 
 ---
 
 ### 🚨 Top 10 Vi phạm tiêu biểu
-- **[Maintainability]** /home/long/Documents/project_private/check_project/src/api/api_server.py: Function too long (God Object anti-pattern): upload_and_audit (> 80 lines). AI Note: Hàm 'upload_and_audit' vượt quá 80 dòng là True Positive. Trong kiến trúc API hiện đại (đặc biệt là FastAPI), các endpoint handler nên ngắn gọn và giao logic xử lý cho tầng Service hoặc Celery/Background Tasks. Việc gộp quá nhiều logic xử lý file và điều phối vào một hàm làm giảm khả năng bảo trì. (Rule: GOD_OBJECT) (Trọng số: -2.0)
-- **[Performance]** /home/long/Documents/project_private/check_project/src/api/api_server.py: Cyclomatic Complexity too high (Too many nested loops/branches): upload_and_audit (Complexity: 13 > 12). AI Note: Độ phức tạp vòng đời (Cyclomatic Complexity) là 13, vượt ngưỡng 12. Đây là lỗi thật vì hàm xử lý nhiều file thường chứa các vòng lặp lồng nhau hoặc nhiều câu lệnh rẽ nhánh để kiểm tra định dạng, lưu trữ và xử lý lỗi, gây khó khăn cho việc viết unit test. (Rule: HIGH_COMPLEXITY) (Trọng số: -5.0)
-- **[Maintainability]** /home/long/Documents/project_private/check_project/src/api/api_server.py: Function too long (God Object anti-pattern): audit_repository (> 80 lines). AI Note: Tương tự như vi phạm #0, hàm 'audit_repository' quá dài (> 80 dòng) chứng tỏ nó đang thực hiện quá nhiều nhiệm vụ: nhận request, clone git, điều phối task... Đây là dấu hiệu của God Object anti-pattern cần được tách nhỏ. (Rule: GOD_OBJECT) (Trọng số: -2.0)
-- **[Reliability]** /home/long/Documents/project_private/check_project/src/api/api_server.py: Swallowed exception (except block has only 'pass'). AI Note: Lỗi 'Swallowed exception' (except Exception: pass) là cực kỳ nguy hiểm trong trường hợp này. Nếu 'ast.parse' thất bại (ví dụ: code lỗi cú pháp), biến 'tree' sẽ không được khởi tạo nhưng chương trình vẫn âm thầm chạy tiếp, dẫn đến các lỗi ReferenceError rất khó debug sau đó. (Rule: SWALLOWED_EXCEPTION) (Trọng số: -5.0)
-- **[Reliability]** /home/long/Documents/project_private/check_project/src/api/api_server.py: Swallowed exception (except block has only 'pass'). AI Note: Việc bao bọc 'violations.extend(results)' trong khối try-except pass làm mất dấu vết nếu có lỗi xảy ra trong quá trình gộp dữ liệu. Điều này vi phạm nghiêm trọng trụ cột Reliability vì nó che giấu sự cố thay vì xử lý hoặc log lại để giám sát. (Rule: SWALLOWED_EXCEPTION) (Trọng số: -5.0)
-- **[Maintainability]** /home/long/Documents/project_private/check_project/src/api/api_server.py: Import 'WEIGHTS' might be unused (AST). AI Note: Lỗi True Positive. Việc import hằng số 'WEIGHTS' nhưng không sử dụng trong file api_server.py gây dư thừa mã nguồn, làm tăng độ nhiễu khi đọc code và không tuân thủ quy tắc Clean Code. Trừ khi nó được sử dụng trong các hàm động như getattr() hoặc globals(), linter báo lỗi này là chính xác. (Rule: UNUSED_IMPORT) (Trọng số: -0.5)
-- **[Maintainability]** /home/long/Documents/project_private/check_project/src/api/api_server.py: Import 'starlette.formparsers' might be unused (AST). AI Note: Lỗi True Positive. Theo AST (Abstract Syntax Tree), 'starlette.formparsers' không được tham chiếu trong logic xử lý của file. Trong các ứng dụng FastAPI/Starlette, form parsers thường được xử lý ngầm định hoặc thông qua dependency injection. Việc import trực tiếp mà không dùng đến là dư thừa. (Rule: UNUSED_IMPORT) (Trọng số: -0.5)
-- **[Performance]** /home/long/Documents/project_private/check_project/src/api/git_helper.py: Cyclomatic Complexity too high (Too many nested loops/branches): clone_repository (Complexity: 13 > 12). AI Note: Lỗi True Positive. Hàm clone_repository nhận nhiều tham số tùy chọn (username, token, branch) và thường chứa nhiều logic kiểm tra điều kiện (if/else), xử lý lỗi (try/except) và định dạng chuỗi URL. Với độ phức tạp 13 so với ngưỡng 12, đây là một chỉ báo hợp lý cho thấy hàm này nên được refactor (tách nhỏ) để dễ kiểm thử và bảo trì. (Rule: HIGH_COMPLEXITY) (Trọng số: -5.0)
-- **[Maintainability]** /home/long/Documents/project_private/check_project/src/api/git_helper.py: Import 'urllib.parse' might be unused (AST). AI Note: Lỗi True Positive. Mặc dù 'urllib.parse' thường được dùng trong git_helper để xử lý thông tin xác thực trong URL, nhưng nếu linter không tìm thấy bất kỳ lời gọi nào đến module này trong thân file, việc import là không cần thiết. Đây là lỗi phổ biến khi refactor code nhưng quên xóa các import cũ. (Rule: UNUSED_IMPORT) (Trọng số: -0.5)
-- **[Maintainability]** /home/long/Documents/project_private/check_project/src/api/api_server.py: Race condition và lỗi dọn dẹp thư mục tạm: Trong endpoint 'upload_and_audit', lệnh 'shutil.rmtree(temp_dir)' nằm trong khối 'finally' của request handler chính. Do 'background_tasks.add_task' chạy bất đồng bộ ngay sau khi response được trả về, khối 'finally' sẽ xóa sạch code nguồn được upload trước khi task background kịp bắt đầu hoặc hoàn thành việc đọc file, dẫn đến lỗi FileNotFoundError khi thực hiện audit. (Rule: AI_REASONING) (Trọng số: -9.0)
+- **[Maintainability]** /tmp/git_audit_0bumud27/repo/source_code/load_py_toml.py: Print statement found in production code. Use logger instead.. AI Note: Câu lệnh print đang được sử dụng để thông báo trạng thái cập nhật tệp tin. Tron mã nguồn chuyên nghiệp (production code), việc sử dụng logger được ưu tiên hơn print để có thể quản lý các mức độ log (info, error, debug), hỗ trợ ghi log ra tệp và dễ dàng cấu hình tắt/mở khi cần thiết mà không phải sửa mã nguồn. (Rule: PRINT_STATEMENT) (Trọng số: -0.5)
+- **[Reliability]** /tmp/git_audit_0bumud27/repo/source_code/load_py_toml.py: Thư viện 'toml' (thường là package PyPI 'toml') không có khả năng bảo toàn các comment (chú thích) và định dạng khi thực hiện chu trình load/dump. Việc chạy script này sẽ xóa sạch toàn bộ các dòng chú thích quan trọng trong file 'pyproject.toml', gây mất dữ liệu meta-information của dự án. (Rule: SILENT_DATA_CORRUPTION) (Trọng số: -5.0)
+- **[Reliability]** /tmp/git_audit_0bumud27/repo/source_code/load_py_toml.py: Thiếu bước kiểm chứng và làm sạch dữ liệu từ 'requirements.txt'. Script nạp trực tiếp mọi dòng (chỉ strip đơn giản) vào config. Nếu file requirements chứa các dòng chú thích (#) hoặc các flag của pip (như --index-url, -e), chúng sẽ được đưa thẳng vào 'project.dependencies', tạo ra cấu trúc không hợp lệ theo chuẩn PEP 508, dẫn đến lỗi im lặng khi build project. (Rule: SILENT_DATA_CORRUPTION) (Trọng số: -5.0)
+- **[Reliability]** /tmp/git_audit_0bumud27/repo/source_code/load_py_toml.py: Script giả định một cách không an toàn rằng cấu trúc file TOML luôn tồn tại key ['project']['dependencies']. Nếu 'pyproject.toml' hiện có đang trống hoặc sử dụng format khác (ví dụ: [tool.poetry]), việc truy cập trực tiếp sẽ gây ra ngoại lệ KeyError tại runtime mà không có cơ chế xử lý lỗi. (Rule: AI_REASONING) (Trọng số: -4.0)
+- **[Maintainability]** /tmp/git_audit_0bumud27/repo/source_code/load_py_toml.py: Tên file 'load_py_toml.py' gây nhầm lẫn (Misleading) vì nó ám chỉ hành vi chỉ đọc dữ liệu, trong khi mục đích chính của script là sửa đổi và ghi đè (Overwrite) cấu hình hệ thống quan trọng. (Rule: MISLEADING_NAME) (Trọng số: -3.0)
+
+### 📈 Thống kê theo Luật (Rule Breakdown)
+| Rule ID | Trụ cột | Số lượng | Tổng phạt |
+|---|---|---|---|
+| `SILENT_DATA_CORRUPTION` | Reliability | 2 | -10.0 |
+| `PRINT_STATEMENT` | Maintainability | 1 | -0.5 |
+| `AI_REASONING` | Reliability | 1 | -4.0 |
+| `MISLEADING_NAME` | Maintainability | 1 | -3.0 |
+

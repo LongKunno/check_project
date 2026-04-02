@@ -242,7 +242,7 @@ class CodeAuditor:
                     rv.get('file', 'unknown'), 
                     rv.get('reason', 'AI Logic Audit'), 
                     weight,
-                    rule_id='AI_REASONING',
+                    rule_id=rv.get('rule_id', 'AI_REASONING'),
                     line=rv.get('line', 0),
                     is_custom=rv.get('is_custom', False)
                 )
@@ -387,14 +387,48 @@ class CodeAuditor:
 
     def generate_report(self, feature_results, project_pillars, final_score, rating):
         """Tạo file báo cáo Markdown chuyên nghiệp phân cấp theo Tính năng."""
+        from datetime import datetime
+        
+        flat_meta = {r.get('id'): r for r in getattr(self, 'merged_rules', {}).get('rules', [])}
+        rule_stats = {}
+        severity_dist = {"Blocker": 0, "Critical": 0, "Major": 0, "Minor": 0, "Info": 0}
+        
+        for v in self.violations:
+            rule_id = v.get('rule_id', 'UNKNOWN')
+            if not rule_id: rule_id = 'UNKNOWN'
+            
+            if rule_id not in rule_stats:
+                rule_stats[rule_id] = {'count': 0, 'weight': 0.0, 'pillars': set()}
+            
+            rule_stats[rule_id]['count'] += 1
+            rule_stats[rule_id]['weight'] += v.get('weight', 0)
+            rule_stats[rule_id]['pillars'].add(v.get('pillar', 'Maintainability'))
+            
+            meta_rule = flat_meta.get(rule_id, {})
+            sev = meta_rule.get('severity', 'Minor')
+            if sev in severity_dist:
+                severity_dist[sev] += 1
+            else:
+                severity_dist['Minor'] += 1
+                
         with open(self.report_path, 'w') as f:
             f.write(f"# BÁO CÁO KIỂM TOÁN TỔNG THỂ (OVERALL AUDIT REPORT)\n\n")
+            f.write(f"**Thời gian báo cáo:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
             f.write(f"## ĐIỂM TỔNG DỰ ÁN: {final_score} / 100 ({rating})\n\n")
             
             f.write("### 📊 Chỉ số dự án (Project Metrics)\n")
             f.write(f"- Tổng LOC: {self.discovery_data['total_loc']}\n")
             f.write(f"- Tổng số file: {self.discovery_data['total_files']}\n")
             f.write(f"- Tổng số tính năng: {len(feature_results)}\n\n")
+            
+            f.write("### 🚨 Phân bổ Mức độ Nghiêm trọng (Severity Distribution)\n")
+            f.write("| Mức độ | Số lượng |\n")
+            f.write("|---|---|\n")
+            for sev in ["Blocker", "Critical", "Major", "Minor", "Info"]:
+                if severity_dist[sev] > 0 or sev in ["Critical", "Blocker"]:
+                    icon = "🔥" if sev in ["Blocker", "Critical"] else "⚠️" if sev == "Major" else "ℹ️"
+                    f.write(f"| {icon} {sev} | {severity_dist[sev]} |\n")
+            f.write("\n")
 
             f.write("### 🛡️ Đánh giá 4 Trụ cột Dự án\n")
             f.write("| Trụ cột | Điểm (Thang 10) | Trạng thái |\n")
@@ -421,6 +455,16 @@ class CodeAuditor:
             
             if not self.violations:
                 f.write("Không tìm thấy vi phạm nào. Mã nguồn đạt chuẩn Gold Standard!\n")
+
+            if rule_stats:
+                f.write("\n### 📈 Thống kê theo Luật (Rule Breakdown)\n")
+                f.write("| Rule ID | Trụ cột | Số lượng | Tổng phạt |\n")
+                f.write("|---|---|---|---|\n")
+                sorted_rules = sorted(rule_stats.items(), key=lambda x: x[1]['count'], reverse=True)
+                for r_id, stats in sorted_rules:
+                    pillars_str = ", ".join(sorted(list(stats['pillars'])))
+                    f.write(f"| `{r_id}` | {pillars_str} | {stats['count']} | {round(stats['weight'], 2)} |\n")
+                f.write("\n")
 
             if hasattr(self, 'member_results') and self.member_results:
                 f.write("\n### 👥 Đánh giá theo Thành viên (Last 6 Months)\n")

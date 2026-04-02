@@ -49,3 +49,7 @@ ai_precheck.py
 ai_double_check.py
 dashboard/dist/
 auditor_v2.db
+
+# Reports output (generated at runtime, not source code)
+reports/*.md
+reports/*.json

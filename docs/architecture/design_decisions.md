@@ -79,7 +79,7 @@ Mô hình rating A-E của SonarQube tuy chuyên nghiệp nhưng có thể gây 
 ## ADR-005: Tích hợp AI Hybrid & Ổn định điểm số (Score Stability)
 
 ### Trạng thái (Status)
-**Proposed** (2026-03-20)
+**Accepted** (2026-04-01)
 
 ### Vấn đề (Problem)
 Việc sử dụng trực tiếp AI (LLM) để chấm điểm code (ví dụ: "Cho tôi biết điểm số bảo mật của file này") thường dẫn đến sự thiếu ổn định: cùng một file có thể nhận các điểm số khác nhau trong các lần quét khác nhau. Điều này vi phạm tính tin cậy của một công cụ quản lý chất lượng.
@@ -185,3 +185,80 @@ Việc bổ sung các luật kiểm toán nhạy cảm về ngữ cảnh như `M
 ### Hệ quả (Consequences)
 - **Tích cực**: Nâng cao năng lực đánh giá của Framework. Mở rộng kho luật dễ dàng.
 - **Thử thách**: Tiêu tốn thêm Token cho LLM khi xác nhận ngữ cảnh. Phải đảm bảo AI Prompt ngắn gọn.
+
+---
+
+## ADR-010: Sandboxing Verification Script và Cấu hình Prompt Linh hoạt
+
+### Trạng thái (Status)
+**Accepted** (2026-04-02)
+
+### Vấn đề (Problem)
+1. **Thiếu Sandboxing**: Lớp `VerificationStep` sinh mã tự động `ai_double_check.py` thẳng vào `target_dir` (Nơi chứa mã nguồn dự án đang được quét). Điều này rủi ro làm ô nhiễm Repository nếu tiến trình bị treo hoặc OS Kill bất ngờ.
+2. **AI Gatekeeper cứng nhắc**: Tại quá trình kiểm tra lai ghép (Hybrid AI Regex), các thuộc tính `ai_prompt` định kiến chi tiết (như luật `FORGOTTEN_TODO` yêu cầu tìm mã Ticket) bị Module `ai_service.py` bỏ qua, khiến Validator của AI Gatekeeper dùng một prompt review chung chung và gây ra False Positive.
+
+### Giải pháp (Options & Decision & Why)
+**Quyết định**: 
+1. Sử dụng thư viện `tempfile.mkdtemp(prefix="auditor_")` của Python cho tiến trình sinh mã Bot Xác thực `ai_double_check.py`. Giới hạn tuyệt đối vòng hoạt động ngoài Repository. Bot sẽ trỏ ngược về project đang quét bằng tham số Absolute Path `cwd`.
+2. Bổ sung trích đoạn tiêm (prompt injection) biến thiên. Truyền thông tin thuộc tính khai báo trong tuỳ chọn `ai_prompt` vào chu kỳ đánh giá của cụm `verify_violations_batch`.
+
+**Tại sao?**: 
+- Các Temporary Folder chứa rủi ro thấp nhất (Level 1) vì HDH tự phân giải. 
+- Giữ AI Gatekeeper phân quyền riêng lẻ đến mức phần tử (Element Level) sẽ gia tăng tính ứng dụng cực độ cho Custom Rules Engine.
+
+### Hệ quả (Consequences)
+- **Tích cực**: Ngăn ngừa viễn cảnh rác kiến trúc, tối ưu chi phí phân khúc AI. Hệ thống chạy 100% trong sạch.
+
+---
+
+## ADR-011: Refactoring Kiến Trúc Toàn Diện (God Object Elimination)
+
+- **Ngày**: 2026-04-02
+- **Trạng thái**: Accepted
+
+### Vấn đề (Problem)
+Sau nhiều vòng phát triển tính năng, 3 file trở thành **God Object** — ôm quá nhiều trách nhiệm khác nhau, gây khó bảo trì và test:
+- `api_server.py`: 726 dòng, 23 routes, không phân tách domain
+- `verification.py`: 535 dòng, 4 class/function độc lập không liên quan
+- `App.jsx` (Frontend): 1043 dòng, toàn bộ render logic nội tuyến
+
+### Giải pháp (Decision)
+
+**Backend — Tách `api_server.py` thành Router modules:**
+```
+src/api/
+├── api_server.py        # Slim app factory, middleware, startup (≈90 dòng)
+└── routers/
+    ├── audit.py         # Audit pipeline, jobs, upload, SSE
+    ├── rules.py         # CRUD rules, compile, test, toggle
+    ├── history.py       # Audit history queries
+    └── repositories.py  # Config repos + AI health check
+```
+
+**Backend — Tách `verification.py` thành modules chức năng:**
+```
+src/engine/
+├── scanners.py          # BaseScanner, RegexScanner, PythonASTScanner
+├── dependency_checker.py # detect_circular_dependencies
+└── verification.py      # double_check_modular, VerificationStep (chỉ orchestration)
+```
+
+**Frontend — Tách `App.jsx` → `AuditView.jsx`:**
+```
+dashboard/src/components/views/
+├── AuditView.jsx        # Toàn bộ Audit Dashboard UI (≈350 dòng, lazy-loaded)
+├── HistoryView.jsx      # đã tách trước
+└── SettingsView.jsx     # đã tách trước
+```
+
+**Bổ sung:**
+- `.gitignore`: Thêm `reports/*.md` và `reports/*.json` — không track runtime output
+
+### Tại sao?
+- Single Responsibility Principle: mỗi file/module làm đúng một việc
+- Lazy loading `AuditView` giảm initial bundle từ 490KB → 343KB (−30%)
+- Router modules dễ test độc lập, dễ thêm middleware per-domain
+
+### Hệ quả (Consequences)
+- **Tích cực**: `api_server.py` giảm từ 726 → ≈90 dòng. `App.jsx` giảm từ 1043 → 557 dòng. Frontend bundle index giảm −30%.
+- **Cần lưu ý**: Khi thêm route mới, phải xác định đúng router file thay vì thêm vào `api_server.py`.

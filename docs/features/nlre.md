@@ -1,13 +1,16 @@
 # Natural Language Rule Engine (NLRE) & Rule Manager
 
 ## Tổng quan
-Hệ thống quản lý luật đánh giá (Rule Manager) bao gồm 2 phần chính:
-1. **Luật Mặc định (Core Rules):** Các luật kỹ thuật được định nghĩa sẵn bởi hệ thống (như SQL Injection, Code Smells...). Người dùng có thể Tắt/Bật bất cứ luật nào nếu thấy không phù hợp với dự án.
-2. **Luật Tùy chỉnh (NLRE):** Tính năng đột phá cho phép mô tả mong muốn thiết lập luật bổ sung bằng Tiếng Việt. AI Agent sẽ hiểu và tạo ra AST & Regex Rules.
+Hệ thống quản lý luật đánh giá (Rule Manager) bao gồm 3 phần chính:
+1. **Luật Mặc định (Core Rules):** Các luật kỹ thuật được định nghĩa sẵn bởi hệ thống, phát hiện bằng **Regex + AST** (như SQL Injection, Code Smells...). Người dùng có thể Tắt/Bật bất cứ luật nào nếu thấy không phù hợp với dự án.
+2. **Luật AI-Only (Deep Audit Rules):** Các luật chỉ có thể được phát hiện bởi AI Deep Audit — không có regex hay AST. Hệ thống **tự nhận diện** bằng quy tắc: `regex=null` + `ast=null` + `ai≠null` → AI-only rule. Chỉ cần thêm rule vào `rules.json` theo format này là tự động hoạt động, không cần sửa code.
+   - Hiện tại gồm 6 luật: `UNCHECKED_NONE_RETURN`, `SILENT_DATA_CORRUPTION`, `INCONSISTENT_RETURN_TYPE`, `REDUNDANT_DB_QUERY`, `MISLEADING_NAME`, `INSECURE_RANDOM`.
+3. **Luật Tùy chỉnh (NLRE):** Tính năng đột phá cho phép mô tả mong muốn thiết lập luật bổ sung bằng Tiếng Việt. AI Agent sẽ hiểu và tạo ra AST & Regex Rules.
 
 Đặc biệt, Code Auditor sử dụng **Two-Stage Audit Pipeline**:
 - **Stage 1 (Static Check):** Quét siêu nhanh bằng RegEx và AST Python.
 - **Stage 2 (AI Gatekeeper):** AI làm nhiệm vụ rà soát toàn bộ các lỗi tìm được từ Stage 1 nhằm tự động gạt bỏ False Positives. Cả lỗi mặc định và lỗi tùy chỉnh đều bị kiểm tra khắt khe.
+- **Stage 3 (AI Deep Audit):** AI quét sâu toàn bộ source code để tìm lỗi logic/kiến trúc. Tại bước này, các luật **AI-Only** được inject vào prompt để AI kiểm tra có hệ thống, và trả về `rule_id` cụ thể thay vì gom chung `AI_REASONING`.
 
 ## Điểm Nổi Bật của Rule Manager Mới
 1. **Dễ tiếp cận:** Cung cấp sẵn kho **Prompt Templates** (VD: OWASP, Clean Code) giúp tạo luật nhàn hạ.

@@ -1,4 +1,16 @@
 services:
+  db:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: auditor_v2
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
   backend:
     build:
       context: .
@@ -6,7 +18,6 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./auditor_v2.db:/app/auditor_v2.db
       - ./src:/app/src
       - ./main.py:/app/main.py
       - ./reports:/app/reports
@@ -17,8 +28,11 @@ services:
       - MAX_MULTIPART_FILES=100000
       - MAX_MULTIPART_FIELDS=100000
       - UVICORN_TIMEOUT_KEEP_ALIVE=600
-    # --reload: tự restart khi sửa code Python, không cần rebuild
-    command: uvicorn src.api.api_server:app --host 0.0.0.0 --port 8000 --reload --timeout-keep-alive 600
+      - DATABASE_URL=postgresql://postgres:postgrespassword@db:5432/auditor_v2
+    depends_on:
+      - db
+    # Không dùng --reload để tránh restart khi đang chạy test
+    command: uvicorn src.api.api_server:app --host 0.0.0.0 --port 8000 --timeout-keep-alive 600
 
   frontend:
     image: node:20-slim
@@ -42,3 +56,6 @@ services:
       - ./mkdocs.yml:/docs/mkdocs.yml
     # Phù hợp với development, tự động reload khi sửa file .md
     command: serve -a 0.0.0.0:8000 -f /docs/mkdocs.yml
+
+volumes:
+  pgdata:
