@@ -74,6 +74,27 @@ stateDiagram-v2
   Sử dụng Module `AstContextExtractor` bên trong `symbol_indexer.py`. Server tự động bay lùng sục cái "Tên hàm bị nghi vấn" kia qua toàn bộ ngóc ngách của Dự Án, bắt nguyên cái Thân Hàm (Body) mang về. AI (vai trò Verifier) soi kĩ Bằng Chứng.
   Nếu bằng chứng cho thấy hàm kia xử lý Lởm $\rightarrow$ Chốt Lỗi Thật. Nếu hàm viết kỹ $\rightarrow$ Trắng Án.
 
+#### Smart Batching & Token Budget (ADR - 2026-04-02)
+
+**Vấn đề:** Khi audit dự án lớn (ví dụ SP Integrate), 1 batch cố định 5 file có thể tạo prompt lên tới **148K tokens** — vượt giới hạn context window của nhiều model AI.
+
+**Giải pháp:** Hệ thống Smart Batching thay thế batch size cố định bằng cơ chế động. Nội dung file luôn được gửi **nguyên vẹn** (không cắt bớt), chỉ kiểm soát số file/batch:
+
+| Tham số | Giá trị | Mô tả |
+|---------|---------|-------|
+| `MAX_FILES_PER_BATCH` | 5 | Tối đa 5 file/batch |
+| `MAX_CHARS_PER_BATCH` | 210,000 chars (~60K tokens) | Budget tổng cho phần code trong 1 batch |
+
+**Logic:**
+1. Duyệt tuần tự qua danh sách file, đo kích thước thực (chars) từ nội dung đọc được.
+2. Nếu file đơn lẻ >= budget -> gửi riêng 1 file/batch (nguyên vẹn nội dung).
+3. Nếu thêm file vào batch hiện tại vượt budget hoặc đạt 5 files -> flush batch, tạo batch mới.
+4. File nhỏ được gom tối đa 5 file/batch để tiết kiệm số lượng request.
+
+**Kết quả:** Tránh tạo prompt khổng lồ 148K tokens. File lớn được gửi riêng, file nhỏ gom nhóm hiệu quả.
+
+**Tham chiếu:** `auditor.py` dòng 155-205
+
 ### 5. Khấu trừ Điểm, Chấm Hạng Phân Cấp & Xuất Cáo Cáo (Aggregation & Reporting)
 Cuối cùng, các vi phạm đọng lại sau nhiều lần bộ lọc (AI) sẽ tiến vào Máy đo lường Điểm Số:
 - **Tính điểm Phân cấp (Feature-based Scoring):** Quy đổi thành Điểm Số cho Từng Tính Năng để xem khu vực nào Nợ lớn nhất (Technical Debt). Tích hợp cấu trúc Phạt Nặng/Nhẹ.

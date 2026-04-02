@@ -156,33 +156,63 @@ class CodeAuditor:
         print("[3.6/5] Bước 3.6: AI Reasoning Audit (Full Code Coverage)...")
         
         audit_files = self.discovery_data['files']
-        deep_batch_size = 5
+        
+        # === SMART BATCHING (Dynamic) ===
+        # Tối đa 5 file/batch, nhưng nếu file lớn quá thì chỉ gửi 1 file
+        # Budget: ~60K tokens cho code (~210K chars với tỷ lệ ~3.5 chars/token)
+        MAX_FILES_PER_BATCH = 5
+        MAX_CHARS_PER_BATCH = 210000  # ~60K tokens budget cho phần code
+        AVG_CHARS_PER_LINE = 45       # Ước tính trung bình cho Python
+
         deep_chunks = []
-        for i in range(0, len(audit_files), deep_batch_size):
-            chunk_files = audit_files[i:i + deep_batch_size]
-            chunk_data = []
-            for f in chunk_files:
-                try:
-                    # Chỉ quét các file nguồn chính, bỏ qua thư mục tests nếu muốn thu hẹp, 
-                    # nhưng ở đây tuân thủ "toàn bộ code" của user.
-                    with open(f['path'], 'r', encoding='utf-8') as file_obj:
-                        chunk_data.append({"path": f['path'], "content": file_obj.read()})
-                except Exception:
-                    continue
-            if chunk_data:
-                deep_chunks.append(chunk_data)
+        current_batch = []
+        current_size = 0
+
+        for f_info in audit_files:
+            try:
+                with open(f_info['path'], 'r', encoding='utf-8') as file_obj:
+                    content = file_obj.read()
+            except Exception:
+                continue
+            
+            file_chars = len(content)
+            file_data = {"path": f_info['path'], "content": content}
+            
+            # Nếu file đơn lẻ đã vượt budget → batch riêng (sẽ bị truncate ở ai_service)
+            if file_chars >= MAX_CHARS_PER_BATCH:
+                # Flush batch hiện tại trước
+                if current_batch:
+                    deep_chunks.append(current_batch)
+                    current_batch = []
+                    current_size = 0
+                deep_chunks.append([file_data])  # Batch chỉ chứa 1 file lớn
+                continue
+            
+            # Nếu thêm file này vào batch hiện tại sẽ vượt budget hoặc đạt max files → flush
+            if (current_size + file_chars > MAX_CHARS_PER_BATCH) or (len(current_batch) >= MAX_FILES_PER_BATCH):
+                if current_batch:
+                    deep_chunks.append(current_batch)
+                current_batch = []
+                current_size = 0
+            
+            current_batch.append(file_data)
+            current_size += file_chars
+
+        if current_batch:
+            deep_chunks.append(current_batch)
+
+        # Log thống kê batching
+        batch_sizes = [len(c) for c in deep_chunks]
+        print(f"   -> Smart Batching: {len(deep_chunks)} batches (files/batch: {batch_sizes})")
 
         sem_deep = asyncio.Semaphore(25)
         async def process_deep_chunk(idx, chunk_data):
             if AuditState.is_cancelled: return []
-            # Deep Audit tốn tài nguyên hơn, stagger 0.2s mỗi chunk
             await asyncio.sleep(idx * 0.2)
             async with sem_deep:
                 return await ai_service.deep_audit_batch(chunk_data, self.custom_rules)
 
         if deep_chunks:
-            print(f"   -> Bắt đầu Deep Audit song song (Async I/O) cho {len(deep_chunks)} nhóm file (Batch size: {deep_batch_size})...")
-            
             async def run_all_deep_audits():
                 tasks = [process_deep_chunk(idx, c) for idx, c in enumerate(deep_chunks)]
                 results = []
