@@ -1,6 +1,7 @@
 import os
 import subprocess
 import re
+import logging
 
 class AuthorshipTracker:
     """
@@ -83,7 +84,7 @@ class AuthorshipTracker:
                 i += 1
                 
         except Exception as e:
-            pass
+            logging.getLogger(__name__).warning(f"Error parsing Git blame for {file_path}: {e}")
             
         self.file_authors_cache[file_path] = line_authors
         return line_authors

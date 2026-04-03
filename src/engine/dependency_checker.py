@@ -4,6 +4,7 @@ Tách ra từ verification.py để tái sử dụng và test độc lập.
 """
 import ast
 import os
+import logging
 
 from src.engine.scanners import _build_flat_meta
 
@@ -39,8 +40,8 @@ def detect_circular_dependencies(file_list, rules):
                 elif isinstance(node, ast.ImportFrom):
                     if node.module: deps.add(node.module.split('.')[0])
             imports_map[file_to_mod[f]] = list(deps.intersection(set(mod_to_file.keys())))
-        except Exception:
-            pass
+        except Exception as e:
+            logging.getLogger(__name__).warning(f"Error parsing {f} for dependencies: {e}")
 
     violations = []
     visited_fully = set()

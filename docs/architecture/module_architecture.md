@@ -61,7 +61,7 @@ graph TD
 
 | Component | Dòng code | Lazy? | Trách nhiệm |
 |-----------|-----------|-------|-------------|
-| `App.jsx` | ≈545 | No | State management, routing, side effects |
+| `App.jsx` | ≈545 | No | State management, React Router Dom (`<Routes>`), side effects |
 | `AuditView.jsx` | ≈350 | Yes | Hero card, charts, violations, leaderboard |
 | `RulesConfigurator.jsx` | ≈800 | Yes | Rule manager + AI sandbox |
 | `HistoryView.jsx` | ≈150 | Yes | Lịch sử audit |

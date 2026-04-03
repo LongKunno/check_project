@@ -44,12 +44,12 @@ BITBUCKET_PASS = os.getenv("BITBUCKET_TOKEN", "")
 
 CONFIGURED_REPOSITORIES = [
     {
-        "id": "fastapi/fastapi",
-        "name": "FastAPI (Public)",
-        "url": "https://github.com/fastapi/fastapi.git",
+        "id": "longkunno-check-project",
+        "name": "Check Project (Current)",
+        "url": "https://github.com/LongKunno/check_project.git",
         "username": "",
         "token": "",
-        "branch": "master"
+        "branch": "main"
     },
     {
         "id": "liftsoftvn/ana-api",

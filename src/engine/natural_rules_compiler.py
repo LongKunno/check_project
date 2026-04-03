@@ -2,7 +2,7 @@ import json
 import logging
 from src.engine.ai_service import ai_service
 from pydantic import BaseModel, Field
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 
 logger = logging.getLogger(__name__)
 

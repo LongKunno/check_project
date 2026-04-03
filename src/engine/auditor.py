@@ -6,11 +6,13 @@ Quản lý luồng thực thi 5 bước: Discovery, Scanning, Verification, Aggr
 import os
 import json
 import sys
+import logging
+
+logger = logging.getLogger(__name__)
 from src.config import WEIGHTS
 from src.engine.discovery import DiscoveryStep
 from src.engine.verification import VerificationStep
 from src.engine.scoring import ScoringEngine
-from src.engine.database import AuditDatabase
 
 try:
     from src.api.audit_state import AuditState
@@ -39,6 +41,12 @@ class CodeAuditor:
 
     def log_violation(self, pillar, file, reason, weight, snippet="", rule_id="", line=0, is_custom=False):
         """Ghi nhận một vi phạm mới và lưu vào danh sách."""
+        # Chuyển đổi thành đường dẫn tương đối (bỏ /tmp/...)
+        if file.startswith(self.target_dir):
+            file = os.path.relpath(file, self.target_dir)
+        elif self.target_dir in file:
+            file = file.split(self.target_dir, 1)[-1].lstrip('/\\')
+            
         violation = {
             "id": f"v_{self.violation_counter}",
             "pillar": pillar,
@@ -63,10 +71,10 @@ class CodeAuditor:
         with open(self.ledger_path, 'w') as f:
             f.write("# SỔ CÁI VI PHẠM (AI VIOLATION LEDGER)\n\n")
 
-        print(f"🚀 Bắt đầu kiểm toán cho: {self.target_dir}")
+        logger.info(f"🚀 Bắt đầu kiểm toán cho: {self.target_dir}")
         
         # BƯỚC 1: DISCOVERY (Khám phá tài nguyên)
-        print("[1/5] Bước 1: Khám phá tài nguyên (Discovery)...")
+        logger.info("[1/5] Bước 1: Khám phá tài nguyên (Discovery)...")
         discovery = DiscoveryStep(self.target_dir)
         self.discovery_data = discovery.run_discovery()
         
@@ -77,16 +85,16 @@ class CodeAuditor:
                 original_count = len(self.discovery_data['files'])
                 if original_count > TEST_MODE_LIMIT_FILES:
                     self.discovery_data['files'] = self.discovery_data['files'][:TEST_MODE_LIMIT_FILES]
-                    print(f"⚠️ [TEST MODE] Đã giới hạn phân tích: {TEST_MODE_LIMIT_FILES}/{original_count} files để tiết kiệm Token!")
+                    logger.warning(f"⚠️ [TEST MODE] Đã giới hạn phân tích: {TEST_MODE_LIMIT_FILES}/{original_count} files để tiết kiệm Token!")
         except ImportError:
             pass
 
         total_loc = self.discovery_data['total_loc']
-        print(f"   - Tổng số dòng code (LOC): {total_loc}")
-        print(f"   - Tổng số file: {self.discovery_data['total_files']}")
+        logger.info(f"   - Tổng số dòng code (LOC): {total_loc}")
+        logger.info(f"   - Tổng số file: {self.discovery_data['total_files']}")
 
         # BƯỚC 2 & 3: SCANNING & VERIFICATION (Quét và Xác thực)
-        print("[2-3/5] Bước 2 & 3: Quét và Xác thực lỗi (Scanning & Verification)...")
+        logger.info("[2-3/5] Bước 2 & 3: Quét và Xác thực lỗi (Scanning & Verification)...")
         verifier = VerificationStep(self.target_dir, self.discovery_data['files'], custom_rules=self.custom_rules)
         automated_violations = verifier.run_verification()
         
@@ -94,7 +102,7 @@ class CodeAuditor:
         self.merged_rules = verifier.load_rules()
         
         # BƯỚC 3.5: AI HYBRID VALIDATION (Xác thực AI theo Batch)
-        print("[3.5/5] Bước 3.5: Xác thực AI (AI Hybrid Validation - Batching) với Async I/O...")
+        logger.info("[3.5/5] Bước 3.5: Xác thực AI (AI Hybrid Validation - Batching) với Async I/O...")
         from src.engine.ai_service import ai_service
         import asyncio
         
@@ -111,14 +119,14 @@ class CodeAuditor:
                 return idx, chunk, await ai_service.verify_violations_batch(chunk)
 
         if chunks:
-            print(f"   -> Đang xác thực AI song song (Async I/O) cho {len(chunks)} nhóm lỗi (Batch size: {batch_size})")
+            logger.info(f"   -> Đang xác thực AI song song (Async I/O) cho {len(chunks)} nhóm lỗi (Batch size: {batch_size})")
             
             async def run_all_validations():
                 tasks = [process_validation_chunk(idx, chunk) for idx, chunk in enumerate(chunks)]
                 results = []
                 for f in asyncio.as_completed(tasks):
                     if AuditState.is_cancelled:
-                        print("\n❌ CẢNH BÁO: Kiểm toán đã bị hủy bởi người dùng.")
+                        logger.info("\n❌ CẢNH BÁO: Kiểm toán đã bị hủy bởi người dùng.")
                         raise Exception("Kiểm toán đã bị hủy bởi người dùng.")
                     res = await f
                     results.append(res)
@@ -146,14 +154,14 @@ class CodeAuditor:
                     
                     if is_fp and conf > 0.7:
                         lbl = "Tùy chỉnh (AI-Gen)" if is_custom else "Mặc định (Core)"
-                        print(f"   ✨ AI Gác cổng đã loại bỏ False Positive [{lbl}]: {v['reason']} tại {v['file']} (Độ tin cậy: {conf})")
+                        logger.info(f"   ✨ AI Gác cổng đã loại bỏ False Positive [{lbl}]: {v['reason']} tại {v['file']} (Độ tin cậy: {conf})")
                         continue
                     
                     final_reason = f"{v['reason']}. AI Note: {ai_reason}" if ai_reason else v['reason']
                     self.log_violation(v['type'], v['file'], final_reason, v['weight'], snippet=v.get('snippet', ''), rule_id=v.get('rule_id', ''), line=v.get('line', 0), is_custom=is_custom)
 
         # BƯỚC 3.6: AI REASONING AUDIT (Quét sâu)
-        print("[3.6/5] Bước 3.6: AI Reasoning Audit (Full Code Coverage)...")
+        logger.info("[3.6/5] Bước 3.6: AI Reasoning Audit (Full Code Coverage)...")
         
         audit_files = self.discovery_data['files']
         
@@ -203,7 +211,7 @@ class CodeAuditor:
 
         # Log thống kê batching
         batch_sizes = [len(c) for c in deep_chunks]
-        print(f"   -> Smart Batching: {len(deep_chunks)} batches (files/batch: {batch_sizes})")
+        logger.info(f"   -> Smart Batching: {len(deep_chunks)} batches (files/batch: {batch_sizes})")
 
         sem_deep = asyncio.Semaphore(25)
         async def process_deep_chunk(idx, chunk_data):
@@ -218,7 +226,7 @@ class CodeAuditor:
                 results = []
                 for f in asyncio.as_completed(tasks):
                     if AuditState.is_cancelled:
-                        print("\n❌ CẢNH BÁO: Kiểm toán đã bị hủy bởi người dùng.")
+                        logger.info("\n❌ CẢNH BÁO: Kiểm toán đã bị hủy bởi người dùng.")
                         raise Exception("Kiểm toán đã bị hủy bởi người dùng.")
                     res = await f
                     results.append(res)
@@ -244,7 +252,7 @@ class CodeAuditor:
                         
             # BƯỚC 3.7: CROSS-CHECK FLAGGED ISSUES (TWO-PASS AUDIT)
             if flagged_violations:
-                print(f"[3.7/5] Bước 3.7: Xác minh chéo (Cross-Check) {len(flagged_violations)} lỗi bị AI cắm cờ...")
+                logger.info(f"[3.7/5] Bước 3.7: Xác minh chéo (Cross-Check) {len(flagged_violations)} lỗi bị AI cắm cờ...")
                 from src.engine.symbol_indexer import AstContextExtractor
                 indexer = AstContextExtractor(self.target_dir)
                 indexer.index_project()
@@ -278,7 +286,7 @@ class CodeAuditor:
                 )
 
         # BƯỚC 4: AGGREGATION (Tổng hợp điểm số Phân cấp)
-        print("[4/5] Bước 4: Tổng hợp dữ liệu (Aggregation)...")
+        logger.info("[4/5] Bước 4: Tổng hợp dữ liệu (Aggregation)...")
         from src.config import WEIGHTS
         from src.engine.authorship import AuthorshipTracker
         
@@ -371,10 +379,15 @@ class CodeAuditor:
             }
             total_features_score += f_score
 
-        # Tính điểm 4 trụ cột cho tổng dự án (Numeric)
+        # Tính điểm 4 trụ cột cho tổng dự án bằng Trung bình có trọng số theo Kích thước (LOC)
+        # để đảm bảo đồng nhất toán học với Điểm tổng kết (final_score)
         self.project_pillars = {}
         for pillar in WEIGHTS.keys():
-            self.project_pillars[pillar] = ScoringEngine.calculate_pillar_score(project_punishments[pillar], total_loc, pillar)
+            if total_loc > 0 and self.feature_results:
+                w_score = sum(res['pillars'][pillar] * res.get('loc', 0) for res in self.feature_results.values())
+                self.project_pillars[pillar] = round(w_score / total_loc, 2)
+            else:
+                self.project_pillars[pillar] = ScoringEngine.calculate_pillar_score(project_punishments[pillar], total_loc, pillar)
 
         # Điểm tổng kết dự án = Trung bình có trọng số theo Kích thước (Weighted Average by LOC)
         final_score = ScoringEngine.calculate_final_score_from_features(self.feature_results)
@@ -403,17 +416,17 @@ class CodeAuditor:
             }
 
         # BƯỚC 5: REPORTING
-        print("[5/5] Bước 5: Xuất báo cáo (Reporting)...")
+        logger.info("[5/5] Bước 5: Xuất báo cáo (Reporting)...")
         self.generate_report(self.feature_results, self.project_pillars, final_score, rating)
         
         # LƯU VÀO LỊCH SỬ
         # Ghi chú: Việc lưu AuditDB (Database) được quản lý ở Backend API `api_server.py`
         # để tránh tạo records rác đối với các phân tích bằng /tmp/ thư mục git.
         
-        print(f"\n✅ Kiểm toán hoàn tất!")
-        print(f"   - Điểm tổng thể: {final_score}/100")
-        print(f"   - Xếp hạng: {rating}")
-        print(f"   - Báo cáo chi tiết: {self.report_path}")
+        logger.info(f"\n✅ Kiểm toán hoàn tất!")
+        logger.info(f"   - Điểm tổng thể: {final_score}/100")
+        logger.info(f"   - Xếp hạng: {rating}")
+        logger.info(f"   - Báo cáo chi tiết: {self.report_path}")
 
     def generate_report(self, feature_results, project_pillars, final_score, rating):
         """Tạo file báo cáo Markdown chuyên nghiệp phân cấp theo Tính năng."""

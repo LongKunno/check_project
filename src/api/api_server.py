@@ -5,7 +5,6 @@ Entry point: khởi tạo FastAPI app, cấu hình Middleware, đăng ký Router
 
 import os
 import sys
-import io
 import logging
 import asyncio
 from dotenv import load_dotenv

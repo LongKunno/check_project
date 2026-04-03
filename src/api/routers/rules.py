@@ -31,14 +31,14 @@ def _run_scanners_sync(content, rules):
     tree = None
     try:
         tree = ast.parse(content)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"SyntaxError when parsing sandbox code: {e}")
     violations = []
     for scanner in [RegexScanner(), PythonASTScanner()]:
         try:
             violations.extend(scanner.scan(file_path, content, lines, tree, rules))
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"Scanner {scanner.__class__.__name__} failed: {e}")
     return violations
 
 

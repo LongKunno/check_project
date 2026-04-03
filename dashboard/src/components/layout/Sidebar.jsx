@@ -1,20 +1,24 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ChevronLeft, ChevronRight, Shield, FolderOpen, 
+import { ChevronLeft, ChevronRight, Shield, FolderOpen, 
   Activity, ShieldCheck, Wand2, FileSearch, 
   Moon, Sun, Settings 
 } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const Sidebar = ({
   isSidebarCollapsed, setIsSidebarCollapsed,
-  mainView, setMainView,
   selectedRepoId, setSelectedRepoId,
   configuredRepos,
   aiHealth,
   isLightMode, setIsLightMode,
   cn
 }) => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const isPathActive = (path) => location.pathname.startsWith(path) || (location.pathname === '/' && path === '/audit');
+
   return (
       <motion.div 
         initial={false}
@@ -76,38 +80,38 @@ const Sidebar = ({
            </div>
            
            <button 
-              onClick={() => setMainView('audit')}
-              className={cn("flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left overflow-hidden shrink-0 group", mainView === 'audit' ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20 shadow-inner' : 'text-slate-400 hover:bg-white/5 hover:text-white border border-transparent')}
+              onClick={() => navigate('/audit')}
+              className={cn("flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left overflow-hidden shrink-0 group", isPathActive('/audit') ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20 shadow-inner' : 'text-slate-400 hover:bg-white/5 hover:text-white border border-transparent')}
               title="Dashboard Analytics"
            >
-              <Activity size={20} className={cn("shrink-0 transition-transform", mainView === 'audit' ? "scale-110" : "group-hover:scale-110")} />
+              <Activity size={20} className={cn("shrink-0 transition-transform", isPathActive('/audit') ? "scale-110" : "group-hover:scale-110")} />
               {!isSidebarCollapsed && <span className="font-bold text-sm whitespace-nowrap">Dashboard</span>}
            </button>
            
            <button 
-              onClick={() => setMainView('rules')}
-              className={cn("flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left overflow-hidden shrink-0 group", mainView === 'rules' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-inner' : 'text-slate-400 hover:bg-white/5 hover:text-white border border-transparent')}
+              onClick={() => navigate('/rules')}
+              className={cn("flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left overflow-hidden shrink-0 group", isPathActive('/rules') ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-inner' : 'text-slate-400 hover:bg-white/5 hover:text-white border border-transparent')}
               title="Rule Manager"
            >
-              <ShieldCheck size={20} className={cn("shrink-0 transition-transform", mainView === 'rules' ? "scale-110" : "group-hover:scale-110")} />
+              <ShieldCheck size={20} className={cn("shrink-0 transition-transform", isPathActive('/rules') ? "scale-110" : "group-hover:scale-110")} />
               {!isSidebarCollapsed && <span className="font-bold text-sm whitespace-nowrap">Danh sách Rule</span>}
            </button>
            
            <button 
-              onClick={() => setMainView('sandbox')}
-              className={cn("flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left overflow-hidden shrink-0 group", mainView === 'sandbox' ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20 shadow-inner' : 'text-slate-400 hover:bg-white/5 hover:text-white border border-transparent')}
+              onClick={() => navigate('/sandbox')}
+              className={cn("flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left overflow-hidden shrink-0 group", isPathActive('/sandbox') ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20 shadow-inner' : 'text-slate-400 hover:bg-white/5 hover:text-white border border-transparent')}
               title="AI Sandbox"
            >
-              <Wand2 size={20} className={cn("shrink-0 transition-transform", mainView === 'sandbox' ? "scale-110" : "group-hover:scale-110")} />
+              <Wand2 size={20} className={cn("shrink-0 transition-transform", isPathActive('/sandbox') ? "scale-110" : "group-hover:scale-110")} />
               {!isSidebarCollapsed && <span className="font-bold text-sm whitespace-nowrap">Tạo Rule AI</span>}
            </button>
            
            <button 
-              onClick={() => setMainView('history')}
-              className={cn("flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left overflow-hidden shrink-0 group mt-1", mainView === 'history' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-inner' : 'text-slate-400 hover:bg-white/5 hover:text-white border border-transparent')}
+              onClick={() => navigate('/history')}
+              className={cn("flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left overflow-hidden shrink-0 group mt-1", isPathActive('/history') ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-inner' : 'text-slate-400 hover:bg-white/5 hover:text-white border border-transparent')}
               title="Lịch sử Quét"
            >
-              <FileSearch size={20} className={cn("shrink-0 transition-transform text-amber-500/80", mainView === 'history' ? "scale-110" : "group-hover:scale-110")} />
+              <FileSearch size={20} className={cn("shrink-0 transition-transform text-amber-500/80", isPathActive('/history') ? "scale-110" : "group-hover:scale-110")} />
               {!isSidebarCollapsed && <span className="font-bold text-sm whitespace-nowrap">Lịch sử Audit</span>}
            </button>
         </div>
@@ -131,10 +135,10 @@ const Sidebar = ({
            </button>
 
            <button 
-              onClick={() => setMainView('settings')}
-              className={cn("flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left overflow-hidden shrink-0 group", mainView === 'settings' ? "bg-slate-500/10 text-slate-400 border border-slate-500/20 shadow-inner" : "text-slate-500 hover:bg-white/5 hover:text-slate-300 border border-transparent")}
+              onClick={() => navigate('/settings')}
+              className={cn("flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left overflow-hidden shrink-0 group", isPathActive('/settings') ? "bg-slate-500/10 text-slate-400 border border-slate-500/20 shadow-inner" : "text-slate-500 hover:bg-white/5 hover:text-slate-300 border border-transparent")}
            >
-              <Settings size={20} className={cn("shrink-0 transition-transform", mainView === 'settings' ? "rotate-45 text-slate-300" : "group-hover:rotate-45")} />
+              <Settings size={20} className={cn("shrink-0 transition-transform", isPathActive('/settings') ? "rotate-45 text-slate-300" : "group-hover:rotate-45")} />
               {!isSidebarCollapsed && <span className="font-bold text-sm whitespace-nowrap">Cài đặt Cấu hình</span>}
            </button>
         </div>

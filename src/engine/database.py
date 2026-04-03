@@ -7,7 +7,10 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 import os
 import json
+import logging
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 # Default to Docker compose service or localhost for local testing
 DB_URL = os.environ.get('DATABASE_URL', 'postgresql://postgres:postgrespassword@localhost:5432/auditor_v2')
@@ -31,11 +34,11 @@ class AuditDatabase:
                 conn = AuditDatabase.get_connection()
                 break
             except psycopg2.OperationalError as e:
-                print(f"Waiting for Postgres to start (Attempt {i+1}/{max_retries})...")
+                logger.info(f"Waiting for Postgres to start (Attempt {i+1}/{max_retries})...")
                 time.sleep(2)
         
         if not conn:
-            print("Failed to connect to Postgres after multiple retries. Database not initialized.")
+            logger.error("Failed to connect to Postgres after multiple retries. Database not initialized.")
             return
 
         try:
@@ -85,7 +88,7 @@ class AuditDatabase:
             cursor.close()
             conn.close()
         except Exception as e:
-            print(f"Database Initialization Error: {e}")
+            logger.error(f"Database Initialization Error: {e}")
 
     @staticmethod
     def save_audit(target, score, rating, loc, violations_count, pillar_scores, full_json=None):
@@ -109,9 +112,9 @@ class AuditDatabase:
         query_cols = "id, timestamp, target, score, rating, total_loc, violations_count, pillar_scores"
         
         if target_path:
-            cursor.execute(f'SELECT {query_cols} FROM audit_history WHERE target = %s ORDER BY timestamp DESC', (target_path,))
+            cursor.execute('SELECT id, timestamp, target, score, rating, total_loc, violations_count, pillar_scores FROM audit_history WHERE target = %s ORDER BY timestamp DESC', (target_path,))
         else:
-            cursor.execute(f'SELECT {query_cols} FROM audit_history ORDER BY timestamp DESC LIMIT 50')
+            cursor.execute('SELECT id, timestamp, target, score, rating, total_loc, violations_count, pillar_scores FROM audit_history ORDER BY timestamp DESC LIMIT 50')
             
         rows = cursor.fetchall()
         cursor.close()
@@ -125,7 +128,8 @@ class AuditDatabase:
                 d['timestamp'] = d['timestamp'].isoformat()
             try:
                 d['pillar_scores'] = json.loads(d.get('pillar_scores', '{}'))
-            except:
+            except Exception as e:
+                logger.warning(f"Error parsing pillar_scores: {e}")
                 d['pillar_scores'] = {}
             results.append(d)
         return results
@@ -136,7 +140,7 @@ class AuditDatabase:
         conn = AuditDatabase.get_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
         
-        cursor.execute('SELECT * FROM audit_history WHERE id = %s', (audit_id,))
+        cursor.execute('SELECT id, timestamp, target, score, rating, total_loc, violations_count, pillar_scores, full_json FROM audit_history WHERE id = %s', (audit_id,))
         row = cursor.fetchone()
         cursor.close()
         conn.close()
@@ -150,13 +154,15 @@ class AuditDatabase:
             
         try:
             d['pillar_scores'] = json.loads(d.get('pillar_scores', '{}'))
-        except:
+        except Exception as e:
+            logger.warning(f"Error parsing pillar_scores in get_audit_by_id: {e}")
             d['pillar_scores'] = {}
             
         if d.get('full_json'):
             try:
                 d['full_json'] = json.loads(d['full_json'])
-            except:
+            except Exception as e:
+                logger.warning(f"Error parsing full_json: {e}")
                 d['full_json'] = None
         return d
 
@@ -200,7 +206,8 @@ class AuditDatabase:
         if row and row[1]:
             try:
                 disabled_rules = json.loads(row[1])
-            except:
+            except Exception as e:
+                logger.warning(f"Error parsing disabled_core_rules: {e}")
                 pass
                 
         if is_disabled and rule_id not in disabled_rules:
@@ -258,17 +265,17 @@ class AuditDatabase:
             compiled = None
             if row['compiled_json']:
                 try: compiled = json.loads(row['compiled_json'])
-                except: pass
+                except Exception as e: logger.warning(f"Error parsing compiled_json: {e}")
                 
             disabled = []
             if row['disabled_core_rules']:
                 try: disabled = json.loads(row['disabled_core_rules'])
-                except: pass
+                except Exception as e: logger.warning(f"Error parsing disabled_core_rules: {e}")
                 
             weights = {}
             if row['custom_weights']:
                 try: weights = json.loads(row['custom_weights'])
-                except: pass
+                except Exception as e: logger.warning(f"Error parsing custom_weights: {e}")
                 
             return {
                 "natural_text": row['natural_text'],

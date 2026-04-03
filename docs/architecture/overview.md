@@ -25,7 +25,7 @@ Quy trình hoạt động cốt lõi của **Auditor Engine** bao gồm 5 bướ
 - **Backend**: FastAPI (Python 3.12).
 - **Frontend**: React + Vite (Dashboard).
 - **Communication**: RESTful API + CORS/PNA Support.
-- **Persistence**: SQLite (Audit records).
+- **Persistence**: PostgreSQL (Audit records).
 - **Documentation**: MkDocs (Material Theme).
 - **Deployment**: Docker Compose.
 

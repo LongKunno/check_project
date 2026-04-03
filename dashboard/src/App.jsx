@@ -54,6 +54,7 @@ const SettingsView = React.lazy(() => import('./components/views/SettingsView'))
 const AuditView = React.lazy(() => import('./components/views/AuditView'));
 import Sidebar from './components/layout/Sidebar';
 import { useAuditJob } from './hooks/useAuditJob';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 
 function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -72,7 +73,8 @@ function App() {
   }, [isLightMode]);
 
   const [activeTab, setActiveTab] = useState('remote'); // 'local' or 'remote'
-  const [mainView, setMainView] = useState('audit'); // 'audit', 'rules', 'sandbox'
+  const location = useLocation();
+  const navigate = useNavigate();
   const [reportView, setReportView] = useState('project'); // 'project' or 'member'
   const [selectedMember, setSelectedMember] = useState(null);
   const [activeLedgerTab, setActiveLedgerTab] = useState('project'); // legacy, kept for safety
@@ -415,7 +417,6 @@ function App() {
       {/* SIDEBAR */}
       <Sidebar
         isSidebarCollapsed={isSidebarCollapsed} setIsSidebarCollapsed={setIsSidebarCollapsed}
-        mainView={mainView} setMainView={setMainView}
         selectedRepoId={selectedRepoId} setSelectedRepoId={setSelectedRepoId}
         configuredRepos={configuredRepos}
         aiHealth={aiHealth}
@@ -435,18 +436,18 @@ function App() {
         }} />
 
         <div className="dashboard-container relative z-10 w-full min-h-screen flex flex-col pb-8">
-          <header className={cn("flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 pb-6 border-b border-navbar/30 border-white/5 shrink-0", mainView === 'audit' ? "mb-10" : "mb-6")}>
+          <header className={cn("flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 pb-6 border-b border-navbar/30 border-white/5 shrink-0", location.pathname.startsWith('/audit') || location.pathname === '/' ? "mb-10" : "mb-6")}>
             {/* Context Title */}
             <div className="flex flex-col">
                <h1 className="text-3xl lg:text-4xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 drop-shadow-sm mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
-                 {mainView === 'audit' ? 'AUDIT DASHBOARD' : mainView === 'rules' ? 'RULE MANAGER' : mainView === 'settings' ? 'SYSTEM SETTINGS' : mainView === 'history' ? 'AUDIT HISTORY' : 'AI SANDBOX'}
+                 {location.pathname.startsWith('/audit') || location.pathname === '/' ? 'AUDIT DASHBOARD' : location.pathname.startsWith('/rules') ? 'RULE MANAGER' : location.pathname.startsWith('/settings') ? 'SYSTEM SETTINGS' : location.pathname.startsWith('/history') ? 'AUDIT HISTORY' : 'AI SANDBOX'}
                </h1>
                <p className="font-bold text-slate-500 uppercase tracking-widest text-xs flex items-center gap-2">
-                 {mainView === 'audit' ? 'Thống kê & Mức độ an toàn mã nguồn' : mainView === 'rules' ? 'Quản lý cấu hình luật mặc định và tuỳ chỉnh' : mainView === 'settings' ? 'Cài đặt và thiết lập hệ thống cảnh báo' : mainView === 'history' ? 'Tra cứu và phục hồi kết quả phân tích lịch sử' : 'Thiết kế luật mới bằng AI & Kiểm chứng'}
+                 {location.pathname.startsWith('/audit') || location.pathname === '/' ? 'Thống kê & Mức độ an toàn mã nguồn' : location.pathname.startsWith('/rules') ? 'Quản lý cấu hình luật mặc định và tuỳ chỉnh' : location.pathname.startsWith('/settings') ? 'Cài đặt và thiết lập hệ thống cảnh báo' : location.pathname.startsWith('/history') ? 'Tra cứu và phục hồi kết quả phân tích lịch sử' : 'Thiết kế luật mới bằng AI & Kiểm chứng'}
                </p>
             </div>
 
-            {mainView === 'audit' && (
+            {(location.pathname.startsWith('/audit') || location.pathname === '/') && (
               <div className="flex items-center gap-4 flex-wrap justify-end ml-auto bg-black/20 p-2.5 rounded-2xl border border-white/5">
                 <button 
                   className="btn-audit" 
@@ -478,69 +479,76 @@ function App() {
             )}
       </header>
 
-      {mainView === 'rules' ? (
-        <div key="view-rules" className="flex-1 flex flex-col w-full" style={{ minHeight: 'calc(100vh - 100px)' }}>
-          <Suspense fallback={<div className="p-8 text-white">Đang tải Rules...</div>}>
-            <RulesConfigurator 
-              targetId={selectedRepoId} 
-              projectName={configuredRepos.find(r => r.id === selectedRepoId)?.name || selectedRepoId} 
-              mode="manager"
-            />
-          </Suspense>
-        </div>
-      ) : mainView === 'sandbox' ? (
-        <div key="view-sandbox" className="flex-1 flex flex-col w-full" style={{ minHeight: 'calc(100vh - 100px)' }}>
-          <Suspense fallback={<div className="p-8 text-white">Đang tải Sandbox...</div>}>
-            <RulesConfigurator 
-              targetId={selectedRepoId} 
-              projectName={configuredRepos.find(r => r.id === selectedRepoId)?.name || selectedRepoId} 
-              mode="sandbox"
-            />
-          </Suspense>
-        </div>
-      ) : mainView === 'settings' ? (
-        <div className="flex-1 flex flex-col w-full" style={{ minHeight: 'calc(100vh - 100px)' }}>
-          <Suspense fallback={<div className="p-8 text-white">Đang tải Settings...</div>}>
-            <SettingsView selectedRepoId={selectedRepoId} cn={cn} />
-          </Suspense>
-        </div>
-      ) : mainView === 'history' ? (
-        <div className="flex-1 flex flex-col w-full" style={{ minHeight: 'calc(100vh - 100px)' }}>
-          <Suspense fallback={<div className="p-8 text-white">Đang tải History...</div>}>
-            <HistoryView 
-              selectedRepoId={selectedRepoId}
-              targetUrl={configuredRepos.find(r => r.id === selectedRepoId)?.url}
-               onRestoreAudit={(fullJson) => {
+      <Routes>
+        <Route path="/" element={<Navigate to="/audit" replace />} />
+        <Route path="/rules" element={
+          <div key="view-rules" className="flex-1 flex flex-col w-full" style={{ minHeight: 'calc(100vh - 100px)' }}>
+            <Suspense fallback={<div className="p-8 text-white">Đang tải Rules...</div>}>
+              <RulesConfigurator 
+                targetId={selectedRepoId} 
+                projectName={configuredRepos.find(r => r.id === selectedRepoId)?.name || selectedRepoId} 
+                mode="manager"
+              />
+            </Suspense>
+          </div>
+        } />
+        <Route path="/sandbox" element={
+          <div key="view-sandbox" className="flex-1 flex flex-col w-full" style={{ minHeight: 'calc(100vh - 100px)' }}>
+            <Suspense fallback={<div className="p-8 text-white">Đang tải Sandbox...</div>}>
+              <RulesConfigurator 
+                targetId={selectedRepoId} 
+                projectName={configuredRepos.find(r => r.id === selectedRepoId)?.name || selectedRepoId} 
+                mode="sandbox"
+              />
+            </Suspense>
+          </div>
+        } />
+        <Route path="/settings" element={
+          <div className="flex-1 flex flex-col w-full" style={{ minHeight: 'calc(100vh - 100px)' }}>
+            <Suspense fallback={<div className="p-8 text-white">Đang tải Settings...</div>}>
+              <SettingsView selectedRepoId={selectedRepoId} cn={cn} />
+            </Suspense>
+          </div>
+        } />
+        <Route path="/history" element={
+          <div className="flex-1 flex flex-col w-full" style={{ minHeight: 'calc(100vh - 100px)' }}>
+            <Suspense fallback={<div className="p-8 text-white">Đang tải History...</div>}>
+              <HistoryView 
+                selectedRepoId={selectedRepoId}
+                targetUrl={configuredRepos.find(r => r.id === selectedRepoId)?.url}
+                onRestoreAudit={(fullJson) => {
                   setData(fullJson);
-                  setMainView('audit');
-               }} 
-              cn={cn} 
+                  navigate('/audit');
+                }} 
+                cn={cn} 
+              />
+            </Suspense>
+          </div>
+        } />
+        <Route path="/audit" element={
+          <Suspense fallback={<div className="p-8 text-white">Đang tải...</div>}>
+            <AuditView
+              data={data}
+              error={error}
+              isAuditing={isAuditing}
+              jobId={jobId}
+              reportView={reportView}
+              setReportView={setReportView}
+              selectedMember={selectedMember}
+              setSelectedMember={setSelectedMember}
+              activeLedgerTab={activeLedgerTab}
+              visibleLimit={visibleLimit}
+              setVisibleLimit={setVisibleLimit}
+              fixingId={fixingId}
+              suggestions={suggestions}
+              fetchFixSuggestion={fetchFixSuggestion}
+              activeTab={activeTab}
+              getSeverityClass={getSeverityClass}
+              cn={cn}
             />
           </Suspense>
-        </div>
-      ) : (
-        <Suspense fallback={<div className="p-8 text-white">Đang tải...</div>}>
-          <AuditView
-            data={data}
-            error={error}
-            isAuditing={isAuditing}
-            jobId={jobId}
-            reportView={reportView}
-            setReportView={setReportView}
-            selectedMember={selectedMember}
-            setSelectedMember={setSelectedMember}
-            activeLedgerTab={activeLedgerTab}
-            visibleLimit={visibleLimit}
-            setVisibleLimit={setVisibleLimit}
-            fixingId={fixingId}
-            suggestions={suggestions}
-            fetchFixSuggestion={fetchFixSuggestion}
-            activeTab={activeTab}
-            getSeverityClass={getSeverityClass}
-            cn={cn}
-          />
-        </Suspense>
-      )}
+        } />
+      </Routes>
         </div>
       </div>
     </div>

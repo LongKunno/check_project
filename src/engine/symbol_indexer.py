@@ -1,5 +1,6 @@
 import os
 import ast
+import logging
 
 class AstContextExtractor:
     """
@@ -12,7 +13,7 @@ class AstContextExtractor:
         
     def index_project(self):
         """Duyệt nhanh toàn bộ dự án để xây dựng từ điển danh mục hàm/class."""
-        print("   🔍 [Indexer] Đang lập chỉ mục mã nguồn (AST Indexing) để hỗ trợ AI...")
+        logging.getLogger(__name__).info("   🔍 [Indexer] Đang lập chỉ mục mã nguồn (AST Indexing) để hỗ trợ AI...")
         for root, _, files in os.walk(self.target_dir):
             if any(exclude in root for exclude in ['venv', '__pycache__', '.git', 'node_modules']):
                 continue
@@ -26,7 +27,8 @@ class AstContextExtractor:
             with open(file_path, 'r', encoding='utf-8') as f:
                 content = f.read()
                 tree = ast.parse(content)
-        except Exception:
+        except Exception as e:
+            logging.getLogger(__name__).warning(f"Error parsing AST for {file_path}: {e}")
             return
 
         for node in ast.walk(tree):
@@ -53,7 +55,7 @@ class AstContextExtractor:
                     snippet = "".join(lines[max(0, start-1):end])
                     rel_path = os.path.relpath(path, self.target_dir)
                     snippets.append(f"--- SOURCE CODE FROM: {rel_path} (Lines {start}-{end}) ---\n```python\n{snippet}\n```")
-            except Exception:
-                pass
+            except Exception as e:
+                logging.getLogger(__name__).warning(f"Error reading block from {path}: {e}")
                 
         return "\n\n".join(snippets)

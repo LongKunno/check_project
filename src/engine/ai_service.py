@@ -112,9 +112,10 @@ class AiService:
                 # Fallback to compiled json description if natural text is missing
                 custom_rules_prompt = f"\nUSER DEFINED PROJECT RULES (ƯU TIÊN): {json.dumps(custom_rules, ensure_ascii=False)}\n"
 
-        files_prompt = ""
+        files_prompt_parts = []
         for f in files_chunk:
-            files_prompt += f"\n--- FILE: {f['path']} ---\n{f['content']}\n"
+            files_prompt_parts.append(f"\n--- FILE: {f['path']} ---\n{f['content']}\n")
+        files_prompt = "".join(files_prompt_parts)
 
         # Tự động phát hiện Tech Stack dựa trên file extensions (đơn giản)
         extensions = {os.path.splitext(f['path'])[1] for f in files_chunk}
@@ -199,10 +200,11 @@ QUAN TRỌNG: NGUYÊN TẮC 'TWO-PASS AUDIT'. Nếu bạn nghi ngờ một lời
         if not violations_chunk:
             return {}
 
-        items_prompt = ""
+        items_prompt_parts = []
         for i, v in enumerate(violations_chunk):
             ai_instruction = f"\nCHỈ ĐẠO CỤ THỂ CHO LỖI NÀY: {v['ai_prompt']}" if v.get('ai_prompt') else ""
-            items_prompt += f"\n--- Vi phạm #{i} ---\nFile: {v['file']}\nLỗi: {v['reason']}\nTrụ cột: {v['type']}\nĐoạn mã:\n```\n{v.get('snippet', '')}\n```\n{ai_instruction}\n"
+            items_prompt_parts.append(f"\n--- Vi phạm #{i} ---\nFile: {v['file']}\nLỗi: {v['reason']}\nTrụ cột: {v['type']}\nĐoạn mã:\n```\n{v.get('snippet', '')}\n```\n{ai_instruction}\n")
+        items_prompt = "".join(items_prompt_parts)
 
         prompt = f"""
 Bạn là một chuyên gia Review Code. Hãy xác định xem các lỗi dưới đây là lỗi thật (True Positive) hay báo lỗi sai (False Positive).
@@ -268,16 +270,19 @@ Yêu cầu trả về kết quả dưới dạng đối tượng JSON với key 
         """
         if not flagged_violations: return []
         
-        items_prompt = ""
+        items_prompt_parts = []
         for i, v in enumerate(flagged_violations):
             target = v.get('verify_target', '')
             found_context = context_cache.get(target, 'Code not found')
             
-            items_prompt += f"\n--- Cờ nghi vấn #{i} ---\n"
-            items_prompt += f"Bối cảnh lỗi ban đầu ở File: {v['file']}\n"
-            items_prompt += f"Lý do bạn nghi ngờ: {v['reason']}\n"
-            items_prompt += f"Trụ cột: {v['type']}\n"
-            items_prompt += f"BẰNG CHỨNG HỆ THỐNG CUNG CẤP TỪ {target}:\n{found_context}\n"
+            items_prompt_parts.append(
+                f"\n--- Cờ nghi vấn #{i} ---\n"
+                f"Bối cảnh lỗi ban đầu ở File: {v['file']}\n"
+                f"Lý do bạn nghi ngờ: {v['reason']}\n"
+                f"Trụ cột: {v['type']}\n"
+                f"BẰNG CHỨNG HỆ THỐNG CUNG CẤP TỪ {target}:\n{found_context}\n"
+            )
+        items_prompt = "".join(items_prompt_parts)
             
         prompt = f"""
         GIÁM ĐỐC KỸ THUẬT QUY ĐỊNH (PHASE 2 CROSS-CHECK):
