@@ -48,7 +48,7 @@ class AuditLogHandler(logging.Handler):
             clean_msg = msg.strip()
             
             # Route vào Job-specific SSE nếu có Job đang active
-            active_job = JobManager.get_active_job()
+            active_job = JobManager.get_active_job_id()
             if active_job:
                 JobManager.log(active_job, clean_msg)
             else:
@@ -112,7 +112,7 @@ app.add_middleware(
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc):
     logger.error(f"Validation Error: {exc.errors()}")
-    return {"detail": exc.errors(), "body": exc.body}
+    return {"detail": exc.errors()}
 
 # ── Root ──────────────────────────────────────────────────────────────────────
 
@@ -134,4 +134,4 @@ app.include_router(repositories_router)
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))

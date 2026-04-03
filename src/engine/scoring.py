@@ -15,8 +15,8 @@ class ScoringEngine:
         Calculates a score from 0 to 10 for a specific pillar using Dynamic K-Factors.
         """
         # Áp dụng Laplace Smoothing (Base Threshold) cho các file hoặc feature quá nhỏ
-        # để ngăn chặn việc lỗi bị khuếch đại vô lý. Tối thiểu là 500 dòng code.
-        effective_loc = max(total_loc, 500)
+        # để ngăn chặn việc lỗi bị khuếch đại vô lý. Tối thiểu là 1000 dòng code.
+        effective_loc = max(total_loc, 1000)
         
         # Dynamic K-Factor mapping based on pillar sensitivity
         k_factors = {
@@ -36,7 +36,8 @@ class ScoringEngine:
     @staticmethod
     def calculate_final_score(pillar_scores):
         """
-        Calculates the final weighted score (0-10) for a single feature/project.
+        Calculates the final weighted score (0-100) for a single feature/project.
+        Pillar scores (0-10) are weighted by config WEIGHTS and scaled to 0-100.
         """
         from src.config import WEIGHTS
         final = 0

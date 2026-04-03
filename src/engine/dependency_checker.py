@@ -18,30 +18,39 @@ def detect_circular_dependencies(file_list, rules):
     if not circ_rule or 'CIRCULAR_DEPENDENCY' in disabled_ids:
         return []
 
-    imports_map = {}
-    file_to_mod = {}
-    mod_to_file = {}
+    def _build_mappings(f_list):
+        f_to_mod = {}
+        mod_to_f = {}
+        for f in f_list:
+            if not f.endswith('.py'): continue
+            base = os.path.splitext(f)[0]
+            mod_name = base.replace(os.sep, '.').replace('/', '.')
+            short_name = os.path.splitext(os.path.basename(f))[0]
+            f_to_mod[f] = short_name
+            mod_to_f[short_name] = f
+            mod_to_f[mod_name] = f
+        return f_to_mod, mod_to_f
 
-    for f in file_list:
-        if not f.endswith('.py'): continue
-        mod_name = os.path.splitext(os.path.basename(f))[0]
-        file_to_mod[f] = mod_name
-        mod_to_file[mod_name] = f
+    def _extract_dependencies(f_list, f_to_mod, mod_to_f):
+        imp_map = {}
+        for f in f_list:
+            if not f.endswith('.py'): continue
+            try:
+                with open(f, 'r', encoding='utf-8') as file:
+                    tree = ast.parse(file.read())
+                deps = set()
+                for node in ast.walk(tree):
+                    if isinstance(node, ast.Import):
+                        for n in node.names: deps.add(n.name.split('.')[0])
+                    elif isinstance(node, ast.ImportFrom):
+                        if node.module: deps.add(node.module.split('.')[0])
+                imp_map[f_to_mod[f]] = list(deps.intersection(set(mod_to_f.keys())))
+            except Exception as e:
+                pass
+        return imp_map
 
-    for f in file_list:
-        if not f.endswith('.py'): continue
-        try:
-            with open(f, 'r', encoding='utf-8') as file:
-                tree = ast.parse(file.read())
-            deps = set()
-            for node in ast.walk(tree):
-                if isinstance(node, ast.Import):
-                    for n in node.names: deps.add(n.name.split('.')[0])
-                elif isinstance(node, ast.ImportFrom):
-                    if node.module: deps.add(node.module.split('.')[0])
-            imports_map[file_to_mod[f]] = list(deps.intersection(set(mod_to_file.keys())))
-        except Exception as e:
-            logging.getLogger(__name__).warning(f"Error parsing {f} for dependencies: {e}")
+    file_to_mod, mod_to_file = _build_mappings(file_list)
+    imports_map = _extract_dependencies(file_list, file_to_mod, mod_to_file)
 
     violations = []
     visited_fully = set()

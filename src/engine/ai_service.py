@@ -52,6 +52,35 @@ class AiService:
             timeout=60.0
         )
 
+    async def _call_llm_json(self, prompt: str, system_message: str, response_model: type[BaseModel], max_retries: int = 3) -> Any:
+        for attempt in range(max_retries):
+            try:
+                messages = [
+                    {"role": "system", "content": system_message},
+                    {"role": "user", "content": prompt}
+                ]
+                response = await self.client.chat.completions.create(
+                    model=self.model,
+                    messages=messages,
+                    temperature=0.0,
+                    response_format={"type": "json_object"} if "gemini" not in self.model.lower() else None
+                )
+                content = response.choices[0].message.content
+                if not content: raise ValueError("Empty AI response")
+
+                json_str = self._extract_json(content)
+                try:
+                    data = json.loads(json_str, strict=False)
+                except json.JSONDecodeError:
+                    import re
+                    json_str_fixed = re.sub(r'\\(?!["\\/bfnrtu])', r'\\\\', json_str)
+                    data = json.loads(json_str_fixed, strict=False)
+                return response_model.model_validate(data)
+            except Exception as e:
+                logger.warning(f"⚠️ AI call attempt {attempt + 1} failed: {e}")
+                if attempt < max_retries - 1: await asyncio.sleep(2 * (attempt + 1))
+        return None
+
     def _extract_json(self, content: str) -> str:
         """Trích xuất khối JSON từ nội dung trả về của AI (xử lý Markdown code blocks)."""
         json_match = re.search(r'```json\s*(.*?)\s*```', content, re.DOTALL)
@@ -167,39 +196,9 @@ QUY TẮC rule_id: Nếu vi phạm khớp với một luật AI-ONLY đã liệt
 AI cũng có trách nhiệm phát hiện xem một lỗi có vi phạm TRỰC TIẾP 'USER DEFINED PROJECT RULES' hay không để đặt 'is_custom' = true.
 QUAN TRỌNG: NGUYÊN TẮC 'TWO-PASS AUDIT'. Nếu bạn nghi ngờ một lời gọi hàm dẫn đến lỗi logic chéo file (vd: N+1 query lấp lửng từ 1 API trả về), TUYỆT ĐỐI KHÔNG SUY ĐOÁN. Hãy bật `needs_verification: true` và gõ tên hàm đó vào `verify_target`. Hệ thống sẽ đi móc code nguyên thủy của hàm đó ở file khác ném trả lại cho bạn ở lần Review thứ 2.
 """
-        max_retries = 3
-        for attempt in range(max_retries):
-            try:
-                messages = [
-                    {"role": "system", "content": "You are a senior auditor. Respond with strictly valid JSON matching the requested schema."},
-                    {"role": "user", "content": prompt}
-                ]
-                response = await self.client.chat.completions.create(
-                    model=self.model,
-                    messages=messages,
-                    temperature=0.0,
-                    response_format={"type": "json_object"} if "gemini" not in self.model.lower() else None
-                )
-                content = response.choices[0].message.content
-                if not content: raise ValueError("Empty AI response")
-
-                json_str = self._extract_json(content)
-                try:
-                    data = json.loads(json_str, strict=False)
-                except json.JSONDecodeError:
-                    import re
-                    json_str_fixed = re.sub(r'\\(?!["\\/bfnrtu])', r'\\\\', json_str)
-                    data = json.loads(json_str_fixed, strict=False)
-                validated_data = DeepAuditResponse.model_validate(data)
-                return [v.model_dump() for v in validated_data.violations]
-            
-            except (ValidationError, json.JSONDecodeError, Exception) as e:
-                logger.warning(f"⚠️ AI Deep Audit Attempt {attempt + 1} failed: {e}")
-                if attempt < max_retries - 1:
-                    await asyncio.sleep(2 * (attempt + 1))
-                else:
-                    return []
-        return []
+        system_msg = "You are a senior auditor. Respond with strictly valid JSON matching the requested schema."
+        validated_data = await self._call_llm_json(prompt, system_msg, DeepAuditResponse)
+        return [v.model_dump() for v in validated_data.violations] if validated_data else []
 
     async def verify_violations_batch(self, violations_chunk: List[Dict[str, Any]]) -> Dict[int, Dict[str, Any]]:
         """
@@ -232,39 +231,9 @@ Yêu cầu trả về kết quả dưới dạng đối tượng JSON với key 
   ]
 }}
 """
-        max_retries = 3
-        for attempt in range(max_retries):
-            try:
-                messages = [
-                    {"role": "system", "content": "You are a code reviewer. Respond with strictly valid JSON matching the requested schema."},
-                    {"role": "user", "content": prompt}
-                ]
-                response = await self.client.chat.completions.create(
-                    model=self.model,
-                    messages=messages,
-                    temperature=0.0,
-                    response_format={"type": "json_object"} if "gemini" not in self.model.lower() else None
-                )
-                content = response.choices[0].message.content
-                if not content: raise ValueError("Empty AI response")
-
-                json_str = self._extract_json(content)
-                try:
-                    data = json.loads(json_str, strict=False)
-                except json.JSONDecodeError:
-                    import re
-                    json_str_fixed = re.sub(r'\\(?!["\\/bfnrtu])', r'\\\\', json_str)
-                    data = json.loads(json_str_fixed, strict=False)
-                validated_data = ValidationResponse.model_validate(data)
-                return {res.index: res.model_dump() for res in validated_data.results}
-            
-            except (ValidationError, json.JSONDecodeError, Exception) as e:
-                logger.warning(f"⚠️ AI Batch Service Attempt {attempt + 1} failed: {e}")
-                if attempt < max_retries - 1:
-                    await asyncio.sleep(2 * (attempt + 1))
-                else:
-                    return {}
-        return {}
+        system_msg = "You are a code reviewer. Respond with strictly valid JSON matching the requested schema."
+        validated_data = await self._call_llm_json(prompt, system_msg, ValidationResponse)
+        return {res.index: res.model_dump() for res in validated_data.results} if validated_data else {}
 
     async def verify_violation(self, file_path, code_snippet, reason, pillar):
         """
@@ -321,50 +290,24 @@ Yêu cầu trả về kết quả dưới dạng đối tượng JSON với key 
             ]
         }}
         """
-        max_retries = 3
-        for attempt in range(max_retries):
-            try:
-                messages = [
-                    {"role": "system", "content": "You are a lead auditor. Resolve flagged suspicions with evidence. Return strict JSON."},
-                    {"role": "user", "content": prompt}
-                ]
-                response = await self.client.chat.completions.create(
-                    model=self.model,
-                    messages=messages,
-                    temperature=0.0,
-                    response_format={"type": "json_object"} if "gemini" not in self.model.lower() else None
-                )
-                content = response.choices[0].message.content
-                if not content: raise ValueError("Empty AI response")
-
-                json_str = self._extract_json(content)
-                try:
-                    data = json.loads(json_str, strict=False)
-                except json.JSONDecodeError:
-                    import re
-                    json_str_fixed = re.sub(r'\\(?!["\\/bfnrtu])', r'\\\\', json_str)
-                    data = json.loads(json_str_fixed, strict=False)
-                validated_data = ValidationResponse.model_validate(data)
-                
-                # Cập nhật kết quả vào danh sách cờ gốc
-                verified_violations = []
-                for res in validated_data.results:
-                    idx = res.index
-                    if 0 <= idx < len(flagged_violations):
-                        if not res.is_false_positive:
-                            # Vẫn là lỗi thật, kèm theo chú thích giải thích từ Cross-Check
-                            bug = flagged_violations[idx]
-                            bug['reason'] = f"{bug['reason']} [Cross-Checked: {res.explanation}]"
-                            verified_violations.append(bug)
-                        else:
-                            logger.info(f"   🛡️ Đã gỡ cờ một False Positive: {flagged_violations[idx]['reason']} nhờ đối chiếu bằng chứng.")
-                            
-                return verified_violations
-                
-            except Exception as e:
-                logger.warning(f"⚠️ AI Cross-Check Attempt {attempt + 1} failed: {e}")
-                if attempt < max_retries - 1: await asyncio.sleep(2 * (attempt + 1))
-        return []
+        system_msg = "You are a lead auditor. Resolve flagged suspicions with evidence. Return strict JSON."
+        validated_data = await self._call_llm_json(prompt, system_msg, ValidationResponse)
+        
+        if not validated_data:
+            return []
+            
+        verified_violations = []
+        for res in validated_data.results:
+            idx = res.index
+            if 0 <= idx < len(flagged_violations):
+                if not res.is_false_positive:
+                    bug = flagged_violations[idx]
+                    bug['reason'] = f"{bug['reason']} [Cross-Checked: {res.explanation}]"
+                    verified_violations.append(bug)
+                else:
+                    logger.info(f"   🛡️ Đã gỡ cờ một False Positive: {flagged_violations[idx]['reason']} nhờ đối chiếu bằng chứng.")
+                    
+        return verified_violations
 
 ai_service = AiService()
 

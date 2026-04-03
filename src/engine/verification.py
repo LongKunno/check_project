@@ -82,70 +82,80 @@ class VerificationStep:
     def load_rules(self):
         """Loads và merges default rules với custom rules (theo Unified Schema)."""
         with open(self.config_rules_path, 'r', encoding='utf-8') as f:
-            merged = json.load(f)  # {rules: [...]}
-
-        disabled_ids = []
-        if self.custom_rules:
-            disabled_ids = self.custom_rules.get('disabled_core_rules', [])
-
-        merged['disabled_ids'] = disabled_ids
+            merged = json.load(f)
 
         if not self.custom_rules:
+            merged['disabled_ids'] = []
             return merged
 
-        # Lọc bỏ các luật bị người dùng disabled (Toggled off)
+        disabled_ids = self.custom_rules.get('disabled_core_rules', [])
+        merged['disabled_ids'] = disabled_ids
+
+        self._apply_disabled_rules(merged, disabled_ids)
+        self._apply_custom_weights(merged)
+        self._merge_custom_payload(merged)
+
+        return merged
+
+    def _apply_disabled_rules(self, merged, disabled_ids):
+        """Lọc bỏ các luật bị người dùng disabled."""
         if disabled_ids:
             merged['rules'] = [r for r in merged.get('rules', []) if r.get('id') not in disabled_ids]
 
-        # Áp dụng Custom Weights (đổi trọng số theo từng rule ID)
+    def _apply_custom_weights(self, merged):
+        """Áp dụng Custom Weights."""
         custom_weights = self.custom_rules.get('custom_weights', {})
-        if custom_weights:
-            for r in merged.get('rules', []):
-                r_id = r.get('id')
-                if r_id and r_id in custom_weights:
-                    try:
-                        r['weight'] = float(custom_weights[r_id])
-                    except (ValueError, TypeError):
-                        logger.warning(f"Invalid custom weight for rule {r_id}: {custom_weights[r_id]}")
+        if not custom_weights:
+            return
+            
+        for r in merged.get('rules', []):
+            r_id = r.get('id')
+            if r_id and r_id in custom_weights:
+                try:
+                    r['weight'] = float(custom_weights[r_id])
+                except (ValueError, TypeError):
+                    logger.warning(f"Invalid custom weight for rule {r_id}: {custom_weights[r_id]}")
 
-        # Merge thêm Custom Rules (do AI Compiler sinh ra)
+    def _merge_custom_payload(self, merged):
+        """Merge thêm Custom Rules do AI sinh ra hoặc từ schema cũ."""
         custom = self.custom_rules.get('compiled_json')
-        if custom:
-            extra_rules = custom.get('rules', [])
-            if extra_rules:
-                merged.setdefault('rules', []).extend(extra_rules)
-            else:
-                # Hỗ trợ schema cũ (compiled_json có regex_rules/ast_rules)
-                for r in custom.get('regex_rules', []):
-                    merged.setdefault('rules', []).append({
-                        "id": r.get('id', 'CUSTOM_REGEX'),
-                        "pillar": r.get('pillar', 'Maintainability'),
-                        "category": r.get('pillar', 'Maintainability'),
-                        "severity": r.get('severity', 'Minor'),
-                        "debt": r.get('debt', 10),
-                        "reason": r.get('reason', 'Custom Rule'),
-                        "weight": r.get('weight', -2.0),
-                        "regex": {"pattern": r.get('pattern', '')},
-                        "ast": None,
-                        "ai": None
-                    })
-                if isinstance(custom.get('ast_rules'), list):
-                    for r in custom.get('ast_rules', []):
-                        node_name = r.get('name') or r.get('id', 'custom')
-                        merged.setdefault('rules', []).append({
-                            "id": r.get('id', f'CUSTOM_{node_name.upper()}'),
-                            "pillar": r.get('pillar', 'Maintainability'),
-                            "category": r.get('pillar', 'Maintainability'),
-                            "severity": r.get('severity', 'Minor'),
-                            "debt": r.get('debt', 10),
-                            "reason": r.get('reason', 'Custom AI Rule'),
-                            "weight": r.get('weight', -2.0),
-                            "regex": None,
-                            "ast": {"type": "dangerous_functions", "targets": [{"name": node_name, "reason": r.get('reason', '')}]},
-                            "ai": None
-                        })
+        if not custom:
+            return
+            
+        extra_rules = custom.get('rules', [])
+        if extra_rules:
+            merged.setdefault('rules', []).extend(extra_rules)
+            return
 
-        return merged
+        # Legacy schema fallback
+        for r in custom.get('regex_rules', []):
+            merged.setdefault('rules', []).append({
+                "id": r.get('id', 'CUSTOM_REGEX'),
+                "pillar": r.get('pillar', 'Maintainability'),
+                "category": r.get('pillar', 'Maintainability'),
+                "severity": r.get('severity', 'Minor'),
+                "debt": r.get('debt', 10),
+                "reason": r.get('reason', 'Custom Rule'),
+                "weight": r.get('weight', -2.0),
+                "regex": {"pattern": r.get('pattern', '')},
+                "ast": None, "ai": None
+            })
+            
+        if isinstance(custom.get('ast_rules'), list):
+            for r in custom.get('ast_rules', []):
+                node_name = r.get('name') or r.get('id', 'custom')
+                merged.setdefault('rules', []).append({
+                    "id": r.get('id', f'CUSTOM_{node_name.upper()}'),
+                    "pillar": r.get('pillar', 'Maintainability'),
+                    "category": r.get('pillar', 'Maintainability'),
+                    "severity": r.get('severity', 'Minor'),
+                    "debt": r.get('debt', 10),
+                    "reason": r.get('reason', 'Custom AI Rule'),
+                    "weight": r.get('weight', -2.0),
+                    "regex": None,
+                    "ast": {"type": "dangerous_functions", "targets": [{"name": node_name, "reason": r.get('reason', '')}]},
+                    "ai": None
+                })
 
     def generate_verification_script(self):
         import inspect

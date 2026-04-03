@@ -9,28 +9,28 @@ logger = logging.getLogger(__name__)
 
 class GitHelper:
     @staticmethod
+    def _build_clone_url(repo_url: str, username: Optional[str], token: Optional[str]) -> str:
+        if not (username and token):
+            return repo_url
+            
+        quoted_username = urllib.parse.quote(username)
+        quoted_token = urllib.parse.quote(token)
+        
+        if "://" in repo_url:
+            protocol, rest = repo_url.split("://", 1)
+            if "@" in rest:
+                rest = rest.split("@", 1)[1]
+            return f"{protocol}://{quoted_username}:{quoted_token}@{rest}"
+        return f"https://{quoted_username}:{quoted_token}@{repo_url}"
+
+    @staticmethod
     def clone_repository(repo_url: str, dest_dir: str, username: Optional[str] = None, token: Optional[str] = None, branch: Optional[str] = None) -> bool:
         """
         Clones a git repository to a destination directory.
         Handles formatting the URL with credentials if necessary.
         """
         try:
-            # Format URL with credentials if provided
-            clone_url = repo_url
-            if username and token:
-                # URL Encode credentials to handle special characters (@, :, =, etc.)
-                quoted_username = urllib.parse.quote(username)
-                quoted_token = urllib.parse.quote(token)
-                
-                # Basic Auth Injection into URL
-                if "://" in clone_url:
-                    protocol, rest = clone_url.split("://", 1)
-                    # Xử lý trường hợp có username trong url rồi (ví dụ: https://admin@bitbucket.org...)
-                    if "@" in rest:
-                        rest = rest.split("@", 1)[1]
-                    clone_url = f"{protocol}://{quoted_username}:{quoted_token}@{rest}"
-                else:
-                    clone_url = f"https://{quoted_username}:{quoted_token}@{clone_url}"
+            clone_url = GitHelper._build_clone_url(repo_url, username, token)
             
             logger.info(f"Cloning repository into {dest_dir} (Shallow clone, shallow-since=6.months)...")
             

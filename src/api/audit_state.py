@@ -50,14 +50,15 @@ class JobManager:
     def cleanup_old_jobs(cls):
         """Dọn dẹp jobs đã COMPLETED/FAILED quá JOB_RETENTION_SECONDS (memory leak prevention)."""
         now = time.time()
+        # Snapshot keys để tránh RuntimeError khi dict thay đổi trong quá trình iterate
         stale_ids = [
-            jid for jid, job in cls.jobs.items()
+            jid for jid, job in list(cls.jobs.items())
             if job.status in ("COMPLETED", "FAILED")
             and job.ended_at
             and (now - job.ended_at) > cls.JOB_RETENTION_SECONDS
         ]
         for jid in stale_ids:
-            del cls.jobs[jid]
+            cls.jobs.pop(jid, None)
             cls.job_logs.pop(jid, None)
         
     @classmethod
@@ -89,8 +90,8 @@ class JobManager:
         cls._thread_local.active_job_id = None
     
     @classmethod
-    def get_active_job(cls) -> Optional[str]:
-        """Lấy job_id đang active trên thread hiện tại (hoặc None)."""
+    def get_active_job_id(cls) -> Optional[str]:
+        """Lấy job_id (str) đang active trên thread hiện tại (hoặc None)."""
         return getattr(cls._thread_local, 'active_job_id', None)
 
     @classmethod

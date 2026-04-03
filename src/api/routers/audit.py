@@ -70,6 +70,29 @@ def run_auditor_with_capture(target_path, target_id=None, job_id=None):
             JobManager.clear_active_job()
 
 
+def _build_and_save_audit_result(auditor, target_str, project_name):
+    total_loc = auditor.discovery_data['total_loc']
+    final_score = ScoringEngine.calculate_final_score_from_features(auditor.feature_results)
+    rating = ScoringEngine.get_rating(final_score)
+    result = {
+        "status": "success", "target": target_str, "project_name": project_name,
+        "metrics": {"total_loc": total_loc, "total_files": auditor.discovery_data['total_files']},
+        "scores": {
+            "final": final_score, "rating": rating,
+            "project_pillars": auditor.project_pillars,
+            "features": auditor.feature_results,
+            "members": getattr(auditor, 'member_results', {})
+        },
+        "violations": auditor.violations
+    }
+    AuditDatabase.save_audit(
+        target=target_str, score=final_score, rating=rating, loc=total_loc,
+        violations_count=len(auditor.violations), pillar_scores=auditor.project_pillars,
+        full_json=result
+    )
+    return result
+
+
 # ── SSE Streams ──────────────────────────────────────────────────────────────
 
 @router.get("/audit/logs")
@@ -145,25 +168,7 @@ async def upload_and_audit(background_tasks: BackgroundTasks, files: List[Upload
             JobManager.update_job(job_id, "RUNNING", "Bắt đầu kiểm toán mã nguồn...")
             try:
                 auditor = run_auditor_with_capture(target_path, project_name, job_id)
-                total_loc = auditor.discovery_data['total_loc']
-                final_score = ScoringEngine.calculate_final_score_from_features(auditor.feature_results)
-                rating = ScoringEngine.get_rating(final_score)
-                result = {
-                    "status": "success", "target": project_name, "project_name": project_name,
-                    "metrics": {"total_loc": total_loc, "total_files": auditor.discovery_data['total_files']},
-                    "scores": {
-                        "final": final_score, "rating": rating,
-                        "project_pillars": auditor.project_pillars,
-                        "features": auditor.feature_results,
-                        "members": getattr(auditor, 'member_results', {})
-                    },
-                    "violations": auditor.violations
-                }
-                AuditDatabase.save_audit(
-                    target=project_name, score=final_score, rating=rating, loc=total_loc,
-                    violations_count=len(auditor.violations), pillar_scores=auditor.project_pillars,
-                    full_json=result
-                )
+                result = _build_and_save_audit_result(auditor, project_name, project_name)
                 JobManager.update_job(job_id, "COMPLETED", result=result)
             except Exception as e:
                 JobManager.update_job(job_id, "FAILED", message=str(e))
@@ -195,26 +200,7 @@ async def run_audit(target: str = Query(".", description="Path to directory")):
     try:
         AuditState.reset()
         auditor = await asyncio.to_thread(run_auditor_with_capture, target_path, target_path)
-        total_loc = auditor.discovery_data['total_loc']
-        final_score = ScoringEngine.calculate_final_score_from_features(auditor.feature_results)
-        rating = ScoringEngine.get_rating(final_score)
-        result = {
-            "status": "success", "target": target_path,
-            "project_name": os.path.basename(target_path),
-            "metrics": {"total_loc": total_loc, "total_files": auditor.discovery_data['total_files']},
-            "scores": {
-                "final": final_score, "rating": rating,
-                "project_pillars": auditor.project_pillars,
-                "features": auditor.feature_results,
-                "members": getattr(auditor, 'member_results', {})
-            },
-            "violations": auditor.violations
-        }
-        AuditDatabase.save_audit(
-            target=target_path, score=final_score, rating=rating, loc=total_loc,
-            violations_count=len(auditor.violations), pillar_scores=auditor.project_pillars,
-            full_json=result
-        )
+        result = _build_and_save_audit_result(auditor, target_path, os.path.basename(target_path))
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi: {str(e)}")
@@ -265,26 +251,8 @@ async def audit_repository(request: RepositoryAuditRequest, background_tasks: Ba
                                        username=username, token=token, branch=branch)
             JobManager.update_job(job_id, "RUNNING", "Đang phân tích tĩnh và áp dụng AI...")
             auditor = run_auditor_with_capture(target_path, target_id, job_id)
-            total_loc = auditor.discovery_data['total_loc']
-            final_score = ScoringEngine.calculate_final_score_from_features(auditor.feature_results)
-            rating = ScoringEngine.get_rating(final_score)
-            result = {
-                "status": "success", "target": repo_url,
-                "project_name": repo_url.split('/')[-1].replace('.git', ''),
-                "metrics": {"total_loc": total_loc, "total_files": auditor.discovery_data['total_files']},
-                "scores": {
-                    "final": final_score, "rating": rating,
-                    "project_pillars": auditor.project_pillars,
-                    "features": auditor.feature_results,
-                    "members": getattr(auditor, 'member_results', {})
-                },
-                "violations": auditor.violations
-            }
-            AuditDatabase.save_audit(
-                target=repo_url, score=final_score, rating=rating, loc=total_loc,
-                violations_count=len(auditor.violations), pillar_scores=auditor.project_pillars,
-                full_json=result
-            )
+            project_name = repo_url.split('/')[-1].replace('.git', '')
+            result = _build_and_save_audit_result(auditor, repo_url, project_name)
             JobManager.update_job(job_id, "COMPLETED", result=result)
         except Exception as e:
             JobManager.update_job(job_id, "FAILED", message=str(e))

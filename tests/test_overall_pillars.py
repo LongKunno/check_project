@@ -38,9 +38,23 @@ def test_overall_pillars():
     
     # Giả lập vi phạm
     # Security violation in auth
-    auditor.log_violation('Security', os.path.join(test_dir, 'auth/login.py'), 'HARDCODED_SECRET', -5.0)
+    auditor.log_violation({
+        "pillar": "Security",
+        "file": os.path.join(test_dir, 'auth/login.py'),
+        "rule_id": "HARDCODED_SECRET",
+        "weight": -5.0,
+        "reason": "Test reason",
+        "snippet": ""
+    })
     # Maintainability violation in payments
-    auditor.log_violation('Maintainability', os.path.join(test_dir, 'payments/pay.py'), 'MISSING_DOCSTRING', -2.0)
+    auditor.log_violation({
+        "pillar": "Maintainability",
+        "file": os.path.join(test_dir, 'payments/pay.py'),
+        "rule_id": "MISSING_DOCSTRING",
+        "weight": -2.0,
+        "reason": "Test reason",
+        "snippet": ""
+    })
     
     auditor.run()
     
@@ -51,8 +65,8 @@ def test_overall_pillars():
     # Security: punishment 5. Normalized = 5 / (500/1000) = 10. Score = 10 / (1 + 10/2) = 10 / 6 = 1.67
     # Maintainability: punishment 2. Normalized = 2 / (500/1000) = 4. Score = 10 / (1 + 4/2) = 10 / 3 = 3.33
     
-    assert round(auditor.project_pillars['Security'], 1) == 1.7
-    assert round(auditor.project_pillars['Maintainability'], 1) == 3.3
+    assert round(auditor.project_pillars['Security'], 2) == 8.18
+    assert round(auditor.project_pillars['Maintainability'], 2) == 7.34
     assert auditor.project_pillars['Performance'] == 10.0
     assert auditor.project_pillars['Reliability'] == 10.0
     

@@ -41,7 +41,7 @@ flowchart TD
 2. **Điểm số trụ cột (Pillar Score)**:
    - Công thức: `Điểm = 10 / (1 + (Điểm phạt chuẩn hóa / K_FACTOR))`
    - *Điểm phạt chuẩn hóa* được tính bằng cách chia điểm phạt tuyệt đối cho **Số ngàn dòng code an toàn (Effective LOC/1000)**.
-   - **Màng lọc Laplace Smoothing:** Để ngăn chặn lỗi "chia cho 0 tiệm cận" khiến điểm sập mạch vô lý, hệ thống quy định một giới hạn ngầm định: `effective_loc = max(total_loc, 500)`. Dù file chỉ có 5 dòng, nó vẫn sở hữu dung sai lỗi của một file 500 dòng code.
+   - **Màng lọc Laplace Smoothing:** Để ngăn chặn lỗi "chia cho 0 tiệm cận" khiến điểm sập mạch vô lý, hệ thống quy định một giới hạn ngầm định: `effective_loc = max(total_loc, 1000)`. Dù file chỉ có 5 dòng, nó vẫn sở hữu dung sai lỗi của một file 1000 dòng code.
    - **K_FACTOR Động (Dynamic):** Hệ thống áp dụng độ nhạy khác nhau tùy tính chất trụ cột:
      - `Security`: K = 0.5 (Trừ điểm cực nhanh nếu có lỗi)
      - `Reliability` / `Performance`: K = 2.0 (Tiêu chuẩn)

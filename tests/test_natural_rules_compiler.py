@@ -14,11 +14,12 @@ async def main():
     
     prompt = "Cấm dùng hàm eval() trong Python vì rủi ro bảo mật quá cao, cần cho 10 điểm phạt. Đồng thời cấm hardcode password có dạng Regex password='...'."
     
-    full_output = ""
+    chunks = []
     async for chunk in compiler.compile_rules_stream(prompt):
         sys.stdout.write(chunk)
         sys.stdout.flush()
-        full_output += chunk
+        chunks.append(chunk)
+    full_output = ''.join(chunks)
     
     print("\\n\\n--- PARSING JSON TEST ---")
     import json
@@ -40,6 +41,7 @@ async def main():
     print("\\n\\nTesting DB Integration...")
     AuditDatabase.save_project_rules('test_target', prompt, {"ast": "test"})
     res = AuditDatabase.get_project_rules('test_target')
+    assert res is not None, "DB returned None for test_target"
     assert res['natural_text'] == prompt
     assert res['compiled_json'] == {"ast": "test"}
     print("DB Test Passed!")

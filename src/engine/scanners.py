@@ -21,6 +21,9 @@ class RegexScanner(BaseScanner):
     """Quét dựa trên biểu thức chính quy (Regex).
     Duyệt qua tất cả rule có khối 'regex' không null trong mảng 'rules'.
     """
+    # Cache compiled regex patterns để tránh recompile cho mỗi file
+    _pattern_cache = {}
+    
     def scan(self, file_path, content, lines, tree, rules):
         violations = []
         disabled_ids = rules.get('disabled_ids', [])
@@ -33,7 +36,10 @@ class RegexScanner(BaseScanner):
             if not regex_cfg:
                 continue
             try:
-                pattern = re.compile(regex_cfg['pattern'])
+                pattern_str = regex_cfg['pattern']
+                if pattern_str not in self._pattern_cache:
+                    self._pattern_cache[pattern_str] = re.compile(pattern_str)
+                pattern = self._pattern_cache[pattern_str]
                 for match in pattern.finditer(content):
                     start_idx = match.start()
                     line_no = content[:start_idx].count('\n') + 1
@@ -81,21 +87,17 @@ class PythonASTScanner(BaseScanner):
         }
 
     def scan(self, file_path, content, lines, tree, rules):
-        if tree is None:
-            return []
+        if tree is None: return []
 
         violations = []
         disabled_ids = rules.get('disabled_ids', [])
-
         ast_rules_by_type = {}
-        dangerous_functions_rules = []  # Hỗ trợ nhiều rule cùng type dangerous_functions
+        dangerous_functions_rules = []
 
         for r in rules.get('rules', []):
-            if r.get('id') in disabled_ids:
-                continue
+            if r.get('id') in disabled_ids: continue
             ast_cfg = r.get('ast')
-            if not ast_cfg:
-                continue
+            if not ast_cfg: continue
             ast_type = ast_cfg.get('type')
             if ast_type == 'dangerous_functions':
                 dangerous_functions_rules.append(r)
@@ -115,206 +117,187 @@ class PythonASTScanner(BaseScanner):
         used_names = set()
 
         for node in ast.walk(tree):
-
-            # --- BARE EXCEPT & SWALLOWED EXCEPTION ---
             if isinstance(node, ast.ExceptHandler):
-                if node.type is None:
-                    rule = ast_rules_by_type.get('bare_except')
-                    if rule:
-                        snippet = "\n".join(lines[max(0, node.lineno-2):min(len(lines), node.lineno+1)])
-                        violations.append(self._make_violation(file_path, rule, node.lineno, snippet))
-
-                if len(node.body) == 1 and isinstance(node.body[0], ast.Pass):
-                    rule = ast_rules_by_type.get('swallowed_exception')
-                    if rule:
-                        snippet = "\n".join(lines[max(0, node.lineno-2):min(len(lines), node.lineno+1)])
-                        violations.append(self._make_violation(file_path, rule, node.lineno, snippet))
-
-            # --- FUNCTION-LEVEL CHECKS ---
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                rule = ast_rules_by_type.get('max_function_length')
-                if rule:
-                    limit = rule.get('ast', {}).get('limit', rule.get('limit', 80))
-                    if node.end_lineno - node.lineno > limit:
-                        snippet = "\n".join(lines[max(0, node.lineno-1):min(len(lines), node.lineno+2)])
-                        violations.append(self._make_violation(
-                            file_path, rule, node.lineno, snippet,
-                            reason_override=f"{rule.get('reason')}: {node.name} (> {limit} lines)"
-                        ))
-
-                rule = ast_rules_by_type.get('complexity')
-                if rule:
-                    limit = rule.get('ast', {}).get('limit', rule.get('limit', 12))
-                    complexity = self.calculate_complexity(node)
-                    if complexity > limit:
-                        snippet = "\n".join(lines[max(0, node.lineno-1):min(len(lines), node.lineno+2)])
-                        violations.append(self._make_violation(
-                            file_path, rule, node.lineno, snippet,
-                            reason_override=f"{rule.get('reason')}: {node.name} (Complexity: {complexity} > {limit})"
-                        ))
-
-                rule = ast_rules_by_type.get('max_parameters')
-                if rule:
-                    limit = rule.get('ast', {}).get('limit', rule.get('limit', 7))
-                    num_args = len(node.args.args) + len(node.args.kwonlyargs)
-                    if getattr(node.args, 'vararg', None): num_args += 1
-                    if getattr(node.args, 'kwarg', None): num_args += 1
-                    if num_args > limit:
-                        snippet = "\n".join(lines[max(0, node.lineno-1):min(len(lines), node.lineno+2)])
-                        violations.append(self._make_violation(
-                            file_path, rule, node.lineno, snippet,
-                            reason_override=f"{rule.get('reason')}: {node.name} ({num_args} > {limit})"
-                        ))
-
-            # --- CALL-LEVEL CHECKS ---
-            if isinstance(node, ast.Call):
-                func_name = ""
-                if isinstance(node.func, ast.Name):
-                    func_name = node.func.id
-                elif isinstance(node.func, ast.Attribute):
-                    if isinstance(node.func.value, ast.Name):
-                        func_name = f"{node.func.value.id}.{node.func.attr}"
-
-                if func_name in dangerous_funcs:
-                    base_rule, target_cfg = dangerous_funcs[func_name]
-                    
-                    # Skip print() nếu:
-                    # 1. Nằm trong `if __name__ == "__main__":` (CLI entrypoint)
-                    # 2. Nằm trong test file (tests/, test_*.py, *_test.py)
-                    if func_name == 'print' and base_rule.get('id') == 'PRINT_STATEMENT':
-                        # Check test file
-                        import os
-                        basename = os.path.basename(file_path)
-                        is_test_file = (
-                            '/tests/' in file_path.replace('\\', '/') or
-                            basename.startswith('test_') or
-                            basename.endswith('_test.py')
-                        )
-                        if is_test_file:
-                            continue
-                        
-                        # Check __main__ guard
-                        in_main_guard = False
-                        parent = getattr(node, 'parent', None)
-                        while parent:
-                            if isinstance(parent, ast.If):
-                                test = parent.test
-                                if (isinstance(test, ast.Compare) and
-                                    isinstance(test.left, ast.Name) and test.left.id == '__name__' and
-                                    len(test.comparators) == 1 and
-                                    isinstance(test.comparators[0], ast.Constant) and
-                                    test.comparators[0].value == '__main__'):
-                                    in_main_guard = True
-                                    break
-                            parent = getattr(parent, 'parent', None)
-                        if in_main_guard:
-                            continue
-                    
-                    snippet = "\n".join(lines[max(0, node.lineno-2):min(len(lines), node.lineno+1)])
-                    merged_rule = {**base_rule, "reason": target_cfg.get('reason', base_rule.get('reason'))}
-                    if 'weight' in target_cfg:
-                        merged_rule['weight'] = target_cfg['weight']
-                    violations.append(self._make_violation(file_path, merged_rule, node.lineno, snippet))
-
-                if func_name == 'open':
-                    rule = ast_rules_by_type.get('missing_with_open')
-                    if rule:
-                        is_with = False
-                        curr = node
-                        for _ in range(5):
-                            if hasattr(curr, 'parent'):
-                                if isinstance(curr.parent, ast.With):
-                                    is_with = True
-                                    break
-                                curr = curr.parent
-                            else:
-                                break
-                        if not is_with:
-                            snippet = "\n".join(lines[max(0, node.lineno-1):min(len(lines), node.lineno+2)])
-                            violations.append(self._make_violation(file_path, rule, node.lineno, snippet))
-
-                if func_name in ['requests.get', 'requests.post', 'requests.put', 'requests.delete', 'requests.patch', 'httpx.get']:
-                    rule = ast_rules_by_type.get('missing_timeout')
-                    if rule:
-                        has_timeout = any(kw.arg == 'timeout' for kw in node.keywords)
-                        if not has_timeout:
-                            snippet = "\n".join(lines[max(0, node.lineno-1):min(len(lines), node.lineno+2)])
-                            violations.append(self._make_violation(file_path, rule, node.lineno, snippet))
-
-            # --- N+1 QUERY ---
-            if isinstance(node, (ast.For, ast.While, ast.AsyncFor)):
-                rule = ast_rules_by_type.get('n_plus_one_query')
-                if rule:
-                    for subnode in ast.walk(node):
-                        if isinstance(subnode, ast.Call):
-                            func_name_parts = []
-                            curr = subnode.func
-                            while isinstance(curr, ast.Attribute):
-                                func_name_parts.insert(0, curr.attr)
-                                curr = curr.value
-                            if isinstance(curr, ast.Name):
-                                func_name_parts.insert(0, curr.id)
-                            full_call = ".".join(func_name_parts)
-                            if (
-                                "objects.get" in full_call or
-                                "objects.filter" in full_call or
-                                "objects.all" in full_call or
-                                full_call.endswith(".execute") or
-                                full_call.startswith("requests.") or
-                                full_call.startswith("httpx.")
-                            ):
-                                snippet = "\n".join(lines[max(0, subnode.lineno-1):min(len(lines), subnode.lineno+2)])
-                                violations.append(self._make_violation(
-                                    file_path, rule, subnode.lineno, snippet,
-                                    reason_override=f"{rule.get('reason')}. Found '{full_call}()' inside loop."
-                                ))
-                                break
-
-            # --- IMPORT TRACKING ---
-            if isinstance(node, ast.Import):
+                self._check_exceptions(node, file_path, lines, ast_rules_by_type, violations)
+            elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                self._check_functions(node, file_path, lines, ast_rules_by_type, violations)
+            elif isinstance(node, ast.Call):
+                self._check_calls(node, file_path, lines, ast_rules_by_type, dangerous_funcs, violations)
+            elif isinstance(node, (ast.For, ast.While, ast.AsyncFor)):
+                self._check_loops(node, file_path, lines, ast_rules_by_type, violations)
+            elif isinstance(node, ast.Import):
                 for n in node.names: imported_names.add((n.asname or n.name, node.lineno))
-            if isinstance(node, ast.ImportFrom):
+            elif isinstance(node, ast.ImportFrom):
                 for n in node.names: imported_names.add((n.asname or n.name, node.lineno))
-            if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load):
+            elif isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load):
                 used_names.add(node.id)
 
-        # UNUSED_IMPORT
-        if 'UNUSED_IMPORT' not in disabled_ids:
-            # Bổ sung: Track Attribute chains (urllib.parse.quote → "urllib.parse")
-            # để xử lý đúng dotted imports
-            used_dotted_names = set()
-            for node in ast.walk(tree):
-                if isinstance(node, ast.Attribute):
-                    # Xây dựng chuỗi từ Attribute chain: urllib.parse.quote → ["urllib", "urllib.parse"]
-                    parts = []
-                    curr = node
-                    while isinstance(curr, ast.Attribute):
-                        parts.insert(0, curr.attr)
-                        curr = curr.value
-                    if isinstance(curr, ast.Name):
-                        parts.insert(0, curr.id)
-                        # Tạo mọi prefix: ["urllib", "urllib.parse", "urllib.parse.quote"]
-                        for i in range(1, len(parts) + 1):
-                            used_dotted_names.add(".".join(parts[:i]))
+        self._check_unused_imports(tree, file_path, lines, disabled_ids, imported_names, used_names, violations)
 
-            for name, line_no in imported_names:
-                # Skip nếu:
-                # 1. Tên đơn giản nằm trong used_names (ast.Name tracking)
-                # 2. Tên dotted nằm trong used_dotted_names (Attribute chain tracking)
-                # 3. Root module (phần trước dấu chấm đầu tiên) nằm trong used_names
-                root_name = name.split('.')[0]
-                is_used = (
-                    name in used_names or              # Dùng trực tiếp: json.loads() → "json" in used_names
-                    name in used_dotted_names or        # Dùng qua Attribute: urllib.parse.quote() → "urllib.parse" in dotted
-                    root_name in used_dotted_names       # Root match: starlette.formparsers → "starlette" in dotted
-                )
-                if not is_used and name not in ['os', 'sys', 'json', 'ast', 're']:
-                    snippet = lines[line_no-1] if line_no <= len(lines) else ""
-                    violations.append({
-                        "file": file_path, "type": "Maintainability",
-                        "reason": f"Import '{name}' might be unused (AST)",
-                        "weight": -0.5, "rule_id": "UNUSED_IMPORT", "line": line_no, "snippet": snippet,
-                        "severity": "Minor", "debt": 5, "ai_prompt": None
-                    })
+        return violations
+
+    def _check_exceptions(self, node, file_path, lines, ast_rules_by_type, violations):
+        if node.type is None:
+            rule = ast_rules_by_type.get('bare_except')
+            if rule:
+                snippet = "\n".join(lines[max(0, node.lineno-2):min(len(lines), node.lineno+1)])
+                violations.append(self._make_violation(file_path, rule, node.lineno, snippet))
+
+        if len(node.body) == 1 and isinstance(node.body[0], ast.Pass):
+            rule = ast_rules_by_type.get('swallowed_exception')
+            if rule:
+                snippet = "\n".join(lines[max(0, node.lineno-2):min(len(lines), node.lineno+1)])
+                violations.append(self._make_violation(file_path, rule, node.lineno, snippet))
+
+    def _check_functions(self, node, file_path, lines, ast_rules_by_type, violations):
+        rule = ast_rules_by_type.get('max_function_length')
+        if rule:
+            limit = rule.get('ast', {}).get('limit', rule.get('limit', 80))
+            if node.end_lineno - node.lineno > limit:
+                snippet = "\n".join(lines[max(0, node.lineno-1):min(len(lines), node.lineno+2)])
+                violations.append(self._make_violation(
+                    file_path, rule, node.lineno, snippet,
+                    reason_override=f"{rule.get('reason')}: {node.name} (> {limit} lines)"
+                ))
+
+        rule = ast_rules_by_type.get('complexity')
+        if rule:
+            limit = rule.get('ast', {}).get('limit', rule.get('limit', 12))
+            complexity = self.calculate_complexity(node)
+            if complexity > limit:
+                snippet = "\n".join(lines[max(0, node.lineno-1):min(len(lines), node.lineno+2)])
+                violations.append(self._make_violation(
+                    file_path, rule, node.lineno, snippet,
+                    reason_override=f"{rule.get('reason')}: {node.name} (Complexity: {complexity} > {limit})"
+                ))
+
+        rule = ast_rules_by_type.get('max_parameters')
+        if rule:
+            limit = rule.get('ast', {}).get('limit', rule.get('limit', 7))
+            num_args = len(node.args.args) + len(node.args.kwonlyargs)
+            if getattr(node.args, 'vararg', None): num_args += 1
+            if getattr(node.args, 'kwarg', None): num_args += 1
+            if num_args > limit:
+                snippet = "\n".join(lines[max(0, node.lineno-1):min(len(lines), node.lineno+2)])
+                violations.append(self._make_violation(
+                    file_path, rule, node.lineno, snippet,
+                    reason_override=f"{rule.get('reason')}: {node.name} ({num_args} > {limit})"
+                ))
+
+    def _check_calls(self, node, file_path, lines, ast_rules_by_type, dangerous_funcs, violations):
+        func_name = ""
+        if isinstance(node.func, ast.Name):
+            func_name = node.func.id
+        elif isinstance(node.func, ast.Attribute):
+            if isinstance(node.func.value, ast.Name):
+                func_name = f"{node.func.value.id}.{node.func.attr}"
+
+        if func_name in dangerous_funcs:
+            base_rule, target_cfg = dangerous_funcs[func_name]
+            
+            if func_name == 'print' and base_rule.get('id') == 'PRINT_STATEMENT':
+                import os
+                basename = os.path.basename(file_path)
+                if '/tests/' in file_path.replace('\\', '/') or basename.startswith('test_') or basename.endswith('_test.py'):
+                    return
+                
+                in_main_guard = False
+                parent = getattr(node, 'parent', None)
+                while parent:
+                    if isinstance(parent, ast.If):
+                        test = parent.test
+                        if (isinstance(test, ast.Compare) and isinstance(test.left, ast.Name) and test.left.id == '__name__' and
+                            len(test.comparators) == 1 and isinstance(test.comparators[0], ast.Constant) and test.comparators[0].value == '__main__'):
+                            in_main_guard = True
+                            break
+                    parent = getattr(parent, 'parent', None)
+                if in_main_guard:
+                    return
+            
+            snippet = "\n".join(lines[max(0, node.lineno-2):min(len(lines), node.lineno+1)])
+            merged_rule = {**base_rule, "reason": target_cfg.get('reason', base_rule.get('reason'))}
+            if 'weight' in target_cfg: merged_rule['weight'] = target_cfg['weight']
+            violations.append(self._make_violation(file_path, merged_rule, node.lineno, snippet))
+
+        if func_name == 'open':
+            rule = ast_rules_by_type.get('missing_with_open')
+            if rule:
+                is_with = False
+                curr = node
+                for _ in range(5):
+                    if hasattr(curr, 'parent'):
+                        if isinstance(curr.parent, ast.With):
+                            is_with = True
+                            break
+                        curr = curr.parent
+                    else: break
+                if not is_with:
+                    snippet = "\n".join(lines[max(0, node.lineno-1):min(len(lines), node.lineno+2)])
+                    violations.append(self._make_violation(file_path, rule, node.lineno, snippet))
+
+        if func_name in ['requests.get', 'requests.post', 'requests.put', 'requests.delete', 'requests.patch', 'httpx.get']:
+            rule = ast_rules_by_type.get('missing_timeout')
+            if rule:
+                if not any(kw.arg == 'timeout' for kw in node.keywords):
+                    snippet = "\n".join(lines[max(0, node.lineno-1):min(len(lines), node.lineno+2)])
+                    violations.append(self._make_violation(file_path, rule, node.lineno, snippet))
+
+    def _check_loops(self, node, file_path, lines, ast_rules_by_type, violations):
+        rule = ast_rules_by_type.get('n_plus_one_query')
+        if not rule: return
+        
+        for subnode in ast.walk(node):
+            if isinstance(subnode, ast.Call):
+                func_name_parts = []
+                curr = subnode.func
+                while isinstance(curr, ast.Attribute):
+                    func_name_parts.insert(0, curr.attr)
+                    curr = curr.value
+                if isinstance(curr, ast.Name):
+                    func_name_parts.insert(0, curr.id)
+                full_call = ".".join(func_name_parts)
+                if (
+                    "objects.get" in full_call or "objects.filter" in full_call or
+                    "objects.all" in full_call or full_call.endswith(".execute") or
+                    full_call.startswith("requests.") or full_call.startswith("httpx.")
+                ):
+                    snippet = "\n".join(lines[max(0, subnode.lineno-1):min(len(lines), subnode.lineno+2)])
+                    violations.append(self._make_violation(
+                        file_path, rule, subnode.lineno, snippet,
+                        reason_override=f"{rule.get('reason')}. Found '{full_call}()' inside loop."
+                    ))
+                    break
+
+    def _check_unused_imports(self, tree, file_path, lines, disabled_ids, imported_names, used_names, violations):
+        if 'UNUSED_IMPORT' in disabled_ids: return
+
+        used_dotted_names = set()
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Attribute):
+                parts = []
+                curr = node
+                while isinstance(curr, ast.Attribute):
+                    parts.insert(0, curr.attr)
+                    curr = curr.value
+                if isinstance(curr, ast.Name):
+                    parts.insert(0, curr.id)
+                    for i in range(1, len(parts) + 1):
+                        used_dotted_names.add(".".join(parts[:i]))
+
+        for name, line_no in imported_names:
+            root_name = name.split('.')[0]
+            is_used = (
+                name in used_names or
+                name in used_dotted_names or
+                root_name in used_dotted_names
+            )
+            if not is_used and name not in ['os', 'sys', 'json', 'ast', 're']:
+                snippet = lines[line_no-1] if line_no <= len(lines) else ""
+                violations.append({
+                    "file": file_path, "type": "Maintainability",
+                    "reason": f"Import '{name}' might be unused (AST)",
+                    "weight": -0.5, "rule_id": "UNUSED_IMPORT", "line": line_no, "snippet": snippet,
+                    "severity": "Minor", "debt": 5, "ai_prompt": None
+                })
 
         return violations

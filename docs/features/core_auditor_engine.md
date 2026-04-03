@@ -34,9 +34,26 @@ graph TD
 
 #### Bug Fixes (2026-04-03)
 
-- **UNUSED_IMPORT Dotted Import Fix:** Luật phát hiện import thừa trước đây chỉ track `ast.Name` nodes, gây False Positive cho dotted imports (`import urllib.parse`, `import starlette.formparsers`). Fix: Bổ sung **Attribute chain tracking** — xây dựng `used_dotted_names` set từ `ast.Attribute` chains để match chính xác `urllib.parse.quote()` → `"urllib.parse"` is used. Tham chiếu: `src/engine/scanners.py` dòng 249-283.
-- **MUTATING_COLLECTION_ITERATION FP Fix:** Rule `for x in collection:` trước đây dùng Regex match MỌI vòng `for-in`, gây False Positive khi collection chỉ được đọc. Fix: Xóa Regex, chuyển hoàn toàn sang **AI-only detection** với prompt chi tiết yêu cầu bằng chứng mutation (`del`, `pop`, `remove`). Tham chiếu: `src/engine/rules.json` rule `MUTATING_COLLECTION_ITERATION`.
-- **PRINT_STATEMENT `__main__` Guard:** Rule `print()` trước đây bắt cả print trong block `if __name__ == "__main__":`. Fix: Walk parent chain để phát hiện `__main__` guard, skip nếu print nằm trong CLI entrypoint. Tham chiếu: `src/engine/scanners.py` dòng 181-198.
+**Engine Rule Fixes (giảm False Positive):**
+- **UNUSED_IMPORT Dotted Import:** Bổ sung **Attribute chain tracking** cho dotted imports (`urllib.parse`, `starlette.formparsers`). Tham chiếu: `src/engine/scanners.py`.
+- **MUTATING_COLLECTION_ITERATION:** Xóa Regex thô, chuyển sang **AI-only detection** với prompt yêu cầu bằng chứng mutation.
+- **PRINT_STATEMENT:** Skip test files (`tests/`, `test_*.py`) + `__main__` guard.
+- **SQL_INJECTION:** Regex chỉ match `f-string` và `.format()`, không bắt parameterized queries.
+- **SLOW_STRING_CONCAT:** Chuyển sang AI-only, không bắt `integer += 1`.
+- **dangerous_functions ghi đè:** Fix bug chỉ giữ 1 rule `dangerous_functions` → **hỗ trợ nhiều rules** cùng type (eval + print cùng tồn tại).
+- **Regex compile caching:** Thêm `_pattern_cache` class-level tránh recompile pattern cho mỗi file.
+
+**Code Quality Fixes:**
+- `database.py`: Xóa hardcoded password, thêm `SELECT...FOR UPDATE` cho toggle_core_rule.
+- `api_server.py`: Xóa `asyncio` unused, CORS→env, DoS 100K→10K, validation handler không leak body.
+- `audit_state.py`: `cleanup_old_jobs()` thread-safe, rename `get_active_job` → `get_active_job_id`.
+- `scoring.py`: Fix docstring misleading 0-10 vs 0-100, `.get('final', 0)` KeyError.
+- `auditor.py`: Safe `float()` cho AI weight, `asyncio.new_event_loop()` thay `get_event_loop()`.
+- `verification.py`: Log SyntaxError, safe `float()` cho custom weights.
+- `symbol_indexer.py`: Thông minh hóa fallback `end_lineno` dựa trên body.
+- `dependency_checker.py`: Dùng path-based module name tránh collision.
+- `config.py`: `try/except` cho `int()` env parsing.
+- `tests/`: Fix string concat trong loop, None guard cho DB result.
 
 ### 3. Lớp Gác cổng AI (AI Hybrid Validation)
 - Công cụ tĩnh (AST) tuy nhanh nhưng thường đánh giá theo hướng cực đoan dẫn đến dư thừa lỗi ảo (False Positive). Vd: Cứ thấy `eval` là quy tội bảo mật dù nó đã bọc Filter an toàn.

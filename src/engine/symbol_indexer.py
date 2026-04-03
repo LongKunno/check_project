@@ -36,7 +36,14 @@ class AstContextExtractor:
                 name = node.name
                 start = node.lineno
                 # end_lineno có sẵn từ Python 3.8+
-                end = getattr(node, 'end_lineno', start + 15) 
+                # Fallback: ước tính dựa trên body length thay vì hardcode 15
+                if hasattr(node, 'end_lineno') and node.end_lineno:
+                    end = node.end_lineno
+                elif hasattr(node, 'body') and node.body:
+                    last_body = node.body[-1]
+                    end = getattr(last_body, 'end_lineno', getattr(last_body, 'lineno', start + 15))
+                else:
+                    end = start + 15
                 
                 if name not in self.symbol_map:
                     self.symbol_map[name] = []
