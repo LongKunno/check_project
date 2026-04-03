@@ -24,9 +24,7 @@ def detect_circular_dependencies(file_list, rules):
             if not f.endswith('.py'): continue
             base = os.path.splitext(f)[0]
             mod_name = base.replace(os.sep, '.').replace('/', '.')
-            short_name = os.path.splitext(os.path.basename(f))[0]
-            f_to_mod[f] = short_name
-            mod_to_f[short_name] = f
+            f_to_mod[f] = mod_name
             mod_to_f[mod_name] = f
         return f_to_mod, mod_to_f
 

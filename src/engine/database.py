@@ -47,7 +47,7 @@ class AuditDatabase:
         for i in range(max_retries):
             try:
                 if not AuditDatabase._pool:
-                    AuditDatabase._pool = pool.SimpleConnectionPool(1, 20, DB_URL)
+                    AuditDatabase._pool = pool.ThreadedConnectionPool(1, 20, DB_URL)
                 conn = AuditDatabase._pool.getconn()
                 break
             except psycopg2.OperationalError as e:
@@ -221,6 +221,11 @@ class AuditDatabase:
             cursor.execute('SELECT id, disabled_core_rules FROM project_rules WHERE target_id = %s FOR UPDATE', (target_id,))
             row = cursor.fetchone()
             
+            if not row:
+                cursor.execute('INSERT INTO project_rules (target_id, natural_text, compiled_json, disabled_core_rules) VALUES (%s, %s, %s, %s) ON CONFLICT (target_id) DO NOTHING', (target_id, "", None, "[]"))
+                cursor.execute('SELECT id, disabled_core_rules FROM project_rules WHERE target_id = %s FOR UPDATE', (target_id,))
+                row = cursor.fetchone()
+                
             disabled_rules = []
             if row and row[1]:
                 try:

@@ -20,12 +20,12 @@ class ScoringEngine:
         
         # Dynamic K-Factor mapping based on pillar sensitivity
         k_factors = {
-            'Maintainability': 4.0,
-            'Security': 0.5,
-            'Reliability': 2.0,
-            'Performance': 2.0
+            'Maintainability': 25.0,
+            'Security': 10.0,
+            'Reliability': 15.0,
+            'Performance': 20.0
         }
-        k_factor = k_factors.get(pillar, 2.0)
+        k_factor = k_factors.get(pillar, 15.0)
         
         # Normalize punishment based on project size (per 1000 lines)
         normalized_punishment = abs(punishment) / (effective_loc / 1000)

@@ -174,6 +174,7 @@ import json
 import sys
 import os
 import logging
+import tempfile
 
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)

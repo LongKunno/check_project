@@ -18,7 +18,7 @@ class DeepAuditViolation(BaseModel):
     file: str = Field(..., description="Đường dẫn file vi phạm")
     type: str = Field(..., description="Trụ cột: Performance, Maintainability, Reliability, Security")
     reason: str = Field(..., description="Giải thích chi tiết lỗi logic/kiến trúc")
-    weight: float = Field(..., description="Trọng số phạt (ví dụ: -3.0 hoặc -5.0)")
+    weight: float = Field(..., description="Trọng số phạt (từ -0.5 đến -2.0, KHÔNG được quá -2.0)")
     confidence: float = Field(..., description="Độ tin cậy từ 0.0 đến 1.0")
     line: int = Field(default=0, description="Dòng code xảy ra lỗi (nếu xác định được)")
     rule_id: str = Field(default="AI_REASONING", description="Rule ID cụ thể nếu vi phạm khớp với một luật AI-only đã định nghĩa (vd: UNCHECKED_NONE_RETURN). Nếu không khớp luật nào, để 'AI_REASONING'.")
@@ -181,7 +181,7 @@ Yêu cầu trả về kết quả dưới dạng đối tượng JSON với key 
       "file": "path/to/file.py",
       "type": "Security",
       "reason": "Giải thích chi tiết...",
-      "weight": -5.0,
+      "weight": -2.0,
       "confidence": 0.95,
       "line": 12,
       "rule_id": "INSECURE_RANDOM",

@@ -273,11 +273,21 @@ class CodeAuditor:
             pillar = rv.get('type', 'Maintainability')
             if pillar not in WEIGHTS:
                 pillar = 'Maintainability'
+            rule_id = rv.get('rule_id', 'AI_REASONING')
             
+            # Capping and Overriding AI hallucinated weights
+            if rule_id == 'AI_REASONING' and weight < -2.0:
+                weight = -2.0 # Giới hạn tối đa mức phạt do AI tự biên tự diễn
+            elif rule_id != 'AI_REASONING':
+                for r in self.rules.get('rules', []):
+                    if r.get('id') == rule_id and r.get('weight'):
+                        weight = float(r.get('weight'))
+                        break
+
             self.log_violation({
                 'pillar': pillar, 'file': rv.get('file', 'unknown'),
                 'reason': rv.get('reason', 'AI Logic Audit'), 'weight': weight,
-                'rule_id': rv.get('rule_id', 'AI_REASONING'),
+                'rule_id': rule_id,
                 'line': rv.get('line', 0), 'is_custom': rv.get('is_custom', False)
             })
 

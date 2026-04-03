@@ -11,7 +11,8 @@ class DiscoveryStep:
     def __init__(self, target_dir):
         """Initializes the discovery step with a target directory."""
         self.target_dir = target_dir
-        self.precheck_script = os.path.join(target_dir, 'ai_precheck.py')
+        import tempfile
+        self.precheck_script = os.path.join(tempfile.gettempdir(), f'ai_precheck_{abs(hash(target_dir))}.py')
         self.report_file = os.path.join(target_dir, 'ai_audit_report.json')
 
     def generate_precheck_script(self):
@@ -104,7 +105,7 @@ if __name__ == "__main__":
         
         try:
             # Run the script
-            subprocess.run(['python3', 'ai_precheck.py'], cwd=self.target_dir, check=True)
+            subprocess.run(['python3', self.precheck_script], cwd=self.target_dir, check=True)
             
             # Read results
             with open(self.report_file, 'r') as f:
