@@ -60,9 +60,9 @@ sequenceDiagram
     deactivate S
 ```
 
-**Interface / Contract:**
-- **Server:** Chuyển hướng `sys.stdout` thông qua Custom Logger. `AuditState` sẽ đảm bảo đồng bộ hóa luồng sự kiện giữa quá trình chạy ẩn và API Response.
-- **Client:** Kết nối `EventSource` tới endpoint `/audit/logs` và tiêu thụ message thông qua `onmessage`.
+**Interface / Contract (Logging Architecture V2):**
+- **Server:** Engine modules dùng `logging.getLogger(__name__).info()` chuẩn Python. `AuditLogHandler` (đăng ký trên root logger tại `api_server.py`) tự động bắt log từ namespace `src.engine.*` thông qua `EngineLogFilter`, rồi route vào `JobManager` (per-job SSE) hoặc `AuditState` (legacy SSE) nhờ thread-local tracking (`JobManager.set_active_job()`). Stdout capture chỉ còn là fallback cho output từ subprocess bên ngoài.
+- **Client:** Kết nối `EventSource` tới endpoint `/audit/logs` (legacy) hoặc `/audit/jobs/{job_id}/logs` (per-job) và tiêu thụ message thông qua `onmessage`.
 
 ### 2. Luồng dữ liệu (Data Flow) - Đánh giá AI (AI Review)
 

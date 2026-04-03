@@ -9,6 +9,7 @@ import sys
 import logging
 
 logger = logging.getLogger(__name__)
+
 from src.config import WEIGHTS
 from src.engine.discovery import DiscoveryStep
 from src.engine.verification import VerificationStep
@@ -126,7 +127,7 @@ class CodeAuditor:
                 results = []
                 for f in asyncio.as_completed(tasks):
                     if AuditState.is_cancelled:
-                        logger.info("\n❌ CẢNH BÁO: Kiểm toán đã bị hủy bởi người dùng.")
+                        logger.warning("❌ CẢNH BÁO: Kiểm toán đã bị hủy bởi người dùng.")
                         raise Exception("Kiểm toán đã bị hủy bởi người dùng.")
                     res = await f
                     results.append(res)
@@ -226,7 +227,7 @@ class CodeAuditor:
                 results = []
                 for f in asyncio.as_completed(tasks):
                     if AuditState.is_cancelled:
-                        logger.info("\n❌ CẢNH BÁO: Kiểm toán đã bị hủy bởi người dùng.")
+                        logger.warning("❌ CẢNH BÁO: Kiểm toán đã bị hủy bởi người dùng.")
                         raise Exception("Kiểm toán đã bị hủy bởi người dùng.")
                     res = await f
                     results.append(res)

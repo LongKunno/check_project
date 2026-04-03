@@ -1,5 +1,6 @@
 import uuid
 import time
+import threading
 from typing import Dict, List, Optional
 from pydantic import BaseModel
 
@@ -21,6 +22,9 @@ class JobManager:
     
     # Backward compatibility cho SSE cũ nếu chưa update kịp
     legacy_logs: List[str] = []
+    
+    # Thread-local storage để track Job đang chạy trên thread nào
+    _thread_local = threading.local()
     
     @classmethod
     def create_job(cls, target: str = "unknown") -> str:
@@ -53,7 +57,22 @@ class JobManager:
         if job_id and job_id in cls.job_logs:
             cls.job_logs[job_id].append(message)
         cls.legacy_logs.append(message)
-        
+    
+    @classmethod
+    def set_active_job(cls, job_id: str):
+        """Đánh dấu job_id đang active trên thread hiện tại."""
+        cls._thread_local.active_job_id = job_id
+    
+    @classmethod
+    def clear_active_job(cls):
+        """Xoá đánh dấu job active trên thread hiện tại."""
+        cls._thread_local.active_job_id = None
+    
+    @classmethod
+    def get_active_job(cls) -> Optional[str]:
+        """Lấy job_id đang active trên thread hiện tại (hoặc None)."""
+        return getattr(cls._thread_local, 'active_job_id', None)
+
     @classmethod
     def get_job(cls, job_id: str) -> Optional[JobStatus]:
         return cls.jobs.get(job_id)

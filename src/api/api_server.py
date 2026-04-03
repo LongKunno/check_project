@@ -28,26 +28,44 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
 
 from src.engine.database import AuditDatabase
-from src.api.audit_state import AuditState
+from src.api.audit_state import AuditState, JobManager
 
 # ── Logging Setup ──────────────────────────────────────────────────────────────
 
 logging.basicConfig(level=logging.INFO)
 
 class AuditLogHandler(logging.Handler):
-    """Chuyển tiếp toàn bộ log vào SSE stream của Frontend."""
+    """
+    Chuyển tiếp log từ Engine vào SSE stream của Frontend.
+    - Chỉ forward log từ 'src.engine.*' để tránh nhiễu (uvicorn access, DB connect, ...)
+    - Tự động route vào Job-specific logs nếu có Job đang active trên thread hiện tại.
+    """
     def emit(self, record):
         try:
             msg = self.format(record)
-            if msg.strip():
-                AuditState.log(msg.strip())
+            if not msg.strip():
+                return
+            clean_msg = msg.strip()
+            
+            # Route vào Job-specific SSE nếu có Job đang active
+            active_job = JobManager.get_active_job()
+            if active_job:
+                JobManager.log(active_job, clean_msg)
+            else:
+                # Fallback: chỉ ghi legacy SSE
+                AuditState.log(clean_msg)
         except Exception:
             self.handleError(record)
 
+class EngineLogFilter(logging.Filter):
+    """Chỉ cho phép log từ namespace 'src.engine.*' đi qua."""
+    def filter(self, record):
+        return record.name.startswith('src.engine')
+
 audit_log_handler = AuditLogHandler()
-audit_log_handler.setFormatter(logging.Formatter('%(levelname)s:%(name)s:%(message)s'))
+audit_log_handler.setFormatter(logging.Formatter('%(message)s'))
+audit_log_handler.addFilter(EngineLogFilter())
 logging.getLogger().addHandler(audit_log_handler)
-logging.getLogger("uvicorn.access").addHandler(audit_log_handler)
 
 logger = logging.getLogger(__name__)
 

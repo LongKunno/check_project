@@ -3,6 +3,9 @@ import os
 import json
 import subprocess
 import sys
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Các scanner và dependency checker đã được tách ra module riêng
 from src.engine.scanners import _build_flat_meta, BaseScanner, RegexScanner, PythonASTScanner
@@ -25,7 +28,7 @@ def double_check_modular(file_list_json, rules_json):
         circ_violations = detect_circular_dependencies(file_list, rules)
         violations.extend(circ_violations)
     except Exception as e:
-        print(f"Error checking circular dependencies: {e}")
+        logger.warning(f"Error checking circular dependencies: {e}")
 
     # 2. File-level Scans
     scanners = [RegexScanner(), PythonASTScanner()]
@@ -52,7 +55,7 @@ def double_check_modular(file_list_json, rules_json):
                         violations.append(v)
                         id_counter += 1
         except Exception as e:
-            print(f"Error scanning {file_path}: {e}")
+            logger.warning(f"Error scanning {file_path}: {e}")
             continue
 
     return violations
@@ -194,7 +197,7 @@ if __name__ == "__main__":
             except json.JSONDecodeError as jde:
                 raise ValueError(f"AI Audit Output Error: Expected JSON but got: '{stdout_lines[-1][:100]}...'. Error: {jde}")
         except subprocess.CalledProcessError as e:
-            print(f"❌ Verification script failed: {e.stderr}")
+            logger.error(f"❌ Verification script failed: {e.stderr}")
             raise
         finally:
             for f in [self.verification_script, self.file_list_json, self.rules_json_path]:

@@ -1,11 +1,11 @@
 # BÁO CÁO KIỂM TOÁN TỔNG THỂ (OVERALL AUDIT REPORT)
 
-**Thời gian báo cáo:** 2026-04-02 10:50:46
+**Thời gian báo cáo:** 2026-04-03 02:38:00
 
-## ĐIỂM TỔNG DỰ ÁN: 99.45 / 100 (🏆 Xuất sắc)
+## ĐIỂM TỔNG DỰ ÁN: 99.46 / 100 (🏆 Xuất sắc)
 
 ### 📊 Chỉ số dự án (Project Metrics)
-- Tổng LOC: 3411
+- Tổng LOC: 3440
 - Tổng số file: 24
 - Tổng số tính năng: 3
 
@@ -13,32 +13,32 @@
 | Mức độ | Số lượng |
 |---|---|
 | 🔥 Blocker | 0 |
-| 🔥 Critical | 1 |
-| ⚠️ Major | 27 |
-| ℹ️ Minor | 43 |
-| ℹ️ Info | 33 |
+| 🔥 Critical | 0 |
+| ⚠️ Major | 20 |
+| ℹ️ Minor | 29 |
+| ℹ️ Info | 9 |
 
 ### 🛡️ Đánh giá 4 Trụ cột Dự án
 | Trụ cột | Điểm (Thang 10) | Trạng thái |
 |---|---|---|
-| Performance | 0.88 | 🚨 Nguy cơ |
-| Maintainability | 2.06 | 🚨 Nguy cơ |
-| Reliability | 0.48 | 🚨 Nguy cơ |
-| Security | 1.09 | 🚨 Nguy cơ |
+| Performance | 9.95 | ✅ Tốt |
+| Maintainability | 9.95 | ✅ Tốt |
+| Reliability | 9.95 | ✅ Tốt |
+| Security | 9.95 | ✅ Tốt |
 
 ### 🧩 Chi tiết theo Tính năng (Feature Breakdown)
 #### 🔹 Tính năng: `root` (LOC: 19)
-**Điểm tính năng: 1.92 / 100** (Nợ: 1394m)
+**Điểm tính năng: 2.64 / 100** (Nợ: 926m)
 
 | Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
 |---|---|---|
-| Performance | -71.0 | 0.14 |
-| Maintainability | -52.5 | 0.37 |
-| Reliability | -134.0 | 0.07 |
-| Security | -14.0 | 0.18 |
+| Performance | -53.5 | 0.18 |
+| Maintainability | -38.0 | 0.5 |
+| Reliability | -92.5 | 0.11 |
+| Security | -9.0 | 0.27 |
 
 ---
-#### 🔹 Tính năng: `src` (LOC: 3138)
+#### 🔹 Tính năng: `src` (LOC: 3167)
 **Điểm tính năng: 100.0 / 100** (Nợ: 0m)
 
 | Trụ cột | Tổng điểm phạt | Điểm quy đổi (Thang 10) |
@@ -62,48 +62,44 @@
 ---
 
 ### 🚨 Top 10 Vi phạm tiêu biểu
-- **[Maintainability]** src/api/api_server.py: Import 'io' might be unused (AST). AI Note: Import 'io' không được sử dụng ở bất kỳ đâu trong file /src/api/api_server.py. (Rule: UNUSED_IMPORT) (Trọng số: -0.5)
-- **[Performance]** src/api/git_helper.py: Cyclomatic Complexity too high (Too many nested loops/branches): clone_repository (Complexity: 13 > 12). AI Note: Hàm 'clone_repository' có cấu trúc rẽ nhánh phức tạp với nhiều khối try-except lồng nhau và các điều kiện kiểm tra (if), dẫn đến độ phức tạp Cyclomatic thực tế vượt quá ngưỡng 12. (Rule: HIGH_COMPLEXITY) (Trọng số: -5.0)
-- **[Maintainability]** src/api/git_helper.py: Import 'urllib.parse' might be unused (AST). AI Note: Import 'urllib.parse' không được sử dụng trực tiếp trong file /src/api/git_helper.py. (Rule: UNUSED_IMPORT) (Trọng số: -0.5)
-- **[Performance]** src/api/routers/audit.py: Cyclomatic Complexity too high (Too many nested loops/branches): upload_and_audit (Complexity: 14 > 12). AI Note: Hàm 'upload_and_audit' chứa nhiều logic rẽ nhánh (if/else) để kiểm tra file, xử lý lỗi, và lồng ghép vòng lặp xử lý danh sách file. Việc quản lý nhiều luồng thực thi (exception handling, file type checking) khiến độ phức tạp vượt mức khuyến nghị. (Rule: HIGH_COMPLEXITY) (Trọng số: -5.0)
-- **[Performance]** src/engine/dependency_checker.py: Cyclomatic Complexity too high (Too many nested loops/branches): detect_circular_dependencies (Complexity: 21 > 12). AI Note: Hàm 'detect_circular_dependencies' có cấu trúc lồng nhau rất phức tạp: xử lý tệp, phân tích AST, duyệt đồ thị để tìm chu trình (DFS lồng trong vòng lặp), cùng nhiều điều kiện rẽ nhánh. Độ phức tạp tính toán vượt quá ngưỡng khuyến nghị (12). (Rule: HIGH_COMPLEXITY) (Trọng số: -5.0)
-- **[Reliability]** src/engine/dependency_checker.py: Swallowed exception (except block has only 'pass'). AI Note: Khối 'except Exception: pass' nuốt mọi lỗi phát sinh trong quá trình phân tích AST hoặc xử lý phụ thuộc mà không có ghi nhật ký (log) hay xử lý cụ thể, điều này gây khó khăn cho việc gỡ lỗi khi có tệp bị hỏng hoặc lỗi định dạng. (Rule: SWALLOWED_EXCEPTION) (Trọng số: -5.0)
-- **[Performance]** src/engine/ai_service.py: String concatenation using `+=` inside a loop is slow. Prefer `list.append()` and `''.join()`.. AI Note: Đoạn mã thực hiện nối chuỗi bằng toán tử `+=` bên trong một vòng lặp (dựa vào thụt đầu dòng và các biến i, v thường dùng trong enumerate). Trong Python, chuỗi là bất biến nên việc cộng chuỗi liên tục sẽ tạo ra nhiều đối tượng tạm thời, gây tốn bộ nhớ và giảm hiệu suất đáng kể so với việc dùng list.append() và ''.join(). (Rule: SLOW_STRING_CONCAT) (Trọng số: -3.0)
-- **[Performance]** src/engine/ai_service.py: String concatenation using `+=` inside a loop is slow. Prefer `list.append()` and `''.join()`.. AI Note: Tương tự như vi phạm #0, việc nối chuỗi `items_prompt +=` diễn ra bên trong vòng lặp xử lý các kết quả (items). Đây là lỗi Performance True Positive theo quy tắc đã nêu. (Rule: SLOW_STRING_CONCAT) (Trọng số: -3.0)
-- **[Performance]** src/engine/ai_service.py: String concatenation using `+=` inside a loop is slow. Prefer `list.append()` and `''.join()`.. AI Note: Đoạn mã này cũng thuộc cùng một khối logic lặp, thực hiện nối các chuỗi f-string vào biến `items_prompt`. Việc lặp lại hành động này nhiều lần trong vòng lặp là không tối ưu. (Rule: SLOW_STRING_CONCAT) (Trọng số: -3.0)
-- **[Performance]** src/engine/ai_service.py: String concatenation using `+=` inside a loop is slow. Prefer `list.append()` and `''.join()`.. AI Note: Tiếp nối phần nội dung của các vi phạm trước đó, đây vẫn là hành vi nối chuỗi trong vòng lặp. Cần thay thế bằng cơ chế gom danh sách rồi mới join. (Rule: SLOW_STRING_CONCAT) (Trọng số: -3.0)
+- **[Maintainability]** src/engine/ai_service.py: Function too long (God Object anti-pattern): deep_audit_batch (> 80 lines). AI Note: Hàm 'deep_audit_batch' kéo dài từ dòng 110 đến dòng 192 (khoảng 82 dòng), vượt quá ngưỡng 80 dòng được quy định. Đây là một hàm phức tạp thực hiện nhiều tác vụ như chuẩn bị prompt, gọi API với cơ chế retry, xử lý lỗi và parsing kết quả, vi phạm nguyên tắc Single Responsibility. (Rule: GOD_OBJECT) (Trọng số: -2.0)
+- **[Maintainability]** src/engine/ai_service.py: Function too long (God Object anti-pattern): verify_flagged_issues (> 80 lines). AI Note: Hàm 'verify_flagged_issues' kéo dài từ dòng 194 đến dòng 276 (82 dòng), vượt quá ngưỡng 80 dòng. Tương tự như 'deep_audit_batch', nó thực hiện quá nhiều logic xử lý trong một hàm duy nhất, gây khó khăn cho việc bảo trì. (Rule: GOD_OBJECT) (Trọng số: -2.0)
+- **[Maintainability]** src/engine/ai_service.py: Print statement found in production code. Use logger instead.. AI Note: Sử dụng 'print' trực tiếp trong mã nguồn production là một thực hành xấu. Nên sử dụng thư viện log chuẩn (ví dụ: logging) để có khả năng kiểm soát mức độ log (DEBUG, INFO, ERROR), định dạng log và log rotation. (Rule: PRINT_STATEMENT) (Trọng số: -0.5)
+- **[Maintainability]** src/engine/ai_service.py: Print statement found in production code. Use logger instead.. AI Note: Sử dụng 'print' trong khối catch lỗi của dịch vụ batch. Việc ghi log vào console qua print làm mất đi tính linh hoạt trong việc giám sát hệ thống production. (Rule: PRINT_STATEMENT) (Trọng số: -0.5)
+- **[Maintainability]** src/engine/ai_service.py: Print statement found in production code. Use logger instead.. AI Note: Sử dụng 'print' trong khối catch lỗi của cơ chế Cross-Check. Các thông tin lỗi quan trọng này cần được ghi nhận qua logger để dễ dàng truy vết và tích hợp với các hệ thống giám sát tập trung. (Rule: PRINT_STATEMENT) (Trọng số: -0.5)
+- **[Maintainability]** src/engine/scanners.py: Function too long (God Object anti-pattern): scan (> 80 lines). AI Note: Hàm `scan` trong `scanners.py` thực tế bao gồm logic xử lý cho rất nhiều loại node AST khác nhau (FunctionDef, For, While, If...), trải dài hơn 80 dòng code, vi phạm nguyên tắc về độ dài hàm để đảm bảo tính bảo trì. (Rule: GOD_OBJECT) (Trọng số: -2.0)
+- **[Performance]** src/engine/scanners.py: Cyclomatic Complexity too high (Too many nested loops/branches): scan (Complexity: 62 > 12). AI Note: Hàm `scan` chứa một vòng lặp lớn đi qua các rule và bên trong là rất nhiều cấu trúc điều kiện lồng nhau (if/elif) để kiểm tra các loại node và quy tắc khác nhau, dẫn đến độ phức tạp vòng (Cyclomatic Complexity) vượt xa ngưỡng đề ra. (Rule: HIGH_COMPLEXITY) (Trọng số: -5.0)
+- **[Maintainability]** src/engine/ai_service.py: Print statement found in production code. Use logger instead.. AI Note: Việc sử dụng lệnh print trực tiếp trong mã nguồn production (đặc biệt là trong các module thuộc engine như ai_service.py) là không tốt cho việc quản lý logs. Nên sử dụng thư viện logging để có thể cấu hình level, format và destination của log. (Rule: PRINT_STATEMENT) (Trọng số: -0.5)
+- **[Maintainability]** src/engine/auditor.py: Function has too many parameters (Consider DTO/Dict): log_violation (9 > 7). AI Note: Hàm log_violation có tới 9 tham số (bao gồm cả 'self'). Theo các tiêu chuẩn Clean Code (như Clean Code của Robert C. Martin), một hàm có quá 3-4 tham số đã bắt đầu khó quản lý. Việc có 9 tham số làm tăng khả năng nhầm lẫn thứ tự đối số và gây khó khăn cho việc viết Unit Test. Giải pháp dùng DTO hoặc Dictionary là hoàn toàn hợp lý. (Rule: TOO_MANY_PARAMS) (Trọng số: -3.0)
+- **[Maintainability]** src/engine/auditor.py: Function too long (God Object anti-pattern): run (> 80 lines). AI Note: Việc hàm run() vượt quá 80 dòng là một dấu hiệu của 'God Function'. Trong các công cụ auditor, hàm run thường phải gánh vác nhiều việc như khởi tạo, quét file, chạy luật và tổng hợp kết quả. Nếu không được chia nhỏ, mã nguồn sẽ rất khó bảo trì và debug. (Rule: GOD_OBJECT) (Trọng số: -2.0)
 
 ### 📈 Thống kê theo Luật (Rule Breakdown)
 | Rule ID | Trụ cột | Số lượng | Tổng phạt |
 |---|---|---|---|
-| `PRINT_STATEMENT` | Maintainability | 32 | -16.0 |
-| `AI_REASONING` | Maintainability, Performance, Reliability, Security | 14 | -54.0 |
-| `SWALLOWED_EXCEPTION` | Reliability | 11 | -55.0 |
-| `SLOW_STRING_CONCAT` | Performance | 8 | -24.0 |
+| `AI_REASONING` | Maintainability, Performance, Reliability, Security | 17 | -65.5 |
+| `PRINT_STATEMENT` | Maintainability | 8 | -4.0 |
 | `HIGH_COMPLEXITY` | Performance | 7 | -35.0 |
-| `BARE_EXCEPT` | Reliability | 7 | -14.0 |
-| `UNUSED_IMPORT` | Maintainability | 6 | -3.0 |
-| `UNCHECKED_NONE_RETURN` | Reliability | 5 | -24.0 |
-| `GOD_OBJECT` | Maintainability | 4 | -8.0 |
-| `SILENT_DATA_CORRUPTION` | Reliability | 3 | -15.0 |
-| `MISLEADING_NAME` | Maintainability | 2 | -6.0 |
+| `SILENT_DATA_CORRUPTION` | Performance, Reliability | 6 | -28.5 |
+| `UNCHECKED_NONE_RETURN` | Reliability | 6 | -30.0 |
+| `GOD_OBJECT` | Maintainability | 5 | -10.0 |
+| `UNUSED_IMPORT` | Maintainability | 3 | -1.5 |
+| `MISLEADING_NAME` | Maintainability | 2 | -7.0 |
 | `TOO_MANY_PARAMS` | Maintainability | 1 | -3.0 |
-| `SQL_INJECTION` | Security | 1 | -8.0 |
-| `SELECT_STAR` | Performance | 1 | -2.0 |
+| `SLOW_STRING_CONCAT` | Performance | 1 | -3.0 |
 | `FORGOTTEN_TODO` | Maintainability | 1 | -0.5 |
-| `REDUNDANT_DB_QUERY` | Performance | 1 | -4.0 |
+| `SWALLOWED_EXCEPTION` | Reliability | 1 | -5.0 |
 
 
 ### 👥 Đánh giá theo Thành viên (Last 6 Months)
 | Thành viên | Tổng LOC | Điểm | Nợ kỹ thuật |
 |---|---|---|---|
-| **LongDD** | 3104 | 10.49 | 1369m |
+| **LongDD** | 2953 | 13.41 | 926m |
 
 #### 🔍 Chi tiết lỗi theo Thành viên
 
 **LongDD** (Top 5 vi phạm nặng nhất):
-- [Security] src/engine/database.py:114 - Potential SQL Injection (Insecure string interpolation in DB query). AI Note: Câu lệnh SQL sử dụng f-string (`f'...'`) để chèn biến `query_cols` trực tiếp vào chuỗi truy vấn. Đây là hành vi nối chuỗi (string interpolation) không an toàn, có thể dẫn đến tấn công SQL Injection nếu `query_cols` bị kẻ tấn công kiểm soát hoặc chứa nội dung không được kiểm chứng. (Rule: SQL_INJECTION)
-- [Security] src/api/git_helper.py:69 - Cơ chế lọc thông tin nhạy cảm trong log lỗi bị hổng. Bạn sử dụng '.replace(token, "***")' để giấu App Password, nhưng trước đó token đã được URL-encoded bằng 'urllib.parse.quote(token)'. Nếu token chứa các ký tự đặc biệt (ví dụ: #, @, :), chuỗi xuất hiện trong lỗi của Git (thường là URL thô) sẽ ở dạng encoded và phép so sánh chuỗi nguyên bản sẽ thất bại, dẫn đến việc lộ token thật vào log hệ thống. (Rule: AI_REASONING)
-- [Performance] src/api/git_helper.py:12 - Cyclomatic Complexity too high (Too many nested loops/branches): clone_repository (Complexity: 13 > 12). AI Note: Hàm 'clone_repository' có cấu trúc rẽ nhánh phức tạp với nhiều khối try-except lồng nhau và các điều kiện kiểm tra (if), dẫn đến độ phức tạp Cyclomatic thực tế vượt quá ngưỡng 12. (Rule: HIGH_COMPLEXITY)
-- [Performance] src/api/routers/audit.py:92 - Cyclomatic Complexity too high (Too many nested loops/branches): upload_and_audit (Complexity: 14 > 12). AI Note: Hàm 'upload_and_audit' chứa nhiều logic rẽ nhánh (if/else) để kiểm tra file, xử lý lỗi, và lồng ghép vòng lặp xử lý danh sách file. Việc quản lý nhiều luồng thực thi (exception handling, file type checking) khiến độ phức tạp vượt mức khuyến nghị. (Rule: HIGH_COMPLEXITY)
-- [Performance] src/engine/dependency_checker.py:11 - Cyclomatic Complexity too high (Too many nested loops/branches): detect_circular_dependencies (Complexity: 21 > 12). AI Note: Hàm 'detect_circular_dependencies' có cấu trúc lồng nhau rất phức tạp: xử lý tệp, phân tích AST, duyệt đồ thị để tìm chu trình (DFS lồng trong vòng lặp), cùng nhiều điều kiện rẽ nhánh. Độ phức tạp tính toán vượt quá ngưỡng khuyến nghị (12). (Rule: HIGH_COMPLEXITY)
+- [Security] src/engine/discovery.py:15 - Vulnerabilidade de Code Injection: O método 'generate_precheck_script' interpola variáveis (EXCLUDE_DIRS, SCAN_EXTENSIONS) diretamente em uma string de script Python que é executada via subprocess. Se um usuário puder manipular essas configurações (ex: via custom_rules ou env vars), ele pode executar código arbitrário no host. (Rule: AI_REASONING)
+- [Performance] src/engine/scanners.py:83 - Cyclomatic Complexity too high (Too many nested loops/branches): scan (Complexity: 62 > 12). AI Note: Hàm `scan` chứa một vòng lặp lớn đi qua các rule và bên trong là rất nhiều cấu trúc điều kiện lồng nhau (if/elif) để kiểm tra các loại node và quy tắc khác nhau, dẫn đến độ phức tạp vòng (Cyclomatic Complexity) vượt xa ngưỡng đề ra. (Rule: HIGH_COMPLEXITY)
+- [Performance] src/engine/auditor.py:68 - Cyclomatic Complexity too high (Too many nested loops/branches): run (Complexity: 58 > 12). AI Note: Chỉ số Cyclomatic Complexity là 58 là cực kỳ cao (ngưỡng an toàn thường là 10-15). Điều này chứng minh hàm run() chứa quá nhiều vòng lặp, câu lệnh điều kiện (if/else) lồng nhau. Mặc dù linter xếp nó vào cột Performance (vì nhiều nhánh có thể ảnh hưởng đến branch prediction của CPU), nhưng tác động chính vẫn là Maintainability. (Rule: HIGH_COMPLEXITY)
+- [Performance] src/engine/auditor.py:431 - Cyclomatic Complexity too high (Too many nested loops/branches): generate_report (Complexity: 22 > 12). AI Note: Độ phức tạp 22 mặc dù nhỏ hơn hàm run nhưng vẫn vượt xa ngưỡng khuyến nghị (12). Điều này cho thấy logic phân nhánh trong báo cáo (ví dụ: kiểm tra điểm số, xếp hạng, lặp qua các pillars) đang được xử lý quá phức tạp trong một khối code duy nhất. (Rule: HIGH_COMPLEXITY)
+- [Performance] src/engine/dependency_checker.py:12 - Cyclomatic Complexity too high (Too many nested loops/branches): detect_circular_dependencies (Complexity: 21 > 12). AI Note: Mặc dù chỉ cung cấp phần đầu của hàm, nhưng việc phát hiện phụ thuộc vòng (circular dependencies) trong một project thường đòi hỏi các thuật toán duyệt đồ thị (như DFS) với nhiều điều kiện kiểm tra, xử lý đệ quy và quản lý trạng thái, dẫn đến Cyclomatic Complexity đạt mức 21 là hợp lý và vượt ngưỡng 12 quy định. Đây là một vi phạm thật về thiết kế code. (Rule: HIGH_COMPLEXITY)

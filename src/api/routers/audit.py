@@ -24,21 +24,35 @@ router = APIRouter()
 
 
 def run_auditor_with_capture(target_path, target_id=None, job_id=None):
-    """Wrapper: capture stdout trong quá trình audit và stream về Frontend."""
-    class AuditLogStream(io.StringIO):
+    """
+    Wrapper: chạy audit và route log vào SSE stream.
+    
+    Kiến trúc Logging (V2):
+    - Engine modules (auditor, ai_service, ...) dùng logging.getLogger(__name__).info()
+    - AuditLogHandler (đăng ký ở api_server.py) tự động bắt log từ 'src.engine.*' 
+      và chuyển tiếp vào JobManager/AuditState SSE stream.
+    - Thread-local tracking (JobManager.set_active_job) cho biết Job nào đang active.
+    - Stdout capture chỉ là fallback cho output từ subprocess/thư viện bên ngoài.
+    """
+    # Đăng ký Job active trên thread này để AuditLogHandler biết route log đi đâu
+    if job_id:
+        JobManager.set_active_job(job_id)
+
+    # Fallback: bắt stdout cho output từ subprocess (discovery, verification scripts)
+    class StdoutFallbackStream(io.StringIO):
         def write(self, s):
             sys.__stdout__.write(s)
             sys.__stdout__.flush()
-            if s.strip('\n'):
+            if s.strip('\\n'):
                 if job_id:
-                    JobManager.log(job_id, s.strip('\n'))
+                    JobManager.log(job_id, s.strip('\\n'))
                 else:
-                    AuditState.log(s.strip('\n'))
+                    AuditState.log(s.strip('\\n'))
         def flush(self):
             sys.__stdout__.flush()
 
     old_stdout = sys.stdout
-    sys.stdout = AuditLogStream()
+    sys.stdout = StdoutFallbackStream()
     AuditState.is_running = True
     try:
         custom_rules = None
@@ -52,6 +66,8 @@ def run_auditor_with_capture(target_path, target_id=None, job_id=None):
     finally:
         AuditState.is_running = False
         sys.stdout = old_stdout
+        if job_id:
+            JobManager.clear_active_job()
 
 
 # ── SSE Streams ──────────────────────────────────────────────────────────────

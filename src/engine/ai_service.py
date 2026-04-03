@@ -2,10 +2,13 @@ import os
 import asyncio
 import json
 import re
+import logging
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field, ValidationError
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -181,12 +184,17 @@ QUAN TRỌNG: NGUYÊN TẮC 'TWO-PASS AUDIT'. Nếu bạn nghi ngờ một lời
                 if not content: raise ValueError("Empty AI response")
 
                 json_str = self._extract_json(content)
-                data = json.loads(json_str)
+                try:
+                    data = json.loads(json_str, strict=False)
+                except json.JSONDecodeError:
+                    import re
+                    json_str_fixed = re.sub(r'\\(?!["\\/bfnrtu])', r'\\\\', json_str)
+                    data = json.loads(json_str_fixed, strict=False)
                 validated_data = DeepAuditResponse.model_validate(data)
                 return [v.model_dump() for v in validated_data.violations]
             
             except (ValidationError, json.JSONDecodeError, Exception) as e:
-                print(f"⚠️ AI Deep Audit Attempt {attempt + 1} failed: {e}")
+                logger.warning(f"⚠️ AI Deep Audit Attempt {attempt + 1} failed: {e}")
                 if attempt < max_retries - 1:
                     await asyncio.sleep(2 * (attempt + 1))
                 else:
@@ -241,12 +249,17 @@ Yêu cầu trả về kết quả dưới dạng đối tượng JSON với key 
                 if not content: raise ValueError("Empty AI response")
 
                 json_str = self._extract_json(content)
-                data = json.loads(json_str)
+                try:
+                    data = json.loads(json_str, strict=False)
+                except json.JSONDecodeError:
+                    import re
+                    json_str_fixed = re.sub(r'\\(?!["\\/bfnrtu])', r'\\\\', json_str)
+                    data = json.loads(json_str_fixed, strict=False)
                 validated_data = ValidationResponse.model_validate(data)
                 return {res.index: res.model_dump() for res in validated_data.results}
             
             except (ValidationError, json.JSONDecodeError, Exception) as e:
-                print(f"⚠️ AI Batch Service Attempt {attempt + 1} failed: {e}")
+                logger.warning(f"⚠️ AI Batch Service Attempt {attempt + 1} failed: {e}")
                 if attempt < max_retries - 1:
                     await asyncio.sleep(2 * (attempt + 1))
                 else:
@@ -325,7 +338,12 @@ Yêu cầu trả về kết quả dưới dạng đối tượng JSON với key 
                 if not content: raise ValueError("Empty AI response")
 
                 json_str = self._extract_json(content)
-                data = json.loads(json_str)
+                try:
+                    data = json.loads(json_str, strict=False)
+                except json.JSONDecodeError:
+                    import re
+                    json_str_fixed = re.sub(r'\\(?!["\\/bfnrtu])', r'\\\\', json_str)
+                    data = json.loads(json_str_fixed, strict=False)
                 validated_data = ValidationResponse.model_validate(data)
                 
                 # Cập nhật kết quả vào danh sách cờ gốc
@@ -339,12 +357,12 @@ Yêu cầu trả về kết quả dưới dạng đối tượng JSON với key 
                             bug['reason'] = f"{bug['reason']} [Cross-Checked: {res.explanation}]"
                             verified_violations.append(bug)
                         else:
-                            print(f"   🛡️ Đã gỡ cờ một False Positive: {flagged_violations[idx]['reason']} nhờ đối chiếu bằng chứng.")
+                            logger.info(f"   🛡️ Đã gỡ cờ một False Positive: {flagged_violations[idx]['reason']} nhờ đối chiếu bằng chứng.")
                             
                 return verified_violations
                 
             except Exception as e:
-                print(f"⚠️ AI Cross-Check Attempt {attempt + 1} failed: {e}")
+                logger.warning(f"⚠️ AI Cross-Check Attempt {attempt + 1} failed: {e}")
                 if attempt < max_retries - 1: await asyncio.sleep(2 * (attempt + 1))
         return []
 
