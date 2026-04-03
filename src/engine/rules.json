@@ -180,7 +180,7 @@
         "targets": [{"name": "print", "reason": "Print statement found in production code. Use logger instead."}]
       },
       "ai": {
-        "prompt": "Kiểm tra xem lệnh print() này có nằm trong FILE TEST (tests/, test_*.py, *_test.py) hay không. Nếu CÓ, hãy loại bỏ vi phạm vì print trong test là hợp lệ. Chỉ cảnh báo nếu print nằm trong code production (src/, app/, main.py, v.v.)."
+        "prompt": "Kiểm tra xem lệnh print() này có nằm trong FILE TEST (tests/, test_*.py, *_test.py) hay không. Nếu CÓ, hãy loại bỏ vi phạm vì print trong test là hợp lệ. Chỉ cảnh báo nếu print nằm trong code production (src/, app/, main.py, v.v.). Nếu lệnh print nằm trong các thư mục hoặc file có tính chất công cụ CLI script, cronjob, hãy tự động Loại Bỏ vi phạm."
       }
     },
     {
@@ -253,11 +253,11 @@
       "debt": 15,
       "reason": "Function has too many parameters (Consider DTO/Dict)",
       "weight": -3.0,
-      "limit": 9,
+      "limit": 12,
       "regex": null,
       "ast": {
         "type": "max_parameters",
-        "limit": 9
+        "limit": 12
       },
       "ai": null
     },
@@ -281,10 +281,10 @@
       "id": "CIRCULAR_DEPENDENCY",
       "pillar": "Maintainability",
       "category": "Maintainability",
-      "severity": "Blocker",
+      "severity": "Critical",
       "debt": 60,
       "reason": "Circular Import Dependency Detected (A imports B, B imports A)",
-      "weight": -10.0,
+      "weight": -5.0,
       "regex": null,
       "ast": {
         "type": "circular_dependency"

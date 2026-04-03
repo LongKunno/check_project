@@ -35,7 +35,15 @@ def run_precheck():
     
     app_indicators = ['__init__.py', 'models.py', 'views.py', 'apps.py']
     
+    visited_dirs = set()
+    
     for root, dirs, files in os.walk(base_scan_path, followlinks=True):
+        real_root = os.path.realpath(root)
+        if real_root in visited_dirs:
+            dirs[:] = []
+            continue
+        visited_dirs.add(real_root)
+        
         # Lọc thư mục rác ở mọi cấp độ
         dirs[:] = [d for d in dirs if d not in exclude_dirs]
         

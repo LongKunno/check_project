@@ -38,12 +38,24 @@ def detect_circular_dependencies(file_list, rules):
             try:
                 with open(f, 'r', encoding='utf-8') as file:
                     tree = ast.parse(file.read())
-                deps = set()
-                for node in ast.walk(tree):
-                    if isinstance(node, ast.Import):
-                        for n in node.names: deps.add(n.name.split('.')[0])
-                    elif isinstance(node, ast.ImportFrom):
-                        if node.module: deps.add(node.module.split('.')[0])
+                
+                class TopLevelImportVisitor(ast.NodeVisitor):
+                    def __init__(self):
+                        self.deps = set()
+                    def visit_Import(self, node):
+                        for n in node.names: self.deps.add(n.name.split('.')[0])
+                        self.generic_visit(node)
+                    def visit_ImportFrom(self, node):
+                        if node.module: self.deps.add(node.module.split('.')[0])
+                        self.generic_visit(node)
+                    def visit_FunctionDef(self, node):
+                        pass
+                    def visit_AsyncFunctionDef(self, node):
+                        pass
+
+                visitor = TopLevelImportVisitor()
+                visitor.visit(tree)
+                deps = visitor.deps
                 imp_map[f_to_mod[f]] = list(deps.intersection(set(mod_to_f.keys())))
             except Exception as e:
                 pass

@@ -4,6 +4,7 @@ import urllib.parse
 from typing import Optional
 from git import Repo, GitCommandError
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -64,8 +65,13 @@ class GitHelper:
             
         except GitCommandError as e:
             logger.error(f"Git clone failed. Command output: {e.stderr}")
-            # Lọc thông báo lỗi để không lộ token (App Password)
-            error_msg = str(e.stderr).replace(token, "***") if token else str(e.stderr)
+            # Lọc thông báo lỗi để không lộ token (App Password) bằng Regex an toàn
+            error_msg = str(e.stderr)
+            if token:
+                # Xóa toàn bộ credentials format (://user:pass@)
+                error_msg = re.sub(r'(?<=://)[^@]+(?=@)', '***', error_msg)
+                # Fallback cho token đứng một mình, hoặc urlencdoded
+                error_msg = error_msg.replace(token, "***")
             raise Exception(f"Không thể clone repository. Vui lòng kiểm tra lại URL, Username và Token. Chi tiết: {error_msg}")
         except Exception as e:
             logger.error(f"Unexpected error during clone: {e}")

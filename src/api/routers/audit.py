@@ -38,22 +38,6 @@ def run_auditor_with_capture(target_path, target_id=None, job_id=None):
     if job_id:
         JobManager.set_active_job(job_id)
 
-    # Fallback: bắt stdout cho output từ subprocess (discovery, verification scripts)
-    class StdoutFallbackStream(io.StringIO):
-        def write(self, s):
-            sys.__stdout__.write(s)
-            sys.__stdout__.flush()
-            if s.strip('\\n'):
-                if job_id:
-                    JobManager.log(job_id, s.strip('\\n'))
-                else:
-                    AuditState.log(s.strip('\\n'))
-        def flush(self):
-            sys.__stdout__.flush()
-
-    old_stdout = sys.stdout
-    sys.stdout = StdoutFallbackStream()
-    AuditState.is_running = True
     try:
         custom_rules = None
         if target_id:
@@ -65,7 +49,6 @@ def run_auditor_with_capture(target_path, target_id=None, job_id=None):
         return auditor
     finally:
         AuditState.is_running = False
-        sys.stdout = old_stdout
         if job_id:
             JobManager.clear_active_job()
 
@@ -192,7 +175,17 @@ async def upload_and_audit(background_tasks: BackgroundTasks, files: List[Upload
 @router.get("/audit")
 async def run_audit(target: str = Query(".", description="Path to directory")):
     """Legacy endpoint: kiểm toán qua đường dẫn (CLI / nội bộ)."""
+    
+    # SECURITY FIX: Directory Traversal Prevention
+    if ".." in target or target.startswith("/"):
+        raise HTTPException(status_code=403, detail="Lệnh duyệt tệp trái phép. Chỉ được phép quét trong không gian làm việc hiện tại.")
+        
+    base_dir = os.path.abspath(".")
     target_path = os.path.abspath(target)
+    
+    if not target_path.startswith(base_dir):
+        raise HTTPException(status_code=403, detail="Đường dẫn quét bị giới hạn trong không gian ứng dụng.")
+        
     if not os.path.exists(target_path):
         raise HTTPException(status_code=404, detail=f"Không tìm thấy: {target}")
     if AuditState.is_running:

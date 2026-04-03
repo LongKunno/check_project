@@ -20,9 +20,7 @@ class JobManager:
     jobs: Dict[str, JobStatus] = {}
     job_logs: Dict[str, List[str]] = {}
     
-    # Backward compatibility cho SSE cũ nếu chưa update kịp
-    legacy_logs: List[str] = []
-    
+
     # Thread-local storage để track Job đang chạy trên thread nào
     _thread_local = threading.local()
     
@@ -42,8 +40,6 @@ class JobManager:
             target=target
         )
         cls.job_logs[job_id] = []
-        # Xoá legacy logs cho phiên mới để không bị rác màn hình
-        cls.legacy_logs.clear()
         return job_id
     
     @classmethod
@@ -77,7 +73,6 @@ class JobManager:
     def log(cls, job_id: str, message: str):
         if job_id and job_id in cls.job_logs:
             cls.job_logs[job_id].append(message)
-        cls.legacy_logs.append(message)
     
     @classmethod
     def set_active_job(cls, job_id: str):
@@ -106,7 +101,7 @@ class JobManager:
 class AuditState:
     is_cancelled = False
     is_running = False
-    logs = JobManager.legacy_logs
+    logs = []
     
     @classmethod
     def reset(cls):
