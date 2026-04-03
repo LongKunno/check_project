@@ -279,7 +279,7 @@ class CodeAuditor:
             if rule_id == 'AI_REASONING' and weight < -2.0:
                 weight = -2.0 # Giới hạn tối đa mức phạt do AI tự biên tự diễn
             elif rule_id != 'AI_REASONING':
-                for r in self.rules.get('rules', []):
+                for r in getattr(self, 'merged_rules', {}).get('rules', []):
                     if r.get('id') == rule_id and r.get('weight'):
                         weight = float(r.get('weight'))
                         break
