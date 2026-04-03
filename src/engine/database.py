@@ -4,6 +4,7 @@ Handles persistence of audit sessions using PostgreSQL.
 """
 
 import psycopg2
+from psycopg2 import pool
 from psycopg2.extras import RealDictCursor
 import os
 import json
@@ -23,9 +24,19 @@ class AuditDatabase:
     """
     Manages the PostgreSQL database for audit history.
     """
+    _pool = None
+
     @staticmethod
     def get_connection():
-        return psycopg2.connect(DB_URL)
+        # Lazy initialization
+        if not AuditDatabase._pool:
+            AuditDatabase.initialize()
+        return AuditDatabase._pool.getconn()
+
+    @staticmethod
+    def release_connection(conn):
+        if AuditDatabase._pool and conn:
+            AuditDatabase._pool.putconn(conn)
 
     @staticmethod
     def initialize():
@@ -35,7 +46,9 @@ class AuditDatabase:
         conn = None
         for i in range(max_retries):
             try:
-                conn = AuditDatabase.get_connection()
+                if not AuditDatabase._pool:
+                    AuditDatabase._pool = pool.SimpleConnectionPool(1, 20, DB_URL)
+                conn = AuditDatabase._pool.getconn()
                 break
             except psycopg2.OperationalError as e:
                 logger.info(f"Waiting for Postgres to start (Attempt {i+1}/{max_retries})...")
@@ -90,7 +103,7 @@ class AuditDatabase:
                 cursor.execute("ALTER TABLE project_rules ADD COLUMN custom_weights TEXT DEFAULT '{}'")
                 
             cursor.close()
-            conn.close()
+            AuditDatabase.release_connection(conn)
         except Exception as e:
             logger.error(f"Database Initialization Error: {e}")
 
@@ -105,7 +118,7 @@ class AuditDatabase:
         ''', (target, score, rating, loc, violations_count, json.dumps(pillar_scores), json.dumps(full_json) if full_json else None))
         conn.commit()
         cursor.close()
-        conn.close()
+        AuditDatabase.release_connection(conn)
 
     @staticmethod
     def get_history(target_path=None):
@@ -122,7 +135,7 @@ class AuditDatabase:
             
         rows = cursor.fetchall()
         cursor.close()
-        conn.close()
+        AuditDatabase.release_connection(conn)
         
         results = []
         for row in rows:
@@ -147,7 +160,7 @@ class AuditDatabase:
         cursor.execute('SELECT id, timestamp, target, score, rating, total_loc, violations_count, pillar_scores, full_json FROM audit_history WHERE id = %s', (audit_id,))
         row = cursor.fetchone()
         cursor.close()
-        conn.close()
+        AuditDatabase.release_connection(conn)
         
         if not row:
             return None
@@ -196,7 +209,7 @@ class AuditDatabase:
             
         conn.commit()
         cursor.close()
-        conn.close()
+        AuditDatabase.release_connection(conn)
 
     @staticmethod
     def toggle_core_rule(target_id, rule_id, is_disabled):
@@ -232,8 +245,8 @@ class AuditDatabase:
             conn.rollback()
             raise
         finally:
-            cursor.close()
-            conn.close()
+            if cursor: cursor.close()
+            if conn: AuditDatabase.release_connection(conn)
 
     @staticmethod
     def save_custom_weights(target_id, custom_weights):
@@ -258,7 +271,7 @@ class AuditDatabase:
             
         conn.commit()
         cursor.close()
-        conn.close()
+        AuditDatabase.release_connection(conn)
 
     @staticmethod
     def get_project_rules(target_id):
@@ -268,7 +281,7 @@ class AuditDatabase:
         cursor.execute('SELECT natural_text, compiled_json, disabled_core_rules, custom_weights FROM project_rules WHERE target_id = %s', (target_id,))
         row = cursor.fetchone()
         cursor.close()
-        conn.close()
+        AuditDatabase.release_connection(conn)
         
         if row:
             compiled = None
@@ -302,7 +315,7 @@ class AuditDatabase:
         cursor.execute('DELETE FROM project_rules WHERE target_id = %s', (target_id,))
         conn.commit()
         cursor.close()
-        conn.close()
+        AuditDatabase.release_connection(conn)
 
 # Avoid initializing DB on import immediately if docker is not up
 # AuditDatabase.initialize()

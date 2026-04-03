@@ -5,7 +5,6 @@ import os
 import shutil
 import tempfile
 import asyncio
-import io
 import sys
 
 from fastapi import APIRouter, HTTPException, Query, UploadFile, File, Request, BackgroundTasks
@@ -115,8 +114,6 @@ async def upload_and_audit(background_tasks: BackgroundTasks, files: List[Upload
     """Nhận file upload, lưu vào thư mục tạm, giao Job cho Background."""
     if not files:
         raise HTTPException(status_code=400, detail="Không có file nào được upload.")
-    if AuditState.is_running:
-        raise HTTPException(status_code=409, detail="Một phiên kiểm toán đang chạy.")
 
     AuditState.reset()
     temp_dir = tempfile.mkdtemp(prefix="audit_upload_")
@@ -131,7 +128,7 @@ async def upload_and_audit(background_tasks: BackgroundTasks, files: List[Upload
             safe_parts = [p for p in parts if p not in ("..", ".", "")]
             if not safe_parts:
                 continue
-            project_name = safe_parts[0]
+            # Lưu ý giữ lại project_name tĩnh thay vì đè lên bằng tên thư mục (bug: ghi đè folder)
             relative_path = os.path.join(*safe_parts)
             dest_path = os.path.join(temp_dir, relative_path)
             if not os.path.abspath(dest_path).startswith(os.path.abspath(temp_dir)):
@@ -141,9 +138,8 @@ async def upload_and_audit(background_tasks: BackgroundTasks, files: List[Upload
             with open(dest_path, "wb") as f:
                 f.write(content)
 
-        target_path = os.path.join(temp_dir, project_name)
-        if not os.path.isdir(target_path):
-            target_path = temp_dir
+        # Trỏ thẳng mục tiêu quét tới gốc temp_dir chứa trọn vẹn toàn bộ các folder
+        target_path = temp_dir
 
         job_id = JobManager.create_job(project_name)
 
@@ -188,8 +184,6 @@ async def run_audit(target: str = Query(".", description="Path to directory")):
         
     if not os.path.exists(target_path):
         raise HTTPException(status_code=404, detail=f"Không tìm thấy: {target}")
-    if AuditState.is_running:
-        raise HTTPException(status_code=409, detail="Một phiên kiểm toán đang chạy.")
     try:
         AuditState.reset()
         auditor = await asyncio.to_thread(run_auditor_with_capture, target_path, target_path)
@@ -216,9 +210,6 @@ async def audit_repository(request: RepositoryAuditRequest, background_tasks: Ba
     username = request.username
     token = request.token
     branch = request.branch
-
-    if AuditState.is_running:
-        raise HTTPException(status_code=409, detail="Một phiên kiểm toán đang chạy.")
 
     if request.id:
         config_repo = next((r for r in CONFIGURED_REPOSITORIES if r["id"] == request.id), None)

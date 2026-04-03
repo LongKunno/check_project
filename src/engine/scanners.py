@@ -38,6 +38,8 @@ class RegexScanner(BaseScanner):
             try:
                 pattern_str = regex_cfg['pattern']
                 if pattern_str not in self._pattern_cache:
+                    if len(self._pattern_cache) >= 1024:
+                        self._pattern_cache.clear() # Ngăn tràn RAM do cài đặt vòng lặp vô tận Regex
                     self._pattern_cache[pattern_str] = re.compile(pattern_str)
                 pattern = self._pattern_cache[pattern_str]
                 for match in pattern.finditer(content):

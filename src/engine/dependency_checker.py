@@ -4,7 +4,6 @@ Tách ra từ verification.py để tái sử dụng và test độc lập.
 """
 import ast
 import os
-import logging
 
 from src.engine.scanners import _build_flat_meta
 
@@ -58,7 +57,7 @@ def detect_circular_dependencies(file_list, rules):
                 deps = visitor.deps
                 imp_map[f_to_mod[f]] = list(deps.intersection(set(mod_to_f.keys())))
             except Exception as e:
-                pass
+                pass # Safe to ignore parsing errors for non-standard Python files in Dependency Checker
         return imp_map
 
     file_to_mod, mod_to_file = _build_mappings(file_list)

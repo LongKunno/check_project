@@ -237,11 +237,11 @@
       "debt": 15,
       "reason": "Cyclomatic Complexity too high (Too many nested loops/branches)",
       "weight": -2.0,
-      "limit": 20,
+      "limit": 25,
       "regex": null,
       "ast": {
         "type": "complexity",
-        "limit": 20
+        "limit": 25
       },
       "ai": null
     },
