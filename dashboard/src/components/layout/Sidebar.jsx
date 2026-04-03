@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Shield, FolderOpen, 
   Activity, ShieldCheck, Wand2, FileSearch, 
-  Moon, Sun, Settings 
+  Moon, Sun, Settings, BarChart3 
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -17,7 +17,7 @@ const Sidebar = ({
   const location = useLocation();
   const navigate = useNavigate();
 
-  const isPathActive = (path) => location.pathname.startsWith(path) || (location.pathname === '/' && path === '/audit');
+  const isPathActive = (path) => location.pathname.startsWith(path) || (location.pathname === '/' && path === '/project-scores');
 
   return (
       <motion.div 
@@ -79,6 +79,15 @@ const Sidebar = ({
               {!isSidebarCollapsed ? "Tính năng chính" : "•••"}
            </div>
            
+           <button 
+              onClick={() => navigate('/project-scores')}
+              className={cn("flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left overflow-hidden shrink-0 group", isPathActive('/project-scores') ? 'bg-pink-500/10 text-pink-400 border border-pink-500/20 shadow-inner' : 'text-slate-400 hover:bg-white/5 hover:text-white border border-transparent')}
+              title="Điểm các Dự án"
+           >
+              <BarChart3 size={20} className={cn("shrink-0 transition-transform text-pink-500/80", isPathActive('/project-scores') ? "scale-110" : "group-hover:scale-110")} />
+              {!isSidebarCollapsed && <span className="font-bold text-sm whitespace-nowrap">Điểm các Dự án</span>}
+           </button>
+
            <button 
               onClick={() => navigate('/audit')}
               className={cn("flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left overflow-hidden shrink-0 group", isPathActive('/audit') ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20 shadow-inner' : 'text-slate-400 hover:bg-white/5 hover:text-white border border-transparent')}

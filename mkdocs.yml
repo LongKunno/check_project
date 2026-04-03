@@ -67,6 +67,7 @@ nav:
     - Health Checks: api_specs/ai_health.md
     - Fix Suggestion: api_specs/fix_suggestion.md
     - History Retrieval: api_specs/history.md
+    - Repositories & Scores: api_specs/repositories.md
     - Git Configuration: api_specs/git.md
     - Rules Compiler: api_specs/rules.md
 

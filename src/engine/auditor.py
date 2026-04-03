@@ -76,34 +76,26 @@ class CodeAuditor:
         """Thực thi toàn bộ quy trình kiểm toán."""
         with open(self.ledger_path, 'w') as f:
             f.write("# SỔ CÁI VI PHẠM (AI VIOLATION LEDGER)\n\n")
-        logger.info(f"🚀 Bắt đầu kiểm toán cho: {self.target_dir}")
+        logger.info(f"🚀 Bắt đầu kiểm toán: {self.target_dir}")
         
-        # BƯỚC 1: DISCOVERY
         self._step_discovery()
-        
-        # BƯỚC 2-3: SCANNING & VERIFICATION
         automated_violations = self._step_scanning()
         
-        # BƯỚC 3.5-3.7: AI PROCESSING hoặc STATIC-ONLY
         from src.config import AI_ENABLED
         if AI_ENABLED:
             self._step_ai_processing(automated_violations)
         else:
-            logger.info("[3.5/5] ⏭️ AI đã bị TẮT (AI_ENABLED=false). Bỏ qua bước Xác thực AI.")
-            logger.info("[3.6/5] ⏭️ AI đã bị TẮT. Bỏ qua bước AI Reasoning Audit.")
+            logger.info("[3/5] AI bị tắt (AI_ENABLED=false) — bỏ qua toàn bộ bước AI.")
             for v in automated_violations:
                 is_custom = v.get('rule_id', '').startswith('CUSTOM_') or v.get('rule_id', '').startswith('FORBIDDEN')
                 self.log_violation({**v, 'is_custom': is_custom})
 
-        # BƯỚC 4: AGGREGATION & SCORING
         final_score, rating = self._step_aggregation()
-        
-        # BƯỚC 5: REPORTING
         self._step_reporting(final_score, rating)
 
     def _step_discovery(self):
-        """BƯỚC 1: Khám phá tài nguyên (Discovery)."""
-        logger.info("[1/5] Bước 1: Khám phá tài nguyên (Discovery)...")
+        """BƯỜC 1: Khám phá tài nguyên."""
+        logger.info("[1/5] Khám phá cấu trúc dự án (Discovery)...")
         discovery = DiscoveryStep(self.target_dir)
         self.discovery_data = discovery.run_discovery()
         
@@ -113,37 +105,51 @@ class CodeAuditor:
                 original_count = len(self.discovery_data['files'])
                 if original_count > TEST_MODE_LIMIT_FILES:
                     self.discovery_data['files'] = self.discovery_data['files'][:TEST_MODE_LIMIT_FILES]
-                    logger.warning(f"⚠️ [TEST MODE] Đã giới hạn phân tích: {TEST_MODE_LIMIT_FILES}/{original_count} files!")
+                    logger.warning(f"[TEST MODE] Giới hạn: {TEST_MODE_LIMIT_FILES}/{original_count} files")
         except ImportError:
-            logger.warning("Could not import TEST_MODE_LIMIT_FILES, running in full mode.")
+            pass
 
-        logger.info(f"   - Tổng LOC: {self.discovery_data['total_loc']}, Files: {self.discovery_data['total_files']}")
+        logger.info(f"   {self.discovery_data['total_files']} files — {self.discovery_data['total_loc']:,} LOC")
 
     def _step_scanning(self):
-        """BƯỚC 2-3: Quét và Xác thực lỗi (Scanning & Verification)."""
-        logger.info("[2-3/5] Bước 2 & 3: Quét và Xác thực lỗi (Scanning & Verification)...")
+        """BƯỜC 2: Quét tĩnh (Regex + AST)."""
+        logger.info("[2/5] Quét tĩnh mã nguồn (Regex + Python AST)...")
+        
+        files = self.discovery_data.get('files', [])
+        logger.info(f"   {len(files)} files sẽ được phân tích")
+        for f_info in files:
+            rel_path = os.path.relpath(f_info['path'], self.target_dir)
+            logger.info(f"[PROGRESS] Scanning: {rel_path}")
+        
         verifier = VerificationStep(self.target_dir, self.discovery_data['files'], custom_rules=self.custom_rules)
         automated_violations = verifier.run_verification()
         self.merged_rules = verifier.load_rules()
+        logger.info(f"   Phát hiện {len(automated_violations)} vi phạm tiềm năng")
         return automated_violations
 
     def _step_ai_processing(self, automated_violations):
-        """BƯỚC 3.5-3.7: AI Validation + Reasoning + Cross-Check."""
+        """BƯỜC 3: Xử lý AI (Validation + Deep Audit + Cross-Check)."""
         import asyncio
         from src.engine.ai_service import ai_service
         
-        # 3.5: AI VALIDATION
+        # 3.1: AI VALIDATION
         self._step_ai_validation(automated_violations, ai_service, asyncio)
         
-        # 3.6-3.7: AI REASONING + CROSS-CHECK
+        # 3.2-3.3: AI REASONING + CROSS-CHECK
         self._step_ai_reasoning(ai_service, asyncio)
 
     def _step_ai_validation(self, automated_violations, ai_service, asyncio):
-        """BƯỚC 3.5: Xác thực AI theo Batch."""
-        logger.info("[3.5/5] Bước 3.5: Xác thực AI (AI Hybrid Validation)...")
+        """BƯỜC 3.1: Xác thực vi phạm bằng AI (lọc False Positive)."""
+        logger.info("[3.1/5] Xác thực vi phạm (AI False-Positive Filter)...")
         
         batch_size = 5
         chunks = [automated_violations[i:i + batch_size] for i in range(0, len(automated_violations), batch_size)]
+        
+        if not chunks:
+            logger.info("   Không có vi phạm nào cần xác thực.")
+            return
+
+        logger.info(f"   {len(automated_violations)} vi phạm → {len(chunks)} batch (mỗi batch {batch_size})")
         
         sem_val = asyncio.Semaphore(25)
         async def process_chunk(idx, chunk):
@@ -151,11 +157,6 @@ class CodeAuditor:
             await asyncio.sleep(idx * 0.1)
             async with sem_val:
                 return idx, chunk, await ai_service.verify_violations_batch(chunk)
-
-        if not chunks:
-            return
-            
-        logger.info(f"   -> Xác thực AI cho {len(chunks)} nhóm lỗi (Batch: {batch_size})")
         
         async def run_all():
             tasks = [process_chunk(idx, c) for idx, c in enumerate(chunks)]
@@ -181,21 +182,24 @@ class CodeAuditor:
                 self.log_violation({**v, 'pillar': v['type'], 'reason': final_reason, 'is_custom': is_custom})
 
     def _step_ai_reasoning(self, ai_service, asyncio):
-        """BƯỚC 3.6-3.7: AI Deep Audit + Cross-Check."""
-        logger.info("[3.6/5] Bước 3.6: AI Reasoning Audit...")
+        """BƯỚC 3.2: AI Deep Audit + [3.3] Cross-Check flagged issues."""
+        logger.info("[3.2/5] Phân tích sâu bằng AI (Deep Reasoning Audit)...")
         
         deep_chunks = self._build_deep_audit_batches()
         if not deep_chunks:
+            logger.info("   Không có file nào cần AI phân tích.")
             return
             
-        batch_sizes = [len(c) for c in deep_chunks]
-        logger.info(f"   -> Smart Batching: {len(deep_chunks)} batches (files/batch: {batch_sizes})")
+        logger.info(f"   {sum(len(c) for c in deep_chunks)} files → {len(deep_chunks)} batches")
 
         sem_deep = asyncio.Semaphore(25)
         async def process_deep(idx, chunk_data):
             if AuditState.is_cancelled: return []
             await asyncio.sleep(idx * 0.2)
             async with sem_deep:
+                for f in chunk_data:
+                    rel = os.path.relpath(f['path'], self.target_dir) if self.target_dir in f['path'] else f['path']
+                    logger.info(f"[PROGRESS] AI Audit: {rel}")
                 return await ai_service.deep_audit_batch(chunk_data, self.custom_rules)
 
         async def run_all():
@@ -210,9 +214,8 @@ class CodeAuditor:
             for rv in batch:
                 (flagged if rv.get('needs_verification') else confirmed).append(rv)
                 
-        # 3.7: CROSS-CHECK
         if flagged:
-            logger.info(f"[3.7/5] Bước 3.7: Cross-Check {len(flagged)} lỗi cắm cờ...")
+            logger.info(f"[3.3/5] Xác minh chéo (Cross-Check) {len(flagged)} mục nghi vấn...")
             from src.engine.symbol_indexer import AstContextExtractor
             indexer = AstContextExtractor(self.target_dir)
             indexer.index_project()
@@ -292,8 +295,8 @@ class CodeAuditor:
             })
 
     def _step_aggregation(self):
-        """BƯỚC 4: Tổng hợp dữ liệu (Aggregation)."""
-        logger.info("[4/5] Bước 4: Tổng hợp dữ liệu (Aggregation)...")
+        """BƯỜC 4: Tổng hợp và tính điểm."""
+        logger.info("[4/5] Tổng hợp kết quả và tính điểm (Aggregation)...")
         from src.config import WEIGHTS
         from src.engine.authorship import AuthorshipTracker
         
@@ -403,13 +406,10 @@ class CodeAuditor:
         return final_score, rating
 
     def _step_reporting(self, final_score, rating):
-        """BƯỚC 5: Xuất báo cáo (Reporting)."""
-        logger.info("[5/5] Bước 5: Xuất báo cáo (Reporting)...")
+        """BƯỜC 5: Xuất báo cáo."""
+        logger.info("[5/5] Xuất báo cáo (Reporting)...")
         self.generate_report(self.feature_results, self.project_pillars, final_score, rating)
-        
-        logger.info(f"\n✅ Kiểm toán hoàn tất!")
-        logger.info(f"   - Điểm tổng thể: {final_score}/100")
-        logger.info(f"   - Xếp hạng: {rating}")
+        logger.info(f"\n✅ Kiểm toán hoàn tất — Điểm: {final_score}/100 ({rating})")
         logger.info(f"   - Báo cáo chi tiết: {self.report_path}")
 
     def generate_report(self, feature_results, project_pillars, final_score, rating):

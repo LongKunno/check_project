@@ -52,6 +52,7 @@ const RulesConfigurator = React.lazy(() => import('./components/nlre/RulesConfig
 const HistoryView = React.lazy(() => import('./components/views/HistoryView'));
 const SettingsView = React.lazy(() => import('./components/views/SettingsView'));
 const AuditView = React.lazy(() => import('./components/views/AuditView'));
+const ProjectScoresView = React.lazy(() => import('./components/views/ProjectScoresView'));
 import Sidebar from './components/layout/Sidebar';
 import { useAuditJob } from './hooks/useAuditJob';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
@@ -440,10 +441,10 @@ function App() {
             {/* Context Title */}
             <div className="flex flex-col">
                <h1 className="text-3xl lg:text-4xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 drop-shadow-sm mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
-                 {location.pathname.startsWith('/audit') || location.pathname === '/' ? 'AUDIT DASHBOARD' : location.pathname.startsWith('/rules') ? 'RULE MANAGER' : location.pathname.startsWith('/settings') ? 'SYSTEM SETTINGS' : location.pathname.startsWith('/history') ? 'AUDIT HISTORY' : 'AI SANDBOX'}
+                 {location.pathname.startsWith('/audit') || location.pathname === '/' ? 'AUDIT DASHBOARD' : location.pathname.startsWith('/rules') ? 'RULE MANAGER' : location.pathname.startsWith('/settings') ? 'SYSTEM SETTINGS' : location.pathname.startsWith('/project-scores') ? 'PROJECT SCORES' : location.pathname.startsWith('/history') ? 'AUDIT HISTORY' : 'AI SANDBOX'}
                </h1>
                <p className="font-bold text-slate-500 uppercase tracking-widest text-xs flex items-center gap-2">
-                 {location.pathname.startsWith('/audit') || location.pathname === '/' ? 'Thống kê & Mức độ an toàn mã nguồn' : location.pathname.startsWith('/rules') ? 'Quản lý cấu hình luật mặc định và tuỳ chỉnh' : location.pathname.startsWith('/settings') ? 'Cài đặt và thiết lập hệ thống cảnh báo' : location.pathname.startsWith('/history') ? 'Tra cứu và phục hồi kết quả phân tích lịch sử' : 'Thiết kế luật mới bằng AI & Kiểm chứng'}
+                 {location.pathname.startsWith('/audit') || location.pathname === '/' ? 'Thống kê & Mức độ an toàn mã nguồn' : location.pathname.startsWith('/rules') ? 'Quản lý cấu hình luật mặc định và tuỳ chỉnh' : location.pathname.startsWith('/settings') ? 'Cài đặt và thiết lập hệ thống cảnh báo' : location.pathname.startsWith('/project-scores') ? 'Tổng quan điểm và trạng thái của tất cả dự án' : location.pathname.startsWith('/history') ? 'Tra cứu và phục hồi kết quả phân tích lịch sử' : 'Thiết kế luật mới bằng AI & Kiểm chứng'}
                </p>
             </div>
 
@@ -480,7 +481,7 @@ function App() {
       </header>
 
       <Routes>
-        <Route path="/" element={<Navigate to="/audit" replace />} />
+        <Route path="/" element={<Navigate to="/project-scores" replace />} />
         <Route path="/rules" element={
           <div key="view-rules" className="flex-1 flex flex-col w-full" style={{ minHeight: 'calc(100vh - 100px)' }}>
             <Suspense fallback={<div className="p-8 text-white">Đang tải Rules...</div>}>
@@ -522,6 +523,13 @@ function App() {
                 }} 
                 cn={cn} 
               />
+            </Suspense>
+          </div>
+        } />
+        <Route path="/project-scores" element={
+          <div className="flex-1 flex flex-col w-full" style={{ minHeight: 'calc(100vh - 100px)' }}>
+            <Suspense fallback={<div className="p-8 text-white">Đang tải Scores...</div>}>
+              <ProjectScoresView cn={cn} />
             </Suspense>
           </div>
         } />
