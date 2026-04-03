@@ -237,6 +237,7 @@ async def audit_repository(request: RepositoryAuditRequest, background_tasks: Ba
     if not repo_url:
         raise HTTPException(status_code=400, detail="Thiếu URL Repository.")
 
+    AuditState.reset()
     temp_dir = tempfile.mkdtemp(prefix="git_audit_")
     job_id = JobManager.create_job(repo_url)
 
