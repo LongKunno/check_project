@@ -88,7 +88,7 @@ class CodeAuditor:
                     self.discovery_data['files'] = self.discovery_data['files'][:TEST_MODE_LIMIT_FILES]
                     logger.warning(f"⚠️ [TEST MODE] Đã giới hạn phân tích: {TEST_MODE_LIMIT_FILES}/{original_count} files để tiết kiệm Token!")
         except ImportError:
-            pass
+            logger.warning("Could not import TEST_MODE_LIMIT_FILES from config, running in full mode.")
 
         total_loc = self.discovery_data['total_loc']
         logger.info(f"   - Tổng số dòng code (LOC): {total_loc}")
@@ -102,189 +102,197 @@ class CodeAuditor:
         # Load merged rules for metadata (severity, debt) later in Aggregation
         self.merged_rules = verifier.load_rules()
         
-        # BƯỚC 3.5: AI HYBRID VALIDATION (Xác thực AI theo Batch)
-        logger.info("[3.5/5] Bước 3.5: Xác thực AI (AI Hybrid Validation - Batching) với Async I/O...")
-        from src.engine.ai_service import ai_service
-        import asyncio
+        # Kiểm tra cấu hình AI
+        from src.config import AI_ENABLED
         
-        # Chia violations thành từng nhóm 5 cái (Batch size = 5 để ổn định hơn)
-        batch_size = 5
-        chunks = [automated_violations[i:i + batch_size] for i in range(0, len(automated_violations), batch_size)]
-        
-        sem_val = asyncio.Semaphore(25)
-        async def process_validation_chunk(idx, chunk):
-            if AuditState.is_cancelled: return idx, chunk, {}
-            # Thêm sleep để stagger (giảm burst lúc đầu) - tránh lỗi 502
-            await asyncio.sleep(idx * 0.1)
-            async with sem_val:
-                return idx, chunk, await ai_service.verify_violations_batch(chunk)
-
-        if chunks:
-            logger.info(f"   -> Đang xác thực AI song song (Async I/O) cho {len(chunks)} nhóm lỗi (Batch size: {batch_size})")
+        if AI_ENABLED:
+            # BƯỚC 3.5: AI HYBRID VALIDATION (Xác thực AI theo Batch)
+            logger.info("[3.5/5] Bước 3.5: Xác thực AI (AI Hybrid Validation - Batching) với Async I/O...")
+            from src.engine.ai_service import ai_service
+            import asyncio
             
-            async def run_all_validations():
-                tasks = [process_validation_chunk(idx, chunk) for idx, chunk in enumerate(chunks)]
-                results = []
-                for f in asyncio.as_completed(tasks):
-                    if AuditState.is_cancelled:
-                        logger.warning("❌ CẢNH BÁO: Kiểm toán đã bị hủy bởi người dùng.")
-                        raise Exception("Kiểm toán đã bị hủy bởi người dùng.")
-                    res = await f
-                    results.append(res)
-                return results
+            # Chia violations thành từng nhóm 5 cái (Batch size = 5 để ổn định hơn)
+            batch_size = 5
+            chunks = [automated_violations[i:i + batch_size] for i in range(0, len(automated_violations), batch_size)]
+            
+            sem_val = asyncio.Semaphore(25)
+            async def process_validation_chunk(idx, chunk):
+                if AuditState.is_cancelled: return idx, chunk, {}
+                # Thêm sleep để stagger (giảm burst lúc đầu) - tránh lỗi 502
+                await asyncio.sleep(idx * 0.1)
+                async with sem_val:
+                    return idx, chunk, await ai_service.verify_violations_batch(chunk)
 
-            try:
-                loop = asyncio.get_event_loop()
-                if loop.is_closed(): loop = asyncio.new_event_loop()
-            except RuntimeError:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
+            if chunks:
+                logger.info(f"   -> Đang xác thực AI song song (Async I/O) cho {len(chunks)} nhóm lỗi (Batch size: {batch_size})")
                 
-            completed_results = loop.run_until_complete(run_all_validations())
-            
-            for idx, chunk, batch_results in completed_results:
-                for i_in_chunk, v in enumerate(chunk):
-                    res = batch_results.get(i_in_chunk, {})
-                    is_fp = res.get("is_false_positive", False)
-                    ai_reason = res.get("explanation", "")
-                    conf = res.get("confidence", 1.0)
-                    
-                    # Cho phép AI loại bỏ cả các luật Tùy chỉnh (Custom Rules) bị sai (False Positive)
-                    # vì Static analysis Regex do AI sinh ra rất hay match nhầm context.
-                    is_custom = v.get('rule_id', '').startswith('CUSTOM_') or v.get('rule_id', '').startswith('FORBIDDEN')
-                    
-                    if is_fp and conf > 0.7:
-                        lbl = "Tùy chỉnh (AI-Gen)" if is_custom else "Mặc định (Core)"
-                        logger.info(f"   ✨ AI Gác cổng đã loại bỏ False Positive [{lbl}]: {v['reason']} tại {v['file']} (Độ tin cậy: {conf})")
-                        continue
-                    
-                    final_reason = f"{v['reason']}. AI Note: {ai_reason}" if ai_reason else v['reason']
-                    self.log_violation(v['type'], v['file'], final_reason, v['weight'], snippet=v.get('snippet', ''), rule_id=v.get('rule_id', ''), line=v.get('line', 0), is_custom=is_custom)
+                async def run_all_validations():
+                    tasks = [process_validation_chunk(idx, chunk) for idx, chunk in enumerate(chunks)]
+                    results = []
+                    for f in asyncio.as_completed(tasks):
+                        if AuditState.is_cancelled:
+                            logger.warning("❌ CẢNH BÁO: Kiểm toán đã bị hủy bởi người dùng.")
+                            raise Exception("Kiểm toán đã bị hủy bởi người dùng.")
+                        res = await f
+                        results.append(res)
+                    return results
 
-        # BƯỚC 3.6: AI REASONING AUDIT (Quét sâu)
-        logger.info("[3.6/5] Bước 3.6: AI Reasoning Audit (Full Code Coverage)...")
-        
-        audit_files = self.discovery_data['files']
-        
-        # === SMART BATCHING (Dynamic) ===
-        # Tối đa 5 file/batch, nhưng nếu file lớn quá thì chỉ gửi 1 file
-        # Budget: ~60K tokens cho code (~210K chars với tỷ lệ ~3.5 chars/token)
-        MAX_FILES_PER_BATCH = 5
-        MAX_CHARS_PER_BATCH = 210000  # ~60K tokens budget cho phần code
-        AVG_CHARS_PER_LINE = 45       # Ước tính trung bình cho Python
+                try:
+                    loop = asyncio.get_event_loop()
+                    if loop.is_closed(): loop = asyncio.new_event_loop()
+                except RuntimeError:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    
+                completed_results = loop.run_until_complete(run_all_validations())
+                
+                for idx, chunk, batch_results in completed_results:
+                    for i_in_chunk, v in enumerate(chunk):
+                        res = batch_results.get(i_in_chunk, {})
+                        is_fp = res.get("is_false_positive", False)
+                        ai_reason = res.get("explanation", "")
+                        conf = res.get("confidence", 1.0)
+                        
+                        # Cho phép AI loại bỏ cả các luật Tùy chỉnh (Custom Rules) bị sai (False Positive)
+                        # vì Static analysis Regex do AI sinh ra rất hay match nhầm context.
+                        is_custom = v.get('rule_id', '').startswith('CUSTOM_') or v.get('rule_id', '').startswith('FORBIDDEN')
+                        
+                        if is_fp and conf > 0.7:
+                            lbl = "Tùy chỉnh (AI-Gen)" if is_custom else "Mặc định (Core)"
+                            logger.info(f"   ✨ AI Gác cổng đã loại bỏ False Positive [{lbl}]: {v['reason']} tại {v['file']} (Độ tin cậy: {conf})")
+                            continue
+                        
+                        final_reason = f"{v['reason']}. AI Note: {ai_reason}" if ai_reason else v['reason']
+                        self.log_violation(v['type'], v['file'], final_reason, v['weight'], snippet=v.get('snippet', ''), rule_id=v.get('rule_id', ''), line=v.get('line', 0), is_custom=is_custom)
 
-        deep_chunks = []
-        current_batch = []
-        current_size = 0
+            # BƯỚC 3.6: AI REASONING AUDIT (Quét sâu)
+            logger.info("[3.6/5] Bước 3.6: AI Reasoning Audit (Full Code Coverage)...")
+            
+            audit_files = self.discovery_data['files']
+            
+            # === SMART BATCHING (Dynamic) ===
+            MAX_FILES_PER_BATCH = 5
+            MAX_CHARS_PER_BATCH = 210000
+            AVG_CHARS_PER_LINE = 45
 
-        for f_info in audit_files:
-            try:
-                with open(f_info['path'], 'r', encoding='utf-8') as file_obj:
-                    content = file_obj.read()
-            except Exception:
-                continue
-            
-            file_chars = len(content)
-            file_data = {"path": f_info['path'], "content": content}
-            
-            # Nếu file đơn lẻ đã vượt budget → batch riêng (sẽ bị truncate ở ai_service)
-            if file_chars >= MAX_CHARS_PER_BATCH:
-                # Flush batch hiện tại trước
-                if current_batch:
-                    deep_chunks.append(current_batch)
+            deep_chunks = []
+            current_batch = []
+            current_size = 0
+
+            for f_info in audit_files:
+                try:
+                    with open(f_info['path'], 'r', encoding='utf-8') as file_obj:
+                        content = file_obj.read()
+                except Exception:
+                    continue
+                
+                file_chars = len(content)
+                file_data = {"path": f_info['path'], "content": content}
+                
+                if file_chars >= MAX_CHARS_PER_BATCH:
+                    if current_batch:
+                        deep_chunks.append(current_batch)
+                        current_batch = []
+                        current_size = 0
+                    deep_chunks.append([file_data])
+                    continue
+                
+                if (current_size + file_chars > MAX_CHARS_PER_BATCH) or (len(current_batch) >= MAX_FILES_PER_BATCH):
+                    if current_batch:
+                        deep_chunks.append(current_batch)
                     current_batch = []
                     current_size = 0
-                deep_chunks.append([file_data])  # Batch chỉ chứa 1 file lớn
-                continue
-            
-            # Nếu thêm file này vào batch hiện tại sẽ vượt budget hoặc đạt max files → flush
-            if (current_size + file_chars > MAX_CHARS_PER_BATCH) or (len(current_batch) >= MAX_FILES_PER_BATCH):
-                if current_batch:
-                    deep_chunks.append(current_batch)
-                current_batch = []
-                current_size = 0
-            
-            current_batch.append(file_data)
-            current_size += file_chars
+                
+                current_batch.append(file_data)
+                current_size += file_chars
 
-        if current_batch:
-            deep_chunks.append(current_batch)
+            if current_batch:
+                deep_chunks.append(current_batch)
 
-        # Log thống kê batching
-        batch_sizes = [len(c) for c in deep_chunks]
-        logger.info(f"   -> Smart Batching: {len(deep_chunks)} batches (files/batch: {batch_sizes})")
+            batch_sizes = [len(c) for c in deep_chunks]
+            logger.info(f"   -> Smart Batching: {len(deep_chunks)} batches (files/batch: {batch_sizes})")
 
-        sem_deep = asyncio.Semaphore(25)
-        async def process_deep_chunk(idx, chunk_data):
-            if AuditState.is_cancelled: return []
-            await asyncio.sleep(idx * 0.2)
-            async with sem_deep:
-                return await ai_service.deep_audit_batch(chunk_data, self.custom_rules)
+            sem_deep = asyncio.Semaphore(25)
+            async def process_deep_chunk(idx, chunk_data):
+                if AuditState.is_cancelled: return []
+                await asyncio.sleep(idx * 0.2)
+                async with sem_deep:
+                    return await ai_service.deep_audit_batch(chunk_data, self.custom_rules)
 
-        if deep_chunks:
-            async def run_all_deep_audits():
-                tasks = [process_deep_chunk(idx, c) for idx, c in enumerate(deep_chunks)]
-                results = []
-                for f in asyncio.as_completed(tasks):
-                    if AuditState.is_cancelled:
-                        logger.warning("❌ CẢNH BÁO: Kiểm toán đã bị hủy bởi người dùng.")
-                        raise Exception("Kiểm toán đã bị hủy bởi người dùng.")
-                    res = await f
-                    results.append(res)
-                return results
+            if deep_chunks:
+                async def run_all_deep_audits():
+                    tasks = [process_deep_chunk(idx, c) for idx, c in enumerate(deep_chunks)]
+                    results = []
+                    for f in asyncio.as_completed(tasks):
+                        if AuditState.is_cancelled:
+                            logger.warning("❌ CẢNH BÁO: Kiểm toán đã bị hủy bởi người dùng.")
+                            raise Exception("Kiểm toán đã bị hủy bởi người dùng.")
+                        res = await f
+                        results.append(res)
+                    return results
+                    
+                try:
+                    loop = asyncio.get_event_loop()
+                    if loop.is_closed(): loop = asyncio.new_event_loop()
+                except RuntimeError:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    
+                completed_deep_results = loop.run_until_complete(run_all_deep_audits())
                 
-            try:
-                loop = asyncio.get_event_loop()
-                if loop.is_closed(): loop = asyncio.new_event_loop()
-            except RuntimeError:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                
-            completed_deep_results = loop.run_until_complete(run_all_deep_audits())
-            
-            confirmed_violations = []
-            flagged_violations = []
-            for reasoning_violations in completed_deep_results:
-                for rv in reasoning_violations:
-                    if rv.get('needs_verification'):
-                        flagged_violations.append(rv)
-                    else:
-                        confirmed_violations.append(rv)
-                        
-            # BƯỚC 3.7: CROSS-CHECK FLAGGED ISSUES (TWO-PASS AUDIT)
-            if flagged_violations:
-                logger.info(f"[3.7/5] Bước 3.7: Xác minh chéo (Cross-Check) {len(flagged_violations)} lỗi bị AI cắm cờ...")
-                from src.engine.symbol_indexer import AstContextExtractor
-                indexer = AstContextExtractor(self.target_dir)
-                indexer.index_project()
-                
-                context_cache = {}
-                for fv in flagged_violations:
-                    target = fv.get('verify_target')
-                    if target and target not in context_cache:
-                        context_cache[target] = indexer.get_symbol_snippet(target)
-                        
-                verified_issues = loop.run_until_complete(ai_service.verify_flagged_issues(flagged_violations, context_cache))
-                confirmed_violations.extend(verified_issues)
-                
-            for rv in confirmed_violations:
-                weight = float(rv.get('weight', -3.0))
-                if weight > 0: weight = -weight
-                
-                pillar = rv.get('type', 'Maintainability')
-                from src.config import WEIGHTS
-                if pillar not in WEIGHTS:
-                    pillar = 'Maintainability' # Default
-                
-                self.log_violation(
-                    pillar, 
-                    rv.get('file', 'unknown'), 
-                    rv.get('reason', 'AI Logic Audit'), 
-                    weight,
-                    rule_id=rv.get('rule_id', 'AI_REASONING'),
-                    line=rv.get('line', 0),
-                    is_custom=rv.get('is_custom', False)
-                )
+                confirmed_violations = []
+                flagged_violations = []
+                for reasoning_violations in completed_deep_results:
+                    for rv in reasoning_violations:
+                        if rv.get('needs_verification'):
+                            flagged_violations.append(rv)
+                        else:
+                            confirmed_violations.append(rv)
+                            
+                # BƯỚC 3.7: CROSS-CHECK FLAGGED ISSUES (TWO-PASS AUDIT)
+                if flagged_violations:
+                    logger.info(f"[3.7/5] Bước 3.7: Xác minh chéo (Cross-Check) {len(flagged_violations)} lỗi bị AI cắm cờ...")
+                    from src.engine.symbol_indexer import AstContextExtractor
+                    indexer = AstContextExtractor(self.target_dir)
+                    indexer.index_project()
+                    
+                    context_cache = {}
+                    for fv in flagged_violations:
+                        target = fv.get('verify_target')
+                        if target and target not in context_cache:
+                            context_cache[target] = indexer.get_symbol_snippet(target)
+                            
+                    verified_issues = loop.run_until_complete(ai_service.verify_flagged_issues(flagged_violations, context_cache))
+                    confirmed_violations.extend(verified_issues)
+                    
+                for rv in confirmed_violations:
+                    try:
+                        weight = float(rv.get('weight', -3.0))
+                    except (ValueError, TypeError):
+                        weight = -3.0  # Fallback an toàn nếu AI trả giá trị không hợp lệ
+                    if weight > 0: weight = -weight
+                    
+                    pillar = rv.get('type', 'Maintainability')
+                    from src.config import WEIGHTS
+                    if pillar not in WEIGHTS:
+                        pillar = 'Maintainability'
+                    
+                    self.log_violation(
+                        pillar, 
+                        rv.get('file', 'unknown'), 
+                        rv.get('reason', 'AI Logic Audit'), 
+                        weight,
+                        rule_id=rv.get('rule_id', 'AI_REASONING'),
+                        line=rv.get('line', 0),
+                        is_custom=rv.get('is_custom', False)
+                    )
+        else:
+            # AI TẮT: Chỉ dùng Static Analysis (Regex + AST), ghi nhận trực tiếp
+            logger.info("[3.5/5] ⏭️ AI đã bị TẮT (AI_ENABLED=false). Bỏ qua bước Xác thực AI.")
+            logger.info("[3.6/5] ⏭️ AI đã bị TẮT. Bỏ qua bước AI Reasoning Audit.")
+            for v in automated_violations:
+                is_custom = v.get('rule_id', '').startswith('CUSTOM_') or v.get('rule_id', '').startswith('FORBIDDEN')
+                self.log_violation(v['type'], v['file'], v['reason'], v['weight'], snippet=v.get('snippet', ''), rule_id=v.get('rule_id', ''), line=v.get('line', 0), is_custom=is_custom)
 
         # BƯỚC 4: AGGREGATION (Tổng hợp điểm số Phân cấp)
         logger.info("[4/5] Bước 4: Tổng hợp dữ liệu (Aggregation)...")
@@ -293,8 +301,11 @@ class CodeAuditor:
         
         auth_tracker = AuthorshipTracker(self.target_dir)
         
-        # Ánh xạ file -> feature
-        file_to_feature = {f['path']: f.get('feature', 'unknown') for f in self.discovery_data['files']}
+        # Ánh xạ file -> feature (dùng relative path vì violations đã được normalize sang relative)
+        file_to_feature = {
+            os.path.relpath(f['path'], self.target_dir): f.get('feature', 'unknown') 
+            for f in self.discovery_data['files']
+        }
         
         # Khởi tạo bảng điểm phạt: feature -> pillar -> punishment
         feature_punishments = {}

@@ -12,8 +12,12 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-# Default to Docker compose service or localhost for local testing
-DB_URL = os.environ.get('DATABASE_URL', 'postgresql://postgres:postgrespassword@localhost:5432/auditor_v2')
+# Database URL: PHẢI được cấu hình qua biến môi trường DATABASE_URL hoặc docker-compose.yml
+# Fallback chỉ dùng cho local development (yêu cầu cấu hình riêng)
+DB_URL = os.environ.get('DATABASE_URL')
+if not DB_URL:
+    logger.warning("DATABASE_URL not set! Database operations will fail. Set it in .env or docker-compose.yml.")
+    DB_URL = 'postgresql://localhost:5432/auditor_v2'  # Sẽ fail-fast nếu chưa cấu hình
 
 class AuditDatabase:
     """
@@ -196,35 +200,40 @@ class AuditDatabase:
 
     @staticmethod
     def toggle_core_rule(target_id, rule_id, is_disabled):
-        """Toggles a specific core rule for a project."""
+        """Toggles a specific core rule for a project (atomic operation)."""
         conn = AuditDatabase.get_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT id, disabled_core_rules FROM project_rules WHERE target_id = %s', (target_id,))
-        row = cursor.fetchone()
-        
-        disabled_rules = []
-        if row and row[1]:
-            try:
-                disabled_rules = json.loads(row[1])
-            except Exception as e:
-                logger.warning(f"Error parsing disabled_core_rules: {e}")
-                pass
+        try:
+            # SELECT ... FOR UPDATE: Lock row để đảm bảo atomic read-modify-write
+            cursor.execute('SELECT id, disabled_core_rules FROM project_rules WHERE target_id = %s FOR UPDATE', (target_id,))
+            row = cursor.fetchone()
+            
+            disabled_rules = []
+            if row and row[1]:
+                try:
+                    disabled_rules = json.loads(row[1])
+                except (json.JSONDecodeError, TypeError) as e:
+                    logger.warning(f"Error parsing disabled_core_rules: {e}")
+                    
+            if is_disabled and rule_id not in disabled_rules:
+                disabled_rules.append(rule_id)
+            elif not is_disabled and rule_id in disabled_rules:
+                disabled_rules.remove(rule_id)
                 
-        if is_disabled and rule_id not in disabled_rules:
-            disabled_rules.append(rule_id)
-        elif not is_disabled and rule_id in disabled_rules:
-            disabled_rules.remove(rule_id)
+            disabled_str = json.dumps(disabled_rules)
             
-        disabled_str = json.dumps(disabled_rules)
-        
-        if row:
-            cursor.execute('UPDATE project_rules SET disabled_core_rules = %s, updated_at = CURRENT_TIMESTAMP WHERE target_id = %s', (disabled_str, target_id))
-        else:
-            cursor.execute('INSERT INTO project_rules (target_id, natural_text, compiled_json, disabled_core_rules) VALUES (%s, %s, %s, %s)', (target_id, "", None, disabled_str))
-            
-        conn.commit()
-        cursor.close()
-        conn.close()
+            if row:
+                cursor.execute('UPDATE project_rules SET disabled_core_rules = %s, updated_at = CURRENT_TIMESTAMP WHERE target_id = %s', (disabled_str, target_id))
+            else:
+                cursor.execute('INSERT INTO project_rules (target_id, natural_text, compiled_json, disabled_core_rules) VALUES (%s, %s, %s, %s)', (target_id, "", None, disabled_str))
+                
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            cursor.close()
+            conn.close()
 
     @staticmethod
     def save_custom_weights(target_id, custom_weights):

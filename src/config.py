@@ -23,7 +23,15 @@ K_FACTOR = 2.0
 
 # TEST MODE: Giới hạn số file được phân tích để tiết kiệm Token (chỉ phân tích tối đa N file)
 # Đặt thành 0 hoặc xóa khỏi .env để tắt Test Mode và quét toàn bộ dự án
-TEST_MODE_LIMIT_FILES = int(os.getenv("TEST_MODE_LIMIT_FILES", 0))
+try:
+    TEST_MODE_LIMIT_FILES = int(os.getenv("TEST_MODE_LIMIT_FILES", 0))
+except (ValueError, TypeError):
+    TEST_MODE_LIMIT_FILES = 0
+
+# AI TOGGLE: Bật/tắt việc sử dụng AI trong quá trình Audit
+# true  = Bật AI (Hybrid Validation + Deep Reasoning + Cross-Check) — đầy đủ nhưng tốn token
+# false = Tắt AI, chỉ dùng Static Analysis (Regex + AST) — nhanh, miễn phí, không cần API key
+AI_ENABLED = os.getenv("AI_ENABLED", "true").lower() in ("true", "1", "yes")
 
 # [DEPRECATED] RULES_METADATA & SEVERITY have been moved to: src/engine/rules.json
 

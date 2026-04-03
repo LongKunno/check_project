@@ -46,7 +46,8 @@ def double_check_modular(file_list_json, rules_json):
                 tree = None
                 if file_path.endswith('.py'):
                     try: tree = ast.parse(content)
-                    except SyntaxError: pass
+                    except SyntaxError:
+                        logger.debug(f"Skipped AST parse for {file_path}: SyntaxError (file may have invalid Python syntax)")
 
                 for scanner in scanners:
                     scan_results = scanner.scan(file_path, content, lines, tree, rules)
@@ -102,7 +103,10 @@ class VerificationStep:
             for r in merged.get('rules', []):
                 r_id = r.get('id')
                 if r_id and r_id in custom_weights:
-                    r['weight'] = float(custom_weights[r_id])
+                    try:
+                        r['weight'] = float(custom_weights[r_id])
+                    except (ValueError, TypeError):
+                        logger.warning(f"Invalid custom weight for rule {r_id}: {custom_weights[r_id]}")
 
         # Merge thêm Custom Rules (do AI Compiler sinh ra)
         custom = self.custom_rules.get('compiled_json')

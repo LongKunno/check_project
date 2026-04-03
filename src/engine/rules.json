@@ -39,11 +39,11 @@
       "reason": "Potential SQL Injection (Insecure string interpolation in DB query)",
       "weight": -8.0,
       "regex": {
-        "pattern": "(?i)(\\.execute\\(.*[f\"'].*\\{.*\\}.*[\"']\\)|\\.execute\\(.*%s.*\\s*%.*\\)|\\.execute\\(.*\\.format\\(.*\\))"
+        "pattern": "(?i)(\\.execute\\(\\s*f[\"']|execute\\([^)]*\\.format\\()"
       },
       "ast": null,
       "ai": {
-        "prompt": "Phân tích đoạn code có thể dính SQL Injection. Xác nhận xem có dữ liệu người dùng (user input) được nối trực tiếp vào câu lệnh SQL mà không qua parameterized query/ORM không."
+        "prompt": "Phân tích đoạn code có thể dính SQL Injection. Chỉ cảnh báo khi dữ liệu người dùng (user input) được NỐI TRỰC TIẾP vào câu lệnh SQL bằng f-string hoặc .format(). KHÔNG cảnh báo nếu code dùng parameterized query (%s, $1, ?) với tuple/list tham số riêng biệt — đó là cách viết đúng."
       }
     },
     {
@@ -175,7 +175,9 @@
         "type": "dangerous_functions",
         "targets": [{"name": "print", "reason": "Print statement found in production code. Use logger instead."}]
       },
-      "ai": null
+      "ai": {
+        "prompt": "Kiểm tra xem lệnh print() này có nằm trong FILE TEST (tests/, test_*.py, *_test.py) hay không. Nếu CÓ, hãy loại bỏ vi phạm vì print trong test là hợp lệ. Chỉ cảnh báo nếu print nằm trong code production (src/, app/, main.py, v.v.)."
+      }
     },
     {
       "id": "BARE_EXCEPT",
@@ -369,12 +371,10 @@
       "debt": 15,
       "reason": "String concatenation using `+=` inside a loop is slow. Prefer `list.append()` and `''.join()`.",
       "weight": -3.0,
-      "regex": {
-        "pattern": "\\+\\="
-      },
+      "regex": null,
       "ast": null,
       "ai": {
-        "prompt": "Kiểm tra xem phép toán `+=` này có đang được dùng để nối Chuỗi (String) bên trong một Vòng lặp (for/while) không. Nếu chỉ cộng Số nguyên (Integer) hoặc nối chuỗi ở ngoài vòng lặp thì loại bỏ."
+        "prompt": "Tìm các trường hợp nối chuỗi (String concatenation) bằng toán tử `+=` BÊN TRONG vòng lặp (for/while). Ví dụ: `result += some_string` trong loop. KHÔNG cảnh báo nếu: (1) `+=` dùng với số (int/float: counter += 1, total += score), (2) `+=` nằm NGOÀI vòng lặp, (3) `+=` dùng với list (.extend thay vì +=). Chỉ báo cáo khi CÓ BẰNG CHỨNG rõ ràng là string concat trong loop."
       }
     },
     {
@@ -401,12 +401,10 @@
       "debt": 30,
       "reason": "Modifying a dictionary or list while iterating over it causes a RuntimeError.",
       "weight": -6.0,
-      "regex": {
-        "pattern": "for\\s+\\w+\\s+in\\s+(\\w+)\\s*:"
-      },
+      "regex": null,
       "ast": null,
       "ai": {
-        "prompt": "Kiểm tra xem vòng lặp này có thực sự ĐANG CỐ TÌNH xóa (del, pop, remove) hoặc sửa đổi kích thước của chính Mảng/Từ điển (List/Dict) mà nó đang dùng để duyệt (Iterate) không? (Ví dụ: `for k in my_dict: del my_dict[k]`). Nếu đúng, xác nhận vi phạm (vì Python sẽ throw RuntimeError)."
+        "prompt": "Tìm các trường hợp vòng lặp `for x in collection:` mà BÊN TRONG body của vòng lặp, chính `collection` đó bị THAY ĐỔI KÍCH THƯỚC (del, pop, remove, clear, append, extend, update, __delitem__). Ví dụ: `for k in my_dict: del my_dict[k]` hoặc `for item in my_list: my_list.remove(item)`. KHÔNG báo cáo nếu: (1) collection chỉ được đọc (.get(), indexing, iteration), (2) mutation xảy ra trên collection KHÁC, (3) iteration dùng bản copy (list(dict.keys()), dict.copy()). Chỉ báo cáo khi có bằng chứng rõ ràng về mutation trên chính collection đang iterate."
       }
     },
     {

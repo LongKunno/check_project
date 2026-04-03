@@ -262,3 +262,58 @@ dashboard/src/components/views/
 ### Hệ quả (Consequences)
 - **Tích cực**: `api_server.py` giảm từ 726 → ≈90 dòng. `App.jsx` giảm từ 1043 → 557 dòng. Frontend bundle index giảm −30%.
 - **Cần lưu ý**: Khi thêm route mới, phải xác định đúng router file thay vì thêm vào `api_server.py`.
+
+---
+
+## ADR-012: Self-Audit Rule Quality Fix (Chiến dịch Sửa Lỗi Bộ Quy Tắc)
+
+- **Ngày**: 2026-04-03
+- **Trạng thái**: Accepted
+
+### Vấn đề (Problem)
+Chạy self-audit cho dự án phát hiện ra **73 violations** ban đầu, nhưng trong đó **17% là False Positive** do 3 bug chính trong engine:
+1. `UNUSED_IMPORT` không hiểu dotted imports (`import urllib.parse`, `import starlette.formparsers`).
+2. `MUTATING_COLLECTION_ITERATION` Regex `for\s+\w+\s+in\s+(\w+):` match MỌI vòng for-in.
+3. `SLOW_STRING_CONCAT` Regex `\+=` match cả phép cộng số (`counter += 1`).
+4. `SQL_INJECTION` Regex match cả parameterized queries (`execute(%s, (param,))`).
+5. `PRINT_STATEMENT` không skip test files và `__main__` guard.
+
+### Giải pháp (Decision)
+
+**Engine Rule Fixes:**
+
+| Rule | Before | After |
+|---|---|---|
+| `UNUSED_IMPORT` | Chỉ track `ast.Name` | Bổ sung **Attribute chain tracking** cho dotted imports |
+| `MUTATING_COLLECTION_ITERATION` | Regex match tất cả `for-in` | Chuyển sang **AI-only** detection |
+| `SLOW_STRING_CONCAT` | Regex match tất cả `+=` | Chuyển sang **AI-only** detection |
+| `SQL_INJECTION` | Regex match cả parameterized | Regex chỉ match `f-string` và `.format()` trong execute |
+| `PRINT_STATEMENT` | Bắt mọi `print()` | Skip test files + `__main__` guard |
+
+**Code Quality Fixes:**
+
+| Bug | Fix |
+|---|---|
+| Hardcoded `DATABASE_URL` password | Xóa fallback chứa credentials, fail-fast nếu thiếu env |
+| `int()` crash trên env | Bọc `try/except ValueError` |
+| Memory leak `JobManager` | Thêm `cleanup_old_jobs()` tự động mỗi 1h |
+| `toggle_core_rule` race condition | `SELECT...FOR UPDATE` + transaction |
+| `res['final']` KeyError scoring | Dùng `.get('final', 0)` |
+| Swallowed exceptions | Thêm `logger.debug/warning` thay `pass` |
+| DoS multipart 100K | Giảm xuống 10K |
+| Hardcoded CORS IPs | Đọc từ env `CORS_ORIGINS` |
+
+### Kết quả định lượng
+
+| Metric | Trước | Sau | Cải thiện |
+|---|---|---|---|
+| Total violations | 73 | **15** | **-79%** |
+| False Positive Rate | 17% | **~0%** | **-100%** |
+| Score | 23.41 | **39.89** | **+70%** |
+
+### Tại sao?
+Khi audit engine tự audit chính mình, False Positive phải gần 0% để đảm bảo uy tín. Mỗi FP sẽ nhân rộng trên MỌI dự án được audit → ảnh hưởng hệ thống.
+
+### Hệ quả (Consequences)
+- **Tích cực**: Engine chính xác hơn, score phản ánh đúng thực tế, không còn FP cho dotted imports.
+- **Lưu ý**: 3 rules chuyển sang AI-only (`SLOW_STRING_CONCAT`, `MUTATING_COLLECTION_ITERATION`, và `PRINT_STATEMENT` filter) → cần `AI_ENABLED=true` để phát hiện.

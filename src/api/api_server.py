@@ -6,19 +6,19 @@ Entry point: khởi tạo FastAPI app, cấu hình Middleware, đăng ký Router
 import os
 import sys
 import logging
-import asyncio
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
-# HACK: Tăng giới hạn multipart upload cho Starlette (mặc định 1000 file → 100,000)
+# Monkey-patch: Tăng giới hạn multipart upload cho Starlette
+# Mặc định 1000 file → 10,000 (đủ cho dự án lớn, hạn chế DoS)
 import starlette.formparsers
 _original_multipart_init = starlette.formparsers.MultiPartParser.__init__
 
 def _patched_multipart_init(self, *args, **kwargs):
-    kwargs['max_files'] = 100000
-    kwargs['max_fields'] = 100000
+    kwargs['max_files'] = 10000
+    kwargs['max_fields'] = 10000
     _original_multipart_init(self, *args, **kwargs)
 
 starlette.formparsers.MultiPartParser.__init__ = _patched_multipart_init
@@ -98,12 +98,12 @@ async def add_private_network_header(request: Request, call_next):
         response.headers["Access-Control-Allow-Headers"] = "*"
     return response
 
+# CORS origins: Đọc từ env hoặc mặc định cho local development
+_cors_origins = os.environ.get('CORS_ORIGINS', 'http://localhost:3000').split(',')
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

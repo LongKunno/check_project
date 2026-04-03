@@ -88,7 +88,7 @@ class PythonASTScanner(BaseScanner):
         disabled_ids = rules.get('disabled_ids', [])
 
         ast_rules_by_type = {}
-        dangerous_functions_rule = None
+        dangerous_functions_rules = []  # Hỗ trợ nhiều rule cùng type dangerous_functions
 
         for r in rules.get('rules', []):
             if r.get('id') in disabled_ids:
@@ -98,14 +98,14 @@ class PythonASTScanner(BaseScanner):
                 continue
             ast_type = ast_cfg.get('type')
             if ast_type == 'dangerous_functions':
-                dangerous_functions_rule = r
+                dangerous_functions_rules.append(r)
             elif ast_type:
                 ast_rules_by_type[ast_type] = r
 
         dangerous_funcs = {}
-        if dangerous_functions_rule:
-            for target in dangerous_functions_rule.get('ast', {}).get('targets', []):
-                dangerous_funcs[target['name']] = (dangerous_functions_rule, target)
+        for df_rule in dangerous_functions_rules:
+            for target in df_rule.get('ast', {}).get('targets', []):
+                dangerous_funcs[target['name']] = (df_rule, target)
 
         for parent_node in ast.walk(tree):
             for child in ast.iter_child_nodes(parent_node):
@@ -177,6 +177,39 @@ class PythonASTScanner(BaseScanner):
 
                 if func_name in dangerous_funcs:
                     base_rule, target_cfg = dangerous_funcs[func_name]
+                    
+                    # Skip print() nếu:
+                    # 1. Nằm trong `if __name__ == "__main__":` (CLI entrypoint)
+                    # 2. Nằm trong test file (tests/, test_*.py, *_test.py)
+                    if func_name == 'print' and base_rule.get('id') == 'PRINT_STATEMENT':
+                        # Check test file
+                        import os
+                        basename = os.path.basename(file_path)
+                        is_test_file = (
+                            '/tests/' in file_path.replace('\\', '/') or
+                            basename.startswith('test_') or
+                            basename.endswith('_test.py')
+                        )
+                        if is_test_file:
+                            continue
+                        
+                        # Check __main__ guard
+                        in_main_guard = False
+                        parent = getattr(node, 'parent', None)
+                        while parent:
+                            if isinstance(parent, ast.If):
+                                test = parent.test
+                                if (isinstance(test, ast.Compare) and
+                                    isinstance(test.left, ast.Name) and test.left.id == '__name__' and
+                                    len(test.comparators) == 1 and
+                                    isinstance(test.comparators[0], ast.Constant) and
+                                    test.comparators[0].value == '__main__'):
+                                    in_main_guard = True
+                                    break
+                            parent = getattr(parent, 'parent', None)
+                        if in_main_guard:
+                            continue
+                    
                     snippet = "\n".join(lines[max(0, node.lineno-2):min(len(lines), node.lineno+1)])
                     merged_rule = {**base_rule, "reason": target_cfg.get('reason', base_rule.get('reason'))}
                     if 'weight' in target_cfg:
@@ -247,8 +280,35 @@ class PythonASTScanner(BaseScanner):
 
         # UNUSED_IMPORT
         if 'UNUSED_IMPORT' not in disabled_ids:
+            # Bổ sung: Track Attribute chains (urllib.parse.quote → "urllib.parse")
+            # để xử lý đúng dotted imports
+            used_dotted_names = set()
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Attribute):
+                    # Xây dựng chuỗi từ Attribute chain: urllib.parse.quote → ["urllib", "urllib.parse"]
+                    parts = []
+                    curr = node
+                    while isinstance(curr, ast.Attribute):
+                        parts.insert(0, curr.attr)
+                        curr = curr.value
+                    if isinstance(curr, ast.Name):
+                        parts.insert(0, curr.id)
+                        # Tạo mọi prefix: ["urllib", "urllib.parse", "urllib.parse.quote"]
+                        for i in range(1, len(parts) + 1):
+                            used_dotted_names.add(".".join(parts[:i]))
+
             for name, line_no in imported_names:
-                if name not in used_names and name not in ['os', 'sys', 'json', 'ast', 're']:
+                # Skip nếu:
+                # 1. Tên đơn giản nằm trong used_names (ast.Name tracking)
+                # 2. Tên dotted nằm trong used_dotted_names (Attribute chain tracking)
+                # 3. Root module (phần trước dấu chấm đầu tiên) nằm trong used_names
+                root_name = name.split('.')[0]
+                is_used = (
+                    name in used_names or              # Dùng trực tiếp: json.loads() → "json" in used_names
+                    name in used_dotted_names or        # Dùng qua Attribute: urllib.parse.quote() → "urllib.parse" in dotted
+                    root_name in used_dotted_names       # Root match: starlette.formparsers → "starlette" in dotted
+                )
+                if not is_used and name not in ['os', 'sys', 'json', 'ast', 're']:
                     snippet = lines[line_no-1] if line_no <= len(lines) else ""
                     violations.append({
                         "file": file_path, "type": "Maintainability",

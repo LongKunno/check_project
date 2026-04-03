@@ -60,10 +60,10 @@ class ScoringEngine:
         
         total_weight = sum(res.get('loc', 0) for res in feature_results.values())
         if total_weight > 0:
-            total_weighted_score = sum(res['final'] * res.get('loc', 0) for res in feature_results.values())
+            total_weighted_score = sum(res.get('final', 0) * res.get('loc', 0) for res in feature_results.values())
             return round(total_weighted_score / total_weight, 2)
             
-        total = sum(f['final'] for f in feature_results.values())
+        total = sum(f.get('final', 0) for f in feature_results.values())
         return round(total / len(feature_results), 2)
 
     @staticmethod

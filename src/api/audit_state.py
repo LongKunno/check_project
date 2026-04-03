@@ -26,8 +26,14 @@ class JobManager:
     # Thread-local storage để track Job đang chạy trên thread nào
     _thread_local = threading.local()
     
+    # Thời gian giữ lại job đã hoàn thành (giây) — dọn sau 1 giờ
+    JOB_RETENTION_SECONDS = 3600
+    
     @classmethod
     def create_job(cls, target: str = "unknown") -> str:
+        # Dọn dẹp jobs cũ trước khi tạo mới để ngăn memory leak
+        cls.cleanup_old_jobs()
+        
         job_id = str(uuid.uuid4())
         cls.jobs[job_id] = JobStatus(
             job_id=job_id,
@@ -39,6 +45,20 @@ class JobManager:
         # Xoá legacy logs cho phiên mới để không bị rác màn hình
         cls.legacy_logs.clear()
         return job_id
+    
+    @classmethod
+    def cleanup_old_jobs(cls):
+        """Dọn dẹp jobs đã COMPLETED/FAILED quá JOB_RETENTION_SECONDS (memory leak prevention)."""
+        now = time.time()
+        stale_ids = [
+            jid for jid, job in cls.jobs.items()
+            if job.status in ("COMPLETED", "FAILED")
+            and job.ended_at
+            and (now - job.ended_at) > cls.JOB_RETENTION_SECONDS
+        ]
+        for jid in stale_ids:
+            del cls.jobs[jid]
+            cls.job_logs.pop(jid, None)
         
     @classmethod
     def update_job(cls, job_id: str, status: str, message: str = "", result: dict = None):

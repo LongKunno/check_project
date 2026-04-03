@@ -24,12 +24,19 @@ graph TD
 ### 1. Khám phá Tài nguyên (Discovery)
 - **Cách hoạt động:** Điểm bắt đầu tại `src/engine/discovery.py`. Hệ thống đếm LOC (Lines of Code) và lập bản đồ các File theo Tính năng (Feature). Nó ưu tiên ánh xạ các thư mục logic nghiệp vụ thay vì quét mù quáng các file tĩnh không logic (CSS/HTML).
 - **Tối ưu Mode Test:** Có chế độ giới hạn số file khi chạy kiểm thử để tiết kiệm Token LLM (giới hạn `TEST_MODE_LIMIT_FILES`).
+- **Bật/Tắt AI:** Biến môi trường `AI_ENABLED` (mặc định `true`) cho phép tắt toàn bộ 3 bước AI (3.5, 3.6, 3.7). Khi `AI_ENABLED=false`, hệ thống chỉ chạy Static Analysis (Regex + AST) — phù hợp khi không có API key hoặc cần audit nhanh không tốn token.
 
 ### 2. Quét Tĩnh Cú pháp (Static Scanning & Verification)
 - Kết hợp **Modular Scanners** khắt khe nhưng nhẹ nhàng cho CPU.
 - `PythonASTScanner`: Đọc cây Cú pháp Python thuần túy. Tính toán Cyclomatic Complexity, Length của hàm, phát hiện N+1 Query vòng lặp, Bare Excepts. Xây dựng "Bản đồ đường đi Import" sơ khai nhằm chẩn đoán chứng Lỗi phân nhánh vòng tròn (Circular Dependency).
 - `RegexScanner`: Tìm kiếm siêu nhanh các đoạn Hardcode password hoặc các quy ước cấu trúc tự do.
 *Output bước này: Danh sách lỗi thô (Raw Violations).*
+
+#### Bug Fixes (2026-04-03)
+
+- **UNUSED_IMPORT Dotted Import Fix:** Luật phát hiện import thừa trước đây chỉ track `ast.Name` nodes, gây False Positive cho dotted imports (`import urllib.parse`, `import starlette.formparsers`). Fix: Bổ sung **Attribute chain tracking** — xây dựng `used_dotted_names` set từ `ast.Attribute` chains để match chính xác `urllib.parse.quote()` → `"urllib.parse"` is used. Tham chiếu: `src/engine/scanners.py` dòng 249-283.
+- **MUTATING_COLLECTION_ITERATION FP Fix:** Rule `for x in collection:` trước đây dùng Regex match MỌI vòng `for-in`, gây False Positive khi collection chỉ được đọc. Fix: Xóa Regex, chuyển hoàn toàn sang **AI-only detection** với prompt chi tiết yêu cầu bằng chứng mutation (`del`, `pop`, `remove`). Tham chiếu: `src/engine/rules.json` rule `MUTATING_COLLECTION_ITERATION`.
+- **PRINT_STATEMENT `__main__` Guard:** Rule `print()` trước đây bắt cả print trong block `if __name__ == "__main__":`. Fix: Walk parent chain để phát hiện `__main__` guard, skip nếu print nằm trong CLI entrypoint. Tham chiếu: `src/engine/scanners.py` dòng 181-198.
 
 ### 3. Lớp Gác cổng AI (AI Hybrid Validation)
 - Công cụ tĩnh (AST) tuy nhanh nhưng thường đánh giá theo hướng cực đoan dẫn đến dư thừa lỗi ảo (False Positive). Vd: Cứ thấy `eval` là quy tội bảo mật dù nó đã bọc Filter an toàn.
