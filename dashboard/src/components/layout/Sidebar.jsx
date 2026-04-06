@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Shield, FolderOpen, 
   Activity, ShieldCheck, Wand2, FileSearch, 
-  Moon, Sun, Settings, BarChart3 
+  Moon, Sun, Settings, BarChart3, Users
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -48,7 +48,7 @@ const Sidebar = ({
 
         <div className="px-3 mb-6 shrink-0 mt-2">
            <div className={cn("text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 transition-all", isSidebarCollapsed ? "text-center opacity-70" : "px-3 opacity-70")}>
-              {isSidebarCollapsed ? "Dự án" : "Dự án hiện tại"}
+              {isSidebarCollapsed ? "Repo" : "Current repository"}
            </div>
            
            {!isSidebarCollapsed ? (
@@ -67,7 +67,7 @@ const Sidebar = ({
            ) : (
              <div 
                 className="flex justify-center items-center w-10 aspect-square bg-slate-800/50 rounded-xl border border-slate-700 mx-auto cursor-pointer hover:bg-slate-700 transition-colors"
-                title={configuredRepos.find(r => r.id === selectedRepoId)?.name || 'Chọn mục tiêu'}
+                title={configuredRepos.find(r => r.id === selectedRepoId)?.name || 'Select target'}
              >
                 <FolderOpen size={18} className="text-violet-400" />
              </div>
@@ -76,24 +76,33 @@ const Sidebar = ({
 
         <div className="flex flex-col gap-2 px-3 mt-2 flex-1 overflow-hidden">
            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest px-3 mb-2 opacity-70">
-              {!isSidebarCollapsed ? "Tính năng chính" : "•••"}
+              {!isSidebarCollapsed ? "Main features" : "•••"}
            </div>
            
            <button 
               onClick={() => navigate('/project-scores')}
               className={cn("flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left overflow-hidden shrink-0 group", isPathActive('/project-scores') ? 'bg-pink-500/10 text-pink-400 border border-pink-500/20 shadow-inner' : 'text-slate-400 hover:bg-white/5 hover:text-white border border-transparent')}
-              title="Điểm các Dự án"
+              title="Project Leaderboard"
            >
               <BarChart3 size={20} className={cn("shrink-0 transition-transform text-pink-500/80", isPathActive('/project-scores') ? "scale-110" : "group-hover:scale-110")} />
-              {!isSidebarCollapsed && <span className="font-bold text-sm whitespace-nowrap">Điểm các Dự án</span>}
+              {!isSidebarCollapsed && <span className="font-bold text-sm whitespace-nowrap">Project Leaderboard</span>}
            </button>
+
+           <button 
+               onClick={() => navigate('/member-scores')}
+               className={cn("flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left overflow-hidden shrink-0 group", isPathActive('/member-scores') ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-inner' : 'text-slate-400 hover:bg-white/5 hover:text-white border border-transparent')}
+               title="Member Leaderboard"
+            >
+               <Users size={20} className={cn("shrink-0 transition-transform text-cyan-500/80", isPathActive('/member-scores') ? "scale-110" : "group-hover:scale-110")} />
+               {!isSidebarCollapsed && <span className="font-bold text-sm whitespace-nowrap">Member Leaderboard</span>}
+            </button>
 
            <button 
               onClick={() => navigate('/audit')}
               className={cn("flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left overflow-hidden shrink-0 group", isPathActive('/audit') ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20 shadow-inner' : 'text-slate-400 hover:bg-white/5 hover:text-white border border-transparent')}
               title="Dashboard Analytics"
            >
-              <Activity size={20} className={cn("shrink-0 transition-transform", isPathActive('/audit') ? "scale-110" : "group-hover:scale-110")} />
+              <Activity size={20} className={cn("shrink-0 transition-transform text-violet-500/80", isPathActive('/audit') ? "scale-110" : "group-hover:scale-110")} />
               {!isSidebarCollapsed && <span className="font-bold text-sm whitespace-nowrap">Dashboard</span>}
            </button>
            
@@ -102,8 +111,8 @@ const Sidebar = ({
               className={cn("flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left overflow-hidden shrink-0 group", isPathActive('/rules') ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-inner' : 'text-slate-400 hover:bg-white/5 hover:text-white border border-transparent')}
               title="Rule Manager"
            >
-              <ShieldCheck size={20} className={cn("shrink-0 transition-transform", isPathActive('/rules') ? "scale-110" : "group-hover:scale-110")} />
-              {!isSidebarCollapsed && <span className="font-bold text-sm whitespace-nowrap">Danh sách Rule</span>}
+              <ShieldCheck size={20} className={cn("shrink-0 transition-transform text-emerald-500/80", isPathActive('/rules') ? "scale-110" : "group-hover:scale-110")} />
+              {!isSidebarCollapsed && <span className="font-bold text-sm whitespace-nowrap">Rule Manager</span>}
            </button>
            
            <button 
@@ -111,24 +120,24 @@ const Sidebar = ({
               className={cn("flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left overflow-hidden shrink-0 group", isPathActive('/sandbox') ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20 shadow-inner' : 'text-slate-400 hover:bg-white/5 hover:text-white border border-transparent')}
               title="AI Sandbox"
            >
-              <Wand2 size={20} className={cn("shrink-0 transition-transform", isPathActive('/sandbox') ? "scale-110" : "group-hover:scale-110")} />
-              {!isSidebarCollapsed && <span className="font-bold text-sm whitespace-nowrap">Tạo Rule AI</span>}
+              <Wand2 size={20} className={cn("shrink-0 transition-transform text-blue-500/80", isPathActive('/sandbox') ? "scale-110" : "group-hover:scale-110")} />
+              {!isSidebarCollapsed && <span className="font-bold text-sm whitespace-nowrap">AI Sandbox</span>}
            </button>
            
            <button 
               onClick={() => navigate('/history')}
               className={cn("flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left overflow-hidden shrink-0 group mt-1", isPathActive('/history') ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-inner' : 'text-slate-400 hover:bg-white/5 hover:text-white border border-transparent')}
-              title="Lịch sử Quét"
+              title="Audit History"
            >
               <FileSearch size={20} className={cn("shrink-0 transition-transform text-amber-500/80", isPathActive('/history') ? "scale-110" : "group-hover:scale-110")} />
-              {!isSidebarCollapsed && <span className="font-bold text-sm whitespace-nowrap">Lịch sử Audit</span>}
+              {!isSidebarCollapsed && <span className="font-bold text-sm whitespace-nowrap">Audit History</span>}
            </button>
         </div>
         
         <div className="p-4 border-t border-white/5 mt-auto shrink-0 flex flex-col gap-2">
            <div 
               className={cn("flex items-center p-3 rounded-xl border mb-1", aiHealth.status === 'healthy' ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500" : "bg-slate-800/50 border-slate-700 text-slate-400")}
-              title="Trạng thái hệ thống AI"
+              title="AI System Health"
            >
               <div className={cn("w-2 h-2 rounded-full shrink-0", aiHealth.status === 'healthy' ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]" : "bg-slate-500")} />
               {!isSidebarCollapsed && <span className="font-bold text-[11px] uppercase tracking-widest ml-3 whitespace-nowrap">AI {aiHealth.status}</span>}
@@ -137,10 +146,10 @@ const Sidebar = ({
            <button 
               onClick={() => setIsLightMode(!isLightMode)}
               className="flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left text-slate-500 hover:bg-white/5 hover:text-slate-300 overflow-hidden shrink-0 group"
-              title="Giao diện Sáng/Tối"
+              title="Toggle Light/Dark Mode"
            >
               {isLightMode ? <Moon size={20} className="shrink-0 hover:rotate-12 transition-transform" /> : <Sun size={20} className="shrink-0 hover:rotate-90 transition-transform" />}
-              {!isSidebarCollapsed && <span className="font-bold text-sm whitespace-nowrap">Cài đặt giao diện</span>}
+              {!isSidebarCollapsed && <span className="font-bold text-sm whitespace-nowrap">Theme</span>}
            </button>
 
            <button 
@@ -148,7 +157,7 @@ const Sidebar = ({
               className={cn("flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left overflow-hidden shrink-0 group", isPathActive('/settings') ? "bg-slate-500/10 text-slate-400 border border-slate-500/20 shadow-inner" : "text-slate-500 hover:bg-white/5 hover:text-slate-300 border border-transparent")}
            >
               <Settings size={20} className={cn("shrink-0 transition-transform", isPathActive('/settings') ? "rotate-45 text-slate-300" : "group-hover:rotate-45")} />
-              {!isSidebarCollapsed && <span className="font-bold text-sm whitespace-nowrap">Cài đặt Cấu hình</span>}
+              {!isSidebarCollapsed && <span className="font-bold text-sm whitespace-nowrap">Settings</span>}
            </button>
         </div>
       </motion.div>

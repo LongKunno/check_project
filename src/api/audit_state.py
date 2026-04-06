@@ -12,6 +12,7 @@ class JobStatus(BaseModel):
     started_at: float
     ended_at: Optional[float] = None
     target: str = ""
+    job_type: str = "single"  # "single" hoac "batch"
 
 class JobManager:
     """
@@ -28,7 +29,7 @@ class JobManager:
     JOB_RETENTION_SECONDS = 3600
     
     @classmethod
-    def create_job(cls, target: str = "unknown") -> str:
+    def create_job(cls, target: str = "unknown", job_type: str = "single") -> str:
         # Dọn dẹp jobs cũ trước khi tạo mới để ngăn memory leak
         cls.cleanup_old_jobs()
         
@@ -37,7 +38,8 @@ class JobManager:
             job_id=job_id,
             status="PENDING",
             started_at=time.time(),
-            target=target
+            target=target,
+            job_type=job_type
         )
         cls.job_logs[job_id] = []
         return job_id

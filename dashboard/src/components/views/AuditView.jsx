@@ -1,6 +1,6 @@
 /**
- * AuditView — Toàn bộ giao diện Dashboard Audit.
- * Tách từ App.jsx để giảm kích thước file và cải thiện khả năng đọc.
+ * AuditView — Full audit dashboard UI.
+ * Split from App.jsx to reduce file size and improve readability.
  */
 import React from 'react';
 import {
@@ -59,7 +59,7 @@ const AuditView = ({
       {error && (
         <div className="glass-card" style={{ borderColor: 'var(--accent-red)', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--accent-red)' }}>
           <AlertTriangle size={24} />
-          <div><strong>Lỗi thực thi:</strong> {error}</div>
+          <div><strong>Error:</strong> {error}</div>
         </div>
       )}
 
@@ -106,7 +106,7 @@ const AuditView = ({
           {/* Member Selector */}
           {reportView === 'member' && data.scores.members && Object.keys(data.scores.members).length > 0 && (
             <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', alignItems: 'center' }}>
-              <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Tác giả:</span>
+              <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Author:</span>
               <select
                 value={selectedMember}
                 onChange={(e) => setSelectedMember(e.target.value)}
@@ -134,7 +134,7 @@ const AuditView = ({
             >
               <div className="hero-left">
                 <div className="metric-label" style={{ fontSize: '0.85rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  {reportView === 'member' ? <><Users size={20} className="text-emerald-400" /> TỔNG QUAN THÀNH VIÊN: {selectedMember}</> : <><Activity size={20} className="text-blue-400" /> TỔNG QUAN DỰ ÁN</>}
+                  {reportView === 'member' ? <><Users size={20} className="text-emerald-400" /> MEMBER OVERVIEW: {selectedMember}</> : <><Activity size={20} className="text-blue-400" /> PROJECT OVERVIEW</>}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'baseline', marginTop: '1.25rem' }}>
                   <div className="metric-value" style={{
@@ -148,19 +148,19 @@ const AuditView = ({
 
                 {reportView === 'project' && data?.scores?.rating && (
                   <div style={{ marginTop: '1.25rem', fontWeight: 800, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '1rem' }}>
-                    XẾP HẠNG: <span className="status-badge" style={{ fontSize: '1.25rem', padding: '0.6rem 1.25rem', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '14px', color: '#f8fafc' }}>{data.scores.rating}</span>
+                    RATING: <span className="status-badge" style={{ fontSize: '1.25rem', padding: '0.6rem 1.25rem', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '14px', color: '#f8fafc' }}>{data.scores.rating}</span>
                   </div>
                 )}
 
                 <div style={{ display: 'flex', gap: '2.5rem', marginTop: '2.5rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                   <div>
-                    <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tổng số dòng Code</div>
+                    <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Lines of Code</div>
                     <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#f8fafc' }}>
                       {reportView === 'project' ? data?.metrics?.total_loc?.toLocaleString() : (data?.scores?.members?.[selectedMember]?.loc || 0).toLocaleString()}
                     </div>
                   </div>
                   <div>
-                    <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{reportView === 'project' ? 'Số lượng tính năng' : 'Nợ kỹ thuật'}</div>
+                    <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{reportView === 'project' ? 'Features' : 'Tech Debt'}</div>
                     <div style={{ fontSize: '1.5rem', fontWeight: 900, color: reportView === 'member' ? '#f59e0b' : '#f8fafc' }}>
                       {reportView === 'project' ? Object.keys(data?.scores?.features || {}).length : `${data?.scores?.members?.[selectedMember]?.debt_mins || 0}m`}
                     </div>
@@ -234,20 +234,25 @@ const AuditView = ({
                         <th style={{ padding: '0.75rem 0.5rem' }}>Author</th>
                         <th style={{ padding: '0.75rem 0.5rem' }}>Total LOC</th>
                         <th style={{ padding: '0.75rem 0.5rem' }}>Score</th>
+                        <th style={{ padding: '0.75rem 0.5rem' }}>Penalty</th>
                         <th style={{ padding: '0.75rem 0.5rem' }}>Debt</th>
                       </tr>
                     </thead>
                     <tbody>
                       {Object.entries(data?.scores?.members || {})
                         .sort((a, b) => (b[1]?.final || 0) - (a[1]?.final || 0))
-                        .map(([author, res]) => (
-                          <tr key={author} style={{ background: 'rgba(255,255,255,0.02)' }}>
-                            <td style={{ padding: '0.75rem 0.5rem', fontWeight: 700, color: '#f8fafc', borderRadius: '8px 0 0 8px' }}>{author}</td>
-                            <td style={{ padding: '0.75rem 0.5rem', color: '#94a3b8' }}>{res.loc.toLocaleString()} lines</td>
-                            <td style={{ padding: '0.75rem 0.5rem', color: getScoreColorClass(res.final / 10), fontWeight: 800, fontSize: '1.1rem' }}>{res.final}</td>
-                            <td style={{ padding: '0.75rem 0.5rem', color: '#f59e0b', fontWeight: 700, borderRadius: '0 8px 8px 0' }}>{res.debt_mins}m</td>
-                          </tr>
-                        ))}
+                        .map(([author, res]) => {
+                          const totalPenalty = Object.values(res.punishments || {}).reduce((acc, curr) => acc + curr, 0);
+                          return (
+                            <tr key={author} style={{ background: 'rgba(255,255,255,0.02)' }}>
+                              <td style={{ padding: '0.75rem 0.5rem', fontWeight: 700, color: '#f8fafc', borderRadius: '8px 0 0 8px' }}>{author}</td>
+                              <td style={{ padding: '0.75rem 0.5rem', color: '#94a3b8' }}>{res.loc.toLocaleString()} lines</td>
+                              <td style={{ padding: '0.75rem 0.5rem', color: getScoreColorClass(res.final / 10), fontWeight: 800, fontSize: '1.1rem' }}>{res.final}</td>
+                              <td style={{ padding: '0.75rem 0.5rem', color: '#ef4444', fontWeight: 700 }}>{Math.abs(totalPenalty).toFixed(2)}</td>
+                              <td style={{ padding: '0.75rem 0.5rem', color: '#f59e0b', fontWeight: 700, borderRadius: '0 8px 8px 0' }}>{res.debt_mins}m</td>
+                            </tr>
+                          );
+                        })}
                     </tbody>
                   </table>
                 </div>
@@ -275,15 +280,15 @@ const AuditView = ({
           {memoizedRuleBreakdown && memoizedRuleBreakdown.length > 0 && (
             <div className="glass-card mb-6" style={{ background: 'rgba(15,23,42,0.6)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div className="metric-label" style={{ color: '#10b981', fontWeight: 800, fontSize: '0.9rem', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem', textTransform: 'uppercase' }}>
-                <ShieldCheck size={18} /> THỐNG KÊ THEO LUẬT (RULE BREAKDOWN)
+                <ShieldCheck size={18} /> RULE BREAKDOWN
               </div>
               <div style={{ overflowX: 'auto', maxHeight: '350px', overflowY: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: '0 4px', textAlign: 'left' }}>
                   <thead style={{ position: 'sticky', top: 0, background: 'rgba(15,23,42,0.9)', zIndex: 10 }}>
                     <tr style={{ color: '#94a3b8', fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase' }}>
-                      <th style={{ padding: '0.75rem 0.5rem' }}>Mã Luật (Rule ID)</th>
-                      <th style={{ padding: '0.75rem 0.5rem', textAlign: 'center' }}>Số Lỗi</th>
-                      <th style={{ padding: '0.75rem 0.5rem', textAlign: 'center' }}>Tổng Điểm Trừ</th>
+                      <th style={{ padding: '0.75rem 0.5rem' }}>Rule ID</th>
+                      <th style={{ padding: '0.75rem 0.5rem', textAlign: 'center' }}>Count</th>
+                      <th style={{ padding: '0.75rem 0.5rem', textAlign: 'center' }}>Total Penalty</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -306,8 +311,8 @@ const AuditView = ({
             <div className="glass-card" style={{ overflow: 'hidden' }}>
               <div className="metric-label" style={{ marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Code2 size={16} /> SỔ CÁI VI PHẠM (VIOLATION LEDGER)</span>
-                  <span>{activeLedgerTab === 'project' ? (data?.violations?.length || 0) : (data?.scores?.members ? Object.keys(data.scores.members).length : 0)} {activeLedgerTab === 'project' ? 'vấn đề' : 'thành viên'}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Code2 size={16} /> VIOLATION LEDGER</span>
+                  <span>{activeLedgerTab === 'project' ? (data?.violations?.length || 0) : (data?.scores?.members ? Object.keys(data.scores.members).length : 0)} {activeLedgerTab === 'project' ? 'issues' : 'members'}</span>
                 </div>
               </div>
 
@@ -373,7 +378,7 @@ const AuditView = ({
                             onClick={() => setVisibleLimit(prev => prev + 50)}
                             style={{ padding: '0.5rem 1.5rem', background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.3)', color: '#60a5fa', borderRadius: '6px', cursor: 'pointer', transition: 'all 0.2s', fontSize: '0.9rem', fontWeight: 500 }}
                           >
-                            Hiển thị thêm (Còn {currentViolations.length - visibleLimit} lỗi)
+                            Show more ({currentViolations.length - visibleLimit} remaining)
                           </button>
                         </div>
                       )}
@@ -381,13 +386,13 @@ const AuditView = ({
                       {currentViolations.length === 0 && reportView === 'project' && (
                         <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '4rem 0' }}>
                           <CheckCircle size={48} style={{ marginBottom: '1rem', color: 'var(--accent-green)', opacity: 0.5 }} />
-                          <p>Chúc mừng! Không tìm thấy vi phạm nào.</p>
+                          <p>All clear! No violations found.</p>
                         </div>
                       )}
 
                       {reportView === 'member' && currentViolations.length === 0 && (!data.scores.members || Object.keys(data.scores.members).length === 0) && (
                         <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem 0' }}>
-                          <p>Lịch sử Git rỗng. Báo cáo thành viên không khả dụng.</p>
+                          <p>Git history is empty. Member report unavailable.</p>
                         </div>
                       )}
                     </>
@@ -399,23 +404,23 @@ const AuditView = ({
             {/* SIDEBAR INFO */}
             <div className="sidebar">
               <div className="glass-card">
-                <div className="metric-label">THÔNG TIN KIỂM TOÁN</div>
+                <div className="metric-label">AUDIT INFO</div>
                 <div style={{ fontSize: '0.875rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <span style={{ color: 'var(--text-muted)' }}>Project:</span>
                     <span style={{ fontWeight: 600 }}>{data?.project_name || 'N/A'}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Số lượng file:</span>
+                    <span style={{ color: 'var(--text-muted)' }}>Files scanned:</span>
                     <span>{data?.metrics?.total_files || 0} files</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: 'var(--text-muted)' }}>Tiêu chuẩn:</span>
+                    <span style={{ color: 'var(--text-muted)' }}>Standard:</span>
                     <span style={{ color: 'var(--accent-blue)', fontWeight: 600 }}>V3 Stable</span>
                   </div>
                   <div style={{ marginTop: '0.5rem', padding: '0.75rem', background: 'rgba(16,185,129,0.05)', borderRadius: '8px', border: '1px solid rgba(16,185,129,0.1)' }}>
                     <p style={{ fontSize: '0.75rem', color: 'var(--accent-green)', textAlign: 'center' }}>
-                      Hệ thống đã xác thực kết quả dựa trên cây cú pháp AST.
+                      Results validated via AST syntax tree analysis.
                     </p>
                   </div>
                 </div>
@@ -424,13 +429,13 @@ const AuditView = ({
                 {memoizedTopFiles.length > 0 && (
                   <div className="glass-card" style={{ marginTop: '1.5rem' }}>
                     <h3 style={{ marginBottom: '1.2rem', display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '1rem', color: 'var(--text-main)' }}>
-                      <FolderOpen size={18} color="var(--accent-yellow)" /> TOP FILE LỖI NHIỀU NHẤT
+                      <FolderOpen size={18} color="var(--accent-yellow)" /> TOP PROBLEMATIC FILES
                     </h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                       {memoizedTopFiles.map(([filename, count], idx) => (
                         <div key={idx} style={{ background: 'rgba(255,255,255,0.03)', padding: '0.75rem 1rem', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span style={{ fontSize: '0.85rem', wordBreak: 'break-all', paddingRight: '1rem' }}>{filename}</span>
-                          <span className="status-badge" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--accent-red)', whiteSpace: 'nowrap' }}>{count} lỗi</span>
+                          <span className="status-badge" style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--accent-red)', whiteSpace: 'nowrap' }}>{count} issues</span>
                         </div>
                       ))}
                     </div>
@@ -447,10 +452,10 @@ const AuditView = ({
             <BarChart3 size={80} style={{ color: 'var(--accent-blue)' }} />
             <Upload size={32} style={{ position: 'absolute', bottom: -10, right: -10 }} />
           </div>
-          <p style={{ fontSize: '1.5rem', fontWeight: 500, fontFamily: 'var(--font-display)' }}>Sẵn sàng để đánh giá mã nguồn</p>
+          <p style={{ fontSize: '1.5rem', fontWeight: 500, fontFamily: 'var(--font-display)' }}>Ready to audit your codebase</p>
           <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-            {activeTab === 'local' ? 'Chọn thư mục từ máy tính và nhấn nút ' : 'Chọn dự án từ danh sách phía trên và nhấn nút '}
-            <strong>Chạy Kiểm Toán</strong>
+            Select a project from the list above, then click
+            <strong> Run Audit</strong>
           </p>
         </div>
       ) : null}

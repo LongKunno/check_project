@@ -20,13 +20,13 @@ function colorizeLog(text) {
     // Error / warning keywords
     { re: /(\bError\b|\bFailed\b|❌|⚠️|🚨)/g, cls: 'text-rose-400 font-bold' },
     // Success keywords
-    { re: /(\bCompleted\b|✅|hoàn tất|COMPLETED)/g, cls: 'text-emerald-300 font-bold' },
+    { re: /(\bCompleted\b|✅|done|COMPLETED)/g, cls: 'text-emerald-300 font-bold' },
     // Numbers like violations, scores
     { re: /\b(\d+)\s*(vi phạm|violations?|files?|batches?|LOC)\b/gi, cls: 'text-amber-300 font-semibold' },
     // Step labels [X/5]
     { re: /(\[\d+[\.\-]?\d*\/\d+\])/g, cls: 'text-violet-300 font-extrabold' },
     // Brackets like CUSTOM, AI_REASONING
-    { re: /\[(Tùy chỉnh|Core|AI|AI_REASONING|AI_ONLY)\]/g, cls: 'text-sky-300 font-semibold' },
+    { re: /\[(Custom|Core|AI|AI_REASONING|AI_ONLY)\]/g, cls: 'text-sky-300 font-semibold' },
   ];
 
   // Apply first match greedily, build array of spans
@@ -91,7 +91,7 @@ function StepGroup({ stepLabel, lines, isActive, defaultOpen }) {
           <Loader2 size={13} className="text-violet-400 animate-spin ml-auto shrink-0" />
         )}
         {!isActive && (
-          <span className="ml-auto text-xs text-slate-600 font-medium shrink-0">{lines.length} dòng</span>
+          <span className="ml-auto text-xs text-slate-600 font-medium shrink-0">{lines.length} lines</span>
         )}
       </button>
 
@@ -226,7 +226,7 @@ const TerminalLogs = React.memo(({ isAuditing, jobId }) => {
         {groups.length === 0 && (
           <div className="flex items-center gap-3 text-slate-500 p-6 text-sm">
             <Cpu size={18} className="animate-pulse text-violet-400" />
-            <span>Đang khởi động bộ máy kiểm toán...</span>
+            <span>Starting audit engine...</span>
           </div>
         )}
         {groups.map((group, idx) => (

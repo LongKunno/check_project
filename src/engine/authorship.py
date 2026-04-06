@@ -8,12 +8,16 @@ class AuthorshipTracker:
     Theo dõi tác giả của từng dòng mã nguồn dựa trên Git blame.
     Chỉ tính toán các dòng mã được commit trong vòng 6 tháng gần đây
     để đảm bảo tính chính xác và không đánh giá code legacy.
+    
+    Sử dụng author-mail (email) làm khóa chính để phân biệt thành viên,
+    tránh trùng lặp khi cùng một người dùng nhiều tên khác nhau.
     """
     def __init__(self, target_dir):
         self.target_dir = os.path.abspath(target_dir)
         self.is_git_repo = os.path.exists(os.path.join(self.target_dir, '.git'))
         self.file_authors_cache = {}
-        self.member_loc = {}
+        self.member_loc = {}          # { email: int } — LOC trong 6 tháng
+        self.member_names = {}        # { email: name } — Mapping email → display name
 
     def parse_blame(self, file_path):
         """
@@ -46,6 +50,7 @@ class AuthorshipTracker:
             current_commit = None
             is_boundary = False
             current_author = "Unknown"
+            current_email = "unknown@unknown"
             
             i = 0
             while i < len(lines):
@@ -58,26 +63,28 @@ class AuthorshipTracker:
                     # Nếu commit bắt đầu bằng '^', nó là boundary (ngoài phạm vi 6 tháng)
                     is_boundary = current_commit.startswith('^')
                     
-                    # Nếu block này đã được parse trước đó, git sẽ không lặp lại author, 
-                    # nó chỉ lặp lại hash. Nhưng --line-porcelain thường nhồi author vào mọi dòng.
                 elif line.startswith('author '):
                     current_author = line[7:].strip()
+                elif line.startswith('author-mail '):
+                    # Format: author-mail <email@example.com>
+                    raw_email = line[12:].strip()
+                    current_email = raw_email.strip('<>')
                 elif line.startswith('boundary'):
                     is_boundary = True
                 elif line.startswith('\t'):
                     # Kết thúc block của một dòng mã
-                    # Số dòng (line number) được đếm tự động hoặc lấy từ parts[2] của dòng hash
-                    # Tuy nhiên để chắc chắn, ta dùng độ dài của từ điển `line_authors` + 1
                     line_no = len(line_authors) + 1
                     
                     if is_boundary:
-                        line_authors[line_no] = {"author": current_author, "boundary": True}
+                        line_authors[line_no] = {"author": current_author, "email": current_email, "boundary": True}
                     else:
-                        line_authors[line_no] = {"author": current_author, "boundary": False}
-                        # Cộng dồn LOC cho author này
-                        if current_author not in self.member_loc:
-                            self.member_loc[current_author] = 0
-                        self.member_loc[current_author] += 1
+                        line_authors[line_no] = {"author": current_author, "email": current_email, "boundary": False}
+                        # Cộng dồn LOC theo email (khóa chính)
+                        if current_email not in self.member_loc:
+                            self.member_loc[current_email] = 0
+                        self.member_loc[current_email] += 1
+                        # Lưu mapping email → tên hiển thị (lấy tên gần nhất)
+                        self.member_names[current_email] = current_author
                         
                     # Reset data for next line
                     is_boundary = False
@@ -91,7 +98,7 @@ class AuthorshipTracker:
 
     def get_author_info(self, file_path, line_no):
         """
-        Trả về dictionary chứa {"author": string, "boundary": boolean} của 1 dòng mã.
+        Trả về dictionary chứa {"author": string, "email": string, "boundary": boolean} của 1 dòng mã.
         Nếu code ngoài 6 tháng hoặc không có thông tin, boundary = True.
         """
         rel_path = os.path.relpath(file_path, self.target_dir)
@@ -99,8 +106,12 @@ class AuthorshipTracker:
         if not file_path.startswith('/'): rel_path = file_path
             
         authors = self.parse_blame(rel_path)
-        return authors.get(line_no, {"author": "Unknown", "boundary": True})
+        return authors.get(line_no, {"author": "Unknown", "email": "unknown@unknown", "boundary": True})
 
     def get_all_member_loc(self):
-        """Trả về tổng số dòng code (trong 6 tháng) của từng member."""
+        """Trả về tổng số dòng code (trong 6 tháng) của từng member, keyed by email."""
         return self.member_loc
+
+    def get_all_member_names(self):
+        """Trả về mapping email → display name."""
+        return self.member_names

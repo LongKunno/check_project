@@ -49,7 +49,7 @@ const WeightInput = ({ value, onChange, disabled, className }) => {
         <div 
            ref={inputRef}
            className={cn("flex items-stretch bg-black/50 border border-white/10 rounded overflow-hidden transition-colors focus-within:border-emerald-500", disabled && "opacity-50 cursor-not-allowed", className)}
-           title="Gợi ý: Chỉ chuột vào khung và Cuộn chuột để tăng/giảm số"
+           title="Tip: Hover over the field and scroll to adjust the value"
         >
             <button 
                 onClick={decrement} 
@@ -229,10 +229,10 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
           }
           setIsTestRun(false);
         } catch (parseError) {
-          showToast("Cấu trúc JSON do AI trả về bị lỗi: " + parseError.message, "error");
+          showToast("AI returned invalid JSON structure: " + parseError.message, "error");
         }
       } else {
-        showToast("Không thể tìm thấy JSON hợp lệ trong phản hồi của AI", "error");
+        showToast("Could not find valid JSON in AI response", "error");
       }
     } catch (e) {
       showToast(e.message, "error");
@@ -257,11 +257,11 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
       });
       if (res.ok) {
         setSaved(true);
-        showToast("Đã lưu quy tắc thành công!");
+        showToast("Rule saved successfully!");
         setTimeout(() => setSaved(false), 3000);
         fetchRules();
       } else {
-        showToast("Lỗi khi lưu quy tắc", "error");
+        showToast("Error saving rule", "error");
       }
     } catch (e) {
       showToast(e.message, "error");
@@ -278,11 +278,11 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
          body: JSON.stringify({ target: targetId, rule_id: ruleId, is_disabled: isDisable })
        });
        if (res.ok) {
-          showToast(`Đã ${isDisable ? 'tắt' : 'bật'} luật ${ruleId}`);
+          showToast(`Rule ${ruleId} ${isDisable ? 'disabled' : 'enabled'}`);
           fetchRules();
        }
      } catch (e) {
-       showToast("Lỗi cập nhật luật", "error");
+       showToast("Error updating rule", "error");
      }
   };
 
@@ -355,10 +355,10 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
         })
       });
       if (res.ok) {
-        showToast("Đã xóa luật tùy chỉnh thành công!");
+        showToast("Custom rule deleted successfully!");
         fetchRules();
       } else {
-        showToast("Lỗi khi lưu, đang khôi phục...", "error");
+        showToast("Error saving, reverting...", "error");
         fetchRules();
       }
     } catch (e) {
@@ -385,10 +385,10 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
             setTestViolations(data.violations || []);
             setIsTestRun(true);
          } else {
-            showToast("Lỗi khi test sandbox", "error");
+            showToast("Sandbox test error", "error");
          }
       } catch (e) {
-         showToast("Lỗi kết nối API", "error");
+         showToast("API connection error", "error");
       } finally {
          setIsTesting(false);
       }
@@ -403,10 +403,9 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
   };
 
   const templates = [
-      "Cấm sử dụng hàm eval() theo OWASP Security",
-      "Không được phép dùng bare except",
-      "Hàm không dài quá 50 dòng",
-      "Bắt buộc dùng biến môi trường thay vì Hardcode"
+      "No bare except clauses allowed",
+      "Functions must not exceed 50 lines",
+      "Use environment variables instead of hardcoded values"
   ];
 
   return (
@@ -415,7 +414,7 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
         <div>
           <p className="text-slate-400 text-sm font-semibold flex items-center gap-2 bg-black/20 px-4 py-2 rounded-full border border-white/5 shadow-inner">
             <span className="w-2 h-2 rounded-full bg-violet-400 animate-pulse block" />
-            Định cấu hình quy tắc kiểm toán cho dự án: <span className="text-violet-300 font-bold tracking-tight">{projectName}</span>
+            Audit rules configured for project: <span className="text-violet-300 font-bold tracking-tight">{projectName}</span>
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -449,7 +448,7 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
                <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
                   <ShieldCheck size={20} />
                </div>
-               Danh sách Rule Đang Chạy
+               Active Rule List
             </div>
             
             <div className="flex bg-black/40 rounded-xl p-1 mb-6 border border-white/10 shrink-0">
@@ -457,13 +456,13 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
                   onClick={() => setActiveTab('core')}
                   className={cn("flex-1 py-2 text-sm font-bold rounded-lg transition-all", activeTab === 'core' ? "bg-slate-700 text-white shadow" : "text-slate-400 hover:text-slate-200")}
                >
-                  Luật Mặc Định
+                   Core Rules
                </button>
                <button
                   onClick={() => setActiveTab('custom')}
                   className={cn("flex-1 py-2 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-2", activeTab === 'custom' ? "bg-violet-600 text-white shadow" : "text-slate-400 hover:text-slate-200")}
                >
-                  <Wand2 size={14} /> Luật Tùy Chỉnh AI
+                   <Wand2 size={14} /> Custom AI Rules
                </button>
             </div>
             
@@ -473,7 +472,7 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
                        {(!compiledJson || (!Array.isArray(compiledJson?.ast_rules?.dangerous_functions) || compiledJson.ast_rules.dangerous_functions.length === 0) && (!Array.isArray(compiledJson?.regex_rules) || compiledJson.regex_rules.length === 0)) && (
                            <div className="text-xs text-slate-500 italic bg-black/20 p-4 rounded-xl border border-white/5 text-center flex flex-col items-center justify-center gap-2 h-32">
                                <Wand2 size={24} className="opacity-50" />
-                               Chưa có luật tùy chỉnh nào được cấu hình.<br/>Hãy tạo ở Wizard bên cạnh.
+                                No custom rules configured yet.<br/>Create one in the Sandbox.
                            </div>
                        )}
                        
@@ -485,7 +484,7 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
                                        <span className="text-[10px] bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full uppercase border border-red-500/30">Security</span>
                                        <button 
                                           onClick={() => handleDeleteCustomRule('regex', idx)}
-                                          title="Xóa luật này"
+                                          title="Delete this rule"
                                           className="relative z-20 opacity-40 hover:opacity-100 p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
                                        >
                                            <Trash2 size={14} />
@@ -495,7 +494,7 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
                                <div className="text-xs text-slate-400">{r.reason}</div>
                                <code className="text-[10px] bg-black/50 p-2 rounded text-emerald-400 font-mono mt-1 mb-2 break-all border border-emerald-500/10">{r.pattern}</code>
                                <div className="flex items-center justify-end gap-2 border-t border-white/5 pt-2 mt-auto">
-                                   <span className="text-[10px] text-slate-500 font-medium">TRỌNG SỐ:</span>
+                                   <span className="text-[10px] text-slate-500 font-medium">WEIGHT:</span>
                                    <WeightInput 
                                       value={r.weight !== undefined ? r.weight : -2.0}
                                       onChange={(val) => handleWeightChange(r.id, val, true, 'regex', idx)}
@@ -513,7 +512,7 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
                                        <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-2 py-0.5 rounded-full uppercase border border-yellow-500/30">{df.pillar || 'Security'}</span>
                                        <button 
                                           onClick={() => handleDeleteCustomRule('ast', idx)}
-                                          title="Xóa luật này"
+                                          title="Delete this rule"
                                           className="relative z-20 opacity-40 hover:opacity-100 p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
                                        >
                                            <Trash2 size={14} />
@@ -522,7 +521,7 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
                                </div>
                                <div className="text-xs text-slate-400 mb-2">{df.reason}</div>
                                <div className="flex items-center justify-end gap-2 border-t border-white/5 pt-2 mt-auto">
-                                   <span className="text-[10px] text-slate-500 font-medium">TRỌNG SỐ:</span>
+                                   <span className="text-[10px] text-slate-500 font-medium">WEIGHT:</span>
                                    <WeightInput 
                                       value={df.weight !== undefined ? df.weight : -2.0}
                                       onChange={(val) => handleWeightChange(df.name || df.id, val, true, 'ast', idx)}
@@ -541,7 +540,7 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
                                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                                <input 
                                    type="text" 
-                                   placeholder="Tìm kiếm theo ID, mô tả..." 
+                                   placeholder="Search by ID, description..." 
                                    value={searchTerm}
                                    onChange={(e) => setSearchTerm(e.target.value)}
                                    className="w-full bg-black/40 border border-white/10 rounded-xl py-2 pl-10 pr-4 text-sm text-slate-200 focus:border-violet-500/50 outline-none transition-colors"
@@ -553,7 +552,7 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
                                    onChange={(e) => setFilterPillar(e.target.value)}
                                    className="appearance-none bg-black/40 border border-white/10 rounded-xl py-2 pl-4 pr-10 text-sm text-slate-200 focus:border-violet-500/50 outline-none transition-colors font-bold cursor-pointer"
                                >
-                                   <option value="ALL">Tất cả Pillars ({Object.keys(defaultRules).length})</option>
+                                   <option value="ALL">All Pillars ({Object.keys(defaultRules).length})</option>
                                    {availableCategories.map(c => <option key={c} value={c}>{c}</option>)}
                                </select>
                                <Filter size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
@@ -564,7 +563,7 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
 
                {activeTab === 'core' && Object.keys(groupedRules).length === 0 && (
                    <div className="text-sm text-slate-500 italic bg-black/20 p-6 rounded-xl border border-white/5 text-center mt-4">
-                       Không tìm thấy luật nào phù hợp với bộ lọc hiện tại.
+                        No rules match the current filter.
                    </div>
                )}
 
@@ -581,7 +580,7 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
                               <span className="font-extrabold text-sm tracking-wide text-slate-200 uppercase flex items-center gap-2">
                                  <Box size={16} className="text-violet-400 opacity-70" /> {category}
                               </span>
-                              <span className="bg-violet-500/10 text-violet-300 px-2.5 py-0.5 rounded-full text-[10px] font-black">{rules.length} LUẬT</span>
+                               <span className="bg-violet-500/10 text-violet-300 px-2.5 py-0.5 rounded-full text-[10px] font-black">{rules.length} RULES</span>
                           </div>
                       </button>
                       
@@ -608,7 +607,7 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
                                                    <button
                                                       onClick={() => setExpandedRules(prev => ({...prev, [ruleKey]: !prev[ruleKey]}))}
                                                       className="text-slate-500 hover:text-violet-400 hover:bg-violet-500/10 p-1.5 rounded-lg transition-colors border border-transparent hover:border-violet-500/20"
-                                                      title="Xem chi tiết luật"
+                                                       title="View rule details"
                                                    >
                                                       <Info size={16} />
                                                    </button>
@@ -643,9 +642,9 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
                                                 </div>
                                              </div>
                                              <div className="flex items-center justify-between mt-1">
-                                                <div className="text-[11px] text-slate-400 line-clamp-2" title={meta.reason || meta.category}>{meta.reason ? `${meta.reason}` : meta.category} | Nợ KH: {meta.debt}m</div>
+                                                 <div className="text-[11px] text-slate-400 line-clamp-2" title={meta.reason || meta.category}>{meta.reason ? `${meta.reason}` : meta.category} | Est. Debt: {meta.debt}m</div>
                                                 <div className="flex items-center gap-2 shrink-0">
-                                                   <span className="text-[10px] text-slate-500 font-medium whitespace-nowrap">TRỌNG SỐ:</span>
+                                                    <span className="text-[10px] text-slate-500 font-medium whitespace-nowrap">WEIGHT:</span>
                                                    <WeightInput 
                                                       value={customWeights[ruleKey] !== undefined ? customWeights[ruleKey] : (meta.weight !== undefined ? meta.weight : -2.0)}
                                                       onChange={(val) => handleWeightChange(ruleKey, val)}
@@ -668,7 +667,7 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
                                                      <div className="flex flex-col gap-3 text-sm">
                                                          {meta.reason && (
                                                              <div className="bg-white/5 rounded-lg p-3 border border-white/10">
-                                                                 <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Mô tả</span>
+                                                                  <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Description</span>
                                                                  <span className="text-slate-300">{meta.reason}</span>
                                                              </div>
                                                          )}
@@ -694,7 +693,7 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
                                                              </div>
                                                          )}
                                                          {!meta.regex && !meta.ast && !meta.ai && (
-                                                             <div className="text-xs text-slate-500 italic">Không có metadata chi tiết cho luật này.</div>
+                                                              <div className="text-xs text-slate-500 italic">No detailed metadata for this rule.</div>
                                                          )}
                                                      </div>
                                                   </motion.div>
@@ -723,7 +722,7 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
                     <div className="p-2 rounded-lg bg-violet-500/10 border border-violet-500/20 text-violet-400">
                       <Wand2 size={20} />
                     </div>
-                    Tạo Luật Mới bằng AI
+                     Create New Rule with AI
                  </div>
                  
                  <div className="flex flex-wrap gap-2 mb-4">
@@ -737,13 +736,13 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
                  <textarea 
                   value={naturalText}
                   onChange={(e) => setNaturalText(e.target.value)}
-                  placeholder="Diễn đạt mong muốn của bạn bằng Tiếng Việt (VD: Cấm dùng hàm subprocess)..."
+                   placeholder="Describe your rule in plain English (e.g., Prohibit use of subprocess)..."
                   className="w-full min-h-[90px] bg-black/40 border border-white/5 rounded-xl p-4 text-slate-200 font-medium placeholder-slate-600 outline-none focus:border-violet-500/40 transition-all resize-none"
                  />
                  
                  <div className="mt-4 flex justify-between items-center">
                     <div className="text-[11px] text-slate-500 flex items-center gap-1.5 italic">
-                        Luật mới sinh ra sẽ tự động chèn vào danh sách bên trái.
+                        New rule will be automatically added to the list on the left.
                     </div>
                     <button
                         onClick={handleCompile}
@@ -751,7 +750,7 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
                         className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-500/20 to-purple-500/20 text-violet-300 border border-violet-500/30 font-bold hover:from-violet-500/30 hover:to-purple-500/30 transition-all"
                     >
                         {isCompiling ? <span className="animate-spin text-lg">◌</span> : <Play size={16} />}
-                        {isCompiling ? 'Đang dịch...' : 'Biên dịch AI'}
+                         {isCompiling ? 'Compiling...' : 'Compile with AI'}
                     </button>
                  </div>
             </div>
@@ -763,14 +762,14 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
                        <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400">
                          <Beaker size={20} />
                        </div>
-                       Interactive Sandbox (Kiểm chứng luật)
+                        Interactive Sandbox (Rule Testing)
                     </div>
                  </div>
                  
                  {!compiledJson ? (
                      <div className="flex-1 flex flex-col items-center justify-center text-slate-500 gap-4 opacity-70 bg-black/20 rounded-xl border border-dashed border-white/5">
                          <Beaker size={40} className="mb-2" />
-                         <p className="font-bold text-sm">Biên dịch AI thành công để hiển thị Sandbox</p>
+                          <p className="font-bold text-sm">Compile a rule with AI to launch the Sandbox</p>
                      </div>
                  ) : (
                      <div className="flex-1 flex flex-col">
@@ -816,7 +815,7 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
                                             setIsTestRun(false);
                                             adjustTextareaHeight(e.target);
                                         }}
-                                        placeholder="Viết một đoạn code giả lập lỗi (Ví dụ Python hoặc JS)\n\ndef main():\n    eval('x=1')"
+                                         placeholder="Write a code snippet to test (Python or JS)\n\ndef main():\n    eval('x=1')"
                                         className="w-full min-h-[300px] overflow-hidden font-mono text-base bg-transparent p-6 text-slate-300 outline-none resize-none leading-relaxed"
                                     ></textarea>
                                  )}
@@ -827,18 +826,17 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
                                  <div className="p-6">
                                     {isTesting ? (
                                         <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-3 text-sm">
-                                           <span className="animate-spin text-2xl text-blue-400">◌</span> 
-                                           Đang Test Rule...
+                                           <span className="animate-spin text-2xl text-blue-400">◌</span>                                            Testing Rule...
                                         </div>
                                     ) : testViolations === null ? (
                                         <div className="flex flex-col items-center justify-center h-full text-slate-600 gap-2 text-xs italic text-center">
                                            <FileText size={24} className="opacity-50" />
-                                           Hãy gõ code vào ô bên trái <br/>và ấn Run Test
+                                            Write code in the left panel <br/>and press Run Test
                                         </div>
                                     ) : testViolations.length === 0 ? (
                                         <div className="text-sm font-bold text-emerald-500 flex flex-col items-center justify-center gap-3 h-full bg-emerald-500/5 rounded-lg border border-emerald-500/10">
-                                            <CheckCircle2 size={36} /> An toàn
-                                            <span className="text-xs font-normal text-slate-400 text-center px-4">Luật Regex/AST không phát hiện lỗi trong đoạn mã này.</span>
+                                             <CheckCircle2 size={36} /> Clean
+                                             <span className="text-xs font-normal text-slate-400 text-center px-4">No violations detected in this code snippet.</span>
                                         </div>
                                     ) : (
                                         <div className="flex flex-col gap-3">
@@ -881,7 +879,7 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
                                 )}
                             >
                                 {isSaving ? <span className="animate-spin text-xl">◌</span> : saved ? <CheckCircle2 size={18} /> : <Save size={18} />}
-                                {saved ? "Đã Lưu Thành Công" : "Lưu Rule Cục Bộ"}
+                                 {saved ? "Saved Successfully" : "Save Rule Locally"}
                             </motion.button>
                          </div>
                      </div>

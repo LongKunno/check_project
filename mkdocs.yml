@@ -49,6 +49,8 @@ nav:
       - Natural Language Rules (NLRE): features/nlre.md
       - High-Performance UI: features/ui_performance.md
       - UI Text Selection Fix: features/ui_text_selection.md
+      - Member Overview: features/member_overview.md
+      - UI Language (English): features/ui_language_english.md
   - Kiến trúc hệ thống:
     - Tổng quan: architecture/overview.md
     - Kiến trúc Module: architecture/module_architecture.md
@@ -70,9 +72,12 @@ nav:
     - Repositories & Scores: api_specs/repositories.md
     - Git Configuration: api_specs/git.md
     - Rules Compiler: api_specs/rules.md
-
+    - Members & Leaderboard: api_specs/members.md
 
   - Quy chuẩn Tech Stack:
       - Python Rules: tech_stack/python_rules.md
       - Frontend Rules: tech_stack/frontend_rules.md
       - Tùy chỉnh Quy tắc: tech_stack/rule_customization.md
+
+  - Kiểm thử (Quality Assurance):
+      - Test Cases Chi tiết: tests/detailed_test_cases.md

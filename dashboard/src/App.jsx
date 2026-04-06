@@ -53,6 +53,7 @@ const HistoryView = React.lazy(() => import('./components/views/HistoryView'));
 const SettingsView = React.lazy(() => import('./components/views/SettingsView'));
 const AuditView = React.lazy(() => import('./components/views/AuditView'));
 const ProjectScoresView = React.lazy(() => import('./components/views/ProjectScoresView'));
+const MemberScoresView = React.lazy(() => import('./components/views/MemberScoresView'));
 import Sidebar from './components/layout/Sidebar';
 import { useAuditJob } from './hooks/useAuditJob';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
@@ -84,6 +85,8 @@ function App() {
   const [selectedRepoId, setSelectedRepoId] = useState('');
   const [repoUrl, setRepoUrl] = useState('');
   
+
+
   // Fetch configured repositories on mount
   useEffect(() => {
     const fetchRepos = async () => {
@@ -93,6 +96,26 @@ function App() {
           const result = await response.json();
           if (result.status === 'success') {
             setConfiguredRepos(result.data);
+            
+            // Cố gắng tìm dự án có lần chấm điểm gần nhất
+            try {
+              const histRes = await fetch('/api/history');
+              if (histRes.ok) {
+                const globalHistory = await histRes.json();
+                if (globalHistory && globalHistory.length > 0) {
+                  const latestAudit = globalHistory[0];
+                  const matchedRepo = result.data.find(r => r.url === latestAudit.target);
+                  if (matchedRepo) {
+                    setSelectedRepoId(matchedRepo.id);
+                    return; // Đặt selectedRepoId theo history gần nhất
+                  }
+                }
+              }
+            } catch (err) {
+              console.error("Failed to fetch global history:", err);
+            }
+
+            // Fallback lấy dự án đầu tiên
             if (result.data.length > 0) {
                 setSelectedRepoId(result.data[0].id);
             }
@@ -292,11 +315,19 @@ function App() {
         const response = await fetch(`/api/history?target=${encodeURIComponent(target)}`);
         if (response.ok) {
           const result = await response.json();
-          if (result && result.length > 0 && result[0].full_json) {
-            setData(result[0].full_json);
-          } else {
-            setData(null); // Reset nếu chưa bao giờ audit dự án này
+          if (result && result.length > 0) {
+            // Lấy ID của lần quét gần nhất và gọi lấy chi tiết
+            const auditId = result[0].id;
+            const detailRes = await fetch(`/api/history/${auditId}`);
+            if (detailRes.ok) {
+              const detail = await detailRes.json();
+              if (detail && detail.full_json) {
+                setData(detail.full_json);
+                return;
+              }
+            }
           }
+          setData(null); // Reset nếu chưa bao giờ audit dự án này hoặc có lỗi
         }
       } catch (err) {
         console.error("Failed to load target audit:", err);
@@ -324,7 +355,7 @@ function App() {
   const runAudit = async () => {
     if (activeTab === 'remote') {
       if (!selectedRepoId) {
-        setError('Vui lòng chọn một dự án từ danh sách.');
+        setError('Please select a project from the list.');
         return;
       }
       setError(null);
@@ -337,7 +368,7 @@ function App() {
 
     const files = filesRef.current;
     if (!files || files.length === 0) {
-      setError('Vui lòng chọn một thư mục để kiểm toán.');
+      setError('Please select a folder to audit.');
       return;
     }
     
@@ -437,15 +468,19 @@ function App() {
         }} />
 
         <div className="dashboard-container relative z-10 w-full min-h-screen flex flex-col pb-8">
-          <header className={cn("flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 pb-6 border-b border-navbar/30 border-white/5 shrink-0", location.pathname.startsWith('/audit') || location.pathname === '/' ? "mb-10" : "mb-6")}>
-            {/* Context Title */}
+          <header className={cn("flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 pb-6 border-b border-navbar/30 border-white/5 shrink-0 mb-6", (location.pathname.startsWith('/project-scores') || location.pathname.startsWith('/member-scores') || location.pathname.startsWith('/history') || location.pathname.startsWith('/settings') || location.pathname.startsWith('/rules') || location.pathname.startsWith('/sandbox')) && "hidden")}>
+            {/* Context Title - Only shown on /audit */}
             <div className="flex flex-col">
-               <h1 className="text-3xl lg:text-4xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-slate-400 drop-shadow-sm mb-2" style={{ fontFamily: 'Outfit, sans-serif' }}>
-                 {location.pathname.startsWith('/audit') || location.pathname === '/' ? 'AUDIT DASHBOARD' : location.pathname.startsWith('/rules') ? 'RULE MANAGER' : location.pathname.startsWith('/settings') ? 'SYSTEM SETTINGS' : location.pathname.startsWith('/project-scores') ? 'PROJECT SCORES' : location.pathname.startsWith('/history') ? 'AUDIT HISTORY' : 'AI SANDBOX'}
-               </h1>
-               <p className="font-bold text-slate-500 uppercase tracking-widest text-xs flex items-center gap-2">
-                 {location.pathname.startsWith('/audit') || location.pathname === '/' ? 'Thống kê & Mức độ an toàn mã nguồn' : location.pathname.startsWith('/rules') ? 'Quản lý cấu hình luật mặc định và tuỳ chỉnh' : location.pathname.startsWith('/settings') ? 'Cài đặt và thiết lập hệ thống cảnh báo' : location.pathname.startsWith('/project-scores') ? 'Tổng quan điểm và trạng thái của tất cả dự án' : location.pathname.startsWith('/history') ? 'Tra cứu và phục hồi kết quả phân tích lịch sử' : 'Thiết kế luật mới bằng AI & Kiểm chứng'}
-               </p>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm font-semibold mb-3" style={{ width: 'fit-content' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                Audit Engine
+              </div>
+              <h1 className="text-3xl lg:text-4xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-200 to-blue-400" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                AUDIT DASHBOARD
+              </h1>
+              <p className="text-slate-400 mt-1 font-medium text-sm">
+                Analyze and evaluate code quality in real time.
+              </p>
             </div>
 
             {(location.pathname.startsWith('/audit') || location.pathname === '/') && (
@@ -458,8 +493,8 @@ function App() {
                   {isAuditing ? <Zap className="spin" size={16} /> : <Zap size={16} />}
                   <span>
                     {isAuditing 
-                      ? (isCancelling ? 'ĐANG HỦY...' : 'AUDITING...') 
-                      : 'PHÂN TÍCH REPO'}
+                      ? (isCancelling ? 'CANCELLING...' : 'AUDITING...')
+                      : 'RUN AUDIT'}
                   </span>
                 </button>
                 
@@ -471,7 +506,7 @@ function App() {
                     }} 
                     disabled={isCancelling}
                     className="btn-stop"
-                    title="Hủy kiểm toán"
+                    title="Cancel audit"
                   >
                     <X size={18} />
                   </button>
@@ -483,8 +518,21 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/project-scores" replace />} />
         <Route path="/rules" element={
-          <div key="view-rules" className="flex-1 flex flex-col w-full" style={{ minHeight: 'calc(100vh - 100px)' }}>
-            <Suspense fallback={<div className="p-8 text-white">Đang tải Rules...</div>}>
+          <div key="view-rules" className="flex-1 flex flex-col w-full pb-8">
+            {/* Header mới cho Rules */}
+            <div className="px-8 pt-8 pb-4 shrink-0">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-semibold mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+                Rule Manager
+              </div>
+              <h2 className="text-3xl lg:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-emerald-200 to-emerald-400" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                RULE MANAGER
+              </h2>
+              <p className="text-slate-400 mt-2 font-medium text-sm lg:text-base max-w-xl">
+                Manage, adjust weights, and toggle audit rules for your project.
+              </p>
+            </div>
+            <Suspense fallback={<div className="p-8 text-white">Loading Rules...</div>}>
               <RulesConfigurator 
                 targetId={selectedRepoId} 
                 projectName={configuredRepos.find(r => r.id === selectedRepoId)?.name || selectedRepoId} 
@@ -494,8 +542,21 @@ function App() {
           </div>
         } />
         <Route path="/sandbox" element={
-          <div key="view-sandbox" className="flex-1 flex flex-col w-full" style={{ minHeight: 'calc(100vh - 100px)' }}>
-            <Suspense fallback={<div className="p-8 text-white">Đang tải Sandbox...</div>}>
+          <div key="view-sandbox" className="flex-1 flex flex-col w-full pb-8">
+            {/* Header mới cho Sandbox */}
+            <div className="px-8 pt-8 pb-4 shrink-0">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 text-sm font-semibold mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg>
+                AI Sandbox
+              </div>
+              <h2 className="text-3xl lg:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-violet-200 to-violet-400" style={{ fontFamily: 'Outfit, sans-serif' }}>
+                AI RULE BUILDER
+              </h2>
+              <p className="text-slate-400 mt-2 font-medium text-sm lg:text-base max-w-xl">
+                Design audit rules using natural language and test them instantly in the Sandbox.
+              </p>
+            </div>
+            <Suspense fallback={<div className="p-8 text-white">Loading Sandbox...</div>}>
               <RulesConfigurator 
                 targetId={selectedRepoId} 
                 projectName={configuredRepos.find(r => r.id === selectedRepoId)?.name || selectedRepoId} 
@@ -506,14 +567,14 @@ function App() {
         } />
         <Route path="/settings" element={
           <div className="flex-1 flex flex-col w-full" style={{ minHeight: 'calc(100vh - 100px)' }}>
-            <Suspense fallback={<div className="p-8 text-white">Đang tải Settings...</div>}>
+            <Suspense fallback={<div className="p-8 text-white">Loading...</div>}>
               <SettingsView selectedRepoId={selectedRepoId} cn={cn} />
             </Suspense>
           </div>
         } />
         <Route path="/history" element={
           <div className="flex-1 flex flex-col w-full" style={{ minHeight: 'calc(100vh - 100px)' }}>
-            <Suspense fallback={<div className="p-8 text-white">Đang tải History...</div>}>
+            <Suspense fallback={<div className="p-8 text-white">Loading...</div>}>
               <HistoryView 
                 selectedRepoId={selectedRepoId}
                 targetUrl={configuredRepos.find(r => r.id === selectedRepoId)?.url}
@@ -528,13 +589,26 @@ function App() {
         } />
         <Route path="/project-scores" element={
           <div className="flex-1 flex flex-col w-full" style={{ minHeight: 'calc(100vh - 100px)' }}>
-            <Suspense fallback={<div className="p-8 text-white">Đang tải Scores...</div>}>
-              <ProjectScoresView cn={cn} />
+            <Suspense fallback={<div className="p-8 text-white">Loading...</div>}>
+              <ProjectScoresView
+                cn={cn}
+                onSelectProject={(repoId) => {
+                  setSelectedRepoId(repoId);
+                  navigate('/audit');
+                }}
+              />
+            </Suspense>
+          </div>
+        } />
+        <Route path="/member-scores" element={
+          <div className="flex-1 flex flex-col w-full" style={{ minHeight: 'calc(100vh - 100px)' }}>
+            <Suspense fallback={<div className="p-8 text-white">Loading...</div>}>
+              <MemberScoresView cn={cn} />
             </Suspense>
           </div>
         } />
         <Route path="/audit" element={
-          <Suspense fallback={<div className="p-8 text-white">Đang tải...</div>}>
+          <Suspense fallback={<div className="p-8 text-white">Loading...</div>}>
             <AuditView
               data={data}
               error={error}

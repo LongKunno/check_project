@@ -29,9 +29,9 @@ export const useAuditJob = () => {
             const res = await fetch(`/api/audit/jobs/${currentJobId}`);
             if (!res.ok) {
                 if (res.status === 404) {
-                    throw new Error("Không tìm thấy tiến trình (Job quá hạn hoặc không tồn tại trên Server).");
+                    throw new Error("Job not found (expired or does not exist on the server).");
                 }
-                throw new Error("Lỗi kết nối khi kiểm tra tiến độ với Backend.");
+                throw new Error("Connection error while checking job status.");
             }
             
             const data = await res.json();
@@ -49,7 +49,7 @@ export const useAuditJob = () => {
             // Xử lý khi Job gãy gánh (Error)
             else if (data.status === 'FAILED') {
                 clearTimer();
-                setError(data.message || "Kiểm toán code thất bại do một lỗi hệ thống không xác định.");
+                setError(data.message || "Code audit failed due to an unknown system error.");
             }
         } catch (err) {
             clearTimer();
@@ -66,7 +66,7 @@ export const useAuditJob = () => {
         setError(null);
         setResult(null);
         setJobId(null);
-        setMessage('Đang khởi tạo kết nối với AI Engine...');
+        setMessage('Initializing connection to AI Engine...');
 
         try {
             const endpoint = isFile ? '/api/audit/process' : '/api/audit/repository';
@@ -83,7 +83,7 @@ export const useAuditJob = () => {
             const response = await fetch(endpoint, options);
             if (!response.ok) {
                 const errData = await response.json().catch(() => ({}));
-                throw new Error(errData.detail || `Máy chủ từ chối yêu cầu (Mã lỗi: ${response.status})`);
+                throw new Error(errData.detail || `Server rejected the request (Error code: ${response.status})`);
             }
 
             const data = await response.json();
@@ -92,14 +92,14 @@ export const useAuditJob = () => {
                 const initialJobId = data.job_id;
                 setJobId(initialJobId);
                 setStatus('running');
-                setMessage(data.message || 'Hệ thống AI đã đẩy tác vụ vào hàng đợi nền.');
+                setMessage(data.message || 'AI system has queued the task in the background.');
                 
                 // Kích nổ hệ thống Long-Polling (cứ 3 giây hỏi Backend 1 lần)
                 pollingTimer.current = setInterval(() => {
                     pollJobStatus(initialJobId);
                 }, 3000);
             } else {
-                throw new Error("Khởi tạo tiến trình nền thất bại: Thuật toán Backend phản hồi sai định dạng chuẩn.");
+                throw new Error("Background job initialization failed: backend returned an invalid response format.");
             }
         } catch (err) {
             setStatus('failed');
@@ -111,7 +111,7 @@ export const useAuditJob = () => {
     const stopAudit = useCallback(() => {
         clearTimer();
         setStatus('idle');
-        setMessage('Đã hủy tác vụ kiểm toán theo yêu cầu.');
+        setMessage('Audit task cancelled on request.');
     }, []);
 
     return {

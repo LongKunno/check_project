@@ -341,15 +341,15 @@ class CodeAuditor:
                 
             author_info = auth_tracker.get_author_info(v['file'], v.get('line', 0))
             if not author_info['boundary']:
-                author = author_info['author']
-                if author not in member_punishments:
-                    member_punishments[author] = {p: 0 for p in WEIGHTS.keys()}
-                    member_meta[author] = {p: {"debt": 0, "max_sev": "Info"} for p in WEIGHTS.keys()}
-                    member_violations[author] = []
+                email = author_info.get('email', 'unknown@unknown')
+                if email not in member_punishments:
+                    member_punishments[email] = {p: 0 for p in WEIGHTS.keys()}
+                    member_meta[email] = {p: {"debt": 0, "max_sev": "Info"} for p in WEIGHTS.keys()}
+                    member_violations[email] = []
                 
-                member_punishments[author][pillar] += v['weight']
-                member_meta[author][pillar]['debt'] += meta['debt']
-                member_violations[author].append(v)
+                member_punishments[email][pillar] += v['weight']
+                member_meta[email][pillar]['debt'] += meta['debt']
+                member_violations[email].append(v)
 
         self.feature_results = {}
         project_punishments = {p: 0 for p in WEIGHTS.keys()}
@@ -388,8 +388,9 @@ class CodeAuditor:
 
         self.member_results = {}
         member_locs = auth_tracker.get_all_member_loc()
-        for author, punishments in member_punishments.items():
-            author_loc = member_locs.get(author, 0)
+        member_name_map = auth_tracker.get_all_member_names()
+        for email, punishments in member_punishments.items():
+            author_loc = member_locs.get(email, 0)
             if author_loc == 0: continue
             
             p_scores = {}
@@ -397,10 +398,12 @@ class CodeAuditor:
                 p_scores[pillar] = ScoringEngine.calculate_pillar_score(punishments[pillar], author_loc, pillar)
                 
             f_score = ScoringEngine.calculate_final_score(p_scores)
-            self.member_results[author] = {
+            self.member_results[email] = {
+                "author_name": member_name_map.get(email, email),
+                "email": email,
                 "pillars": p_scores, "final": f_score, "punishments": punishments, "loc": author_loc,
-                "debt_mins": sum(m["debt"] for m in member_meta[author].values()),
-                "violations": member_violations.get(author, [])
+                "debt_mins": sum(m["debt"] for m in member_meta[email].values()),
+                "violations": member_violations.get(email, [])
             }
             
         return final_score, rating

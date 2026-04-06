@@ -11,7 +11,7 @@ export const getViolationDistributionData = (violationsList) => {
     if (counts[v.pillar] !== undefined) counts[v.pillar]++;
   });
   return {
-    labels: ['Hiệu năng', 'Bảo trì', 'Độ tin cậy', 'Bảo mật'],
+    labels: ['Performance', 'Maintainability', 'Reliability', 'Security'],
     datasets: [{
       data: [counts.Performance, counts.Maintainability, counts.Reliability, counts.Security],
       backgroundColor: [
@@ -34,9 +34,9 @@ export const getSeverityDistributionData = (violationsList) => {
     else low++;
   });
   return {
-    labels: ['Nghiêm trọng (High)', 'Trung bình (Medium)', 'Nhẹ (Low)'],
+    labels: ['High', 'Medium', 'Low'],
     datasets: [{
-      label: 'Số lượng vi phạm',
+      label: 'Violation count',
       data: [high, medium, low],
       backgroundColor: [
         'rgba(239, 68, 68, 0.8)',

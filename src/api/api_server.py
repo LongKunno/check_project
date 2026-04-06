@@ -126,11 +126,13 @@ from src.api.routers.audit import router as audit_router
 from src.api.routers.rules import router as rules_router
 from src.api.routers.history import router as history_router
 from src.api.routers.repositories import router as repositories_router
+from src.api.routers.members import router as members_router
 
 app.include_router(audit_router)
 app.include_router(rules_router)
 app.include_router(history_router)
 app.include_router(repositories_router)
+app.include_router(members_router)
 
 if __name__ == "__main__":
     import uvicorn

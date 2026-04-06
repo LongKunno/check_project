@@ -72,8 +72,9 @@ class ScoringEngine:
         """
         Returns a descriptive rating and emoji based on the 0-100 score.
         """
-        if score >= 90: return "🏆 Xuất sắc"
-        if score >= 80: return "🥈 Tốt"
-        if score >= 65: return "🥉 Khá"
-        if score >= 45: return "⚠️ Trung bình"
-        return "🚨 Cần cải thiện ngay"
+        if score >= 90: return "🏆 Excellent"
+        if score >= 80: return "🥈 Good"
+        if score >= 65: return "🥉 Fair"
+        if score >= 45: return "⚠️ Average"
+        return "🚨 Needs Improvement"
+

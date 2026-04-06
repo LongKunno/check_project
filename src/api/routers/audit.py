@@ -249,7 +249,95 @@ async def audit_repository(request: RepositoryAuditRequest, background_tasks: Ba
     return {"status": "started", "job_id": job_id, "message": "Đã bắt đầu clone và kiểm toán."}
 
 
+# ── Batch Audit ───────────────────────────────────────────────────────────────
+
+class BatchAuditRequest(BaseModel):
+    project_ids: List[str]
+
+@router.post("/audit/batch")
+async def audit_batch(request: BatchAuditRequest, background_tasks: BackgroundTasks):
+    """Quét hàng loạt các dự án trong cấu hình."""
+    if not request.project_ids:
+        raise HTTPException(status_code=400, detail="Không có dự án nào được chọn.")
+
+    # Tìm một active batch (nếu có)
+    for jid, job in JobManager.jobs.items():
+        if job.job_type == "batch" and job.status in ["PENDING", "RUNNING"]:
+            return {"status": "started", "job_id": jid, "message": "Batch hiện tại đang chạy."}
+
+    AuditState.reset()
+    job_id = JobManager.create_job("batch_scan", job_type="batch")
+    
+    # Khởi tạo trạng thái cho từng dự án
+    initial_result = {"projects": {}}
+    for pid in request.project_ids:
+        initial_result["projects"][pid] = {"status": "PENDING"}
+    JobManager.update_job(job_id, "RUNNING", "Đang khởi tạo Batch...", result=initial_result)
+
+    def background_batch(job_id, project_ids):
+        JobManager.log(job_id, f"[BATCH] Bắt đầu quét hàng loạt {len(project_ids)} dự án.")
+        
+        for idx, pid in enumerate(project_ids):
+            config_repo = next((r for r in CONFIGURED_REPOSITORIES if r["id"] == pid), None)
+            
+            job = JobManager.get_job(job_id)
+            if not job: break
+            batch_result = job.result or {"projects": {}}
+            
+            if not config_repo:
+                batch_result["projects"][pid] = {"status": "FAILED", "message": "Không tìm thấy cấu hình."}
+                JobManager.update_job(job_id, "RUNNING", result=batch_result)
+                continue
+                
+            batch_result["projects"][pid] = {"status": "RUNNING"}
+            JobManager.update_job(job_id, "RUNNING", result=batch_result)
+            
+            repo_url = config_repo["url"]
+            username = config_repo["username"]
+            token = config_repo["token"]
+            branch = config_repo.get("branch")
+            
+            JobManager.log(job_id, f"[BATCH] Đang xử lý: {pid} ({idx+1}/{len(project_ids)})")
+            
+            temp_dir = tempfile.mkdtemp(prefix=f"batch_{pid}_")
+            target_path = os.path.join(temp_dir, "repo")
+            try:
+                # 1. Clone
+                JobManager.log(job_id, f"[BATCH] Đang tải mã nguồn: {repo_url}")
+                GitHelper.clone_repository(repo_url=repo_url, dest_dir=target_path,
+                                           username=username, token=token, branch=branch)
+                                           
+                # 2. Audit
+                JobManager.log(job_id, f"[BATCH] Thực thi kiểm toán: {pid}")
+                auditor = run_auditor_with_capture(target_path, pid, job_id)
+                project_name = repo_url.split('/')[-1].replace('.git', '')
+                res = _build_and_save_audit_result(auditor, repo_url, project_name)
+                
+                batch_result["projects"][pid] = {"status": "COMPLETED", "score": res["scores"]["final"]}
+                JobManager.update_job(job_id, "RUNNING", result=batch_result)
+            except Exception as e:
+                batch_result["projects"][pid] = {"status": "FAILED", "message": str(e)}
+                JobManager.update_job(job_id, "RUNNING", result=batch_result)
+                JobManager.log(job_id, f"[BATCH] LỖI tại {pid}: {str(e)}")
+            finally:
+                if os.path.exists(temp_dir):
+                    shutil.rmtree(temp_dir)
+                    
+        JobManager.log(job_id, "[BATCH] Hoàn tất toàn bộ !")
+        JobManager.update_job(job_id, "COMPLETED", "Hoàn tất Batch.")
+
+    background_tasks.add_task(background_batch, job_id, request.project_ids)
+    return {"status": "started", "job_id": job_id, "message": "Bắt đầu quét hàng loạt."}
+
+@router.get("/audit/batch/active")
+async def get_active_batch():
+    for jid, job in JobManager.jobs.items():
+        if job.job_type == "batch" and job.status in ["PENDING", "RUNNING"]:
+            return {"has_active": True, "job_id": jid, "job": job}
+    return {"has_active": False}
+
 # ── Job Management ────────────────────────────────────────────────────────────
+
 
 @router.get("/audit/jobs/{job_id}")
 async def get_job_status(job_id: str):
