@@ -118,10 +118,10 @@ const Sidebar = ({
            <button 
               onClick={() => navigate('/sandbox')}
               className={cn("flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left overflow-hidden shrink-0 group", isPathActive('/sandbox') ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20 shadow-inner' : 'text-slate-400 hover:bg-white/5 hover:text-white border border-transparent')}
-              title="AI Sandbox"
+              title="Rule Builder"
            >
               <Wand2 size={20} className={cn("shrink-0 transition-transform text-blue-500/80", isPathActive('/sandbox') ? "scale-110" : "group-hover:scale-110")} />
-              {!isSidebarCollapsed && <span className="font-bold text-sm whitespace-nowrap">AI Sandbox</span>}
+              {!isSidebarCollapsed && <span className="font-bold text-sm whitespace-nowrap">Rule Builder</span>}
            </button>
            
            <button 

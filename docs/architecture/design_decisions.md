@@ -344,3 +344,42 @@ Cụ thể:
 - `scanners.py` -> `_check_exceptions`, `_check_functions`, `_check_calls`, `_check_loops`.
 - `ai_service.py` -> Proxy chung qua `_call_llm_json`.
 - Sự bảo trì dài hạn (Maintainability Pillar) nhảy cực mạnh. Các rules sắp tới sẽ chỉ tập trung vào vi phân cực nhỏ mà không phải chèn code qua nhiều vòng loop phức tạp.
+
+---
+
+## ADR-013: Sửa lỗi Batch Scan — Crash do ký tự `/` trong Project ID
+
+- **Ngày**: 2026-04-06
+- **Trạng thái**: Accepted
+
+### 1. Vấn đề (Problem)
+
+Khi chạy "Scan All" (batch audit), hệ thống bị crash và treo vĩnh viễn ở trạng thái RUNNING khi gặp project ID chứa ký tự `/` (ví dụ: `liftsoftvn/ana-api`).
+
+**Root Cause (2 lỗi kết hợp):**
+
+1. **Lỗi đường dẫn Temp Directory**: `tempfile.mkdtemp(prefix=f"batch_{pid}_")` với `pid = "liftsoftvn/ana-api"` tạo ra đường dẫn `/tmp/batch_liftsoftvn/ana-api_xxx`. OS coi `batch_liftsoftvn` là thư mục con không tồn tại → `FileNotFoundError`.
+
+2. **Exception ngoài try block**: Dòng `tempfile.mkdtemp(...)` nằm **trước** `try:` block, nên exception không bị bắt bởi `except`. Kết quả: toàn bộ `background_batch()` crash, job status mãi ở `RUNNING`, frontend polling liên tục không dừng.
+
+**Lỗi liên quan (file):** [src/api/routers/audit.py](../../src/api/routers/audit.py) — hàm `background_batch()`.
+
+### 2. Giải pháp (Decision)
+
+| Thay đổi | Trước | Sau |
+|---|---|---|
+| Prefix tempdir | `batch_{pid}_` | `batch_{safe_pid}_` với `safe_pid = pid.replace("/", "_")` |
+| Phạm vi try block | Chỉ bọc clone + audit | Bọc **toàn bộ** thân loop (config lookup → tempdir → clone → audit) |
+| finally cleanup | `if os.path.exists(temp_dir)` | `if temp_dir and os.path.exists(temp_dir)` (null check) |
+| except handler | Truy cập `batch_result` trực tiếp | Re-fetch `job.result` từ `JobManager` để tránh stale reference |
+
+### 3. Tại sao?
+
+- Sanitize `/` → `_` ngăn OS tạo đường dẫn con bất hợp lệ.
+- Bọc toàn bộ logic vào try block đảm bảo **bất kỳ exception nào** (kể cả config lookup, permission error) đều được xử lý gracefully — batch tiếp tục chạy dự án kế tiếp thay vì crash toàn bộ.
+
+### 4. Hệ quả (Consequences)
+
+- **Tích cực**: Batch scan hoạt động ổn định với mọi project ID format. Hệ thống tự phục hồi khi 1 dự án lỗi thay vì treo cả batch.
+- **Lưu ý**: Nếu config có thêm ký tự đặc biệt khác (ví dụ: `\`, `:`) cũng cần sanitize tương tự — hiện đã sanitize cả `\`.
+

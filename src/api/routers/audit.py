@@ -278,30 +278,34 @@ async def audit_batch(request: BatchAuditRequest, background_tasks: BackgroundTa
         JobManager.log(job_id, f"[BATCH] Bắt đầu quét hàng loạt {len(project_ids)} dự án.")
         
         for idx, pid in enumerate(project_ids):
-            config_repo = next((r for r in CONFIGURED_REPOSITORIES if r["id"] == pid), None)
-            
-            job = JobManager.get_job(job_id)
-            if not job: break
-            batch_result = job.result or {"projects": {}}
-            
-            if not config_repo:
-                batch_result["projects"][pid] = {"status": "FAILED", "message": "Không tìm thấy cấu hình."}
-                JobManager.update_job(job_id, "RUNNING", result=batch_result)
-                continue
-                
-            batch_result["projects"][pid] = {"status": "RUNNING"}
-            JobManager.update_job(job_id, "RUNNING", result=batch_result)
-            
-            repo_url = config_repo["url"]
-            username = config_repo["username"]
-            token = config_repo["token"]
-            branch = config_repo.get("branch")
-            
-            JobManager.log(job_id, f"[BATCH] Đang xử lý: {pid} ({idx+1}/{len(project_ids)})")
-            
-            temp_dir = tempfile.mkdtemp(prefix=f"batch_{pid}_")
-            target_path = os.path.join(temp_dir, "repo")
+            temp_dir = None
             try:
+                config_repo = next((r for r in CONFIGURED_REPOSITORIES if r["id"] == pid), None)
+                
+                job = JobManager.get_job(job_id)
+                if not job: break
+                batch_result = job.result or {"projects": {}}
+                
+                if not config_repo:
+                    batch_result["projects"][pid] = {"status": "FAILED", "message": "Không tìm thấy cấu hình."}
+                    JobManager.update_job(job_id, "RUNNING", result=batch_result)
+                    continue
+                    
+                batch_result["projects"][pid] = {"status": "RUNNING"}
+                JobManager.update_job(job_id, "RUNNING", result=batch_result)
+                
+                repo_url = config_repo["url"]
+                username = config_repo["username"]
+                token = config_repo["token"]
+                branch = config_repo.get("branch")
+                
+                JobManager.log(job_id, f"[BATCH] Đang xử lý: {pid} ({idx+1}/{len(project_ids)})")
+                
+                # Sanitize pid cho tempdir prefix: thay / thành _ để tránh lỗi đường dẫn
+                safe_pid = pid.replace("/", "_").replace("\\", "_")
+                temp_dir = tempfile.mkdtemp(prefix=f"batch_{safe_pid}_")
+                target_path = os.path.join(temp_dir, "repo")
+
                 # 1. Clone
                 JobManager.log(job_id, f"[BATCH] Đang tải mã nguồn: {repo_url}")
                 GitHelper.clone_repository(repo_url=repo_url, dest_dir=target_path,
@@ -316,11 +320,13 @@ async def audit_batch(request: BatchAuditRequest, background_tasks: BackgroundTa
                 batch_result["projects"][pid] = {"status": "COMPLETED", "score": res["scores"]["final"]}
                 JobManager.update_job(job_id, "RUNNING", result=batch_result)
             except Exception as e:
+                job = JobManager.get_job(job_id)
+                batch_result = (job.result if job else None) or {"projects": {}}
                 batch_result["projects"][pid] = {"status": "FAILED", "message": str(e)}
                 JobManager.update_job(job_id, "RUNNING", result=batch_result)
                 JobManager.log(job_id, f"[BATCH] LỖI tại {pid}: {str(e)}")
             finally:
-                if os.path.exists(temp_dir):
+                if temp_dir and os.path.exists(temp_dir):
                     shutil.rmtree(temp_dir)
                     
         JobManager.log(job_id, "[BATCH] Hoàn tất toàn bộ !")

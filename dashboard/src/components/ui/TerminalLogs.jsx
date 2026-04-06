@@ -120,6 +120,7 @@ const TerminalLogs = React.memo(({ isAuditing, jobId }) => {
   const [activeGroupIdx, setActiveGroupIdx] = useState(0);
   const [currentFile, setCurrentFile] = useState(null); // For Status Bar
   const logsEndRef = useRef(null);
+  const scrollContainerRef = useRef(null);
 
   const processLine = useCallback((rawLine) => {
     // Filter out PROGRESS lines → only update StatusBar, don't store in terminal
@@ -173,7 +174,10 @@ const TerminalLogs = React.memo(({ isAuditing, jobId }) => {
   }, [isAuditing, jobId, processLine]);
 
   useEffect(() => {
-    logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
   }, [groups]);
 
   if (!isAuditing) return null;
@@ -214,6 +218,7 @@ const TerminalLogs = React.memo(({ isAuditing, jobId }) => {
 
       {/* ── Log Groups (Accordion) ── */}
       <div
+        ref={scrollContainerRef}
         className="overflow-y-auto p-4"
         style={{
           height: '60vh',
