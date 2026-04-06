@@ -9,6 +9,7 @@ import {
 import TerminalLogs from '../ui/TerminalLogs';
 import { TableSkeleton, CardSkeleton } from '../ui/SkeletonLoader';
 import EmptyState from '../ui/EmptyState';
+import Pagination from '../ui/Pagination';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -29,6 +30,15 @@ const getScoreColor = (score) => {
   if (score >= 65) return 'text-amber-400';
   if (score >= 45) return 'text-orange-400';
   return 'text-rose-400';
+};
+
+const getScoreDotClass = (score) => {
+  if (score == null) return '';
+  if (score >= 90) return 'score-dot score-dot-emerald';
+  if (score >= 80) return 'score-dot score-dot-blue';
+  if (score >= 65) return 'score-dot score-dot-amber';
+  if (score >= 45) return 'score-dot score-dot-orange';
+  return 'score-dot score-dot-rose';
 };
 
 const getScoreGradient = (score) => {
@@ -144,11 +154,11 @@ function useScanAllQueue(projects, onFinishAll) {
 
 // ─── Medal ────────────────────────────────────────────────────────────────────
 
-function Medal({ rank }) {
-  if (rank === 1) return <span className="text-xl">🥇</span>;
-  if (rank === 2) return <span className="text-xl">🥈</span>;
-  if (rank === 3) return <span className="text-xl">🥉</span>;
-  return <span className="text-sm font-black text-slate-500 w-6 text-center">#{rank}</span>;
+function RankBadge({ rank }) {
+  if (rank === 1) return <div className="rank-badge rank-badge-gold"><Star size={12} /></div>;
+  if (rank === 2) return <div className="rank-badge rank-badge-silver"><Star size={12} /></div>;
+  if (rank === 3) return <div className="rank-badge rank-badge-bronze"><Star size={12} /></div>;
+  return <div className="rank-badge rank-badge-default">{rank}</div>;
 }
 
 // ─── Scan Status Pill ─────────────────────────────────────────────────────────
@@ -233,7 +243,7 @@ function ProjectRow({ project, rank, scanState, onSelect }) {
       {/* Rank */}
       <td className="px-4 py-4">
         <div className="flex items-center justify-center">
-          <Medal rank={rank} />
+          <RankBadge rank={rank} />
         </div>
       </td>
 
@@ -262,6 +272,7 @@ function ProjectRow({ project, rank, scanState, onSelect }) {
       <td className="px-4 py-4">
         {hasScore ? (
           <div className="flex items-center gap-2.5">
+            <span className={getScoreDotClass(project.latest_score)} />
             <span className={`text-xl font-black ${getScoreColor(project.latest_score)}`}>
               {parseFloat(project.latest_score).toFixed(1)}
             </span>
@@ -324,6 +335,8 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
   const [error, setError] = useState(null);
   const [sortBy, setSortBy] = useState('latest_score');
   const [sortDir, setSortDir] = useState('desc');
+  const [projPage, setProjPage] = useState(1);
+  const [projPageSize, setProjPageSize] = useState(10);
 
   const fetchScores = useCallback(async () => {
     setIsLoading(true);
@@ -383,21 +396,21 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-500/8 blur-[100px] rounded-full pointer-events-none -z-10" />
 
       {/* ── Header ── */}
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-5 page-header-compact">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-400 text-sm font-semibold mb-4">
-              <BarChart3 size={16} /> Project Leaderboard
+            <div className="flex items-center gap-3 mb-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-400 text-xs font-semibold">
+                <BarChart3 size={14} /> Project Leaderboard
+              </div>
+              <span className="text-slate-600 text-xs font-medium hidden sm:block">Code quality ranking for all repositories</span>
             </div>
             <h2
-              className="text-3xl lg:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-pink-200 to-pink-400"
+              className="text-3xl lg:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-violet-400 to-fuchsia-400"
               style={{ fontFamily: 'Outfit, sans-serif' }}
             >
               PROJECT LEADERBOARD
             </h2>
-            <p className="text-slate-400 mt-2 font-medium text-sm lg:text-base max-w-xl">
-              Code quality leaderboard for all repositories based on their latest audit.
-            </p>
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
@@ -436,12 +449,12 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
             className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4"
           >
             {[
-              { label: 'Total projects', value: projects.length, icon: <FolderOpen size={16} className="text-pink-400" />, accent: 'border-pink-500/25 shadow-[0_0_15px_-5px_rgba(236,72,153,0.15)]' },
-              { label: 'Avg score', value: avgScore ? `${avgScore}/100` : '—', icon: <Star size={16} className="text-amber-400" />, accent: 'border-amber-500/25 shadow-[0_0_15px_-5px_rgba(245,158,11,0.15)]' },
-              { label: 'Top project', value: topProject?.name?.split('_').join(' ') || '—', icon: <Trophy size={16} className="text-emerald-400" />, accent: 'border-emerald-500/25 shadow-[0_0_15px_-5px_rgba(16,185,129,0.15)]' },
-              { label: 'Total violations', value: totalViolations.toLocaleString(), icon: <AlertTriangle size={16} className="text-orange-400" />, accent: 'border-orange-500/25 shadow-[0_0_15px_-5px_rgba(249,115,22,0.15)]' },
+              { label: 'Total projects', value: projects.length, icon: <FolderOpen size={16} className="text-pink-400" />, accent: 'border-pink-500/25 shadow-[0_0_15px_-5px_rgba(236,72,153,0.15)]', accentLine: 'kpi-accent-pink' },
+              { label: 'Avg score', value: avgScore ? `${avgScore}/100` : '—', icon: <Star size={16} className="text-amber-400" />, accent: 'border-amber-500/25 shadow-[0_0_15px_-5px_rgba(245,158,11,0.15)]', accentLine: 'kpi-accent-amber' },
+              { label: 'Top project', value: topProject?.name?.split('_').join(' ') || '—', icon: <Trophy size={16} className="text-emerald-400" />, accent: 'border-emerald-500/25 shadow-[0_0_15px_-5px_rgba(16,185,129,0.15)]', accentLine: 'kpi-accent-emerald' },
+              { label: 'Total violations', value: totalViolations.toLocaleString(), icon: <AlertTriangle size={16} className="text-orange-400" />, accent: 'border-orange-500/25 shadow-[0_0_15px_-5px_rgba(249,115,22,0.15)]', accentLine: 'kpi-accent-orange' },
             ].map(s => (
-              <div key={s.label} className={`flex items-center gap-3 px-5 py-4 rounded-2xl bg-white/[0.03] border backdrop-blur-sm transition-all hover:bg-white/[0.06] ${s.accent}`}>
+              <div key={s.label} className={`kpi-accent-card flex items-center gap-3 px-5 py-5 rounded-2xl bg-white/[0.03] border backdrop-blur-sm transition-all hover:bg-white/[0.06] ${s.accent} ${s.accentLine}`}>
                 <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
                   {s.icon}
                 </div>
@@ -508,7 +521,7 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
           className="bg-[#080c14]/40 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl"
         >
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full premium-table" style={{ '--table-accent': 'rgba(236, 72, 153, 0.5)' }}>
               <thead>
                 <tr className="border-b border-white/[0.08] bg-white/[0.04]">
                   <th className="px-4 py-3 text-center">
@@ -525,11 +538,11 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
                 </tr>
               </thead>
               <tbody>
-                {sorted.map((project, idx) => (
+                {sorted.slice((projPage - 1) * projPageSize, projPage * projPageSize).map((project, idx) => (
                   <ProjectRow
                     key={project.id}
                     project={project}
-                    rank={idx + 1}
+                    rank={(projPage - 1) * projPageSize + idx + 1}
                     scanState={scanStates[project.id]}
                     onSelect={onSelectProject}
                   />
@@ -538,12 +551,15 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
             </table>
           </div>
 
-            <div className="px-6 py-3 border-t border-white/[0.08] flex items-center justify-between bg-white/[0.02]">
-              <span className="text-xs text-slate-500 font-semibold">
-                {scanned.length}/{projects.length} projects scanned
-              </span>
-              <span className="text-xs text-slate-600 italic">Click a row to open the detailed Dashboard</span>
-            </div>
+            <Pagination
+              currentPage={projPage}
+              totalItems={sorted.length}
+              pageSize={projPageSize}
+              onPageChange={setProjPage}
+              onPageSizeChange={setProjPageSize}
+              showPageSizeSelector={true}
+              label="projects"
+            />
         </motion.div>
       )}
     </div>

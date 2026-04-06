@@ -1,5 +1,958 @@
 # SỔ CÁI VI PHẠM (AI VIOLATION LEDGER)
 
-- [Reliability] | [src/engine/auditor.py:109] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
-- [Reliability] | [src/engine/dependency_checker.py:57] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
-- [Security] | [src/engine/natural_rules_compiler.py:47] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Maintainability] | [source_code/BPO_Task/admin.py:1] | Lý do: Import 'admin' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Security] | [source_code/BPO_Task/bpo_gmail_api.py:26] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Performance] | [source_code/BPO_Task/bpo_gmail_api.py:18] | Lý do: Usage of open() outside a 'with' context manager (Risk of File Handle Leak) | Trình bày: MEMORY_LEAK_OPEN | Trọng số: -4.0
+- [Performance] | [source_code/BPO_Task/bpo_gmail_api.py:21] | Lý do: Usage of open() outside a 'with' context manager (Risk of File Handle Leak) | Trình bày: MEMORY_LEAK_OPEN | Trọng số: -4.0
+- [Reliability] | [source_code/BPO_Task/bpo_gmail_api.py:164] | Lý do: External API call without timeout parameter | Trình bày: NO_TIMEOUT_SET | Trọng số: -5.0
+- [Maintainability] | [source_code/BPO_Task/bpo_gmail_api.py:153] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/bpo_gmail_api.py:142] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Reliability] | [source_code/BPO_Task/bpo_gmail_api.py:150] | Lý do: External API call without timeout parameter | Trình bày: NO_TIMEOUT_SET | Trọng số: -5.0
+- [Maintainability] | [source_code/BPO_Task/bpo_gmail_api.py:12] | Lý do: Import 'SUBJECT_SALEFORCE_KEYWORDS' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/bpo_gmail_api.py:9] | Lý do: Import '*' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/crontab.py:14] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/crontab.py:29] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/crontab.py:33] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/crontab.py:37] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/crontab.py:1] | Lý do: Import 'ProjectSprintInfo' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/crontab.py:2] | Lý do: Import 'env_const' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Security] | [source_code/BPO_Task/gmail_view.py:12] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Reliability] | [source_code/BPO_Task/gmail_view.py:77] | Lý do: External API call without timeout parameter | Trình bày: NO_TIMEOUT_SET | Trọng số: -5.0
+- [Reliability] | [source_code/BPO_Task/gmail_view.py:88] | Lý do: External API call without timeout parameter | Trình bày: NO_TIMEOUT_SET | Trọng số: -5.0
+- [Performance] | [source_code/BPO_Task/gmail_view.py:97] | Lý do: Usage of open() outside a 'with' context manager (Risk of File Handle Leak) | Trình bày: MEMORY_LEAK_OPEN | Trọng số: -4.0
+- [Performance] | [source_code/BPO_Task/handle_received_email.py:112] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'BPOProjectTaskInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/BPO_Task/handle_received_email.py:210] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/handle_received_email.py:213] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/handle_received_email.py:215] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/handle_received_email.py:13] | Lý do: Import 'env_const' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/models.py:10] | Lý do: Import 'Sum' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/models.py:3] | Lý do: Import 'timezone' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Security] | [source_code/BPO_Task/project_utils.py:511] | Lý do: verify=False detected (disables SSL verification) | Trình bày: VERIFY_FALSE | Trọng số: -5.0
+- [Reliability] | [source_code/BPO_Task/project_utils.py:511] | Lý do: External API call without timeout parameter | Trình bày: NO_TIMEOUT_SET | Trọng số: -5.0
+- [Reliability] | [source_code/BPO_Task/project_utils.py:515] | Lý do: External API call without timeout parameter | Trình bày: NO_TIMEOUT_SET | Trọng số: -5.0
+- [Reliability] | [source_code/BPO_Task/project_utils.py:521] | Lý do: External API call without timeout parameter | Trình bày: NO_TIMEOUT_SET | Trọng số: -5.0
+- [Maintainability] | [source_code/BPO_Task/project_utils.py:525] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/project_utils.py:526] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/project_utils.py:542] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/serializers.py:1223] | Lý do: Function too long (God Object anti-pattern): _calculate_member_metrics (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/BPO_Task/serializers.py:1223] | Lý do: Cyclomatic Complexity too high (Too many nested loops/branches): _calculate_member_metrics (Complexity: 45 > 25) | Trình bày: HIGH_COMPLEXITY | Trọng số: -2.0
+- [Reliability] | [source_code/BPO_Task/serializers.py:1277] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Reliability] | [source_code/BPO_Task/serializers.py:1345] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Reliability] | [source_code/BPO_Task/serializers.py:1416] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Reliability] | [source_code/BPO_Task/serializers.py:1378] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Maintainability] | [source_code/BPO_Task/serializers.py:12] | Lý do: Import 'Coalesce' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/serializers.py:3] | Lý do: Import 'ProjectTaskInfo' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/serializers.py:11] | Lý do: Import 'FloatField' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/serializers.py:11] | Lý do: Import 'Value' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/serializers.py:15] | Lý do: Import 'Employee' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/serializers.py:13] | Lý do: Import 'DepartmentEmployees' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/serializers.py:11] | Lý do: Import 'F' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/tests.py:1] | Lý do: Import 'TestCase' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/urls.py:1] | Lý do: Import 'include' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/view_bpo_task.py:2367] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/BPO_Task/view_bpo_task.py:1061] | Lý do: Function too long (God Object anti-pattern): get_general_report (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Maintainability] | [source_code/BPO_Task/view_bpo_task.py:1228] | Lý do: Function too long (God Object anti-pattern): export_general_report_excel (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/BPO_Task/view_bpo_task.py:1228] | Lý do: Cyclomatic Complexity too high (Too many nested loops/branches): export_general_report_excel (Complexity: 39 > 25) | Trình bày: HIGH_COMPLEXITY | Trọng số: -2.0
+- [Maintainability] | [source_code/BPO_Task/view_bpo_task.py:1905] | Lý do: Function too long (God Object anti-pattern): get_bpo_member_report (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/BPO_Task/view_bpo_task.py:1905] | Lý do: Cyclomatic Complexity too high (Too many nested loops/branches): get_bpo_member_report (Complexity: 42 > 25) | Trình bày: HIGH_COMPLEXITY | Trọng số: -2.0
+- [Maintainability] | [source_code/BPO_Task/view_bpo_task.py:2381] | Lý do: Function too long (God Object anti-pattern): _create_bpo_member_report_sheet (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/BPO_Task/view_bpo_task.py:2381] | Lý do: Cyclomatic Complexity too high (Too many nested loops/branches): _create_bpo_member_report_sheet (Complexity: 42 > 25) | Trình bày: HIGH_COMPLEXITY | Trọng số: -2.0
+- [Maintainability] | [source_code/BPO_Task/view_bpo_task.py:2660] | Lý do: Function too long (God Object anti-pattern): _create_bpo_member_report_for_bo_sheet (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/BPO_Task/view_bpo_task.py:2660] | Lý do: Cyclomatic Complexity too high (Too many nested loops/branches): _create_bpo_member_report_for_bo_sheet (Complexity: 40 > 25) | Trình bày: HIGH_COMPLEXITY | Trọng số: -2.0
+- [Maintainability] | [source_code/BPO_Task/view_bpo_task.py:3075] | Lý do: Function too long (God Object anti-pattern): get_bpo_member_report_export_excel (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/BPO_Task/view_bpo_task.py:3075] | Lý do: Cyclomatic Complexity too high (Too many nested loops/branches): get_bpo_member_report_export_excel (Complexity: 41 > 25) | Trình bày: HIGH_COMPLEXITY | Trọng số: -2.0
+- [Maintainability] | [source_code/BPO_Task/view_bpo_task.py:3482] | Lý do: Function too long (God Object anti-pattern): get_member_alert (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/BPO_Task/view_bpo_task.py:858] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'self.taskgroup_model.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/BPO_Task/view_bpo_task.py:1145] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'WorklogTaskInfos.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/BPO_Task/view_bpo_task.py:1329] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'WorklogTaskInfos.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/BPO_Task/view_bpo_task.py:2014] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'Employee.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/BPO_Task/view_bpo_task.py:3189] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'Employee.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Reliability] | [source_code/BPO_Task/view_bpo_task.py:1005] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Maintainability] | [source_code/BPO_Task/view_bpo_task.py:3450] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Reliability] | [source_code/BPO_Task/view_bpo_task.py:2108] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Reliability] | [source_code/BPO_Task/view_bpo_task.py:2253] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Reliability] | [source_code/BPO_Task/view_bpo_task.py:3282] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Reliability] | [source_code/BPO_Task/view_bpo_task.py:1142] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Reliability] | [source_code/BPO_Task/view_bpo_task.py:1326] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Reliability] | [source_code/BPO_Task/view_bpo_task.py:2037] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Reliability] | [source_code/BPO_Task/view_bpo_task.py:2068] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Reliability] | [source_code/BPO_Task/view_bpo_task.py:3212] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Reliability] | [source_code/BPO_Task/view_bpo_task.py:3243] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Maintainability] | [source_code/BPO_Task/view_bpo_task.py:4] | Lý do: Import 'SimpleNamespace' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/view_bpo_task.py:14] | Lý do: Import 'Count' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/view_hook.py:576] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Performance] | [source_code/BPO_Task/view_hook.py:436] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectSprintInfo.objects.get_or_create()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/BPO_Task/view_hook.py:324] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/view_hook.py:325] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Reliability] | [source_code/BPO_Task/view_hook.py:623] | Lý do: External API call without timeout parameter | Trình bày: NO_TIMEOUT_SET | Trọng số: -5.0
+- [Reliability] | [source_code/BPO_Task/view_hook.py:687] | Lý do: External API call without timeout parameter | Trình bày: NO_TIMEOUT_SET | Trọng số: -5.0
+- [Maintainability] | [source_code/BPO_Task/view_hook.py:537] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/view_hook.py:540] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/view_hook.py:574] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/view_hook.py:625] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/view_hook.py:627] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/view_hook.py:630] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/view_hook.py:689] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/view_hook.py:691] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/view_hook.py:30] | Lý do: Import 'env_const' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Reliability] | [source_code/BPO_Task/backlog_utils/backlog_auth.py:29] | Lý do: Function uses a mutable default argument (e.g. list or dict). This can cause unexpected state retention across calls. | Trình bày: MUTABLE_DEFAULT_ARGS | Trọng số: -4.0
+- [Reliability] | [source_code/BPO_Task/backlog_utils/backlog_auth.py:33] | Lý do: Function uses a mutable default argument (e.g. list or dict). This can cause unexpected state retention across calls. | Trình bày: MUTABLE_DEFAULT_ARGS | Trọng số: -4.0
+- [Reliability] | [source_code/BPO_Task/backlog_utils/backlog_auth.py:37] | Lý do: Function uses a mutable default argument (e.g. list or dict). This can cause unexpected state retention across calls. | Trình bày: MUTABLE_DEFAULT_ARGS | Trọng số: -4.0
+- [Maintainability] | [source_code/BPO_Task/backlog_utils/backlog_handle_issue.py:59] | Lý do: Function has too many parameters (Consider DTO/Dict): add_issue (17 > 12) | Trình bày: TOO_MANY_PARAMS | Trọng số: -3.0
+- [Maintainability] | [source_code/BPO_Task/backlog_utils/backlog_handle_issue.py:104] | Lý do: Function has too many parameters (Consider DTO/Dict): update_issue (14 > 12) | Trình bày: TOO_MANY_PARAMS | Trọng số: -3.0
+- [Maintainability] | [source_code/BPO_Task/backlog_utils/backlog_handle_issue.py:169] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/BPO_Task/backlog_utils/config.py:129] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/DevTools/admin.py:1] | Lý do: Import 'admin' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/DevTools/models.py:1] | Lý do: Import 'models' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/DevTools/tests.py:1] | Lý do: Import 'TestCase' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/DevTools/views.py:231] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/DevTools/views.py:14] | Lý do: Import 'User' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/DevTools/views.py:16] | Lý do: Import 'transaction' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/DevTools/views.py:17] | Lý do: Import 'HttpResponse' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F10_Auth/admin.py:14] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Security] | [source_code/F10_Auth/tests.py:50] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Maintainability] | [source_code/F10_Auth/tests.py:29] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Reliability] | [source_code/F10_Auth/tests.py:31] | Lý do: External API call without timeout parameter | Trình bày: NO_TIMEOUT_SET | Trọng số: -5.0
+- [Reliability] | [source_code/F10_Auth/tests.py:37] | Lý do: External API call without timeout parameter | Trình bày: NO_TIMEOUT_SET | Trọng số: -5.0
+- [Reliability] | [source_code/F10_Auth/tests.py:40] | Lý do: External API call without timeout parameter | Trình bày: NO_TIMEOUT_SET | Trọng số: -5.0
+- [Maintainability] | [source_code/F10_Auth/tests.py:44] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Reliability] | [source_code/F10_Auth/tests.py:52] | Lý do: External API call without timeout parameter | Trình bày: NO_TIMEOUT_SET | Trọng số: -5.0
+- [Reliability] | [source_code/F10_Auth/tests.py:65] | Lý do: External API call without timeout parameter | Trình bày: NO_TIMEOUT_SET | Trọng số: -5.0
+- [Security] | [source_code/F10_Auth/views.py:507] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Maintainability] | [source_code/F10_Auth/views.py:382] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F10_Auth/views.py:507] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Reliability] | [source_code/F10_Auth/views.py:117] | Lý do: External API call without timeout parameter | Trình bày: NO_TIMEOUT_SET | Trọng số: -5.0
+- [Reliability] | [source_code/F10_Auth/views.py:227] | Lý do: External API call without timeout parameter | Trình bày: NO_TIMEOUT_SET | Trọng số: -5.0
+- [Maintainability] | [source_code/F10_Auth/views.py:5] | Lý do: Import 'relativedelta' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F10_Auth/views.py:39] | Lý do: Import 'WorklogTaskInfos' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F10_Auth/views.py:11] | Lý do: Import 'transaction' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F10_Auth/views.py:40] | Lý do: Import 'is_vn_holiday' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F10_Auth/views.py:14] | Lý do: Import 'viewsets' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F10_Auth/views.py:38] | Lý do: Import 'Timesheet' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F10_Auth/views.py:39] | Lý do: Import 'WorkLogInfo' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F10_Auth/views.py:10] | Lý do: Import 'make_password' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F10_Auth/views.py:40] | Lý do: Import 'is_business_day' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F10_Auth/handle/external_user.py:8] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F10_Auth/handle/handle_user_info.py:20] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Performance] | [source_code/F11_CheckInOut/crontab.py:336] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'Timesheet.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F11_CheckInOut/crontab.py:427] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'Request.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F11_CheckInOut/crontab.py:540] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'Request.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:20] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:33] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:36] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:94] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:97] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:169] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:178] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:208] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:280] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Performance] | [source_code/F11_CheckInOut/crontab.py:336] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'Timesheet.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:392] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:393] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:408] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:466] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:467] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:485] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:567] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:568] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:90] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:92] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:165] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:167] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:285] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:286] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:405] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:523] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:524] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:503] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:504] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:492] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:493] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:565] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:14] | Lý do: Import 'ViolationHandle' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:12] | Lý do: Import 'Prefetch' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/crontab.py:6] | Lý do: Import 'relativedelta' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/models.py:2] | Lý do: Import 'User' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/models.py:5] | Lý do: Import 'timezone' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/models.py:4] | Lý do: Import 'fields' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/models.py:4] | Lý do: Import 'F' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/models.py:4] | Lý do: Import 'Sum' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/models.py:4] | Lý do: Import 'ExpressionWrapper' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Security] | [source_code/F11_CheckInOut/tests.py:28] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Maintainability] | [source_code/F11_CheckInOut/tests.py:3] | Lý do: Import 'APIClient' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/tests.py:5] | Lý do: Import 'Token' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/tests.py:11] | Lý do: Import 'enum' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/tests.py:3] | Lý do: Import 'APITestCase' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/tests.py:10] | Lý do: Import 'Employee' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/tests.py:1] | Lý do: Import 'User' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/tests.py:6] | Lý do: Import 'date' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/views.py:604] | Lý do: Function too long (God Object anti-pattern): summary_violation_classification (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/F11_CheckInOut/views.py:604] | Lý do: Cyclomatic Complexity too high (Too many nested loops/branches): summary_violation_classification (Complexity: 31 > 25) | Trình bày: HIGH_COMPLEXITY | Trọng số: -2.0
+- [Maintainability] | [source_code/F11_CheckInOut/views.py:572] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/views.py:600] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/views.py:722] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/views.py:755] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/views.py:758] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/views.py:764] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/views.py:770] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/views.py:784] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/views.py:787] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/views.py:804] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/views.py:807] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/views.py:812] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/views.py:842] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/views.py:761] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/views.py:767] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/views.py:125] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/views.py:180] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/views.py:252] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/views.py:579] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/views.py:742] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/views.py:583] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/views.py:12] | Lý do: Import 'APIView' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/views.py:619] | Lý do: Import 'ViolationScoreMapping' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/views.py:612] | Lý do: Import 'crontab_employee_classification' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/views_employee_classification.py:8] | Lý do: Import 'Q' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/views_test.py:42] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/F11_CheckInOut/views_test.py:194] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Reliability] | [source_code/F11_CheckInOut/views_test.py:103] | Lý do: Hardcoded IP addresses (excluding localhost) decrease maintainability and reliability when migrating environments. | Trình bày: HARDCODED_IP_ADDRESS | Trọng số: -3.0
+- [Reliability] | [source_code/F11_CheckInOut/views_test.py:103] | Lý do: Hardcoded IP addresses (excluding localhost) decrease maintainability and reliability when migrating environments. | Trình bày: HARDCODED_IP_ADDRESS | Trọng số: -3.0
+- [Reliability] | [source_code/F11_CheckInOut/views_test.py:103] | Lý do: Hardcoded IP addresses (excluding localhost) decrease maintainability and reliability when migrating environments. | Trình bày: HARDCODED_IP_ADDRESS | Trọng số: -3.0
+- [Reliability] | [source_code/F11_CheckInOut/views_test.py:103] | Lý do: Hardcoded IP addresses (excluding localhost) decrease maintainability and reliability when migrating environments. | Trình bày: HARDCODED_IP_ADDRESS | Trọng số: -3.0
+- [Reliability] | [source_code/F11_CheckInOut/views_test.py:104] | Lý do: Hardcoded IP addresses (excluding localhost) decrease maintainability and reliability when migrating environments. | Trình bày: HARDCODED_IP_ADDRESS | Trọng số: -3.0
+- [Reliability] | [source_code/F11_CheckInOut/views_test.py:104] | Lý do: Hardcoded IP addresses (excluding localhost) decrease maintainability and reliability when migrating environments. | Trình bày: HARDCODED_IP_ADDRESS | Trọng số: -3.0
+- [Reliability] | [source_code/F11_CheckInOut/views_test.py:104] | Lý do: Hardcoded IP addresses (excluding localhost) decrease maintainability and reliability when migrating environments. | Trình bày: HARDCODED_IP_ADDRESS | Trọng số: -3.0
+- [Reliability] | [source_code/F11_CheckInOut/views_test.py:104] | Lý do: Hardcoded IP addresses (excluding localhost) decrease maintainability and reliability when migrating environments. | Trình bày: HARDCODED_IP_ADDRESS | Trọng số: -3.0
+- [Reliability] | [source_code/F11_CheckInOut/views_test.py:105] | Lý do: Hardcoded IP addresses (excluding localhost) decrease maintainability and reliability when migrating environments. | Trình bày: HARDCODED_IP_ADDRESS | Trọng số: -3.0
+- [Reliability] | [source_code/F11_CheckInOut/views_test.py:105] | Lý do: Hardcoded IP addresses (excluding localhost) decrease maintainability and reliability when migrating environments. | Trình bày: HARDCODED_IP_ADDRESS | Trọng số: -3.0
+- [Reliability] | [source_code/F11_CheckInOut/views_test.py:105] | Lý do: Hardcoded IP addresses (excluding localhost) decrease maintainability and reliability when migrating environments. | Trình bày: HARDCODED_IP_ADDRESS | Trọng số: -3.0
+- [Reliability] | [source_code/F11_CheckInOut/views_test.py:105] | Lý do: Hardcoded IP addresses (excluding localhost) decrease maintainability and reliability when migrating environments. | Trình bày: HARDCODED_IP_ADDRESS | Trọng số: -3.0
+- [Maintainability] | [source_code/F11_CheckInOut/views_test.py:23] | Lý do: Function too long (God Object anti-pattern): get (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/F11_CheckInOut/views_test.py:23] | Lý do: Cyclomatic Complexity too high (Too many nested loops/branches): get (Complexity: 41 > 25) | Trình bày: HIGH_COMPLEXITY | Trọng số: -2.0
+- [Maintainability] | [source_code/F11_CheckInOut/handle/handle_violation_chart.py:2] | Lý do: Import 'Count' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/handle/handle_violation_chart.py:2] | Lý do: Import 'Q' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/utils/helper.py:53] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/utils/helper.py:80] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F11_CheckInOut/utils/utils.py:480] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Performance] | [source_code/F11_CheckInOut/utils/utils.py:210] | Lý do: Cyclomatic Complexity too high (Too many nested loops/branches): get_emp_classification_qs (Complexity: 26 > 25) | Trình bày: HIGH_COMPLEXITY | Trọng số: -2.0
+- [Maintainability] | [source_code/F12_Request_Management/models.py:761] | Lý do: Forgotten TODO/FIXME comment in code. | Trình bày: FORGOTTEN_TODO | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/models.py:718] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Performance] | [source_code/F12_Request_Management/models.py:847] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'Timesheet.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F12_Request_Management/models.py:806] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'EmployeeClassification.objects.get()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F12_Request_Management/models.py:283] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'Violation.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F12_Request_Management/models.py:100] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/models.py:129] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/models.py:817] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/models.py:23] | Lý do: Import 'WorkLogInfo' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/models.py:23] | Lý do: Import 'WorklogTaskInfos' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Reliability] | [source_code/F12_Request_Management/serializers.py:106] | Lý do: Bare except: block detected (Catches SystemExit/KeyboardInterrupt) | Trình bày: BARE_EXCEPT | Trọng số: -2.0
+- [Reliability] | [source_code/F12_Request_Management/serializers.py:109] | Lý do: Bare except: block detected (Catches SystemExit/KeyboardInterrupt) | Trình bày: BARE_EXCEPT | Trọng số: -2.0
+- [Security] | [source_code/F12_Request_Management/tests.py:24] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Security] | [source_code/F12_Request_Management/tests.py:31] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Maintainability] | [source_code/F12_Request_Management/views.py:1986] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/F12_Request_Management/views.py:236] | Lý do: Function too long (God Object anti-pattern): create_off_request (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Maintainability] | [source_code/F12_Request_Management/views.py:1680] | Lý do: Function too long (God Object anti-pattern): _try_split_request_if_insufficient_leave (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Maintainability] | [source_code/F12_Request_Management/views.py:2160] | Lý do: Function too long (God Object anti-pattern): _process_single_approve (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/F12_Request_Management/views.py:2160] | Lý do: Cyclomatic Complexity too high (Too many nested loops/branches): _process_single_approve (Complexity: 79 > 25) | Trình bày: HIGH_COMPLEXITY | Trọng số: -2.0
+- [Reliability] | [source_code/F12_Request_Management/views.py:2795] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Maintainability] | [source_code/F12_Request_Management/views.py:388] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:481] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:539] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:591] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:606] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:654] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:718] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:732] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:763] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:837] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:882] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:943] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:1159] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:1226] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:1275] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:1376] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:1441] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:1453] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:1465] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:1569] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:1625] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:2046] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:2154] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:2992] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:3006] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:3021] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Reliability] | [source_code/F12_Request_Management/views.py:2320] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Reliability] | [source_code/F12_Request_Management/views.py:2358] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Reliability] | [source_code/F12_Request_Management/views.py:2365] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Maintainability] | [source_code/F12_Request_Management/views.py:10] | Lý do: Import 'TruncDate' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:33] | Lý do: Import 'WorklogTaskInfos' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:10] | Lý do: Import 'Concat' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:8] | Lý do: Import 'models' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:9] | Lý do: Import 'Count' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:40] | Lý do: Import 'WorklogTaskInfos' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/views.py:12] | Lý do: Import 'localtime' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/handle/handle_adjust_pending_requests.py:65] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/F12_Request_Management/handle/handle_adjust_pending_requests.py:115] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/F12_Request_Management/handle/handle_adjust_pending_requests.py:304] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/F12_Request_Management/handle/handle_adjust_pending_requests.py:27] | Lý do: Function too long (God Object anti-pattern): adjust_pending_requests_after_approval (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/F12_Request_Management/handle/handle_adjust_pending_requests.py:27] | Lý do: Cyclomatic Complexity too high (Too many nested loops/branches): adjust_pending_requests_after_approval (Complexity: 30 > 25) | Trình bày: HIGH_COMPLEXITY | Trọng số: -2.0
+- [Maintainability] | [source_code/F12_Request_Management/handle/handle_adjust_pending_requests.py:695] | Lý do: Function too long (God Object anti-pattern): adjust_pending_requests_after_rejection (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/F12_Request_Management/handle/handle_adjust_pending_requests.py:752] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'self.model_class.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F12_Request_Management/handle/handle_adjust_pending_requests.py:8] | Lý do: Import 'Request' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/handle/handle_adjust_pending_requests.py:9] | Lý do: Import 'Employee' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/handle/handle_adjust_pending_requests.py:6] | Lý do: Import 'transaction' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/handle/handle_adjust_pending_requests.py:5] | Lý do: Import 'datetime' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/handle/handle_off_request.py:896] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/F12_Request_Management/handle/handle_off_request.py:182] | Lý do: Function too long (God Object anti-pattern): calculate_request_plans (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Maintainability] | [source_code/F12_Request_Management/handle/handle_off_request.py:696] | Lý do: Function too long (God Object anti-pattern): _calculate_pto_plans_cross_month (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Maintainability] | [source_code/F12_Request_Management/handle/handle_off_request.py:359] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/handle/handle_validate_request.py:1] | Lý do: Import 'datetime' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/handle/handle_violation.py:497] | Lý do: Function too long (God Object anti-pattern): check_not_checkin (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/F12_Request_Management/handle/handle_violation.py:497] | Lý do: Cyclomatic Complexity too high (Too many nested loops/branches): check_not_checkin (Complexity: 37 > 25) | Trình bày: HIGH_COMPLEXITY | Trọng số: -2.0
+- [Maintainability] | [source_code/F12_Request_Management/handle/handle_violation.py:897] | Lý do: Function too long (God Object anti-pattern): check_not_checkout (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/F12_Request_Management/handle/handle_violation.py:787] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'Employee.objects.get()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F12_Request_Management/handle/handle_violation.py:835] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'EmployeeClassification.objects.get_or_create()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F12_Request_Management/handle/handle_violation.py:1026] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'EmployeeClassification.objects.get_or_create()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F12_Request_Management/handle/handle_violation.py:1113] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'EmployeeClassification.objects.get()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F12_Request_Management/handle/handle_violation.py:807] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/handle/handle_violation.py:669] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Performance] | [source_code/F12_Request_Management/handle/handle_violation.py:881] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'Violation.objects.get_or_create()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F12_Request_Management/handle/handle_violation.py:1070] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'Violation.objects.get_or_create()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F12_Request_Management/handle/handle_violation.py:2] | Lý do: Import 'models' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F12_Request_Management/utils/helper.py:2] | Lý do: Import 'EnumViolationType' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F13_Timesheet_And_Worklog/tests.py:1] | Lý do: Import 'TestCase' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F13_Timesheet_And_Worklog/views.py:804] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/F13_Timesheet_And_Worklog/views.py:1210] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/F13_Timesheet_And_Worklog/views.py:1539] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/F13_Timesheet_And_Worklog/views.py:1570] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/F13_Timesheet_And_Worklog/views.py:54] | Lý do: Function too long (God Object anti-pattern): get (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/F13_Timesheet_And_Worklog/views.py:54] | Lý do: Cyclomatic Complexity too high (Too many nested loops/branches): get (Complexity: 99 > 25) | Trình bày: HIGH_COMPLEXITY | Trọng số: -2.0
+- [Maintainability] | [source_code/F13_Timesheet_And_Worklog/views.py:586] | Lý do: Function too long (God Object anti-pattern): put (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Maintainability] | [source_code/F13_Timesheet_And_Worklog/views.py:749] | Lý do: Function too long (God Object anti-pattern): post (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Maintainability] | [source_code/F13_Timesheet_And_Worklog/views.py:1327] | Lý do: Function too long (God Object anti-pattern): _prepare_worklog_task_logs (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/F13_Timesheet_And_Worklog/views.py:1327] | Lý do: Cyclomatic Complexity too high (Too many nested loops/branches): _prepare_worklog_task_logs (Complexity: 40 > 25) | Trình bày: HIGH_COMPLEXITY | Trọng số: -2.0
+- [Performance] | [source_code/F13_Timesheet_And_Worklog/views.py:297] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'Holiday.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F13_Timesheet_And_Worklog/views.py:1341] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectTaskInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F13_Timesheet_And_Worklog/views.py:1436] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectTaskInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F13_Timesheet_And_Worklog/views.py:1607] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectTaskInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F13_Timesheet_And_Worklog/views.py:894] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F13_Timesheet_And_Worklog/views.py:62] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F13_Timesheet_And_Worklog/views.py:532] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F13_Timesheet_And_Worklog/views.py:601] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F13_Timesheet_And_Worklog/views.py:769] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Reliability] | [source_code/F13_Timesheet_And_Worklog/views.py:1638] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Maintainability] | [source_code/F13_Timesheet_And_Worklog/views.py:1496] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F13_Timesheet_And_Worklog/views.py:25] | Lý do: Import 'env_const' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F13_Timesheet_And_Worklog/handle/handle_request.py:7] | Lý do: Import 'Employee' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F13_Timesheet_And_Worklog/handle/handle_request.py:1] | Lý do: Import 'datetime' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F13_Timesheet_And_Worklog/handle_view/report_monthly.py:242] | Lý do: Function too long (God Object anti-pattern): get (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Maintainability] | [source_code/F16_Daily_Report/const.py:130] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/F16_Daily_Report/cron_views.py:8] | Lý do: Import 'Response' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Performance] | [source_code/F16_Daily_Report/serializers.py:379] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'DailyTaskHistory.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F16_Daily_Report/serializers.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F16_Daily_Report/views.py:502] | Lý do: Function too long (God Object anti-pattern): save_daily_report (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/F16_Daily_Report/views.py:502] | Lý do: Cyclomatic Complexity too high (Too many nested loops/branches): save_daily_report (Complexity: 31 > 25) | Trình bày: HIGH_COMPLEXITY | Trọng số: -2.0
+- [Maintainability] | [source_code/F16_Daily_Report/views.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F16_Daily_Report/handle_view/daily_report_handle_view.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F16_Daily_Report/handle_view/daily_report_slack_view.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F16_Daily_Report/handle_view/handle_test_alerts.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Performance] | [source_code/F16_Daily_Report/utils/alerts.py:669] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'AlertLog.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F16_Daily_Report/utils/alerts.py:633] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F16_Daily_Report/utils/alerts.py:647] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F16_Daily_Report/utils/alerts.py:637] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F16_Daily_Report/utils/alerts.py:652] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F16_Daily_Report/utils/alerts.py:16] | Lý do: Import 'date_helper' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F16_Daily_Report/utils/alerts.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F16_Daily_Report/utils/alerts.py:31] | Lý do: Import 'AssessmentMemberPeriod' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F16_Daily_Report/utils/alerts.py:11] | Lý do: Import 'Q' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F16_Daily_Report/utils/alerts.py:31] | Lý do: Import 'WeeklyTaskAssessment' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F21_Employee_Management/models.py:7] | Lý do: Import 'relativedelta' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F21_Employee_Management/serializers.py:14] | Lý do: Import 'models' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F21_Employee_Management/tests.py:8] | Lý do: Function too long (God Object anti-pattern): convert_data (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Maintainability] | [source_code/F21_Employee_Management/tests.py:344] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F21_Employee_Management/views.py:85] | Lý do: Function too long (God Object anti-pattern): get_same_unit_employee_list (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/F21_Employee_Management/views.py:358] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectEmployees.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F21_Employee_Management/views.py:378] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'DepartmentEmployees.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F21_Employee_Management/views.py:273] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'DepartmentEmployees.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F21_Employee_Management/views.py:445] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F21_Employee_Management/views.py:446] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F21_Employee_Management/views.py:447] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F21_Employee_Management/views.py:82] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F21_Employee_Management/views.py:322] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F21_Employee_Management/views.py:332] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F21_Employee_Management/views.py:550] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F21_Employee_Management/views.py:17] | Lý do: Import 'PositionInfo' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F21_Employee_Management/views.py:3] | Lý do: Import 'generics' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F21_Employee_Management/handle/handle_availability_view.py:25] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F21_Employee_Management/handle/handle_availability_view.py:47] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F21_Employee_Management/handle/handle_index_view.py:206] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Performance] | [source_code/F21_Employee_Management/handle/handle_index_view.py:175] | Lý do: Cyclomatic Complexity too high (Too many nested loops/branches): _validate_employee_data (Complexity: 28 > 25) | Trình bày: HIGH_COMPLEXITY | Trọng số: -2.0
+- [Maintainability] | [source_code/F21_Employee_Management/handle/handle_index_view.py:417] | Lý do: Function too long (God Object anti-pattern): _process_edit_employee (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Maintainability] | [source_code/F21_Employee_Management/handle/handle_index_view.py:865] | Lý do: Function too long (God Object anti-pattern): get_employee_info (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/F21_Employee_Management/handle/handle_index_view.py:543] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'PositionInfo.objects.get()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F21_Employee_Management/handle/handle_index_view.py:30] | Lý do: Import 'Timesheet' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F21_Employee_Management/handle/handle_index_view.py:1] | Lý do: Import 'timedelta' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F21_Employee_Management/handle/handle_index_view.py:3] | Lý do: Import 'IsAuthenticated' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F21_Employee_Management/handle/handle_index_view.py:28] | Lý do: Import 'FloatField' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F21_Employee_Management/handle/handle_index_view.py:29] | Lý do: Import 'Extract' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F21_Employee_Management/handle/handle_index_view.py:13] | Lý do: Import 'make_password' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F21_Employee_Management/handle/handle_index_view.py:2] | Lý do: Import 'Sum' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Reliability] | [source_code/F21_Employee_Management/handle/handle_user_role.py:94] | Lý do: Bare except: block detected (Catches SystemExit/KeyboardInterrupt) | Trình bày: BARE_EXCEPT | Trọng số: -2.0
+- [Reliability] | [source_code/F21_Employee_Management/handle/handle_user_role.py:94] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Maintainability] | [source_code/F21_Employee_Management/utils/class_utils.py:33] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F21_Employee_Management/utils/class_utils.py:34] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F21_Employee_Management/utils/class_utils.py:3] | Lý do: Import 'enum' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F22_Department_Management/models.py:58] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/F22_Department_Management/models.py:97] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/F22_Department_Management/models.py:146] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/F22_Department_Management/models.py:207] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F22_Department_Management/models.py:213] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F22_Department_Management/models.py:3] | Lý do: Import 'UniqueConstraint' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F22_Department_Management/models.py:2] | Lý do: Import 'Q' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F22_Department_Management/permissions.py:3] | Lý do: Import 'DepartmentInfo' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F22_Department_Management/permissions.py:3] | Lý do: Import 'PositionInfo' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F22_Department_Management/tests.py:7] | Lý do: Function too long (God Object anti-pattern): init_department (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Maintainability] | [source_code/F22_Department_Management/tests.py:1] | Lý do: Import 'UnitTeamInfo' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F22_Department_Management/views.py:127] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F22_Department_Management/views.py:224] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F22_Department_Management/views.py:281] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F22_Department_Management/views.py:302] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F22_Department_Management/views.py:311] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F22_Department_Management/views.py:429] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F22_Department_Management/views.py:442] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F22_Department_Management/views.py:453] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F22_Department_Management/views.py:1] | Lý do: Import 'List' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F22_Department_Management/views.py:1] | Lý do: Import 'Any' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F22_Department_Management/views.py:1] | Lý do: Import 'Dict' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F22_Department_Management/views.py:1] | Lý do: Import 'Optional' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F22_Department_Management/handle/handle_filters_view.py:5] | Lý do: Import 'DepartmentLabelSerializer' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F22_Department_Management/handle/handle_index_view.py:356] | Lý do: Function too long (God Object anti-pattern): edit_unit (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Maintainability] | [source_code/F22_Department_Management/handle/handle_index_view.py:13] | Lý do: Import 'UnitTeamInfo' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/crontab.py:12] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/crontab.py:24] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/crontab.py:35] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/crontab.py:29] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/crontab.py:31] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/crontab.py:33] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/crontab.py:3] | Lý do: Import 'settings' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/crontab.py:2] | Lý do: Import 'env_const' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/models.py:324] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Performance] | [source_code/F31_Project_Management/models.py:1012] | Lý do: Cyclomatic Complexity too high (Too many nested loops/branches): save (Complexity: 38 > 25) | Trình bày: HIGH_COMPLEXITY | Trọng số: -2.0
+- [Reliability] | [source_code/F31_Project_Management/models.py:1151] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Reliability] | [source_code/F31_Project_Management/models.py:1404] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Reliability] | [source_code/F31_Project_Management/models.py:1148] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Maintainability] | [source_code/F31_Project_Management/models.py:1145] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/models.py:1146] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/models.py:5] | Lý do: Import 'relativedelta' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/models.py:15] | Lý do: Import 'BACKLOG_CONFIG' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/models.py:1116] | Lý do: Import 'get_employee_primary_email' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/serializers.py:36] | Lý do: Import 'datetime' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/serializers.py:29] | Lý do: Import 'AssessmentTargetConfig' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/serializers.py:37] | Lý do: Import 'relativedelta' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/serializers.py:29] | Lý do: Import 'AssessmentResult' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/serializers.py:3] | Lý do: Import 'timezone' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/serializers.py:1] | Lý do: Import 'Q' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/serializers2.py:30] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/F31_Project_Management/serializers2.py:44] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/serializers2.py:3] | Lý do: Import 'timezone' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/serializers2.py:2] | Lý do: Import 'Sum' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Security] | [source_code/F31_Project_Management/tests.py:39] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Maintainability] | [source_code/F31_Project_Management/tests.py:13] | Lý do: Import 'Any' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/tests.py:13] | Lý do: Import 'Dict' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Security] | [source_code/F31_Project_Management/tests2.py:29] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Security] | [source_code/F31_Project_Management/tests2.py:428] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Security] | [source_code/F31_Project_Management/tests2.py:820] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Security] | [source_code/F31_Project_Management/tests2.py:901] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Security] | [source_code/F31_Project_Management/tests2.py:908] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Maintainability] | [source_code/F31_Project_Management/tests2.py:889] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/F31_Project_Management/tests2.py:10] | Lý do: Import 'PositionInfo' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/tests2.py:2] | Lý do: Import 'User' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/tests2.py:4] | Lý do: Import 'APIClient' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/tests2.py:13] | Lý do: Import 'Employee' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/tests2.py:1] | Lý do: Import 'patch' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/tests2.py:4] | Lý do: Import 'APITestCase' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/tests2.py:9] | Lý do: Import 'TimeHelper' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/tests2.py:6] | Lý do: Import 'Token' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/tests2.py:10] | Lý do: Import 'ProjectEmployees' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/views.py:1] | Lý do: Import 'render' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_create_view.py:772] | Lý do: Function too long (God Object anti-pattern): _get_recommend_value (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_create_view.py:772] | Lý do: Cyclomatic Complexity too high (Too many nested loops/branches): _get_recommend_value (Complexity: 28 > 25) | Trình bày: HIGH_COMPLEXITY | Trọng số: -2.0
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_create_view.py:1222] | Lý do: Function too long (God Object anti-pattern): get_history_employee (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_create_view.py:1222] | Lý do: Cyclomatic Complexity too high (Too many nested loops/branches): get_history_employee (Complexity: 28 > 25) | Trình bày: HIGH_COMPLEXITY | Trọng số: -2.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_create_view.py:989] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'AssessmentCriteriaInfo.objects.get_or_create()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_create_view.py:643] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectTaskInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_create_view.py:646] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectIssueInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_create_view.py:183] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ReportInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_create_view.py:203] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'CommunicationInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_create_view.py:264] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_create_view.py:418] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_create_view.py:607] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_create_view.py:630] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_create_view.py:651] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_create_view.py:682] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_create_view.py:769] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_create_view.py:1104] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_create_view.py:1126] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Performance] | [source_code/F31_Project_Management/handle/handle_create_view.py:1703] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'CommunicationInfo.objects.get()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_create_view.py:1722] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Performance] | [source_code/F31_Project_Management/handle/handle_create_view.py:1783] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'CommunicationInfo.objects.get()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_create_view.py:1797] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_deliverable_overview.py:96] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_deliverable_overview.py:126] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_deliverable_overview.py:306] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_deliverable_overview.py:323] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_deliverable_overview.py:373] | Lý do: Function too long (God Object anti-pattern): get_deliverable_overview_by_project_chart (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_deliverable_overview.py:773] | Lý do: Function too long (God Object anti-pattern): get_deliverable_overview_by_owner_chart (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_deliverable_overview.py:773] | Lý do: Cyclomatic Complexity too high (Too many nested loops/branches): get_deliverable_overview_by_owner_chart (Complexity: 30 > 25) | Trình bày: HIGH_COMPLEXITY | Trọng số: -2.0
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_deliverable_overview.py:1290] | Lý do: Function too long (God Object anti-pattern): get_deliverable_overview_by_reviewer_chart (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_deliverable_overview.py:1290] | Lý do: Cyclomatic Complexity too high (Too many nested loops/branches): get_deliverable_overview_by_reviewer_chart (Complexity: 30 > 25) | Trình bày: HIGH_COMPLEXITY | Trọng số: -2.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_deliverable_overview.py:442] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectDeliverableInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_deliverable_overview.py:498] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectDeliverableInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_deliverable_overview.py:934] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectTaskInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_deliverable_overview.py:1451] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectTaskInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_deliverable_overview.py:556] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectDeliverableInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_deliverable_overview.py:986] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectIssueInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_deliverable_overview.py:1503] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectIssueInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_deliverable_overview.py:602] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectDeliverableInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_deliverable_overview.py:1028] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectIssueInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_deliverable_overview.py:1545] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectIssueInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_deliverable_overview.py:19] | Lý do: Import 'ProcessUtils' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_filters.py:39] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_filters.py:68] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_filters.py:215] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_filters.py:2] | Lý do: Import 'transaction' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_filters.py:9] | Lý do: Import 'ProjectSprintDeliverableLink' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_filters.py:3] | Lý do: Import 'TimeHelper' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_filters.py:4] | Lý do: Import 'enum' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_index_view.py:88] | Lý do: Function too long (God Object anti-pattern): get_projects (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_index_view.py:88] | Lý do: Cyclomatic Complexity too high (Too many nested loops/branches): get_projects (Complexity: 59 > 25) | Trình bày: HIGH_COMPLEXITY | Trọng số: -2.0
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_index_view.py:11] | Lý do: Import 'ProjectInfo' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_index_view.py:15] | Lý do: Import 'Q' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_issue.py:196] | Lý do: Function too long (God Object anti-pattern): get_all_issue (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_project_issue.py:196] | Lý do: Cyclomatic Complexity too high (Too many nested loops/branches): get_all_issue (Complexity: 35 > 25) | Trình bày: HIGH_COMPLEXITY | Trọng số: -2.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_project_issue.py:493] | Lý do: Cyclomatic Complexity too high (Too many nested loops/branches): edit_issue (Complexity: 27 > 25) | Trình bày: HIGH_COMPLEXITY | Trọng số: -2.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_project_issue.py:166] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectSprintInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_project_issue.py:523] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectVersionManagementInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_project_issue.py:654] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectVersionManagementInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_project_issue.py:775] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectTaskInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Reliability] | [source_code/F31_Project_Management/handle/handle_project_issue.py:353] | Lý do: Bare except: block detected (Catches SystemExit/KeyboardInterrupt) | Trình bày: BARE_EXCEPT | Trọng số: -2.0
+- [Reliability] | [source_code/F31_Project_Management/handle/handle_project_issue.py:367] | Lý do: Bare except: block detected (Catches SystemExit/KeyboardInterrupt) | Trình bày: BARE_EXCEPT | Trọng số: -2.0
+- [Reliability] | [source_code/F31_Project_Management/handle/handle_project_issue.py:376] | Lý do: Bare except: block detected (Catches SystemExit/KeyboardInterrupt) | Trình bày: BARE_EXCEPT | Trọng số: -2.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_project_issue.py:602] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectTaskInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_project_issue.py:692] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectTaskInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Reliability] | [source_code/F31_Project_Management/handle/handle_project_issue.py:169] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Reliability] | [source_code/F31_Project_Management/handle/handle_project_issue.py:178] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_issue.py:12] | Lý do: Import 'ProjectEmployees' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_resource.py:217] | Lý do: Function too long (God Object anti-pattern): get_teams (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_project_resource.py:857] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectEmployees.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_resource.py:35] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_resource.py:646] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_resource.py:916] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_resource.py:955] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_resource.py:16] | Lý do: Import 'CoefficientLevelInfo' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_sprint.py:788] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_sprint.py:458] | Lý do: Function too long (God Object anti-pattern): create_sprint (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_sprint.py:657] | Lý do: Function too long (God Object anti-pattern): edit_sprint (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_sprint.py:1591] | Lý do: Function too long (God Object anti-pattern): get_member_bug_analytics (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_project_sprint.py:909] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectSprintTeams.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_sprint.py:948] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_sprint.py:1013] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_sprint.py:5] | Lý do: Import 'threading' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_sprint.py:3] | Lý do: Import 'datetime' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_task.py:802] | Lý do: Function too long (God Object anti-pattern): get_all_task (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_project_task.py:189] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectSprintInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_project_task.py:379] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectIssueInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Reliability] | [source_code/F31_Project_Management/handle/handle_project_task.py:878] | Lý do: Bare except: block detected (Catches SystemExit/KeyboardInterrupt) | Trình bày: BARE_EXCEPT | Trọng số: -2.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_project_task.py:294] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'WeeklyTask.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_project_task.py:309] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectIssueInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_project_task.py:675] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'WeeklyTask.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F31_Project_Management/handle/handle_project_task.py:703] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectIssueInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Reliability] | [source_code/F31_Project_Management/handle/handle_project_task.py:192] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Reliability] | [source_code/F31_Project_Management/handle/handle_project_task.py:201] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_task.py:12] | Lý do: Import 'ProjectEmployees' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_timeline.py:18] | Lý do: Import 'CommunicationLinks' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_timeline.py:12] | Lý do: Import 'APIView' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_timeline.py:11] | Lý do: Import 'IsAuthenticated' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_timeline.py:3] | Lý do: Import 'datetime' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_timeline.py:18] | Lý do: Import 'ProjectSprintTeams' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_timeline.py:9] | Lý do: Import 'Q' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_timeline.py:18] | Lý do: Import 'ProjectEmployees' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_timeline.py:7] | Lý do: Import 'Count' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_timeline.py:4] | Lý do: Import 'timezone' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_timeline.py:14] | Lý do: Import 'enum' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_timeline.py:18] | Lý do: Import 'ProjectSprintInfo' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_timeline.py:26] | Lý do: Import 'F31Msg' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_timeline.py:9] | Lý do: Import 'F' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_timeline.py:6] | Lý do: Import 'transaction' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_timeline.py:15] | Lý do: Import 'ResponseStatus' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_project_timeline.py:8] | Lý do: Import 'Concat' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_version.py:606] | Lý do: Function too long (God Object anti-pattern): get_issue_list_version_filter (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_version.py:199] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_version.py:239] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_version.py:353] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F31_Project_Management/handle/handle_version.py:13] | Lý do: Import 'timezone' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/cron_views.py:7] | Lý do: Import 'Response' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/models.py:336] | Lý do: Forgotten TODO/FIXME comment in code. | Trình bày: FORGOTTEN_TODO | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/models.py:759] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/F32_Work_Performace/models.py:7] | Lý do: Import 'to_int_or_float' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/serializers.py:463] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Performance] | [source_code/F32_Work_Performace/serializers.py:68] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectTaskInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F32_Work_Performace/serializers.py:375] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectTaskInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F32_Work_Performace/serializers.py:4] | Lý do: Import 'Avg' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/serializers.py:3] | Lý do: Import 'F' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Performance] | [source_code/F32_Work_Performace/tasks.py:32] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'Weekly.objects.get_or_create()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F32_Work_Performace/tasks.py:125] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'Weekly.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F32_Work_Performace/tasks.py:132] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/tests.py:1] | Lý do: Import 'TestCase' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/urls.py:1] | Lý do: Import 'include' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/views.py:83] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/views.py:244] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/views.py:296] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/views.py:39] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/views.py:6] | Lý do: Import 'handle_user_role' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Performance] | [source_code/F32_Work_Performace/views_manager.py:102] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'WeeklyTaskAssessment.objects.get_or_create()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F32_Work_Performace/views_manager.py:102] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'WeeklyTaskAssessment.objects.get_or_create()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F32_Work_Performace/views_manager.py:16] | Lý do: Import 'ProjectTaskInfo' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Performance] | [source_code/F32_Work_Performace/handle_data/handle_monthly_assessment.py:369] | Lý do: Cyclomatic Complexity too high (Too many nested loops/branches): build_log_changes (Complexity: 28 > 25) | Trình bày: HIGH_COMPLEXITY | Trọng số: -2.0
+- [Performance] | [source_code/F32_Work_Performace/handle_data/handle_monthly_assessment.py:214] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'AssessmentCriteriaInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F32_Work_Performace/handle_data/handle_weekly_task.py:6] | Lý do: Import 'f32_consts' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/handle_data/handle_weekly_task.py:2] | Lý do: Import 'enum' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/handle_view/view_monthly_assessment.py:578] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/F32_Work_Performace/handle_view/view_monthly_assessment.py:247] | Lý do: Function too long (God Object anti-pattern): _get_assessment_list_by_normal (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Maintainability] | [source_code/F32_Work_Performace/handle_view/view_monthly_assessment.py:566] | Lý do: Function too long (God Object anti-pattern): get_monthly_assessment_detail (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/F32_Work_Performace/handle_view/view_monthly_assessment.py:537] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'WeeklyTaskAssessment.objects.get_or_create()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F32_Work_Performace/handle_view/view_monthly_assessment.py:563] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/handle_view/view_monthly_assessment.py:742] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Reliability] | [source_code/F32_Work_Performace/handle_view/view_monthly_assessment.py:857] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Maintainability] | [source_code/F32_Work_Performace/handle_view/view_monthly_assessment.py:870] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/handle_view/view_monthly_assessment.py:923] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/handle_view/view_monthly_assessment.py:964] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/utils/monthly_alerts.py:67] | Lý do: Function too long (God Object anti-pattern): alert_monthly_assessment_missing_channel (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Maintainability] | [source_code/F32_Work_Performace/utils/monthly_alerts.py:593] | Lý do: Function too long (God Object anti-pattern): remind_leader_monthly_assessment_pending (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/F32_Work_Performace/utils/monthly_alerts.py:741] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'Employee.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F32_Work_Performace/utils/monthly_alerts.py:137] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/utils/monthly_alerts.py:151] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Performance] | [source_code/F32_Work_Performace/utils/monthly_alerts.py:157] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'Employee.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F32_Work_Performace/utils/monthly_alerts.py:673] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/utils/monthly_alerts.py:141] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/utils/monthly_alerts.py:174] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/utils/monthly_alerts.py:681] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Performance] | [source_code/F32_Work_Performace/utils/monthly_alerts.py:741] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'Employee.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F32_Work_Performace/utils/monthly_alerts.py:180] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/utils/monthly_alerts.py:688] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/utils/monthly_alerts.py:159] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/utils/monthly_alerts.py:168] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/utils/monthly_alerts.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/utils/weekly_alerts.py:321] | Lý do: Function too long (God Object anti-pattern): alert_weekly_assessment_missing_channel (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Maintainability] | [source_code/F32_Work_Performace/utils/weekly_alerts.py:101] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/utils/weekly_alerts.py:117] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/utils/weekly_alerts.py:384] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/utils/weekly_alerts.py:398] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Performance] | [source_code/F32_Work_Performace/utils/weekly_alerts.py:403] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'Employee.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F32_Work_Performace/utils/weekly_alerts.py:793] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/utils/weekly_alerts.py:819] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/utils/weekly_alerts.py:105] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/utils/weekly_alerts.py:108] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/utils/weekly_alerts.py:122] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/utils/weekly_alerts.py:388] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/utils/weekly_alerts.py:416] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/utils/weekly_alerts.py:824] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/utils/weekly_alerts.py:830] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/utils/weekly_alerts.py:405] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/utils/weekly_alerts.py:411] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/utils/weekly_alerts.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F32_Work_Performace/utils/weekly_alerts.py:16] | Lý do: Import 'AlertLog' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/admin.py:1] | Lý do: Import 'admin' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/models.py:2] | Lý do: Import 'BaseModelManager' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/serializers.py:6] | Lý do: Import 'ProjectSprintSerializer' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/tests.py:1] | Lý do: Import 'TestCase' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Performance] | [source_code/F36_Meeting_Management/views.py:402] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'MeetingInfo.objects.get()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F36_Meeting_Management/views.py:607] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectTaskInfo.objects.get()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F36_Meeting_Management/views.py:758] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ProjectIssueInfo.objects.get()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F36_Meeting_Management/views.py:1038] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'MeetingInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:68] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:114] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:160] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:174] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:227] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:280] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:321] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:359] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:373] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:424] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:459] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:486] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:501] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:516] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:527] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:577] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:650] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:677] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:728] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:801] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:828] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:870] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:903] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:947] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:956] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:977] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:996] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:1006] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:1078] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:1110] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:1118] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:1162] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F36_Meeting_Management/views.py:1191] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F37_Favorite_Management/admin.py:1] | Lý do: Import 'admin' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F37_Favorite_Management/serializers.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F37_Favorite_Management/tests.py:1] | Lý do: Import 'TestCase' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F37_Favorite_Management/views.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F39_Report_Management/crontab.py:527] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Performance] | [source_code/F39_Report_Management/crontab.py:464] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'ReportInfo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F39_Report_Management/services.py:5] | Lý do: Import 'time_helper' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Security] | [source_code/F39_Report_Management/tests.py:29] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Security] | [source_code/F39_Report_Management/tests.py:462] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Maintainability] | [source_code/F39_Report_Management/views.py:35] | Lý do: Import 'status_code' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F39_Report_Management/views.py:12] | Lý do: Import 'ReportDeliverables' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F39_Report_Management/views.py:6] | Lý do: Import 'Response' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/apps.py:9] | Lý do: Import 'signals' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/serializers.py:184] | Lý do: Forgotten TODO/FIXME comment in code. | Trình bày: FORGOTTEN_TODO | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/signals.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/const/fixed_members.py:7] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/const/skill_config.py:102] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/F51_Level_Assessment/management/commands/clear_level_assessment_data.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Performance] | [source_code/F51_Level_Assessment/management/commands/fix_tester_weights.py:57] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'SkillArea.objects.all()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F51_Level_Assessment/management/commands/fix_tester_weights.py:116] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'EmployeeSkills.objects.all()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F51_Level_Assessment/management/commands/fix_tester_weights.py:155] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'EmployeeLevel.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F51_Level_Assessment/management/commands/fix_tester_weights.py:12] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Performance] | [source_code/F51_Level_Assessment/management/commands/rebuild_skill_structure.py:77] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'GroupSkill.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F51_Level_Assessment/management/commands/rebuild_skill_structure.py:104] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'GroupSkill.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F51_Level_Assessment/management/commands/rebuild_skill_structure.py:163] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'SkillArea.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F51_Level_Assessment/management/commands/rebuild_skill_structure.py:167] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'GroupSkill.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F51_Level_Assessment/management/commands/rebuild_skill_structure.py:213] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'GroupSkill.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F51_Level_Assessment/management/commands/rebuild_skill_structure.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Performance] | [source_code/F51_Level_Assessment/management/commands/recalculate_levels.py:51] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'EmployeeLevel.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F51_Level_Assessment/management/commands/recalculate_levels.py:34] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/management/commands/recalculate_levels.py:100] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/management/commands/recalculate_levels.py:102] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/management/commands/recalculate_levels.py:97] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/management/commands/recalculate_levels.py:71] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/management/commands/recalculate_levels.py:78] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/management/commands/recalculate_levels.py:87] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Performance] | [source_code/F51_Level_Assessment/management/commands/seed_assessment_role.py:129] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'EmployeeLevel.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F51_Level_Assessment/management/commands/seed_assessment_role.py:12] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Performance] | [source_code/F51_Level_Assessment/management/commands/update_experience_months.py:76] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'Request.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F51_Level_Assessment/management/commands/update_experience_months.py:51] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/management/commands/update_experience_months.py:58] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/management/commands/update_experience_months.py:131] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/management/commands/update_experience_months.py:133] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/management/commands/update_experience_months.py:111] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/management/commands/update_experience_months.py:119] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/management/commands/update_experience_months.py:123] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/management/commands/update_experience_months.py:128] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/management/commands/update_experience_months.py:13] | Lý do: Import 'relativedelta' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Performance] | [source_code/F51_Level_Assessment/services/achievement_history_service.py:36] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'Achievement.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F51_Level_Assessment/services/achievement_history_service.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/services/assessment_detail_service.py:8] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Performance] | [source_code/F51_Level_Assessment/services/assessment_init_service.py:131] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'EmployeeLevel.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F51_Level_Assessment/services/assessment_init_service.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/services/assessment_scoring_service.py:9] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/services/assessment_setup_service.py:3] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/services/assessment_skill_level_service.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/services/assessment_submit_service.py:3] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/services/certificate_date_service.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/services/experience_service.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/services/level_assessment_detail_service.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/services/level_assessment_list_service.py:280] | Lý do: Function too long (God Object anti-pattern): get_filtered_queryset (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/F51_Level_Assessment/services/level_assessment_list_service.py:838] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'EmployeeCertificates.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Reliability] | [source_code/F51_Level_Assessment/services/level_assessment_list_service.py:185] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Maintainability] | [source_code/F51_Level_Assessment/services/level_assessment_list_service.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Performance] | [source_code/F51_Level_Assessment/services/level_assessment_overview_service.py:182] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'SkillArea.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F51_Level_Assessment/services/level_assessment_overview_service.py:191] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'CertificateInfo.objects.all()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F51_Level_Assessment/services/level_assessment_overview_service.py:3] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/services/milestone_detail_service.py:8] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/services/period_utils.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/services/skill_bank_service.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/services/skill_config_sidebar_service.py:8] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/services/skillbank_excel_import_service.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Performance] | [source_code/F51_Level_Assessment/services/table_management_service.py:152] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'EmployeeSkills.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/F51_Level_Assessment/services/table_management_service.py:165] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'EmployeeCertificates.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/F51_Level_Assessment/services/table_management_service.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Security] | [source_code/F51_Level_Assessment/tests/test_achievement_history_service_v2.py:28] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Security] | [source_code/F51_Level_Assessment/tests/test_achievement_history_service_v2.py:186] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Maintainability] | [source_code/F51_Level_Assessment/tests/test_achievement_history_service_v2.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/tests/test_assessment_init_service.py:2] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Security] | [source_code/F51_Level_Assessment/tests/test_experience_service_v2.py:24] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Maintainability] | [source_code/F51_Level_Assessment/tests/test_experience_service_v2.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Security] | [source_code/F51_Level_Assessment/tests/test_level_assessment_detail_v2.py:35] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Maintainability] | [source_code/F51_Level_Assessment/tests/test_level_assessment_detail_v2.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Security] | [source_code/F51_Level_Assessment/tests/test_level_assessment_overview_v2.py:22] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Maintainability] | [source_code/F51_Level_Assessment/tests/test_level_assessment_overview_v2.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Security] | [source_code/F51_Level_Assessment/tests/test_level_assessment_summary_v2.py:100] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Maintainability] | [source_code/F51_Level_Assessment/tests/test_level_assessment_summary_v2.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/tests/test_overview_score_import.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F51_Level_Assessment/tests/test_period_utils.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Security] | [source_code/F51_Level_Assessment/tests/test_single_submit_endpoint.py:33] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Maintainability] | [source_code/F51_Level_Assessment/tests/test_single_submit_endpoint.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Security] | [source_code/F51_Level_Assessment/tests/test_skill_config_sidebar_service_v2.py:20] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Maintainability] | [source_code/F51_Level_Assessment/tests/test_skill_config_sidebar_service_v2.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Security] | [source_code/F51_Level_Assessment/tests/test_submitted_score_consistency_v2.py:21] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Maintainability] | [source_code/F51_Level_Assessment/tests/test_submitted_score_consistency_v2.py:1] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F52_Achievement_Management/admin.py:1] | Lý do: Import 'admin' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/F52_Achievement_Management/tests.py:1] | Lý do: Import 'TestCase' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/Fxx_Sample_App/models.py:15] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Security] | [source_code/Fxx_Sample_App/signals.py:30] | Lý do: Potential SQL Injection (Insecure string interpolation in DB query) | Trình bày: SQL_INJECTION | Trọng số: -8.0
+- [Maintainability] | [source_code/Fxx_Sample_App/signals.py:23] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/Fxx_Sample_App/signals.py:36] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Performance] | [source_code/Fxx_Sample_App/views.py:233] | Lý do: SELECT * in BigQuery/SQL (anti-pattern) | Trình bày: SELECT_STAR | Trọng số: -2.0
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:27] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:59] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:87] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:125] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:274] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:298] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:311] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:26] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:45] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:46] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:47] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:56] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:57] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:58] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:97] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:98] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:99] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:373] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:120] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:124] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:140] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:171] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:176] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:201] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:212] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:265] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:266] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:267] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:308] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:309] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:310] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:364] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:365] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:366] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:401] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:412] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Reliability] | [source_code/Fxx_Sample_App/views.py:182] | Lý do: External API call without timeout parameter | Trình bày: NO_TIMEOUT_SET | Trọng số: -5.0
+- [Reliability] | [source_code/Fxx_Sample_App/views.py:187] | Lý do: External API call without timeout parameter | Trình bày: NO_TIMEOUT_SET | Trọng số: -5.0
+- [Reliability] | [source_code/Fxx_Sample_App/views.py:192] | Lý do: External API call without timeout parameter | Trình bày: NO_TIMEOUT_SET | Trọng số: -5.0
+- [Maintainability] | [source_code/Fxx_Sample_App/views.py:236] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/MediaHub/tests.py:1] | Lý do: Import 'TestCase' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/MediaHub/until.py:37] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Performance] | [source_code/MediaHub/views.py:24] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'MediaVideo.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Maintainability] | [source_code/MediaHub/views.py:33] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/MediaHub/views.py:52] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/MediaHub/views.py:72] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Reliability] | [source_code/MediaHub/views.py:226] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Reliability] | [source_code/MediaHub/views.py:139] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Maintainability] | [source_code/__Common/cache.py:170] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/__Common/cache.py:182] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/__Common/cache.py:96] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/__Common/cache.py:103] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/__Common/cache.py:121] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/__Common/cache.py:172] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/__Common/cache.py:184] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/__Common/cache.py:3] | Lý do: Import 'glob' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/__Common/custom_logger.py:42] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/__Common/custom_logger.py:95] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/__Common/commands/base.py:53] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/__Common/commands/base.py:54] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/__Common/const/enum.py:97] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/__Common/core/response.py:23] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/__Common/helpers/time_helper.py:55] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/__Common/helpers/time_helper.py:67] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/__Common/helpers/time_helper.py:4] | Lý do: Import 'Decimal' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/__Common/helpers/time_helper.py:4] | Lý do: Import 'ROUND_DOWN' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/__Common/helpers/holiday/holiday_vn/holiday_vn.py:65] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/__Common/helpers/holiday/holiday_vn/tests.py:1] | Lý do: Import 'TestCase' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/__Common/helpers/holiday/holiday_vn/views.py:1] | Lý do: Import 'render' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/__Common/models/models.py:58] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Security] | [source_code/__Common/tests/base_tests.py:116] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Security] | [source_code/__Common/tests/base_tests.py:117] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Reliability] | [source_code/__Common/utils/excel.py:390] | Lý do: Bare except: block detected (Catches SystemExit/KeyboardInterrupt) | Trình bày: BARE_EXCEPT | Trọng số: -2.0
+- [Reliability] | [source_code/__Common/utils/excel.py:390] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Maintainability] | [source_code/__Common/utils/excel.py:1] | Lý do: Import 'pd' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/__Common/utils/excel.py:9] | Lý do: Import 'datetime' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/__Common/utils/handle_date.py:202] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/__Common/viewsets/_base_viewset.py:5] | Lý do: Import 'Value' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Security] | [source_code/__Common/viewsets/base_unit_test.py:21] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Reliability] | [source_code/__Common/viewsets/response_status.py:85] | Lý do: Function uses a mutable default argument (e.g. list or dict). This can cause unexpected state retention across calls. | Trình bày: MUTABLE_DEFAULT_ARGS | Trọng số: -4.0
+- [Reliability] | [source_code/__Common/viewsets/response_status.py:237] | Lý do: Function uses a mutable default argument (e.g. list or dict). This can cause unexpected state retention across calls. | Trình bày: MUTABLE_DEFAULT_ARGS | Trọng số: -4.0
+- [Reliability] | [source_code/__Common/viewsets/response_status.py:265] | Lý do: Function uses a mutable default argument (e.g. list or dict). This can cause unexpected state retention across calls. | Trình bày: MUTABLE_DEFAULT_ARGS | Trọng số: -4.0
+- [Reliability] | [source_code/__Common/viewsets/response_status.py:282] | Lý do: Function uses a mutable default argument (e.g. list or dict). This can cause unexpected state retention across calls. | Trình bày: MUTABLE_DEFAULT_ARGS | Trọng số: -4.0
+- [Reliability] | [source_code/__Common/viewsets/response_status.py:312] | Lý do: Function uses a mutable default argument (e.g. list or dict). This can cause unexpected state retention across calls. | Trình bày: MUTABLE_DEFAULT_ARGS | Trọng số: -4.0
+- [Reliability] | [source_code/__Common/viewsets/response_status.py:396] | Lý do: Function uses a mutable default argument (e.g. list or dict). This can cause unexpected state retention across calls. | Trình bày: MUTABLE_DEFAULT_ARGS | Trọng số: -4.0
+- [Reliability] | [source_code/__Common/viewsets/response_status.py:441] | Lý do: Function uses a mutable default argument (e.g. list or dict). This can cause unexpected state retention across calls. | Trình bày: MUTABLE_DEFAULT_ARGS | Trọng số: -4.0
+- [Maintainability] | [source_code/__Common/viewsets/response_status.py:324] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/__Common/viewsets/response_status.py:393] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Reliability] | [source_code/__LP_Library/GCS_Storage/gcs_client.py:274] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Maintainability] | [source_code/__LP_Library/GCS_Storage/gcs_client.py:126] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Reliability] | [source_code/__LP_Library/GCS_Storage/gcs_client.py:154] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Reliability] | [source_code/__LP_Library/GCS_Storage/gcs_client.py:161] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Maintainability] | [source_code/__LP_Library/GCS_Storage/gcs_client.py:172] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/__LP_Library/GCS_Storage/gcs_client.py:183] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/__LP_Library/GCS_Storage/gcs_client.py:193] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/__LP_Library/GCS_Storage/gcs_client.py:233] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Reliability] | [source_code/__LP_Library/GCS_Storage/gcs_client.py:255] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Maintainability] | [source_code/__LP_Library/GCS_Storage/gcs_client.py:287] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/__LP_Library/GCS_Storage/gcs_client.py:298] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/__LP_Library/GCS_Storage/gcs_client.py:310] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/__LP_Library/GCS_Storage/gcs_client.py:321] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/__LP_Library/GCS_Storage/gcs_client.py:335] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Reliability] | [source_code/__LP_Library/GCS_Storage/gcs_client.py:356] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Reliability] | [source_code/__LP_Library/GCS_Storage/gcs_client.py:366] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Maintainability] | [source_code/__LP_Library/GCS_Storage/gcs_client.py:398] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/__LP_Library/GCS_Storage/gcs_client.py:97] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/__LP_Library/GCS_Storage/gcs_client.py:258] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Reliability] | [source_code/__LP_Library/GCS_Storage/gcs_client.py:262] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Maintainability] | [source_code/__LP_Library/GCS_Storage/gcs_client.py:383] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/__LP_Library/GCS_Storage/gcs_url_helpers.py:6] | Lý do: Import 'annotations' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Security] | [source_code/__LP_Library/GoogleOAuthV2/GoogleAuthen.py:9] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Security] | [source_code/__LP_Library/GoogleOAuthV2/GoogleAuthen.py:11] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Performance] | [source_code/__LP_Library/GoogleOAuthV2/GoogleAuthen.py:17] | Lý do: Usage of open() outside a 'with' context manager (Risk of File Handle Leak) | Trình bày: MEMORY_LEAK_OPEN | Trọng số: -4.0
+- [Reliability] | [source_code/__LP_Library/GoogleOAuthV2/GoogleAuthen.py:95] | Lý do: External API call without timeout parameter | Trình bày: NO_TIMEOUT_SET | Trọng số: -5.0
+- [Maintainability] | [source_code/__LP_Library/GoogleOAuthV2/GoogleAuthen.py:77] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Reliability] | [source_code/__LP_Library/GoogleOAuthV2/GoogleAuthen.py:83] | Lý do: External API call without timeout parameter | Trình bày: NO_TIMEOUT_SET | Trọng số: -5.0
+- [Maintainability] | [source_code/__LP_Library/GoogleOAuthV2/GoogleAuthen.py:103] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Reliability] | [source_code/__LP_Library/GoogleOAuthV2/GoogleAuthen.py:108] | Lý do: External API call without timeout parameter | Trình bày: NO_TIMEOUT_SET | Trọng số: -5.0
+- [Reliability] | [source_code/__LP_Library/GoogleOAuthV2/GoogleAuthen.py:74] | Lý do: External API call without timeout parameter | Trình bày: NO_TIMEOUT_SET | Trọng số: -5.0
+- [Maintainability] | [source_code/__LP_Library/GoogleOAuthV2/GoogleAuthen.py:5] | Lý do: Import '*' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Security] | [source_code/__LP_Library/GoogleOAuthV2/const.py:20] | Lý do: Hardcoded Secret/Token/Password detected | Trình bày: HARDCODED_SECRET | Trọng số: -10.0
+- [Reliability] | [source_code/__LP_Library/Slack_Api/slack_service.py:113] | Lý do: Function uses a mutable default argument (e.g. list or dict). This can cause unexpected state retention across calls. | Trình bày: MUTABLE_DEFAULT_ARGS | Trọng số: -4.0
+- [Reliability] | [source_code/__LP_Library/Slack_Api/slack_service.py:156] | Lý do: Function uses a mutable default argument (e.g. list or dict). This can cause unexpected state retention across calls. | Trình bày: MUTABLE_DEFAULT_ARGS | Trọng số: -4.0
+- [Maintainability] | [source_code/__LP_Library/Slack_Api/slack_service.py:388] | Lý do: Function too long (God Object anti-pattern): send_request_notify (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/__LP_Library/Slack_Api/slack_service.py:388] | Lý do: Cyclomatic Complexity too high (Too many nested loops/branches): send_request_notify (Complexity: 36 > 25) | Trình bày: HIGH_COMPLEXITY | Trọng số: -2.0
+- [Maintainability] | [source_code/__LP_Library/Slack_Api/slack_service.py:1540] | Lý do: Function too long (God Object anti-pattern): alert_bpo_man_month (> 150 lines) | Trình bày: GOD_OBJECT | Trọng số: -2.0
+- [Performance] | [source_code/__LP_Library/Slack_Api/slack_service.py:1642] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'Employee.objects.get()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Performance] | [source_code/__LP_Library/Slack_Api/slack_service.py:1810] | Lý do: N+1 Query Pattern Detected (DB/API Call inside a loop). Found 'Employee.objects.filter()' inside loop. | Trình bày: N_PLUS_ONE | Trọng số: -5.0
+- [Reliability] | [source_code/__LP_Library/Slack_Api/slack_service.py:748] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Reliability] | [source_code/__LP_Library/Slack_Api/slack_service.py:803] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Reliability] | [source_code/__LP_Library/Slack_Api/slack_service.py:910] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Reliability] | [source_code/__LP_Library/Slack_Api/slack_service.py:980] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Reliability] | [source_code/__LP_Library/Slack_Api/slack_service.py:1059] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Reliability] | [source_code/__LP_Library/Slack_Api/slack_service.py:1109] | Lý do: External API call without timeout parameter | Trình bày: NO_TIMEOUT_SET | Trọng số: -5.0
+- [Maintainability] | [source_code/__LP_Library/Slack_Api/slack_service.py:161] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/__LP_Library/Slack_Api/slack_service.py:111] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/__LP_Library/Slack_Api/slack_service.py:596] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/__LP_Library/Slack_Api/slack_service.py:598] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Maintainability] | [source_code/__LP_Library/Slack_Api/slack_service.py:599] | Lý do: Print statement found in production code. Use logger instead. | Trình bày: PRINT_STATEMENT | Trọng số: -0.5
+- [Reliability] | [source_code/__LP_Library/Slack_Api/slack_socket_mode_service.py:189] | Lý do: Bare except: block detected (Catches SystemExit/KeyboardInterrupt) | Trình bày: BARE_EXCEPT | Trọng số: -2.0
+- [Reliability] | [source_code/__LP_Library/Slack_Api/slack_socket_mode_service.py:189] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Reliability] | [source_code/__LP_Library/Slack_Api/slack_socket_mode_service.py:394] | Lý do: Bare except: block detected (Catches SystemExit/KeyboardInterrupt) | Trình bày: BARE_EXCEPT | Trọng số: -2.0
+- [Reliability] | [source_code/__LP_Library/Slack_Api/slack_socket_mode_service.py:394] | Lý do: Swallowed exception (except block has only 'pass') | Trình bày: SWALLOWED_EXCEPTION | Trọng số: -5.0
+- [Maintainability] | [source_code/main/middleware.py:112] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/main/middleware.py:2] | Lý do: Import 'datetime' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/main/settings.py:156] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/main/settings.py:164] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/main/settings.py:188] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/main/settings.py:250] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0
+- [Maintainability] | [source_code/main/settings_test.py:7] | Lý do: Import '*' might be unused (AST) | Trình bày: UNUSED_IMPORT | Trọng số: -0.5
+- [Maintainability] | [source_code/main/urls.py:103] | Lý do: Large block of commented-out code detected. Should be removed and tracked via Git. | Trình bày: COMMENTED_OUT_CODE | Trọng số: -1.0

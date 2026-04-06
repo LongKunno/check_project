@@ -8,9 +8,11 @@ import {
   Code2, Search, Zap, FolderOpen, Upload, Sparkles, Users, Wand2
 } from 'lucide-react';
 import { Radar, Line, Doughnut, Bar } from 'react-chartjs-2';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import TerminalLogs from '../ui/TerminalLogs';
 import EmptyState from '../ui/EmptyState';
+import HeroCard from '../ui/HeroCard';
+import Pagination from '../ui/Pagination';
 import {
   getScoreColorClass,
   getViolationDistributionData,
@@ -20,7 +22,133 @@ import {
   getRadarChartData,
   chartOptions
 } from '../../utils/chartHelpers';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+
+// ─── Feature Table (Inline Pillars) ───────────────────────────────────────────
+
+const getScoreColorVal = (score10) => {
+  if (score10 >= 9) return '#10b981';
+  if (score10 >= 7) return '#3b82f6';
+  if (score10 >= 5) return '#f59e0b';
+  return '#ef4444';
+};
+
+const getScoreDotClass = (score100) => {
+  if (score100 >= 90) return 'score-dot score-dot-emerald';
+  if (score100 >= 80) return 'score-dot score-dot-blue';
+  if (score100 >= 65) return 'score-dot score-dot-amber';
+  if (score100 >= 45) return 'score-dot score-dot-orange';
+  return 'score-dot score-dot-rose';
+};
+
+const thBase = { padding: '0.6rem 0.75rem', fontSize: '9px', textTransform: 'uppercase', letterSpacing: '0.15em', color: '#475569', fontWeight: 700 };
+
+function PillarCell({ score }) {
+  const color = getScoreColorVal(score);
+  return (
+    <td style={{ padding: '0.5rem 0.5rem' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px', minWidth: '55px' }}>
+        <span style={{ fontSize: '0.85rem', fontWeight: 900, color, fontFamily: 'Outfit, sans-serif' }}>{score}</span>
+        <div style={{ width: '100%', height: '3px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${score * 10}%` }}
+            transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+            style={{ height: '100%', background: color, borderRadius: '4px' }}
+          />
+        </div>
+      </div>
+    </td>
+  );
+}
+
+function FeatureTable({ features }) {
+  const entries = Object.entries(features).sort((a, b) => a[1].final - b[1].final);
+  const pillarNames = entries.length > 0 ? Object.keys(entries[0][1].pillars) : [];
+  const [ftPage, setFtPage] = useState(1);
+  const [ftPageSize, setFtPageSize] = useState(10);
+  const paged = entries.slice((ftPage - 1) * ftPageSize, ftPage * ftPageSize);
+
+  return (
+    <div className="glass-card col-span-4" style={{ background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(255,255,255,0.05)', padding: 0, borderRadius: '16px', overflow: 'hidden' }}>
+      <div style={{ padding: '1.25rem 1.5rem 0.75rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+        <div className="metric-label" style={{ color: '#3b82f6', fontWeight: 800, fontSize: '0.85rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', textTransform: 'uppercase' }}>
+          <FolderOpen size={16} /> MODULE BREAKDOWN
+          <span style={{ background: 'rgba(59,130,246,0.15)', color: '#60a5fa', padding: '2px 8px', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 700 }}>
+            {entries.length}
+          </span>
+        </div>
+      </div>
+      <div style={{ overflowX: 'auto' }}>
+        <table className="w-full premium-table" style={{ '--table-accent': 'rgba(59, 130, 246, 0.5)', minWidth: '800px' }}>
+          <thead>
+            <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+              <th style={{ ...thBase, textAlign: 'left', padding: '0.6rem 1.5rem' }}>Module</th>
+              <th style={{ ...thBase, textAlign: 'left' }}>Score</th>
+              {pillarNames.map(p => (
+                <th key={p} style={{ ...thBase, textAlign: 'center' }}>{p.length > 5 ? p.slice(0, 5) + '.' : p}</th>
+              ))}
+              <th style={{ ...thBase, textAlign: 'right' }}>LOC</th>
+              <th style={{ ...thBase, textAlign: 'right' }}>Debt</th>
+            </tr>
+          </thead>
+          <tbody>
+            {paged.map(([name, feat], idx) => {
+              const scoreColor = getScoreColorClass(feat.final / 10);
+              return (
+                <motion.tr
+                  key={name}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: idx * 0.02 }}
+                  style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+                >
+                  <td style={{ padding: '0.6rem 1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <FolderOpen size={13} style={{ color: '#60a5fa', flexShrink: 0 }} />
+                      <span style={{ fontWeight: 700, color: '#f1f5f9', fontSize: '0.8rem' }}>{name}</span>
+                    </div>
+                  </td>
+                  <td style={{ padding: '0.6rem 0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <span className={getScoreDotClass(feat.final)} />
+                      <span style={{ fontWeight: 900, color: scoreColor, fontSize: '0.95rem', fontFamily: 'Outfit, sans-serif' }}>
+                        {feat.final}
+                      </span>
+                      <div style={{ width: '40px', height: '3px', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div style={{ width: `${feat.final}%`, height: '100%', background: scoreColor, borderRadius: '4px' }} />
+                      </div>
+                    </div>
+                  </td>
+                  {pillarNames.map(p => (
+                    <PillarCell key={p} score={feat.pillars[p]} />
+                  ))}
+                  <td style={{ padding: '0.6rem 1rem', textAlign: 'right', color: '#94a3b8', fontSize: '0.75rem' }}>
+                    {feat.loc.toLocaleString()}
+                  </td>
+                  <td style={{ padding: '0.6rem 1rem', textAlign: 'right' }}>
+                    <span style={{ color: '#8b5cf6', fontWeight: 700, fontSize: '0.7rem' }}>
+                      {feat.debt_mins}m
+                    </span>
+                  </td>
+                </motion.tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <Pagination
+        currentPage={ftPage}
+        totalItems={entries.length}
+        pageSize={ftPageSize}
+        onPageChange={setFtPage}
+        onPageSizeChange={setFtPageSize}
+        showPageSizeSelector={true}
+        label="modules"
+      />
+    </div>
+  );
+}
 
 const AuditView = ({
   // Data
@@ -49,7 +177,23 @@ const AuditView = ({
   const memoizedSeverityDistData = useMemo(() => getSeverityDistributionData(chartCurrentViolations), [chartCurrentViolations]);
   const memoizedTopFiles = useMemo(() => getTopProblematicFiles(chartCurrentViolations), [chartCurrentViolations]);
   const memoizedRuleBreakdown = useMemo(() => getRuleBreakdownData(chartCurrentViolations), [chartCurrentViolations]);
-  const memoizedRadarData = useMemo(() => getRadarChartData(data, reportView, selectedMember), [data, reportView, selectedMember]);
+  const topImprovements = useMemo(() => {
+    if (!data || !data.scores) return [];
+    if (reportView === 'project' && data.scores.features) {
+       return Object.entries(data.scores.features)
+         .sort((a,b) => a[1].final - b[1].final)
+         .slice(0, 5)
+         .map(([name, feat]) => ({ name, score: feat.final, debt: feat.debt_mins }));
+    } else if (reportView === 'member' && selectedMember && data.scores.members?.[selectedMember]) {
+       const mbr = data.scores.members[selectedMember];
+       if(!mbr.pillars) return [];
+       return Object.entries(mbr.pillars)
+         .sort((a,b) => a[1] - b[1])
+         .slice(0, 5)
+         .map(([name, score]) => ({ name, score: Math.round(score * 10), debt: mbr.debt_mins }));
+    }
+    return [];
+  }, [data, reportView, selectedMember]);
 
   return (
     <>
@@ -67,20 +211,12 @@ const AuditView = ({
       {data ? (
         <>
           {/* TOP LEVEL TOGGLE */}
-          <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '2.5rem', borderBottom: '1px solid rgba(15,23,42,0.05)', paddingBottom: '1.25rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', alignItems: 'center' }}>
             <button
               onClick={() => setReportView('project')}
-              style={{
-                padding: '0.8rem 1.75rem',
-                background: reportView === 'project' ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
-                color: reportView === 'project' ? '#60a5fa' : '#94a3b8',
-                border: reportView === 'project' ? '1px solid rgba(59, 130, 246, 0.2)' : '1px solid transparent',
-                borderRadius: '12px', cursor: 'pointer', fontWeight: 800, transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.6rem',
-                textTransform: 'uppercase', letterSpacing: '0.05em'
-              }}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold uppercase tracking-wider transition-all ${reportView === 'project' ? 'bg-blue-500/15 text-blue-400 border border-blue-500/20' : 'text-slate-500 hover:text-slate-300 border border-transparent'}`}
             >
-              <Activity size={18} /> Project View
+              <Activity size={16} /> Project View
             </button>
             <button
               onClick={() => {
@@ -89,18 +225,10 @@ const AuditView = ({
                   setSelectedMember(Object.keys(data.scores.members)[0]);
                 }
               }}
-              style={{
-                padding: '0.8rem 1.75rem',
-                background: reportView === 'member' ? 'rgba(139, 92, 246, 0.15)' : 'transparent',
-                color: reportView === 'member' ? '#a78bfa' : '#94a3b8',
-                border: reportView === 'member' ? '1px solid rgba(124, 58, 237, 0.2)' : '1px solid transparent',
-                borderRadius: '12px', cursor: 'pointer', fontWeight: 800, transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.6rem',
-                textTransform: 'uppercase', letterSpacing: '0.05em'
-              }}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold uppercase tracking-wider transition-all ${reportView === 'member' ? 'bg-violet-500/15 text-violet-400 border border-violet-500/20' : 'text-slate-500 hover:text-slate-300 border border-transparent'}`}
               disabled={!data.scores.members || Object.keys(data.scores.members).length === 0}
             >
-              <Users size={18} /> Team Analytics
+              <Users size={16} /> Team Analytics
             </button>
           </div>
 
@@ -123,148 +251,18 @@ const AuditView = ({
           {/* STATS GRID */}
           <div className="stats-grid">
             {/* HERO CARD */}
-            <motion.div
-              animate={{ y: [0, -8, 0] }}
-              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-              className="glass-card hero-card col-span-4"
-              style={{
-                borderColor: reportView === 'member' ? 'rgba(124, 58, 237, 0.2)' : 'rgba(59, 130, 246, 0.2)',
-                background: 'rgba(15, 23, 42, 0.6)',
-                boxShadow: '0 20px 50px -15px rgba(0,0,0,0.5)'
-              }}
-            >
-              <div className="hero-left">
-                <div className="metric-label" style={{ fontSize: '0.85rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  {reportView === 'member' ? <><Users size={20} className="text-emerald-400" /> MEMBER OVERVIEW: {selectedMember}</> : <><Activity size={20} className="text-blue-400" /> PROJECT OVERVIEW</>}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginTop: '1.25rem' }}>
-                  {/* Animated Score Ring */}
-                  {(() => {
-                    const score = reportView === 'project' ? data?.scores?.final : (data?.scores?.members?.[selectedMember]?.final || 0);
-                    const pct = Math.min(score / 100, 1);
-                    const circumference = 2 * Math.PI * 45;
-                    const strokeDashoffset = circumference * (1 - pct);
-                    const ringColor = getScoreColorClass(score / 10);
-                    return (
-                      <div style={{ position: 'relative', width: 140, height: 140, flexShrink: 0 }}>
-                        <svg viewBox="0 0 100 100" width={140} height={140}>
-                          <circle cx="50" cy="50" r="45" className="score-ring-track" />
-                          <motion.circle
-                            cx="50" cy="50" r="45"
-                            fill="none"
-                            stroke={ringColor}
-                            strokeWidth={7}
-                            strokeLinecap="round"
-                            strokeDasharray={circumference}
-                            initial={{ strokeDashoffset: circumference }}
-                            animate={{ strokeDashoffset }}
-                            transition={{ duration: 1.4, ease: [0.4, 0, 0.2, 1] }}
-                            style={{ transform: 'rotate(-90deg)', transformOrigin: 'center', filter: `drop-shadow(0 0 8px ${ringColor}66)` }}
-                          />
-                        </svg>
-                        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                          <motion.span
-                            initial={{ opacity: 0, scale: 0.5 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.5, type: 'spring', stiffness: 200 }}
-                            style={{ fontSize: '2.25rem', fontWeight: 900, color: ringColor, lineHeight: 1, fontFamily: 'Outfit, sans-serif' }}
-                          >
-                            {score}
-                          </motion.span>
-                          <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700 }}>/100</span>
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
+            <HeroCard
+              data={data}
+              reportView={reportView}
+              selectedMember={selectedMember}
+              chartCurrentViolations={chartCurrentViolations}
+              topImprovements={topImprovements}
+            />
 
-                {reportView === 'project' && data?.scores?.rating && (
-                  <div style={{ marginTop: '1.25rem', fontWeight: 800, color: '#f8fafc', display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '1rem' }}>
-                    RATING: <span className="status-badge" style={{ fontSize: '1.25rem', padding: '0.6rem 1.25rem', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '14px', color: '#f8fafc' }}>{data.scores.rating}</span>
-                  </div>
-                )}
-
-                <div style={{ display: 'flex', gap: '2.5rem', marginTop: '2.5rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div>
-                    <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total Lines of Code</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#f8fafc' }}>
-                      {reportView === 'project' ? data?.metrics?.total_loc?.toLocaleString() : (data?.scores?.members?.[selectedMember]?.loc || 0).toLocaleString()}
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{ color: '#94a3b8', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{reportView === 'project' ? 'Features' : 'Tech Debt'}</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 900, color: reportView === 'member' ? '#f59e0b' : '#f8fafc' }}>
-                      {reportView === 'project' ? Object.keys(data?.scores?.features || {}).length : `${data?.scores?.members?.[selectedMember]?.debt_mins || 0}m`}
-                    </div>
-                  </div>
-                </div>
-
-                {/* 4 Pillars — Animated */}
-                <div style={{ marginTop: '3rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', width: '100%' }}>
-                  {Object.entries(reportView === 'project' ? (data?.scores?.project_pillars || {}) : (data?.scores?.members?.[selectedMember]?.pillars || {})).map(([pillar, score], idx) => {
-                    const color = getScoreColorClass(score);
-                    return (
-                      <motion.div
-                        key={pillar}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 + idx * 0.1 }}
-                      >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.6rem', alignItems: 'flex-end' }}>
-                          <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{pillar}</span>
-                          <span style={{ fontSize: '1.1rem', fontWeight: 900, color }}>{score}<span style={{ fontSize: '0.75rem', opacity: 0.5 }}>/10</span></span>
-                        </div>
-                        <div className="progress-track" style={{ height: '8px', background: 'rgba(255,255,255,0.04)', borderRadius: '10px', overflow: 'hidden' }}>
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${score * 10}%` }}
-                            transition={{ duration: 0.8, delay: 0.4 + idx * 0.1, ease: [0.4, 0, 0.2, 1] }}
-                            style={{ height: '100%', background: color, boxShadow: `0 0 12px ${color}44`, borderRadius: '10px' }}
-                          />
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="hero-right">
-                <div style={{ width: '100%', height: '100%', maxWidth: '380px', filter: 'drop-shadow(0 15px 30px rgba(0,0,0,0.06))' }}>
-                  {memoizedRadarData && <Radar data={memoizedRadarData} options={chartOptions} />}
-                </div>
-              </div>
-            </motion.div>
-
-            {/* FEATURE CARDS */}
-            {reportView === 'project' && Object.entries(data?.scores?.features || {}).map(([name, feat]) => (
-              <div key={name} className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(255,255,255,0.05)', padding: '1.25rem', borderRadius: '16px' }}>
-                <div className="metric-label" style={{ color: '#3b82f6', fontWeight: 800, fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem', textTransform: 'uppercase' }}>
-                  <FolderOpen size={14} /> {name}
-                </div>
-                <div className="metric-value" style={{ fontSize: '2.25rem', fontWeight: 800, color: getScoreColorClass(feat.final / 10), letterSpacing: '-0.02em' }}>
-                  {feat.final}<span style={{ fontSize: '0.9rem', color: '#64748b', marginLeft: '2px' }}>/100</span>
-                </div>
-                <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {Object.entries(feat.pillars).map(([pillar, p_score]) => (
-                    <div key={pillar} style={{ fontSize: '0.7rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                        <span style={{ color: '#94a3b8', fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase' }}>{pillar}</span>
-                        <span style={{ fontWeight: 700, color: '#e2e8f0' }}>{p_score}/10</span>
-                      </div>
-                      <div className="progress-track" style={{ height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px' }}>
-                        <div className="progress-fill" style={{ width: `${p_score * 10}%`, backgroundColor: getScoreColorClass(p_score), borderRadius: '10px' }}></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ fontSize: '0.7rem', color: '#8b5cf6', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                    <Zap size={10} /> {feat.debt_mins}m DEBT
-                  </div>
-                  <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{feat.loc.toLocaleString()} LOC</div>
-                </div>
-              </div>
-            ))}
+            {/* FEATURE TABLE (Collapsible rows) */}
+            {reportView === 'project' && Object.keys(data?.scores?.features || {}).length > 0 && (
+              <FeatureTable features={data.scores.features} />
+            )}
 
             {/* MEMBER LEADERBOARD */}
             {reportView === 'project' && data?.scores?.members && Object.keys(data.scores.members).length > 0 && (

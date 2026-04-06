@@ -71,7 +71,19 @@ function App() {
   const [selectedRepoId, setSelectedRepoId] = useState('');
   const [repoUrl, setRepoUrl] = useState('');
   
+  const glowRef = React.useRef(null);
 
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (glowRef.current) {
+        glowRef.current.style.background = `radial-gradient(800px circle at ${e.clientX}px ${e.clientY}px, rgba(139, 92, 246, 0.08), transparent 40%)`;
+      }
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
+  const cn = (...classes) => classes.filter(Boolean).join(' ');
 
   // Fetch configured repositories on mount
   useEffect(() => {
@@ -426,9 +438,6 @@ function App() {
 
 
 
-  // Để dùng hàm `cn` nếu cần class ghép
-  const cn = (...classes) => classes.filter(Boolean).join(' ');
-
   return (
     <div className="flex h-screen w-screen overflow-hidden font-sans text-slate-300">
       
@@ -442,30 +451,41 @@ function App() {
       />
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 overflow-y-auto relative no-scrollbar bg-transparent">
-        {/* Decorative background blobs */}
-        <div style={{
+        {/* Dynamic Mouse Spotlight overlay (Optimized with Ref) */}
+        <div 
+          ref={glowRef}
+          className="pointer-events-none fixed inset-0 z-[100]"
+          style={{
+            background: `radial-gradient(800px circle at -100px -100px, rgba(139, 92, 246, 0.08), transparent 40%)`
+          }}
+        />
+
+        {/* Decorative background blobs with breathing animations */}
+        <div className="aurora-blob" style={{
           position: 'fixed', top: '-10%', right: '-5%', width: '60vw', height: '60vw',
-          background: 'radial-gradient(circle, rgba(139, 92, 246, 0.4) 0%, transparent 60%)', filter: 'blur(120px)', zIndex: 0, pointerEvents: 'none'
+          background: 'radial-gradient(circle, rgba(139, 92, 246, 0.4) 0%, transparent 60%)', filter: 'blur(120px)', zIndex: 0, pointerEvents: 'none',
+          animation: 'blob-float-1 20s infinite alternate ease-in-out'
         }} />
-        <div style={{
+        <div className="aurora-blob" style={{
           position: 'fixed', bottom: '-10%', left: '-10%', width: '70vw', height: '70vw',
-          background: 'radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, transparent 60%)', filter: 'blur(140px)', zIndex: 0, pointerEvents: 'none'
+          background: 'radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, transparent 60%)', filter: 'blur(140px)', zIndex: 0, pointerEvents: 'none',
+          animation: 'blob-float-2 25s infinite alternate ease-in-out'
         }} />
 
         <div className="dashboard-container relative z-10 w-full min-h-screen flex flex-col pb-8">
           <header className={cn("flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 pb-6 border-b border-navbar/30 border-white/5 shrink-0 mb-6", (location.pathname.startsWith('/project-scores') || location.pathname.startsWith('/member-scores') || location.pathname.startsWith('/history') || location.pathname.startsWith('/settings') || location.pathname.startsWith('/rules') || location.pathname.startsWith('/sandbox')) && "hidden")}>
             {/* Context Title - Only shown on /audit */}
-            <div className="flex flex-col">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-sm font-semibold mb-3" style={{ width: 'fit-content' }}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                Audit Engine
+            <div className="flex flex-col page-header-compact">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold" style={{ width: 'fit-content' }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                  Audit Engine
+                </div>
+                <span className="text-slate-600 text-xs font-medium hidden sm:block">Analyze and evaluate code quality in real time</span>
               </div>
               <h1 className="text-3xl lg:text-4xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-blue-200 to-blue-400" style={{ fontFamily: 'Outfit, sans-serif' }}>
                 AUDIT DASHBOARD
               </h1>
-              <p className="text-slate-400 mt-1 font-medium text-sm">
-                Analyze and evaluate code quality in real time.
-              </p>
             </div>
 
             {(location.pathname.startsWith('/audit') || location.pathname === '/') && (
@@ -506,17 +526,17 @@ function App() {
         <Route path="/rules" element={
           <div key="view-rules" className="flex-1 flex flex-col w-full pb-8">
             {/* Header mới cho Rules */}
-            <div className="px-8 pt-8 pb-4 shrink-0">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-semibold mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
-                Rule Manager
+            <div className="px-8 pt-8 pb-4 shrink-0 page-header-compact">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+                  Rule Manager
+                </div>
+                <span className="text-slate-600 text-xs font-medium hidden sm:block">Manage, adjust weights, and toggle audit rules</span>
               </div>
               <h2 className="text-3xl lg:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-emerald-200 to-emerald-400" style={{ fontFamily: 'Outfit, sans-serif' }}>
                 RULE MANAGER
               </h2>
-              <p className="text-slate-400 mt-2 font-medium text-sm lg:text-base max-w-xl">
-                Manage, adjust weights, and toggle audit rules for your project.
-              </p>
             </div>
             <Suspense fallback={<div className="p-8 space-y-6"><CardSkeleton count={4} /><TableSkeleton rows={5} cols={4} /></div>}>
               <RulesConfigurator 
@@ -530,17 +550,17 @@ function App() {
         <Route path="/sandbox" element={
           <div key="view-sandbox" className="flex-1 flex flex-col w-full pb-8">
             {/* Header mới cho Sandbox */}
-            <div className="px-8 pt-8 pb-4 shrink-0">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 text-sm font-semibold mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg>
-                Rule Builder
+            <div className="px-8 pt-8 pb-4 shrink-0 page-header-compact">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs font-semibold">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18"/></svg>
+                  Rule Builder
+                </div>
+                <span className="text-slate-600 text-xs font-medium hidden sm:block">Design rules with natural language and test instantly</span>
               </div>
               <h2 className="text-3xl lg:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-violet-200 to-violet-400" style={{ fontFamily: 'Outfit, sans-serif' }}>
                 AI RULE BUILDER
               </h2>
-              <p className="text-slate-400 mt-2 font-medium text-sm lg:text-base max-w-xl">
-                Design audit rules using natural language and test them instantly in the Sandbox.
-              </p>
             </div>
             <Suspense fallback={<div className="p-8 space-y-6"><CardSkeleton count={4} /><TableSkeleton rows={5} cols={4} /></div>}>
               <RulesConfigurator 

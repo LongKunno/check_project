@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { getScoreColorClass } from '../../utils/chartHelpers';
 import { TableSkeleton, CardSkeleton } from '../ui/SkeletonLoader';
 import EmptyState from '../ui/EmptyState';
+import Pagination from '../ui/Pagination';
 import { useToast } from '../ui/Toast';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -103,6 +104,8 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
   const [historyList, setHistoryList] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [loadingId, setLoadingId] = useState(null);
+  const [histPage, setHistPage] = useState(1);
+  const [histPageSize, setHistPageSize] = useState(10);
   const toast = useToast();
 
   const fetchTarget = targetUrl || selectedRepoId;
@@ -148,11 +151,14 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
       <div className="absolute bottom-0 left-0 w-[350px] h-[350px] bg-orange-500/6 blur-[100px] rounded-full pointer-events-none -z-10" />
 
       {/* ── Header ── */}
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
+      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-5 page-header-compact">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-sm font-semibold mb-4">
-              <FileSearch size={16} /> Audit History
+            <div className="flex items-center gap-3 mb-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold">
+                <FileSearch size={14} /> Audit History
+              </div>
+              <span className="text-slate-600 text-xs font-medium hidden sm:block">Look up and restore previous code analysis sessions</span>
             </div>
             <h2
               className="text-3xl lg:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-200 to-amber-400"
@@ -160,9 +166,6 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
             >
               AUDIT HISTORY
             </h2>
-            <p className="text-slate-400 mt-2 font-medium text-sm lg:text-base max-w-xl">
-              Look up and restore previous code analysis sessions.
-            </p>
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
@@ -223,7 +226,7 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {historyList.map((h, idx) => {
+                  {historyList.slice((histPage - 1) * histPageSize, histPage * histPageSize).map((h, idx) => {
                     const colorClass = getScoreColorClass(h.score / 10);
                     return (
                       <motion.tr
@@ -292,12 +295,15 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
               </table>
             </div>
 
-            <div className="px-6 py-3 border-t border-white/[0.08] flex items-center justify-between bg-white/[0.02]">
-              <span className="text-xs text-slate-600 font-medium">
-                {historyList.length} records • {fetchTarget?.split('/').pop() || fetchTarget}
-              </span>
-              <span className="text-xs text-slate-600">Click "Restore" to reload that session's dashboard</span>
-            </div>
+            <Pagination
+              currentPage={histPage}
+              totalItems={historyList.length}
+              pageSize={histPageSize}
+              onPageChange={setHistPage}
+              onPageSizeChange={setHistPageSize}
+              showPageSizeSelector={true}
+              label="records"
+            />
           </motion.div>
         </>
       )}

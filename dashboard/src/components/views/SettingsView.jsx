@@ -89,10 +89,13 @@ const SettingsView = ({ selectedRepoId, cn }) => {
       <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-slate-500/6 blur-[100px] rounded-full pointer-events-none -z-10" />
 
       {/* ── Header ── */}
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-5 page-header-compact">
         <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-500/10 border border-slate-500/20 text-slate-400 text-sm font-semibold mb-4">
-            <Settings size={16} /> System Settings
+          <div className="flex items-center gap-3 mb-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-500/10 border border-slate-500/20 text-slate-400 text-xs font-semibold">
+              <Settings size={14} /> System Settings
+            </div>
+            <span className="text-slate-600 text-xs font-medium hidden sm:block">Manage configuration and parameters for the audit engine</span>
           </div>
           <h2
             className="text-3xl lg:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-300 to-slate-500"
@@ -100,9 +103,6 @@ const SettingsView = ({ selectedRepoId, cn }) => {
           >
             SYSTEM SETTINGS
           </h2>
-          <p className="text-slate-400 mt-2 font-medium text-sm lg:text-base max-w-xl">
-            Manage configuration and parameters for the audit engine.
-          </p>
         </div>
       </motion.div>
 

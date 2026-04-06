@@ -115,12 +115,7 @@ export const chartOptions = {
       angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
       grid: { color: 'rgba(255, 255, 255, 0.1)' },
       pointLabels: { 
-        color: '#f8fafc', 
-        font: { 
-          size: 11, 
-          weight: '800',
-          family: 'Outfit'
-        } 
+        display: false
       },
       ticks: { display: false, stepSize: 20 },
       suggestedMin: 0,
