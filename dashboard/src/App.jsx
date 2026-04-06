@@ -55,6 +55,8 @@ const AuditView = React.lazy(() => import('./components/views/AuditView'));
 const ProjectScoresView = React.lazy(() => import('./components/views/ProjectScoresView'));
 const MemberScoresView = React.lazy(() => import('./components/views/MemberScoresView'));
 import Sidebar from './components/layout/Sidebar';
+import PageTransition from './components/ui/PageTransition';
+import { CardSkeleton, TableSkeleton } from './components/ui/SkeletonLoader';
 import { useAuditJob } from './hooks/useAuditJob';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 
@@ -515,6 +517,7 @@ function App() {
             )}
       </header>
 
+      <PageTransition pageKey={location.pathname}>
       <Routes>
         <Route path="/" element={<Navigate to="/project-scores" replace />} />
         <Route path="/rules" element={
@@ -532,7 +535,7 @@ function App() {
                 Manage, adjust weights, and toggle audit rules for your project.
               </p>
             </div>
-            <Suspense fallback={<div className="p-8 text-white">Loading Rules...</div>}>
+            <Suspense fallback={<div className="p-8 space-y-6"><CardSkeleton count={4} /><TableSkeleton rows={5} cols={4} /></div>}>
               <RulesConfigurator 
                 targetId={selectedRepoId} 
                 projectName={configuredRepos.find(r => r.id === selectedRepoId)?.name || selectedRepoId} 
@@ -556,7 +559,7 @@ function App() {
                 Design audit rules using natural language and test them instantly in the Sandbox.
               </p>
             </div>
-            <Suspense fallback={<div className="p-8 text-white">Loading Sandbox...</div>}>
+            <Suspense fallback={<div className="p-8 space-y-6"><CardSkeleton count={4} /><TableSkeleton rows={5} cols={4} /></div>}>
               <RulesConfigurator 
                 targetId={selectedRepoId} 
                 projectName={configuredRepos.find(r => r.id === selectedRepoId)?.name || selectedRepoId} 
@@ -567,14 +570,14 @@ function App() {
         } />
         <Route path="/settings" element={
           <div className="flex-1 flex flex-col w-full" style={{ minHeight: 'calc(100vh - 100px)' }}>
-            <Suspense fallback={<div className="p-8 text-white">Loading...</div>}>
+            <Suspense fallback={<div className="p-8 space-y-6"><CardSkeleton count={4} /><TableSkeleton rows={5} cols={4} /></div>}>
               <SettingsView selectedRepoId={selectedRepoId} cn={cn} />
             </Suspense>
           </div>
         } />
         <Route path="/history" element={
           <div className="flex-1 flex flex-col w-full" style={{ minHeight: 'calc(100vh - 100px)' }}>
-            <Suspense fallback={<div className="p-8 text-white">Loading...</div>}>
+            <Suspense fallback={<div className="p-8 space-y-6"><CardSkeleton count={4} /><TableSkeleton rows={5} cols={4} /></div>}>
               <HistoryView 
                 selectedRepoId={selectedRepoId}
                 targetUrl={configuredRepos.find(r => r.id === selectedRepoId)?.url}
@@ -589,7 +592,7 @@ function App() {
         } />
         <Route path="/project-scores" element={
           <div className="flex-1 flex flex-col w-full" style={{ minHeight: 'calc(100vh - 100px)' }}>
-            <Suspense fallback={<div className="p-8 text-white">Loading...</div>}>
+            <Suspense fallback={<div className="p-8 space-y-6"><CardSkeleton count={4} /><TableSkeleton rows={5} cols={4} /></div>}>
               <ProjectScoresView
                 cn={cn}
                 onSelectProject={(repoId) => {
@@ -602,13 +605,13 @@ function App() {
         } />
         <Route path="/member-scores" element={
           <div className="flex-1 flex flex-col w-full" style={{ minHeight: 'calc(100vh - 100px)' }}>
-            <Suspense fallback={<div className="p-8 text-white">Loading...</div>}>
+            <Suspense fallback={<div className="p-8 space-y-6"><CardSkeleton count={4} /><TableSkeleton rows={5} cols={4} /></div>}>
               <MemberScoresView cn={cn} />
             </Suspense>
           </div>
         } />
         <Route path="/audit" element={
-          <Suspense fallback={<div className="p-8 text-white">Loading...</div>}>
+          <Suspense fallback={<div className="p-8 space-y-6"><CardSkeleton count={4} /><TableSkeleton rows={5} cols={4} /></div>}>
             <AuditView
               data={data}
               error={error}
@@ -631,6 +634,7 @@ function App() {
           </Suspense>
         } />
       </Routes>
+      </PageTransition>
         </div>
       </div>
     </div>

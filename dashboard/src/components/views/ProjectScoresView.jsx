@@ -7,6 +7,8 @@ import {
   TrendingUp, AlertCircle
 } from 'lucide-react';
 import TerminalLogs from '../ui/TerminalLogs';
+import { TableSkeleton, CardSkeleton } from '../ui/SkeletonLoader';
+import EmptyState from '../ui/EmptyState';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -37,13 +39,20 @@ const getScoreGradient = (score) => {
   return 'from-rose-400 to-red-600';
 };
 
-const formatDate = (ts) =>
-  ts
-    ? new Date(ts).toLocaleDateString('vi-VN', {
-        day: '2-digit', month: '2-digit', year: 'numeric',
-        hour: '2-digit', minute: '2-digit',
-      })
-    : '—';
+const formatDate = (ts) => {
+  if (!ts) return '—';
+  const date = new Date(ts);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMin = Math.floor(diffMs / 60000);
+  if (diffMin < 1) return 'Just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHours = Math.floor(diffMin / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 30) return `${diffDays}d ago`;
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+};
 
 const SCAN_STATUS = { IDLE: 'idle', RUNNING: 'running', DONE: 'done', ERROR: 'error' };
 
@@ -163,16 +172,22 @@ function ScanPill({ state }) {
 
 function ScoreBar({ score }) {
   const pct = Math.min(Math.max(((score ?? 0) / 100) * 100, 0), 100);
-  const colorClass =
-    score >= 90 ? 'bg-emerald-500' :
-    score >= 80 ? 'bg-blue-500' :
-    score >= 65 ? 'bg-amber-500' :
-    score >= 45 ? 'bg-orange-500' : 'bg-rose-500';
+  const gradientClass =
+    score >= 90 ? 'bg-gradient-to-r from-emerald-500 to-teal-400' :
+    score >= 80 ? 'bg-gradient-to-r from-blue-500 to-cyan-400' :
+    score >= 65 ? 'bg-gradient-to-r from-amber-500 to-yellow-400' :
+    score >= 45 ? 'bg-gradient-to-r from-orange-500 to-amber-400' : 'bg-gradient-to-r from-rose-500 to-pink-400';
+  const glowClass =
+    score >= 90 ? 'shadow-emerald-500/40' :
+    score >= 80 ? 'shadow-blue-500/40' :
+    score >= 65 ? 'shadow-amber-500/40' : 'shadow-rose-500/40';
   return (
-    <div className="w-24 bg-slate-800 rounded-full h-1.5 overflow-hidden">
-      <div
-        className={`h-full rounded-full ${colorClass} transition-all duration-700`}
-        style={{ width: `${pct}%` }}
+    <div className="w-24 bg-slate-800/80 rounded-full h-2 overflow-hidden">
+      <motion.div
+        initial={{ width: 0 }}
+        animate={{ width: `${pct}%` }}
+        transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
+        className={`h-full rounded-full ${gradientClass} shadow-sm ${glowClass}`}
       />
     </div>
   );
@@ -210,8 +225,8 @@ function ProjectRow({ project, rank, scanState, onSelect }) {
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: rank * 0.04 }}
-      className={`group border-b border-white/5 cursor-pointer transition-colors ${
-        isRunning ? 'bg-indigo-500/5' : 'hover:bg-white/3'
+      className={`group border-b border-white/[0.06] cursor-pointer transition-all duration-200 ${
+        isRunning ? 'bg-indigo-500/5' : 'hover:bg-white/[0.05] hover:border-l-2 hover:border-l-pink-500/50'
       }`}
       onClick={() => onSelect?.(project.id)}
     >
@@ -421,16 +436,18 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
             className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4"
           >
             {[
-              { label: 'Total projects', value: projects.length, icon: <FolderOpen size={16} className="text-pink-400" /> },
-              { label: 'Avg score', value: avgScore ? `${avgScore}/100` : '—', icon: <Star size={16} className="text-amber-400" /> },
-              { label: 'Top project', value: topProject?.name?.split('_').join(' ') || '—', icon: <Trophy size={16} className="text-emerald-400" /> },
-              { label: 'Total violations', value: totalViolations.toLocaleString(), icon: <AlertTriangle size={16} className="text-orange-400" /> },
+              { label: 'Total projects', value: projects.length, icon: <FolderOpen size={16} className="text-pink-400" />, accent: 'border-pink-500/25 shadow-[0_0_15px_-5px_rgba(236,72,153,0.15)]' },
+              { label: 'Avg score', value: avgScore ? `${avgScore}/100` : '—', icon: <Star size={16} className="text-amber-400" />, accent: 'border-amber-500/25 shadow-[0_0_15px_-5px_rgba(245,158,11,0.15)]' },
+              { label: 'Top project', value: topProject?.name?.split('_').join(' ') || '—', icon: <Trophy size={16} className="text-emerald-400" />, accent: 'border-emerald-500/25 shadow-[0_0_15px_-5px_rgba(16,185,129,0.15)]' },
+              { label: 'Total violations', value: totalViolations.toLocaleString(), icon: <AlertTriangle size={16} className="text-orange-400" />, accent: 'border-orange-500/25 shadow-[0_0_15px_-5px_rgba(249,115,22,0.15)]' },
             ].map(s => (
-              <div key={s.label} className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/3 border border-white/8 backdrop-blur-sm">
-                {s.icon}
+              <div key={s.label} className={`flex items-center gap-3 px-5 py-4 rounded-2xl bg-white/[0.03] border backdrop-blur-sm transition-all hover:bg-white/[0.06] ${s.accent}`}>
+                <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
+                  {s.icon}
+                </div>
                 <div>
                   <div className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">{s.label}</div>
-                  <div className="text-lg font-black text-white truncate max-w-[120px]">{s.value}</div>
+                  <div className="text-lg font-black text-white truncate max-w-[140px]">{s.value}</div>
                 </div>
               </div>
             ))}
@@ -460,22 +477,29 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
 
       {/* ── States ── */}
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center p-20">
-          <Loader2 className="animate-spin text-pink-500 mb-4" size={40} />
-          <p className="text-slate-400 font-medium animate-pulse">Loading leaderboard data...</p>
+        <div className="space-y-6">
+          <CardSkeleton count={4} />
+          <TableSkeleton rows={6} cols={5} />
         </div>
       ) : error ? (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-6 text-center max-w-lg mx-auto">
-          <AlertTriangle className="text-red-400 mx-auto mb-3" size={32} />
-          <h3 className="text-red-400 font-bold text-lg mb-2">Data fetch error</h3>
-          <p className="text-slate-300 text-sm">{error}</p>
-        </div>
+        <EmptyState
+          variant="error"
+          title="Data fetch error"
+          description={error}
+          accentColor="rose"
+          action={
+            <button onClick={fetchScores} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-pink-500/10 border border-pink-500/30 text-pink-400 text-sm font-bold hover:bg-pink-500/20 transition-all">
+              <RefreshCw size={14} /> Retry
+            </button>
+          }
+        />
       ) : projects.length === 0 ? (
-        <div className="text-center p-20 bg-slate-900/50 rounded-3xl border border-slate-800 backdrop-blur-xl">
-          <AlertCircle size={48} className="text-slate-500 mx-auto mb-4" />
-          <h3 className="text-white font-bold text-xl mb-2">No projects yet</h3>
-          <p className="text-slate-400">Please configure repositories in system settings.</p>
-        </div>
+        <EmptyState
+          variant="noData"
+          title="No projects yet"
+          description="Configure repositories in system settings to see them on the leaderboard."
+          accentColor="pink"
+        />
       ) : (
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -486,7 +510,7 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-white/5 bg-white/2">
+                <tr className="border-b border-white/[0.08] bg-white/[0.04]">
                   <th className="px-4 py-3 text-center">
                     <span className="text-[10px] uppercase tracking-widest font-bold text-slate-500">#</span>
                   </th>
@@ -514,12 +538,12 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
             </table>
           </div>
 
-          <div className="px-6 py-3 border-t border-white/5 flex items-center justify-between">
-            <span className="text-xs text-slate-600 font-medium">
-              {scanned.length}/{projects.length} projects scanned
-            </span>
-            <span className="text-xs text-slate-600">Click a row to open the detailed Dashboard</span>
-          </div>
+            <div className="px-6 py-3 border-t border-white/[0.08] flex items-center justify-between bg-white/[0.02]">
+              <span className="text-xs text-slate-500 font-semibold">
+                {scanned.length}/{projects.length} projects scanned
+              </span>
+              <span className="text-xs text-slate-600 italic">Click a row to open the detailed Dashboard</span>
+            </div>
         </motion.div>
       )}
     </div>

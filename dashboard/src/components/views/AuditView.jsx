@@ -10,6 +10,7 @@ import {
 import { Radar, Line, Doughnut, Bar } from 'react-chartjs-2';
 import { motion } from 'framer-motion';
 import TerminalLogs from '../ui/TerminalLogs';
+import EmptyState from '../ui/EmptyState';
 import {
   getScoreColorClass,
   getViolationDistributionData,
@@ -136,14 +137,45 @@ const AuditView = ({
                 <div className="metric-label" style={{ fontSize: '0.85rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '0.6rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   {reportView === 'member' ? <><Users size={20} className="text-emerald-400" /> MEMBER OVERVIEW: {selectedMember}</> : <><Activity size={20} className="text-blue-400" /> PROJECT OVERVIEW</>}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'baseline', marginTop: '1.25rem' }}>
-                  <div className="metric-value" style={{
-                    fontSize: '5rem', fontWeight: 900, lineHeight: '1', letterSpacing: '-0.03em',
-                    color: getScoreColorClass((reportView === 'project' ? data?.scores?.final : (data?.scores?.members?.[selectedMember]?.final || 0)) / 10)
-                  }}>
-                    {reportView === 'project' ? data?.scores?.final : (data?.scores?.members?.[selectedMember]?.final || 0)}
-                  </div>
-                  <span style={{ fontSize: '1.5rem', color: '#64748b', marginLeft: '0.75rem', fontWeight: 700 }}>/ 100</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '2rem', marginTop: '1.25rem' }}>
+                  {/* Animated Score Ring */}
+                  {(() => {
+                    const score = reportView === 'project' ? data?.scores?.final : (data?.scores?.members?.[selectedMember]?.final || 0);
+                    const pct = Math.min(score / 100, 1);
+                    const circumference = 2 * Math.PI * 45;
+                    const strokeDashoffset = circumference * (1 - pct);
+                    const ringColor = getScoreColorClass(score / 10);
+                    return (
+                      <div style={{ position: 'relative', width: 140, height: 140, flexShrink: 0 }}>
+                        <svg viewBox="0 0 100 100" width={140} height={140}>
+                          <circle cx="50" cy="50" r="45" className="score-ring-track" />
+                          <motion.circle
+                            cx="50" cy="50" r="45"
+                            fill="none"
+                            stroke={ringColor}
+                            strokeWidth={7}
+                            strokeLinecap="round"
+                            strokeDasharray={circumference}
+                            initial={{ strokeDashoffset: circumference }}
+                            animate={{ strokeDashoffset }}
+                            transition={{ duration: 1.4, ease: [0.4, 0, 0.2, 1] }}
+                            style={{ transform: 'rotate(-90deg)', transformOrigin: 'center', filter: `drop-shadow(0 0 8px ${ringColor}66)` }}
+                          />
+                        </svg>
+                        <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                          <motion.span
+                            initial={{ opacity: 0, scale: 0.5 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.5, type: 'spring', stiffness: 200 }}
+                            style={{ fontSize: '2.25rem', fontWeight: 900, color: ringColor, lineHeight: 1, fontFamily: 'Outfit, sans-serif' }}
+                          >
+                            {score}
+                          </motion.span>
+                          <span style={{ fontSize: '0.65rem', color: '#64748b', fontWeight: 700 }}>/100</span>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {reportView === 'project' && data?.scores?.rating && (
@@ -167,19 +199,32 @@ const AuditView = ({
                   </div>
                 </div>
 
-                {/* 4 Pillars */}
+                {/* 4 Pillars — Animated */}
                 <div style={{ marginTop: '3rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', width: '100%' }}>
-                  {Object.entries(reportView === 'project' ? (data?.scores?.project_pillars || {}) : (data?.scores?.members?.[selectedMember]?.pillars || {})).map(([pillar, score]) => (
-                    <div key={pillar}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.6rem', alignItems: 'flex-end' }}>
-                        <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{pillar}</span>
-                        <span style={{ fontSize: '1.1rem', fontWeight: 900, color: getScoreColorClass(score) }}>{score}<span style={{ fontSize: '0.75rem', opacity: 0.5 }}>/10</span></span>
-                      </div>
-                      <div className="progress-track" style={{ height: '8px', background: 'rgba(15,23,42,0.05)', borderRadius: '10px' }}>
-                        <div className="progress-fill" style={{ width: `${score * 10}%`, background: getScoreColorClass(score), boxShadow: `0 4px 12px ${getScoreColorClass(score)}33`, borderRadius: '10px' }}></div>
-                      </div>
-                    </div>
-                  ))}
+                  {Object.entries(reportView === 'project' ? (data?.scores?.project_pillars || {}) : (data?.scores?.members?.[selectedMember]?.pillars || {})).map(([pillar, score], idx) => {
+                    const color = getScoreColorClass(score);
+                    return (
+                      <motion.div
+                        key={pillar}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 + idx * 0.1 }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.6rem', alignItems: 'flex-end' }}>
+                          <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{pillar}</span>
+                          <span style={{ fontSize: '1.1rem', fontWeight: 900, color }}>{score}<span style={{ fontSize: '0.75rem', opacity: 0.5 }}>/10</span></span>
+                        </div>
+                        <div className="progress-track" style={{ height: '8px', background: 'rgba(255,255,255,0.04)', borderRadius: '10px', overflow: 'hidden' }}>
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${score * 10}%` }}
+                            transition={{ duration: 0.8, delay: 0.4 + idx * 0.1, ease: [0.4, 0, 0.2, 1] }}
+                            style={{ height: '100%', background: color, boxShadow: `0 0 12px ${color}44`, borderRadius: '10px' }}
+                          />
+                        </div>
+                      </motion.div>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -446,18 +491,12 @@ const AuditView = ({
           </div>
         </>
       ) : !isAuditing ? (
-        /* Trạng thái trống */
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '8rem 0', opacity: 0.4 }}>
-          <div style={{ position: 'relative', marginBottom: '2rem' }}>
-            <BarChart3 size={80} style={{ color: 'var(--accent-blue)' }} />
-            <Upload size={32} style={{ position: 'absolute', bottom: -10, right: -10 }} />
-          </div>
-          <p style={{ fontSize: '1.5rem', fontWeight: 500, fontFamily: 'var(--font-display)' }}>Ready to audit your codebase</p>
-          <p style={{ color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-            Select a project from the list above, then click
-            <strong> Run Audit</strong>
-          </p>
-        </div>
+        <EmptyState
+          variant="empty"
+          title="Ready to audit your codebase"
+          description="Select a project from the sidebar, then click Run Audit to start the analysis."
+          accentColor="blue"
+        />
       ) : null}
 
       <style>{`

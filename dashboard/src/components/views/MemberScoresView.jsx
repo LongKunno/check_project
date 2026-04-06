@@ -6,6 +6,8 @@ import {
   FolderOpen, TrendingUp, Clock, Award, ShieldCheck,
   Activity, Zap, AlertCircle
 } from 'lucide-react';
+import { TableSkeleton, CardSkeleton } from '../ui/SkeletonLoader';
+import EmptyState from '../ui/EmptyState';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -232,7 +234,7 @@ function MemberRow({ member, rank, onClick }) {
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: rank * 0.04 }}
-      className="group border-b border-white/5 hover:bg-white/3 cursor-pointer transition-colors"
+      className="group border-b border-white/[0.06] hover:bg-white/[0.05] hover:border-l-2 hover:border-l-cyan-500/50 cursor-pointer transition-all duration-200"
       onClick={() => onClick({ ...member, _rank: rank })}
     >
       {/* Rank */}
@@ -424,16 +426,18 @@ const MemberScoresView = ({ cn }) => {
             className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4"
           >
             {[
-              { label: 'Total members', value: members.length, icon: <Users size={16} className="text-cyan-400" /> },
-              { label: 'Avg score', value: avgScore ? `${avgScore}/100` : '—', icon: <Star size={16} className="text-amber-400" /> },
-              { label: 'Top Performer', value: topPerformer?.author_name?.split(' ').pop() || '—', icon: <Trophy size={16} className="text-emerald-400" /> },
-              { label: 'Total LOC contributed', value: formatLoc(totalLoc), icon: <Code2 size={16} className="text-violet-400" /> },
+              { label: 'Total members', value: members.length, icon: <Users size={16} className="text-cyan-400" />, accent: 'border-cyan-500/25 shadow-[0_0_15px_-5px_rgba(6,182,212,0.15)]' },
+              { label: 'Avg score', value: avgScore ? `${avgScore}/100` : '—', icon: <Star size={16} className="text-amber-400" />, accent: 'border-amber-500/25 shadow-[0_0_15px_-5px_rgba(245,158,11,0.15)]' },
+              { label: 'Top Performer', value: topPerformer?.author_name?.split(' ').pop() || '—', icon: <Trophy size={16} className="text-emerald-400" />, accent: 'border-emerald-500/25 shadow-[0_0_15px_-5px_rgba(16,185,129,0.15)]' },
+              { label: 'Total LOC contributed', value: formatLoc(totalLoc), icon: <Code2 size={16} className="text-violet-400" />, accent: 'border-violet-500/25 shadow-[0_0_15px_-5px_rgba(139,92,246,0.15)]' },
             ].map((s) => (
-              <div key={s.label} className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-white/3 border border-white/8 backdrop-blur-sm">
-                {s.icon}
+              <div key={s.label} className={`flex items-center gap-3 px-5 py-4 rounded-2xl bg-white/[0.03] border backdrop-blur-sm transition-all hover:bg-white/[0.06] ${s.accent}`}>
+                <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
+                  {s.icon}
+                </div>
                 <div>
                   <div className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">{s.label}</div>
-                  <div className="text-lg font-black text-white truncate max-w-[120px]">{s.value}</div>
+                  <div className="text-lg font-black text-white truncate max-w-[140px]">{s.value}</div>
                 </div>
               </div>
             ))}
@@ -441,26 +445,30 @@ const MemberScoresView = ({ cn }) => {
         )}
       </motion.div>
 
-      {/* ── States ── */}
       {isLoading ? (
-        <div className="flex flex-col items-center justify-center p-20">
-          <Loader2 className="animate-spin text-cyan-500 mb-4" size={40} />
-          <p className="text-slate-400 font-medium animate-pulse">Aggregating member data...</p>
+        <div className="space-y-6">
+          <CardSkeleton count={4} />
+          <TableSkeleton rows={6} cols={5} />
         </div>
       ) : error ? (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-6 text-center max-w-lg mx-auto">
-          <AlertTriangle className="text-red-400 mx-auto mb-3" size={32} />
-          <h3 className="text-red-400 font-bold text-lg mb-2">Data load error</h3>
-          <p className="text-slate-300 text-sm">{error}</p>
-        </div>
+        <EmptyState
+          variant="error"
+          title="Data load error"
+          description={error}
+          accentColor="rose"
+          action={
+            <button onClick={fetchMembers} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-sm font-bold hover:bg-cyan-500/20 transition-all">
+              <RefreshCw size={14} /> Retry
+            </button>
+          }
+        />
       ) : members.length === 0 ? (
-        <div className="text-center p-20 bg-slate-900/50 rounded-3xl border border-slate-800 backdrop-blur-xl">
-          <AlertCircle size={48} className="text-slate-500 mx-auto mb-4" />
-          <h3 className="text-white font-bold text-xl mb-2">No member data yet</h3>
-          <p className="text-slate-400 text-sm">
-            Run at least one Audit on a repository with Git history to collect member data via <code className="text-cyan-400">git blame</code>.
-          </p>
-        </div>
+        <EmptyState
+          variant="noData"
+          title="No member data yet"
+          description="Run at least one Audit on a repository with Git history to collect member data via git blame."
+          accentColor="cyan"
+        />
       ) : (
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -471,7 +479,7 @@ const MemberScoresView = ({ cn }) => {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-white/5 bg-white/2">
+                <tr className="border-b border-white/[0.08] bg-white/[0.04]">
                   <th className="px-4 py-3 text-center">
                     <span className="text-[10px] uppercase tracking-widest font-bold text-slate-500">#</span>
                   </th>
@@ -500,7 +508,7 @@ const MemberScoresView = ({ cn }) => {
           </div>
 
           {/* Footer */}
-          <div className="px-6 py-3 border-t border-white/5 flex items-center justify-between">
+          <div className="px-6 py-3 border-t border-white/[0.08] flex items-center justify-between bg-white/[0.02]">
             <span className="text-xs text-slate-600 font-medium">
               {members.length} members • Data from last 6 months via <code className="text-cyan-600/80">git blame</code>
             </span>

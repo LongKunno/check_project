@@ -97,7 +97,7 @@ CONFIGURED_REPOSITORIES = [
         "url": "https://bitbucket.org/liftsoftvn/mpf_mobile_api.git",
         "username": BITBUCKET_USER,
         "token": BITBUCKET_PASS,
-        "branch": "master"
+        "branch": "develop"
     },
     {
         "id": "liftsoftvn/mpf_api",

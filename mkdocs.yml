@@ -51,6 +51,7 @@ nav:
       - UI Text Selection Fix: features/ui_text_selection.md
       - Member Overview: features/member_overview.md
       - UI Language (English): features/ui_language_english.md
+      - UI Overhaul V1: features/ui_overhaul.md
   - Kiến trúc hệ thống:
     - Tổng quan: architecture/overview.md
     - Kiến trúc Module: architecture/module_architecture.md
