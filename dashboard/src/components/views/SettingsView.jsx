@@ -110,7 +110,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
         {/* ── System Information ── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="bg-[#0f172a]/80 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
+          className="bg-[#080c14]/40 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
         >
           <SectionTitle icon={<Server size={18} />} title="System Information" description="Current engine status and environment" />
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -123,7 +123,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
         {/* ── Engine Configuration ── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-          className="bg-[#0f172a]/80 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
+          className="bg-[#080c14]/40 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
         >
           <SectionTitle icon={<ShieldCheck size={18} />} title="Engine Configuration" description={`Rules configured for: ${selectedRepoId || 'none'}`} />
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -136,7 +136,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
         {/* ── Quick Links ── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-          className="bg-[#0f172a]/80 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
+          className="bg-[#080c14]/40 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
         >
           <SectionTitle icon={<Info size={18} />} title="Quick Links" description="Useful resources and endpoints" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -163,7 +163,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
         {/* ── Danger Zone ── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
-          className="bg-[#0f172a]/80 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
+          className="bg-[#080c14]/40 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
         >
           <div className="border border-red-500/20 rounded-2xl p-6 bg-red-900/10">
             <h3 className="text-red-400 font-extrabold text-sm uppercase tracking-wider mb-3 flex items-center gap-2">

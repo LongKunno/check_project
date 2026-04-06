@@ -3,12 +3,12 @@
 @tailwind utilities;
 
 :root {
-  --bg-color: #020617;
-  --card-bg: rgba(15, 23, 42, 0.85);
-  --glass-border: rgba(255, 255, 255, 0.12);
-  --glass-shine: rgba(255, 255, 255, 0.05);
-  --primary-glow: rgba(59, 130, 246, 0.12);
-  --secondary-glow: rgba(139, 92, 246, 0.1);
+  --bg-color: #080c14;
+  --card-bg: rgba(13, 17, 28, 0.7);
+  --glass-border: rgba(139, 92, 246, 0.15);
+  --glass-shine: rgba(255, 255, 255, 0.03);
+  --primary-glow: rgba(59, 130, 246, 0.2);
+  --secondary-glow: rgba(139, 92, 246, 0.2);
   --accent-emerald: #10b981;
   --accent-green: #10b981;
   --accent-violet: #8b5cf6;
@@ -18,8 +18,8 @@
   --accent-cyan: #06b6d4;
   --accent-pink: #ec4899;
   --accent-amber: #f59e0b;
-  --text-main: #f8fafc;
-  --text-muted: #cbd5e1;
+  --text-main: #e2e8f0;
+  --text-muted: #94a3b8;
   --font-main: 'Inter', sans-serif;
   --font-display: 'Outfit', sans-serif;
   /* Spacing scale */
@@ -68,8 +68,9 @@ body::before {
   width: 100%;
   height: 100%;
   background: 
-    radial-gradient(circle at 0% 0%, #1e293b 0%, transparent 50%),
-    radial-gradient(circle at 100% 100%, #1e1b4b 0%, transparent 50%);
+    radial-gradient(circle at 15% 50%, rgba(139, 92, 246, 0.2), transparent 50%),
+    radial-gradient(circle at 85% 30%, rgba(16, 185, 129, 0.15), transparent 50%),
+    radial-gradient(circle at 50% 80%, rgba(59, 130, 246, 0.2), transparent 50%);
   z-index: -1;
 }
 
@@ -162,14 +163,14 @@ h1 {
 
 .glass-card {
   background: var(--card-bg);
-  backdrop-filter: blur(12px) saturate(140%);
-  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
   border: 1px solid var(--glass-border);
   border-radius: 20px;
   padding: 1.5rem;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 
-    0 10px 30px -10px rgba(0, 0, 0, 0.5),
+    0 4px 20px -2px rgba(0, 0, 0, 0.5),
     inset 0 1px 1px 0 var(--glass-shine);
   position: relative;
   overflow: hidden;
@@ -182,16 +183,17 @@ h1 {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, rgba(255,255,255,0.05) 0%, transparent 100%);
+  background: linear-gradient(135deg, rgba(255,255,255,0.03) 0%, transparent 100%);
   pointer-events: none;
 }
 
 .glass-card:hover {
   transform: translateY(-4px);
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(139, 92, 246, 0.4);
   box-shadow: 
-    0 20px 40px -15px rgba(0, 0, 0, 0.6),
-    inset 0 1px 2px 0 rgba(255,255,255,0.1);
+    0 12px 30px -10px rgba(139, 92, 246, 0.2),
+    0 20px 40px -15px rgba(0, 0, 0, 0.7),
+    inset 0 1px 2px 0 rgba(255,255,255,0.08);
 }
 
 .metric-label {
@@ -681,69 +683,7 @@ h1 {
   text-transform: uppercase;
 }
 
-/* --- LIGHT MODE OVERRIDES --- */
-html.light {
-  --bg-color: #f8fafc;
-  --card-bg: rgba(255, 255, 255, 0.85);
-  --glass-border: rgba(0, 0, 0, 0.12);
-  --glass-shine: rgba(0, 0, 0, 0.05);
-  --text-main: #0f172a;
-  --text-muted: #475569;
-}
-
-html.light body {
-  background-color: var(--bg-color) !important;
-  color: var(--text-main) !important;
-}
-
-html.light .bg-\[\#020617\] { background-color: #f8fafc !important; }
-html.light .bg-\[\#0f172a\]\/95 { background-color: rgba(255, 255, 255, 0.95) !important; }
-html.light .bg-\[\#0f172a\] { background-color: #ffffff !important; }
-html.light .bg-\[\#0f172a\]\/90 { background-color: rgba(255, 255, 255, 0.9) !important; }
-html.light .bg-\[\#0d1117\] { background-color: #f1f5f9 !important; }
-html.light .from-\[\#020617\] { --tw-gradient-from: #f8fafc !important; --tw-gradient-to: rgba(248, 250, 252, 0) !important; }
-html.light .to-\[\#0f172a\] { --tw-gradient-to: #e2e8f0 !important; }
-
-html.light .text-slate-100, 
-html.light .text-slate-200, 
-html.light .text-white { color: #0f172a !important; }
-
-html.light .text-slate-300 { color: #334155 !important; }
-html.light .text-slate-400 { color: #475569 !important; }
-html.light .text-slate-500 { color: #64748b !important; }
-
-html.light .border-white\/10 { border-color: rgba(0,0,0,0.1) !important; }
-html.light .border-white\/5 { border-color: rgba(0,0,0,0.05) !important; }
-
-html.light .bg-black\/50 { background-color: rgba(0,0,0,0.08) !important; }
-html.light .bg-black\/40 { background-color: rgba(0,0,0,0.05) !important; }
-html.light .bg-black\/20 { background-color: rgba(0,0,0,0.03) !important; }
-
-html.light .bg-slate-900\/60 { background-color: rgba(255,255,255,0.7) !important; }
-html.light .bg-slate-900\/30 { background-color: rgba(255,255,255,0.4) !important; }
-
-html.light .bg-slate-800\/80 { background-color: rgba(241,245,249,0.8) !important; }
-html.light .bg-slate-800\/50 { background-color: rgba(241,245,249,0.5) !important; }
-html.light .bg-slate-800 { background-color: #e2e8f0 !important; }
-
-html.light .border-slate-800 { border-color: #cbd5e1 !important; }
-html.light .border-slate-700 { border-color: #94a3b8 !important; }
-
-html.light .bg-white\/5 { background-color: rgba(0,0,0,0.05) !important; }
-html.light .hover\:bg-white\/5:hover { background-color: rgba(0,0,0,0.05) !important; }
-html.light .hover\:text-white:hover { color: #0f172a !important; }
-
-html.light .shadow-inner { box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06) !important; }
-
-html.light body::before {
-  background: 
-    radial-gradient(circle at 0% 0%, #e2e8f0 0%, transparent 50%),
-    radial-gradient(circle at 100% 100%, #cbd5e1 0%, transparent 50%);
-}
-html.light .glass-card {
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1), inset 0 1px 1px 0 rgba(255,255,255,0.5);
-  border-color: rgba(0,0,0,0.1);
-}
+/* --- REMOVED LIGHT MODE OVERRIDES --- */
 
 /* ─── Skeleton Loader ──────────────────────────────────────────────────────── */
 

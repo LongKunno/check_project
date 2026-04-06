@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Users, Trophy, AlertTriangle, Code2, Star,
@@ -117,11 +118,11 @@ function MemberDetailModal({ member, onClose }) {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.92, y: 20 }}
           transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-          className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto bg-[#0f172a] border border-white/10 rounded-3xl shadow-2xl shadow-black/50 z-10"
+          className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto bg-[#080c14]/80 border border-white/10 rounded-3xl shadow-2xl shadow-black/50 z-10"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="sticky top-0 bg-[#0f172a]/95 backdrop-blur-xl border-b border-white/5 px-6 pt-6 pb-4 flex items-start justify-between z-10">
+          <div className="sticky top-0 bg-[#080c14]/70 backdrop-blur-xl border-b border-white/5 px-6 pt-6 pb-4 flex items-start justify-between z-10">
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-bold mb-3">
                 <Users size={12} /> Member Profile
@@ -474,7 +475,7 @@ const MemberScoresView = ({ cn }) => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-[#0f172a]/80 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl"
+          className="bg-[#080c14]/40 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl"
         >
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -517,15 +518,18 @@ const MemberScoresView = ({ cn }) => {
         </motion.div>
       )}
 
-      {/* Modal */}
-      <AnimatePresence>
-        {selectedMember && (
-          <MemberDetailModal
-            member={selectedMember}
-            onClose={() => setSelectedMember(null)}
-          />
-        )}
-      </AnimatePresence>
+      {/* Modal - Use Portal to escape transform wrapper */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {selectedMember && (
+            <MemberDetailModal
+              member={selectedMember}
+              onClose={() => setSelectedMember(null)}
+            />
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 };

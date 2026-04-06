@@ -175,7 +175,7 @@ const Sidebar = ({
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -300, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-            className="fixed top-0 left-0 bottom-0 w-[280px] bg-[#0f172a]/98 backdrop-blur-xl border-r border-white/10 flex flex-col z-[200] shadow-2xl lg:hidden overflow-y-auto"
+            className="fixed top-0 left-0 bottom-0 w-[280px] bg-[#080c14]/80 backdrop-blur-xl border-r border-white/10 flex flex-col z-[200] shadow-2xl lg:hidden overflow-y-auto"
           >
             {sidebarContent}
           </motion.div>
@@ -186,7 +186,7 @@ const Sidebar = ({
       <motion.div 
         initial={false}
         animate={{ width: isSidebarCollapsed ? 80 : 280 }}
-        className="hidden lg:flex flex-shrink-0 bg-[#0f172a]/95 backdrop-blur-xl border-r border-white/10 flex-col relative z-[100] h-full transition-all duration-300 shadow-2xl"
+        className="hidden lg:flex flex-shrink-0 bg-[#080c14]/40 backdrop-blur-xl border-r border-white/10 flex-col relative z-[100] h-full transition-all duration-300 shadow-2xl"
       >
         <button 
           onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}

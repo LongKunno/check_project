@@ -505,7 +505,7 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-[#0f172a]/80 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl"
+          className="bg-[#080c14]/40 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl"
         >
           <div className="overflow-x-auto">
             <table className="w-full">

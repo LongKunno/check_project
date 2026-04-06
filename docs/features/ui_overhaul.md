@@ -167,5 +167,15 @@ graph TD
   - History: `hover:border-l-amber-500/50`
 - **Table Footer**: Added `bg-white/[0.02]` background for subtle separation
 
+### 17. Midnight Aurora Premium Dark Theme (Phase 3)
+- **File**: `dashboard/src/index.css`, `dashboard/src/App.jsx`
+- Quyết định: Huỷ bỏ chuyển đổi sang Light Theme (do gây chói/mỏi mắt khi đọc log/code), chuyển sang làm sâu và tối ưu Dark Theme hiện tại.
+- **Base Color (`index.css`)**: Tổi màu nền gốc từ `--bg-color: #020617` sang `#080c14` sâu hơn, loại bỏ hoàn toàn khối override `.light` dính chặt vào tailwind class cũ.
+- **Glassmorphism Enhancement**:
+  - `backdrop-filter: blur(16px) saturate(160%)` thay vì 12px.
+  - Tăng độ sáng viền: `--glass-border: rgba(139, 92, 246, 0.15)`.
+- **Glowing Orbs (App.jsx & index.css)**:
+  - Cập nhật 3 radial-gradient chìm ở Body với các mã màu `rgba(139, 92, 246, 0.15)`, `rgba(16, 185, 129, 0.1)`. Không dùng `opacity: 0.1` CSS thuần mà ép màu RGBa với alpha gốc để tăng mức độ rực rỡ dưới lớp kính.
+
 ---
 *Cập nhật: 2026-04-06 — LongDD*

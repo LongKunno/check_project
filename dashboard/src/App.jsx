@@ -430,7 +430,7 @@ function App() {
   const cn = (...classes) => classes.filter(Boolean).join(' ');
 
   return (
-    <div className="flex h-screen w-screen bg-[#020617] overflow-hidden font-sans text-slate-200">
+    <div className="flex h-screen w-screen overflow-hidden font-sans text-slate-300">
       
       {/* SIDEBAR */}
       <Sidebar
@@ -444,12 +444,12 @@ function App() {
       <div className="flex-1 overflow-y-auto relative no-scrollbar bg-transparent">
         {/* Decorative background blobs */}
         <div style={{
-          position: 'fixed', top: '5%', right: '10%', width: '40vw', height: '40vw',
-          background: 'radial-gradient(circle, #bfdbfe 0%, transparent 70%)', filter: 'blur(100px)', zIndex: -1, pointerEvents: 'none', opacity: 0.1
+          position: 'fixed', top: '-10%', right: '-5%', width: '60vw', height: '60vw',
+          background: 'radial-gradient(circle, rgba(139, 92, 246, 0.4) 0%, transparent 60%)', filter: 'blur(120px)', zIndex: 0, pointerEvents: 'none'
         }} />
         <div style={{
-          position: 'fixed', bottom: '10%', left: '5%', width: '50vw', height: '50vw',
-          background: 'radial-gradient(circle, #ddd6fe 0%, transparent 70%)', filter: 'blur(120px)', zIndex: -1, pointerEvents: 'none', opacity: 0.1
+          position: 'fixed', bottom: '-10%', left: '-10%', width: '70vw', height: '70vw',
+          background: 'radial-gradient(circle, rgba(16, 185, 129, 0.3) 0%, transparent 60%)', filter: 'blur(140px)', zIndex: 0, pointerEvents: 'none'
         }} />
 
         <div className="dashboard-container relative z-10 w-full min-h-screen flex flex-col pb-8">
