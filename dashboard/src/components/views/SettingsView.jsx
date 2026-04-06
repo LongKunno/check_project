@@ -36,7 +36,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
 
   // Fetch system info
   useEffect(() => {
-    fetch('/api/ai/health')
+    fetch('/api/health/ai')
       .then(r => r.ok ? r.json() : null)
       .then(d => { if (d) setSystemInfo(d); })
       .catch(() => {});
@@ -113,14 +113,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
           className="bg-[#0f172a]/80 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
         >
           <SectionTitle icon={<Server size={18} />} title="System Information" description="Current engine status and environment" />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <InfoCard
-              icon={<Activity size={16} />}
-              label="AI Status"
-              value={systemInfo?.status === 'healthy' ? '● Healthy' : systemInfo?.status === 'error' ? '● Offline' : 'Checking...'}
-              iconClass={systemInfo?.status === 'healthy' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}
-              accent={systemInfo?.status === 'healthy' ? 'border-emerald-500/25 shadow-[0_0_15px_-5px_rgba(16,185,129,0.15)]' : 'border-rose-500/25 shadow-[0_0_15px_-5px_rgba(239,68,68,0.15)]'}
-            />
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <InfoCard icon={<Cpu size={16} />} label="Engine" value="V4 Stable" iconClass="bg-blue-500/10 border-blue-500/20 text-blue-400" accent="border-blue-500/25 shadow-[0_0_15px_-5px_rgba(59,130,246,0.15)]" />
             <InfoCard icon={<Code2 size={16} />} label="Framework" value="React + FastAPI" iconClass="bg-violet-500/10 border-violet-500/20 text-violet-400" accent="border-violet-500/25 shadow-[0_0_15px_-5px_rgba(139,92,246,0.15)]" />
             <InfoCard icon={<Clock size={16} />} label="AI Model" value={systemInfo?.model || 'GPT-4o-mini'} iconClass="bg-cyan-500/10 border-cyan-500/20 text-cyan-400" accent="border-cyan-500/25 shadow-[0_0_15px_-5px_rgba(6,182,212,0.15)]" />
@@ -148,9 +141,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
           <SectionTitle icon={<Info size={18} />} title="Quick Links" description="Useful resources and endpoints" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {[
-              { label: 'API Health', href: '/api/ai/health', desc: 'Check AI service status' },
-              { label: 'Active Repositories', href: '/api/repositories', desc: 'List all configured repos' },
-              { label: 'Documentation', href: 'http://localhost:8585', desc: 'MkDocs project docs' },
+              { label: 'Documentation', href: 'http://localhost:8001', desc: 'MkDocs project docs' },
             ].map((link) => (
               <a
                 key={link.label}

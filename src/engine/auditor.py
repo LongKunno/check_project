@@ -313,6 +313,12 @@ class CodeAuditor:
         member_meta = {}
         member_violations = {}
         
+        import time
+        logger.info("   [AuthTracker] Pre-indexing member contributions from all scanned files...")
+        for f_info in self.discovery_data['files']:
+            rel_path = os.path.relpath(f_info['path'], self.target_dir) if self.target_dir in f_info['path'] else f_info['path']
+            auth_tracker.parse_blame(rel_path)
+            
         for feature in self.discovery_data['features'].keys():
             feature_punishments[feature] = {p: 0 for p in WEIGHTS.keys()}
             feature_meta[feature] = {p: {"debt": 0, "max_sev": "Info"} for p in WEIGHTS.keys()}

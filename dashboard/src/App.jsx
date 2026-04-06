@@ -23,8 +23,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
-  Sun,
-  Moon,
   Trash2
 } from 'lucide-react';
 
@@ -62,20 +60,6 @@ import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-
 
 function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isLightMode, setIsLightMode] = useState(() => {
-    return localStorage.getItem('theme') === 'light';
-  });
-
-  useEffect(() => {
-    if (isLightMode) {
-      document.documentElement.classList.add('light');
-      localStorage.setItem('theme', 'light');
-    } else {
-      document.documentElement.classList.remove('light');
-      localStorage.setItem('theme', 'dark');
-    }
-  }, [isLightMode]);
-
   const [activeTab, setActiveTab] = useState('remote'); // 'local' or 'remote'
   const location = useLocation();
   const navigate = useNavigate();
@@ -454,7 +438,6 @@ function App() {
         selectedRepoId={selectedRepoId} setSelectedRepoId={setSelectedRepoId}
         configuredRepos={configuredRepos}
         aiHealth={aiHealth}
-        isLightMode={isLightMode} setIsLightMode={setIsLightMode}
         cn={cn}
       />
       {/* MAIN CONTENT AREA */}

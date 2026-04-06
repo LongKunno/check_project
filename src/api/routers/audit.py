@@ -104,6 +104,13 @@ async def get_audit_status():
 async def cancel_audit():
     """Hủy phiên kiểm toán đang chạy."""
     AuditState.cancel()
+    
+    # Huỷ cả các Job đang chạy trong JobManager (Batch Scanning)
+    for jid, job in JobManager.jobs.items():
+        if job.status in ["PENDING", "RUNNING"]:
+            JobManager.update_job(jid, "FAILED", "Đã bị huỷ bởi người dùng.")
+            JobManager.log(jid, "[SYSTEM] Đã nhận lệnh huỷ từ người dùng.")
+            
     return {"status": "success", "message": "Đã gửi tín hiệu hủy quét mã nguồn."}
 
 
@@ -278,12 +285,21 @@ async def audit_batch(request: BatchAuditRequest, background_tasks: BackgroundTa
         JobManager.log(job_id, f"[BATCH] Bắt đầu quét hàng loạt {len(project_ids)} dự án.")
         
         for idx, pid in enumerate(project_ids):
+            # Kiểm tra tín hiệu huỷ giữa các project
+            if AuditState.is_cancelled:
+                JobManager.log(job_id, "[BATCH] Đã dừng quét loạt dự án do lệnh huỷ.")
+                break
+                
             temp_dir = None
             try:
                 config_repo = next((r for r in CONFIGURED_REPOSITORIES if r["id"] == pid), None)
                 
                 job = JobManager.get_job(job_id)
-                if not job: break
+                # Dừng nếu job bị huỷ từ API /audit/cancel
+                if not job or job.status == "FAILED": 
+                    JobManager.log(job_id, "[BATCH] Job đã kết thúc hoặc bị huỷ.")
+                    break
+                    
                 batch_result = job.result or {"projects": {}}
                 
                 if not config_repo:

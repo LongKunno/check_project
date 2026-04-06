@@ -53,7 +53,7 @@ BITBUCKET_PASS = os.getenv("BITBUCKET_TOKEN", "")
 CONFIGURED_REPOSITORIES = [
     {
         "id": "longkunno-check-project",
-        "name": "Check Project (Current)",
+        "name": "Check Project",
         "url": "https://github.com/LongKunno/check_project.git",
         "username": "",
         "token": "",

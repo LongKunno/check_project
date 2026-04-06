@@ -2,7 +2,7 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Shield, FolderOpen, 
   Activity, ShieldCheck, Wand2, FileSearch, 
-  Moon, Sun, Settings, BarChart3, Users, Menu, X
+  Settings, BarChart3, Users, Menu, X
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
@@ -11,7 +11,6 @@ const Sidebar = ({
   selectedRepoId, setSelectedRepoId,
   configuredRepos,
   aiHealth,
-  isLightMode, setIsLightMode,
   cn
 }) => {
   const location = useLocation();
@@ -131,14 +130,7 @@ const Sidebar = ({
             {!isSidebarCollapsed && <span className="font-bold text-[11px] uppercase tracking-widest ml-3 whitespace-nowrap">AI {aiHealth.status}</span>}
          </div>
 
-         <button 
-            onClick={() => setIsLightMode(!isLightMode)}
-            className="flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left text-slate-500 hover:bg-white/5 hover:text-slate-300 overflow-hidden shrink-0 group"
-            title="Toggle Light/Dark Mode"
-         >
-            {isLightMode ? <Moon size={20} className="shrink-0 hover:rotate-12 transition-transform" /> : <Sun size={20} className="shrink-0 hover:rotate-90 transition-transform" />}
-            {!isSidebarCollapsed && <span className="font-bold text-sm whitespace-nowrap">Theme</span>}
-         </button>
+
 
          <button 
             onClick={() => handleNav('/settings')}
