@@ -33,20 +33,20 @@ class GitHelper:
         try:
             clone_url = GitHelper._build_clone_url(repo_url, username, token)
             
-            logger.info(f"Cloning repository into {dest_dir} (Shallow clone, shallow-since=6.months)...")
+            logger.info(f"Cloning repository into {dest_dir} (Shallow clone, shallow-since=3.months)...")
             
-            # Khởi tạo bản sao (Dùng shallow_since thay vì depth=1 để giữ lịch sử 6 tháng cho Member Scoring)
+            # Khởi tạo bản sao (Dùng shallow_since thay vì depth=1 để giữ lịch sử 3 tháng cho Member Scoring)
             # Thiết lập GIT_TERMINAL_PROMPT=0 để ngăn việc Git bị treo khi hỏi password tương tác
             env = os.environ.copy()
             env["GIT_TERMINAL_PROMPT"] = "0"
             
-            kwargs = {"shallow_since": "6 months", "env": env}
+            kwargs = {"shallow_since": "3 months", "env": env}
             if branch:
                 kwargs["branch"] = branch
             
             try:
                 Repo.clone_from(clone_url, dest_dir, **kwargs)
-                logger.info(f"Successfully cloned repository (branch: {branch or 'default'}) with 6-month history. Kept .git directory for Authorship analysis.")
+                logger.info(f"Successfully cloned repository (branch: {branch or 'default'}) with 3-month history. Kept .git directory for Authorship analysis.")
             except GitCommandError as shallow_err:
                 if "error processing shallow info" in str(shallow_err.stderr):
                     logger.warning("Shallow clone failed. Falling back to full clone...")

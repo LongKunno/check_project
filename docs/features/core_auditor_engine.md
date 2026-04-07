@@ -23,6 +23,7 @@ graph TD
 
 ### 1. Khám phá Tài nguyên (Discovery)
 - **Cách hoạt động:** Điểm bắt đầu tại `src/engine/discovery.py`. Hệ thống đếm LOC (Lines of Code) và lập bản đồ các File theo Tính năng (Feature). Nó ưu tiên ánh xạ các thư mục logic nghiệp vụ thay vì quét mù quáng các file tĩnh không logic (CSS/HTML).
+- **Auto-detect Source Root:** Engine tự động tìm thư mục source theo danh sách ưu tiên: `source_code` → `code` → `src` → `app` → `backend` → `api` → `growme_app` → `growme_api`. Khi phát hiện thư mục khớp, engine đào sâu vào bên trong và các **subdirectory cấp 1** trở thành các Feature/Module riêng biệt (thay vì gom thành 1 module duy nhất).
 - **Tối ưu Mode Test:** Có chế độ giới hạn số file khi chạy kiểm thử để tiết kiệm Token LLM (giới hạn `TEST_MODE_LIMIT_FILES`).
 - **Bật/Tắt AI:** Biến môi trường `AI_ENABLED` (mặc định `true`) cho phép tắt toàn bộ 3 bước AI (3.5, 3.6, 3.7). Khi `AI_ENABLED=false`, hệ thống chỉ chạy Static Analysis (Regex + AST) — phù hợp khi không có API key hoặc cần audit nhanh không tốn token.
 
@@ -122,7 +123,7 @@ stateDiagram-v2
 ### 5. Khấu trừ Điểm, Chấm Hạng Phân Cấp & Xuất Cáo Cáo (Aggregation & Reporting)
 Cuối cùng, các vi phạm đọng lại sau nhiều lần bộ lọc (AI) sẽ tiến vào Máy đo lường Điểm Số:
 - **Tính điểm Phân cấp (Feature-based Scoring):** Quy đổi thành Điểm Số cho Từng Tính Năng để xem khu vực nào Nợ lớn nhất (Technical Debt). Tích hợp cấu trúc Phạt Nặng/Nhẹ.
-- **Truy vấn Authorship:** Kiểm toán lại Member Tác quyền nào viết ra Lỗi đó (Tối đa 6 Tháng - The 6 Month Blame limit) để quy trách nhiệm hiệu suất cá nhân.
+- **Truy vấn Authorship:** Kiểm toán lại Member Tác quyền nào viết ra Lỗi đó (Tối đa 3 Tháng - The 3 Month Blame limit) để quy trách nhiệm hiệu suất cá nhân.
 - **Xuất Báo cáo (Reporting):** Hệ thống tự động tạo báo cáo Markdown (`reports/Final_Audit_Report.md`) với các thành phần thống kê Nâng Cao:
   - **Phân bổ Mức độ Nghiêm trọng (Severity Distribution):** Liệt kê thống kê số lượng lỗi phân loại theo `Blocker`, `Critical`, `Major`, `Minor`, `Info` để nhanh chóng khoanh vùng mức độ nguy hiểm của toàn cục dự án.
   - **Thống kê Theo Luật (Rule Breakdown):** Xác định tần suất và tổng mức phạt của từng Unit Rule (Rule ID) giúp team nhận biết những lỗi sai logic nào team đang mắc phải nhiều nhất để đưa vào quy chuẩn đào tạo.

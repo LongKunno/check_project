@@ -442,7 +442,7 @@ const MemberScoresView = ({ cn }) => {
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold">
                 <Users size={14} /> Team Leaderboard
               </div>
-              <span className="text-slate-600 text-xs font-medium hidden sm:block">Individual quality across all repositories (6 months)</span>
+              <span className="text-slate-600 text-xs font-medium hidden sm:block">Individual quality across all repositories (3 months)</span>
             </div>
             <h2
               className="text-3xl lg:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-cyan-400 to-violet-400"

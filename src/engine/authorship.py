@@ -6,7 +6,7 @@ import logging
 class AuthorshipTracker:
     """
     Theo dõi tác giả của từng dòng mã nguồn dựa trên Git blame.
-    Chỉ tính toán các dòng mã được commit trong vòng 6 tháng gần đây
+    Chỉ tính toán các dòng mã được commit trong vòng 3 tháng gần đây
     để đảm bảo tính chính xác và không đánh giá code legacy.
     
     Sử dụng author-mail (email) làm khóa chính để phân biệt thành viên,
@@ -16,14 +16,14 @@ class AuthorshipTracker:
         self.target_dir = os.path.abspath(target_dir)
         self.is_git_repo = os.path.exists(os.path.join(self.target_dir, '.git'))
         self.file_authors_cache = {}
-        self.member_loc = {}          # { email: int } — LOC trong 6 tháng
+        self.member_loc = {}          # { email: int } — LOC trong 3 tháng
         self.member_names = {}        # { email: name } — Mapping email → display name
 
     def parse_blame(self, file_path):
         """
-        Sử dụng git blame --line-porcelain --since="6 months" để lấy tác giả của từng dòng.
+        Sử dụng git blame --line-porcelain --since="3 months" để lấy tác giả của từng dòng.
         Lưu trữ kết quả vào cache để sử dụng lại.
-        Trương hợp code cũ hơn 6 tháng, git sẽ đánh dấu commit bằng kí tự boundary (thường là '^').
+        Trương hợp code cũ hơn 3 tháng, git sẽ đánh dấu commit bằng kí tự boundary (thường là '^').
         """
         if file_path in self.file_authors_cache:
             return self.file_authors_cache[file_path]
@@ -33,9 +33,9 @@ class AuthorshipTracker:
             return line_authors
 
         try:
-            # Chạy git blame với giới hạn 6 tháng
+            # Chạy git blame với giới hạn 3 tháng
             result = subprocess.run(
-                ['git', 'blame', '--line-porcelain', '--since=6.months', file_path],
+                ['git', 'blame', '--line-porcelain', '--since=3.months', file_path],
                 cwd=self.target_dir,
                 capture_output=True,
                 text=True,
@@ -99,7 +99,7 @@ class AuthorshipTracker:
     def get_author_info(self, file_path, line_no):
         """
         Trả về dictionary chứa {"author": string, "email": string, "boundary": boolean} của 1 dòng mã.
-        Nếu code ngoài 6 tháng hoặc không có thông tin, boundary = True.
+        Nếu code ngoài 3 tháng hoặc không có thông tin, boundary = True.
         """
         rel_path = os.path.relpath(file_path, self.target_dir)
         # Fix cho trường hợp file path đã tương đối rồi thì để nguyên
@@ -109,7 +109,7 @@ class AuthorshipTracker:
         return authors.get(line_no, {"author": "Unknown", "email": "unknown@unknown", "boundary": True})
 
     def get_all_member_loc(self):
-        """Trả về tổng số dòng code (trong 6 tháng) của từng member, keyed by email."""
+        """Trả về tổng số dòng code (trong 3 tháng) của từng member, keyed by email."""
         return self.member_loc
 
     def get_all_member_names(self):

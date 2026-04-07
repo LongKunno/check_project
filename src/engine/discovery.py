@@ -27,15 +27,75 @@ def run_precheck():
         "total_loc": 0,
         "total_files": 0,
         "files": [],
-        "features": {{}} # Nhóm theo thư mục cấp 1
+        "features": {{}}
     }}
     
-    # Ưu tiên folder source_code nếu tồn tại
-    use_source_code = os.path.isdir('source_code')
-    base_scan_path = 'source_code' if use_source_code else '.'
+    # Danh sách các tên thư mục source phổ biến (ưu tiên theo thứ tự)
+    SOURCE_DIR_CANDIDATES = ['source_code', 'code', 'src', 'app', 'backend', 'api', 'growme_app', 'growme_api']
     
-    app_indicators = ['__init__.py', 'models.py', 'views.py', 'apps.py']
+    detected_source_dir = None
+    for candidate in SOURCE_DIR_CANDIDATES:
+        if os.path.isdir(candidate):
+            detected_source_dir = candidate
+            break
     
+    use_source_code = detected_source_dir is not None
+    base_scan_path = detected_source_dir if use_source_code else '.'
+    
+    # --- PHASE 1: Scan toàn bộ cây thư mục để xây dựng bản đồ Django Apps ---
+    # Django App = thư mục chứa ít nhất 1 trong: models.py, views.py, apps.py
+    app_indicator_files = {{'models.py', 'views.py', 'apps.py'}}
+    django_app_dirs = set()  # Chứa absolute path của các Django App directories
+    
+    # Thư mục trung gian cần bỏ qua khi đặt tên feature (ví dụ: 'code/')
+    TRANSPARENT_DIRS = {{'code', 'src', 'app'}}
+    
+    for scan_root, scan_dirs, scan_files in os.walk(base_scan_path, followlinks=True):
+        scan_dirs[:] = [d for d in scan_dirs if d not in exclude_dirs]
+        if app_indicator_files.intersection(scan_files):
+            django_app_dirs.add(os.path.realpath(scan_root))
+    
+    def get_feature_name(file_dir):
+        \"\"\"
+        Xác định feature name cho một file dựa trên Django App gần nhất chứa nó.
+        
+        Logic:
+        1. Từ thư mục của file, đi ngược lên tìm Django App gần nhất
+        2. Tạo tên feature = context_parent/app_name (bỏ qua các thư mục trung gian như 'code/')
+        3. Nếu không tìm thấy Django App, dùng folder cấp 1 như cũ (fallback)
+        \"\"\"
+        real_dir = os.path.realpath(file_dir)
+        real_base = os.path.realpath(base_scan_path)
+        
+        # Đi ngược lên từ thư mục hiện tại để tìm Django App gần nhất
+        check_dir = real_dir
+        while check_dir.startswith(real_base) and check_dir != os.path.dirname(real_base):
+            if check_dir in django_app_dirs:
+                # Tìm thấy Django App! Tạo tên feature
+                rel_app = os.path.relpath(check_dir, real_base)
+                parts = rel_app.split(os.sep)
+                
+                # Lọc bỏ các thư mục trung gian (transparent dirs) khỏi tên
+                clean_parts = [p for p in parts if p not in TRANSPARENT_DIRS]
+                
+                if clean_parts:
+                    return '/'.join(clean_parts)
+                else:
+                    return parts[0]
+            check_dir = os.path.dirname(check_dir)
+        
+        # Fallback: không tìm thấy Django App -> dùng folder cấp 1
+        rel_to_base = os.path.relpath(file_dir, base_scan_path)
+        if rel_to_base == '.':
+            return f"{{detected_source_dir}}_root" if use_source_code else "root"
+        parts = rel_to_base.split(os.sep)
+        # Lọc bỏ transparent dirs cho fallback
+        clean_parts = [p for p in parts if p not in TRANSPARENT_DIRS]
+        if clean_parts:
+            return clean_parts[0]
+        return parts[0]
+    
+    # --- PHASE 2: Scan lại và gán Feature cho từng file ---
     visited_dirs = set()
     
     for root, dirs, files in os.walk(base_scan_path, followlinks=True):
@@ -49,30 +109,15 @@ def run_precheck():
         dirs[:] = [d for d in dirs if d not in exclude_dirs]
         
         # BẮT BUỘC Sắp xếp dirs và files theo Alphabet (Deterministic Order)
-        # Điều này khóa cứng thứ tự file được ném vào Prompt AI, ngăn AI bị bối rối và cho ra điểm số chênh lệch
         dirs.sort()
         files.sort()
-        
-        # Xác định xem root hiện tại hoặc cha của nó có phải là App không
-        rel_to_base = os.path.relpath(root, base_scan_path)
-        parts = rel_to_base.split(os.sep)
-        
-        current_feature = None
-        if rel_to_base == '.':
-            current_feature = "source_code_root" if use_source_code else "root"
-        else:
-            # Lấy folder cấp 1 làm mặc định nếu chưa tìm thấy app
-            current_feature = parts[0]
             
         for file in files:
             if any(file.endswith(ext) for ext in scan_ext) and file != 'ai_precheck.py':
                 path = os.path.join(root, file)
                 
-                # Logic gán Feature chi tiết hơn:
-                # Nếu file nằm trong subfolder của 1 App, nó vẫn thuộc App đó.
-                # Ở đây ta giữ đơn giản: Thư mục con trực tiếp của base_scan_path là 1 Feature.
-                # Nhưng nhờ followlinks=True, các folder ảo sẽ được quét.
-                feature_name = current_feature
+                # Sử dụng Django App detection để gán feature
+                feature_name = get_feature_name(root)
 
                 if feature_name not in results["features"]:
                     results["features"][feature_name] = {{"loc": 0, "files_count": 0}}
