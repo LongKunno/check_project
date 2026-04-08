@@ -79,10 +79,11 @@ app = FastAPI(
 
 @app.on_event("startup")
 async def startup_event():
-    logger.info("Initializing PostgreSQL Database...")
+    import asyncio
+    logger.info("Initializing PostgreSQL Database in background thread...")
     try:
-        AuditDatabase.initialize()
-        logger.info("Database initialized successfully.")
+        await asyncio.to_thread(AuditDatabase.initialize)
+        logger.info("Database initialized successfully without blocking the event loop.")
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
 

@@ -373,7 +373,7 @@ function SortTh({ label, field, sortBy, sortDir, onClick, align = 'left' }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-const MemberScoresView = ({ cn }) => {
+export const MemberScoresView = ({ cn }) => {
   const [members, setMembers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -578,5 +578,3 @@ const MemberScoresView = ({ cn }) => {
     </div>
   );
 };
-
-export default MemberScoresView;

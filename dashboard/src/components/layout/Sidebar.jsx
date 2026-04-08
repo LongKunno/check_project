@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight, Shield, FolderOpen,
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
-const Sidebar = ({
+export const Sidebar = ({
   isSidebarCollapsed, setIsSidebarCollapsed,
   selectedRepoId, setSelectedRepoId,
   configuredRepos,
@@ -265,5 +265,3 @@ const Sidebar = ({
     </>
   );
 };
-
-export default Sidebar;
