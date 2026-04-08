@@ -52,6 +52,7 @@ const SettingsView = React.lazy(() => import('./components/views/SettingsView'))
 const AuditView = React.lazy(() => import('./components/views/AuditView'));
 const ProjectScoresView = React.lazy(() => import('./components/views/ProjectScoresView'));
 const MemberScoresView = React.lazy(() => import('./components/views/MemberScoresView'));
+const PresentationsStaticView = React.lazy(() => import('./components/views/PresentationsStaticView'));
 import Sidebar from './components/layout/Sidebar';
 import PageTransition from './components/ui/PageTransition';
 import { CardSkeleton, TableSkeleton } from './components/ui/SkeletonLoader';
@@ -473,7 +474,7 @@ function App() {
         }} />
 
         <div className="dashboard-container relative z-10 w-full min-h-screen flex flex-col pb-8">
-          <header className={cn("flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 pb-6 border-b border-navbar/30 border-white/5 shrink-0 mb-6", (location.pathname.startsWith('/project-scores') || location.pathname.startsWith('/member-scores') || location.pathname.startsWith('/history') || location.pathname.startsWith('/settings') || location.pathname.startsWith('/rules') || location.pathname.startsWith('/sandbox')) && "hidden")}>
+          <header className={cn("flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 pb-6 border-b border-navbar/30 border-white/5 shrink-0 mb-6", (location.pathname.startsWith('/project-scores') || location.pathname.startsWith('/member-scores') || location.pathname.startsWith('/history') || location.pathname.startsWith('/settings') || location.pathname.startsWith('/rules') || location.pathname.startsWith('/sandbox') || location.pathname.startsWith('/presentations')) && "hidden")}>
             {/* Context Title - Only shown on /audit */}
             <div className="flex flex-col page-header-compact">
               <div className="flex items-center gap-3 mb-2">
@@ -610,6 +611,13 @@ function App() {
           <div className="flex-1 flex flex-col w-full" style={{ minHeight: 'calc(100vh - 100px)' }}>
             <Suspense fallback={<div className="p-8 space-y-6"><CardSkeleton count={4} /><TableSkeleton rows={5} cols={4} /></div>}>
               <MemberScoresView cn={cn} />
+            </Suspense>
+          </div>
+        } />
+        <Route path="/presentations" element={
+          <div className="flex-1 flex flex-col w-full" style={{ minHeight: 'calc(100vh - 100px)' }}>
+            <Suspense fallback={<div className="p-8 space-y-6"><CardSkeleton count={4} /><TableSkeleton rows={5} cols={4} /></div>}>
+              <PresentationsStaticView />
             </Suspense>
           </div>
         } />

@@ -290,5 +290,72 @@ graph TD
 - **Rank số thứ tự**: Cập nhật rank = `(page - 1) * pageSize + idx + 1` để rank chính xác across pages
 
 ---
-*Cập nhật: 2026-04-06 — UI/UX Professional Overhaul Phase 5c — Pagination*
+
+### 22. Sidebar Navigation Context Separation (Phase 6 — 2026-04-07)
+
+- **File**: `dashboard/src/components/layout/Sidebar.jsx`
+- **Vấn đề**: Toàn bộ nav items (bao gồm Project Leaderboard, Member Leaderboard, Presentations) được render bên dưới dropdown "Current repository", tạo ra sự hiểu nhầm rằng các tính năng toàn cục này phụ thuộc vào repo đang được chọn.
+- **Giải pháp**: Chia nav items thành 2 arrays riêng biệt và render chúng trong 2 section độc lập:
+
+#### 22.1 Cấu trúc mới — `globalNavItems`
+
+Các tính năng **không phụ thuộc** vào repository (dữ liệu toàn hệ thống):
+
+| Label | Path | Icon | Color |
+|---|---|---|---|
+| Project Leaderboard | `/project-scores` | BarChart3 | Pink |
+| Member Leaderboard | `/member-scores` | Users | Cyan |
+| Presentations | `/presentations` | MonitorPlay | Rose |
+
+#### 22.2 Cấu trúc mới — `repoNavItems`
+
+Các tính năng **phụ thuộc** vào repository đang được chọn. Nhóm này được đặt bên dưới dropdown chọn repo:
+
+| Label | Path | Icon | Color |
+|---|---|---|---|
+| Audit Dashboard | `/audit` | Activity | Violet |
+| Rule Manager | `/rules` | ShieldCheck | Emerald |
+| Rule Builder | `/sandbox` | Wand2 | Blue |
+| Audit History | `/history` | FileSearch | Amber |
+
+#### 22.3 Layout Sidebar sau thay đổi
+
+```
+┌──────────────────────────────┐
+│  AUDIT ENGINE  [Framework V4]│  ← Logo Header
+├──────────────────────────────┤
+│  🌐 GLOBAL VIEWS             │  ← Section header mới
+│    [Project Leaderboard]     │
+│    [Member Leaderboard]      │
+│    [Presentations]           │
+├──────────────────────────────┤  ← Divider (border-t border-white/5)
+│  📁 REPOSITORY WORKSPACE     │  ← Section header mới
+│    [select repo dropdown]    │  ← Dropdown được nhóm vào đây
+│    [Audit Dashboard]         │
+│    [Rule Manager]            │
+│    [Rule Builder]            │
+│    [Audit History]           │
+├──────────────────────────────┤
+│  ● AI healthy   [Settings]   │  ← Footer
+└──────────────────────────────┘
+```
+
+#### 22.4 Chi tiết UI
+
+- **Section headers**: `text-[10px] font-bold text-slate-500 uppercase tracking-widest opacity-70`
+- **Global Views header icon**: `Globe` (10px, text-slate-500)
+- **Repository Workspace header icon**: `FolderOpen` (10px, text-slate-500)
+- **Repo dropdown** kế thừa `border-violet-500/20` thay vì `border-slate-700` để nhất quán với theme violet của Workspace section
+- **Repo icon (collapsed mode)**: `bg-violet-500/10 border-violet-500/20` thay vì `bg-slate-800/50 border-slate-700` — phân biệt rõ hơn khi sidebar thu nhỏ
+- **renderNavItems** helper: Abstract hóa render logic thành 1 function tái sử dụng cho cả 2 nhóm
+
+#### 22.5 Collapsed Sidebar Behavior
+
+Khi sidebar ở chế độ thu nhỏ (80px wide):
+- Section header hiển thị `•••` thay vì text đầy đủ
+- Dropdown repo thu lại thành icon `FolderOpen` violet
+- Nav items chỉ hiển thị icon (tooltip `title` vẫn hoạt động)
+
+---
+*Cập nhật: 2026-04-07 — Sidebar Context Separation Phase 6*
 

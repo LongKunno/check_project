@@ -52,6 +52,7 @@ nav:
       - Member Overview: features/member_overview.md
       - UI Language (English): features/ui_language_english.md
       - UI Overhaul V1: features/ui_overhaul.md
+      - Presentations Static Page: features/presentation_static_page.md
   - Kiến trúc hệ thống:
     - Tổng quan: architecture/overview.md
     - Kiến trúc Module: architecture/module_architecture.md

@@ -31,6 +31,8 @@ services:
       - DATABASE_URL=postgresql://postgres:postgrespassword@db:5432/auditor_v2
     depends_on:
       - db
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     # Không dùng --reload để tránh restart khi đang chạy test
     command: uvicorn src.api.api_server:app --host 0.0.0.0 --port 8000 --timeout-keep-alive 600
 
