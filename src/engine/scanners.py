@@ -139,11 +139,23 @@ class PythonASTScanner(BaseScanner):
         return violations
 
     def _check_exceptions(self, node, file_path, lines, ast_rules_by_type, violations):
-        if node.type is None:
+        # 1. Bare except: except:
+        is_bare = node.type is None
+        
+        # 2. General Exception: except Exception: or except Exception as e:
+        is_general_exception = False
+        if node.type is not None:
+            if isinstance(node.type, ast.Name) and node.type.id == 'Exception':
+                is_general_exception = True
+            elif isinstance(node.type, ast.Attribute) and node.type.attr == 'Exception':
+                is_general_exception = True
+
+        if is_bare or is_general_exception:
             rule = ast_rules_by_type.get('bare_except')
             if rule:
                 snippet = "\n".join(lines[max(0, node.lineno-2):min(len(lines), node.lineno+1)])
-                violations.append(self._make_violation(file_path, rule, node.lineno, snippet))
+                reason = "Bắt ngoại lệ quá chung chung (Exception hoặc Bare except)" if is_general_exception else rule.get('reason')
+                violations.append(self._make_violation(file_path, rule, node.lineno, snippet, reason_override=reason))
 
         if len(node.body) == 1 and isinstance(node.body[0], ast.Pass):
             rule = ast_rules_by_type.get('swallowed_exception')

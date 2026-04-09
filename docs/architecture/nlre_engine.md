@@ -12,15 +12,20 @@ sequenceDiagram
     participant SQLite DB
     participant Auditor Engine
 
-    %% Flow cấu hình & test
+    %% Flow cấu hình & test (AI Rule Builder V2)
     Note over User, SQLite DB: Luồng Quản lý và Tạo Luật (2 Tab Độc lập có React Key Props riêng)
-    User->>Dashboard (React): Vào Tab "Tạo Rule AI" (Sandbox) -> Nhập luật & "Biên dịch"
-    Dashboard (React)->>API Server: POST /api/rules/compile
-    API Server->>AI Service: Yêu cầu AI qua Streaming để lấy cấu trúc
-    AI Service-->>Dashboard (React): Trả lại AST/Regex JSON nguyên bản bọc ```json
-    Dashboard (React)->>Dashboard (React): Frontend dùng Try-Catch + Regex nghiêm ngặt lấy JSON -> hiển thị.
-    User->>Dashboard (React): Chạy "Run Test" -> Bấm "Lưu Rule Cục Bộ" (Thành Rules chính thức)
-    Dashboard (React)->>API Server: POST /api/rules/test sau đó /save
+    User->>Dashboard (React): Vào Tab "Tạo Rule AI" (Sandbox) -> Chọn Template hoặc Nhập luật
+    Dashboard (React)->>API Server: POST /api/rules/compile (Streaming API)
+    API Server->>AI Service: Yêu cầu AI qua Streaming Endpoint
+    AI Service-->>Dashboard (React): Trả lại luồng Chain of Thought + AST/Regex/AI_rules JSON (SSE Chunk)
+    Dashboard (React)->>Dashboard (React): Frontend hiển thị Typing Effect, sau đó bóc tách JSON -> hiển thị khối Code/JSON.
+    User->>Dashboard (React): Chạy "Run Test". Nếu lỗi (Hoặc AI gen sai JSON / Logic) -> Nhấn "Auto Fix"
+    Dashboard (React)->>API Server: POST /api/rules/test (3-Phase Sandbox Audit)
+    API Server->>Auditor Engine: (Phase 1) Gọi Static Scanners chặn đứng ReDOS
+    API Server->>AI Service: (Phase 2 & 3) Gửi lô kết quả cho AI False Positive Checker & Kích hoạt Deep Audit (cho ai_rules)
+    Dashboard (React)->>API Server: POST /api/rules/auto_fix (Streaming API) -> API Server map lại dữ liệu (Flatten rules) và gọi AI Service sửa lỗi
+    User->>Dashboard (React): Bấm "Lưu Rule Cục Bộ" (Thành Rules chính thức)
+    Dashboard (React)->>API Server: POST /api/rules/save
     User->>Dashboard (React): Chuyển qua Tab "Danh sách Rule" (Quản lý)
     Dashboard (React)->>API Server: POST /api/rules/toggle & /api/rules/save (chỉnh Weight bằng Wheel Event)
     API Server->>SQLite DB: Cập nhật `project_rules` (Toggled Rules, Compiled_json & Custom Weights)

@@ -17,7 +17,7 @@ from src.engine.scoring import ScoringEngine
 from src.engine.database import AuditDatabase
 from src.api.git_helper import GitHelper
 from src.api.audit_state import AuditState, JobManager
-from src.config import CONFIGURED_REPOSITORIES
+from src.config import CONFIGURED_REPOSITORIES, AI_ENABLED
 
 router = APIRouter()
 
@@ -67,10 +67,11 @@ def _build_and_save_audit_result(auditor, target_str, project_name):
         },
         "violations": auditor.violations
     }
+    scan_mode = 'full_ai' if AI_ENABLED else 'static_only'
     AuditDatabase.save_audit(
         target=target_str, score=final_score, rating=rating, loc=total_loc,
         violations_count=len(auditor.violations), pillar_scores=auditor.project_pillars,
-        full_json=result
+        full_json=result, scan_mode=scan_mode
     )
     return result
 

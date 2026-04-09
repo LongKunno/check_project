@@ -95,10 +95,22 @@ Các chunk string giải thích luật (AI Explanation), sau đó là markdown c
 ```text
 Tôi hiểu yêu cầu của bạn, tôi sẽ tạo một rule cho hàm eval().
 ```json
-{
-  "ast_rules": { ... },
-  "regex_rules": [ ... ],
   "test_case": "def foo():\n    eval('2+2')"
 }
 ```
 ```
+
+## POST `/api/rules/auto_fix`
+Yêu cầu AI phân tích lỗi trả về từ Sandbox (hoặc lỗi parse) để tự động sửa chữa bộ luật JSON. (Sử dụng Streaming).
+
+- **Phương thức:** `POST`
+- **Body:**
+```json
+{
+  "failed_json": "Bộ JSON bị lỗi hoặc muốn cải tiến",
+  "test_case_code": "Đoạn mã test snippet trong sandbox",
+  "error_message": "Log lỗi từ hệ thống hoặc phản hồi từ user"
+}
+```
+- **Phản hồi (200 - text/plain Streaming):**
+Trả về luồng ký tự đại diện cho đoạn mã JSON mới đã được "chữa lành" (Healed), bọc trong Markdown Codeblock.

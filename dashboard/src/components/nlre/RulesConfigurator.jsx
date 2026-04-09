@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Save, Settings2, FileText, CheckCircle2, ChevronRight, ChevronDown, Search, Filter, Wand2, Terminal, AlertTriangle, Trash2, Box, ShieldCheck, Database, Beaker, XCircle, Info } from 'lucide-react';
+import { Play, Save, Settings2, FileText, CheckCircle2, ChevronRight, ChevronDown, Search, Filter, Wand2, Terminal, AlertTriangle, Trash2, Box, ShieldCheck, Database, Beaker, XCircle, Info, RefreshCw } from 'lucide-react';
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -98,6 +98,11 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
   const [activeTab, setActiveTab] = useState('core');
   const [isTestRun, setIsTestRun] = useState(false);
   const [sandboxTab, setSandboxTab] = useState('code');
+  
+  // Streaming state
+  const [streamingText, setStreamingText] = useState("");
+  const [isAutoFixing, setIsAutoFixing] = useState(false);
+
 
   // Search & Filter state
   const [searchTerm, setSearchTerm] = useState('');
@@ -199,6 +204,9 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
     setIsCompiling(true);
     setTestViolations(null);
     setSaved(false);
+    setStreamingText("");
+    setCompiledJson(null);
+    setSandboxTab('json');
 
     try {
       const response = await fetch('/api/rules/compile', {
@@ -207,7 +215,20 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
         body: JSON.stringify({ natural_text: naturalText })
       });
 
-      const fullText = await response.text();
+      if (!response.body) throw new Error("ReadableStream not supported");
+      
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let fullText = "";
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        fullText += chunk;
+        setStreamingText(fullText);
+      }
+
       let jsonStr = null;
       const jsonMatch = fullText.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
       if (jsonMatch && jsonMatch[1]) {
@@ -223,13 +244,19 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
       if (jsonStr) {
         try {
           const parsed = JSON.parse(jsonStr);
-          setCompiledJson(parsed);
-          if (parsed.test_case) {
-            setTestCode(parsed.test_case);
+          
+          if (parsed.existing_rule) {
+              setCompiledJson({ ...parsed, _is_duplicate: true });
+              setSandboxTab('json');
+          } else {
+              setCompiledJson(parsed);
+              if (parsed.test_case) {
+                setTestCode(parsed.test_case);
+              }
+              setIsTestRun(false);
           }
-          setIsTestRun(false);
         } catch (parseError) {
-          showToast("AI returned invalid JSON structure: " + parseError.message, "error");
+          showToast("AI returned invalid JSON structure.", "error");
         }
       } else {
         showToast("Could not find valid JSON in AI response", "error");
@@ -238,6 +265,78 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
       showToast(e.message, "error");
     } finally {
       setIsCompiling(false);
+    }
+  };
+
+  const handleAutoFix = async () => {
+    if (!compiledJson) return;
+    setIsAutoFixing(true);
+    setSaved(false);
+    setStreamingText("");
+    setSandboxTab('json');
+    
+    // Lưu lại trạng thái JSON hiện tại trước khi fix để hiển thị
+    const failedJsonStr = typeof compiledJson === 'string' ? compiledJson : JSON.stringify(compiledJson, null, 2);
+    setCompiledJson(null);
+    
+    try {
+      const errMsg = (testViolations && testViolations.length > 0) ? "Có báo cáo lỗi vi phạm khi chạy test" : "Không áp dụng hoặc Parse lỗi JSON";
+
+      const response = await fetch('/api/rules/auto_fix', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+           failed_json: failedJsonStr, 
+           test_case_code: testCode,
+           error_message: errMsg
+        })
+      });
+
+      if (!response.body) throw new Error("ReadableStream not supported");
+      
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let fullText = "";
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        fullText += chunk;
+        setStreamingText(fullText);
+      }
+      
+      let jsonStr = null;
+      const jsonMatch = fullText.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+      if (jsonMatch && jsonMatch[1]) {
+        jsonStr = jsonMatch[1].trim();
+      } else {
+        const firstBrace = fullText.indexOf('{');
+        const lastBrace = fullText.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+          jsonStr = fullText.substring(firstBrace, lastBrace + 1);
+        }
+      }
+
+      if (jsonStr) {
+        try {
+          setCompiledJson(JSON.parse(jsonStr));
+          setIsTestRun(false);
+          setTestViolations(null);
+          showToast("AI Auto-Fix thành công!");
+        } catch (parseError) {
+          showToast("AI Auto-Fix trả về JSON lỗi.", "error");
+          setCompiledJson(failedJsonStr); // Phục hồi
+        }
+      } else {
+        showToast("Auto-Fix thất bại.", "error");
+        setCompiledJson(failedJsonStr);
+      }
+    } catch (e) {
+      showToast(e.message, "error");
+      setCompiledJson(failedJsonStr);
+    } finally {
+      setIsAutoFixing(false);
     }
   };
 
@@ -403,9 +502,30 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
   };
 
   const templates = [
-      "No bare except clauses allowed",
-      "Functions must not exceed 50 lines",
-      "Use environment variables instead of hardcoded values"
+      {
+          label: "Cấm bắt báo lỗi chung",
+          category: "Clean Code",
+          reason: "Bắt except: hoặc except Exception: sẽ nuốt lỗi ngầm.",
+          prompt: "Tuyệt đối không sử dụng bare except (except:) hoặc ngoại lệ quá chung chung (except Exception:). Phải bắt rõ ngoại lệ cụ thể."
+      },
+      {
+          label: "Giới hạn độ dài hàm",
+          category: "Maintainability",
+          reason: "Hàm lớn hơn 50 dòng phức tạp khó bảo trì.",
+          prompt: "Các hàm Python không được vượt quá 50 dòng code để đảm bảo Clean Code."
+      },
+      {
+          label: "Ngăn chặn eval()",
+          category: "Security",
+          reason: "Thực thi string thành code sẽ gây lỗi RCE.",
+          prompt: "Tuyệt đối không sử dụng hàm eval() để thực thi code, rủi ro bảo mật nghiêm trọng (RCE)."
+      },
+      {
+          label: "Cấm Hardcode Credentials",
+          category: "Security",
+          reason: "Không hardcode API Keys, Token hay Passwords.",
+          prompt: "Ngăn chặn việc gán các token, password, secret_key cứng trong mã nguồn. Bắt buộc đọc từ biến môi trường."
+      }
   ];
 
   return (
@@ -725,20 +845,30 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
                      Create New Rule with AI
                  </div>
                  
-                 <div className="flex flex-wrap gap-2 mb-4">
+                 <div className="grid grid-cols-2 gap-3 mb-4">
                      {templates.map((tpl, i) => (
-                         <button key={i} onClick={() => setNaturalText(tpl)} className="text-[11px] bg-slate-800 text-slate-300 px-3 py-1.5 rounded-full border border-slate-700 hover:border-violet-500 hover:text-violet-300 transition block font-medium">
-                             + {tpl}
+                         <button 
+                             key={i} 
+                             onClick={() => setNaturalText(tpl.prompt)} 
+                             className="text-left bg-black/40 p-3 rounded-xl border border-white/5 hover:border-violet-500/50 hover:bg-violet-900/10 transition-all group flex flex-col gap-1"
+                         >
+                             <div className="flex justify-between items-start">
+                                 <span className="font-bold text-slate-200 text-xs group-hover:text-violet-300 transition-colors">{tpl.label}</span>
+                                 <span className="text-[9px] uppercase px-2 py-0.5 rounded-full bg-white/5 text-slate-400 group-hover:bg-violet-500/10 group-hover:text-violet-400">{tpl.category}</span>
+                             </div>
+                             <span className="text-[10px] text-slate-500 leading-tight">{tpl.reason}</span>
                          </button>
                      ))}
                  </div>
                  
-                 <textarea 
-                  value={naturalText}
-                  onChange={(e) => setNaturalText(e.target.value)}
-                   placeholder="Describe your rule in plain English (e.g., Prohibit use of subprocess)..."
-                  className="w-full min-h-[90px] bg-black/40 border border-white/5 rounded-xl p-4 text-slate-200 font-medium placeholder-slate-600 outline-none focus:border-violet-500/40 transition-all resize-none"
-                 />
+                 <div className="relative">
+                   <textarea 
+                    value={naturalText}
+                    onChange={(e) => setNaturalText(e.target.value)}
+                     placeholder="Describe your rule in plain English (e.g., Cấm sử dụng hàm subprocess)..."
+                    className="w-full min-h-[90px] bg-black/40 border border-white/5 rounded-xl p-4 text-slate-200 font-medium placeholder-slate-600 outline-none focus:border-violet-500/40 transition-all resize-none"
+                   />
+                 </div>
                  
                  <div className="mt-4 flex justify-between items-center">
                     <div className="text-[11px] text-slate-500 flex items-center gap-1.5 italic">
@@ -764,16 +894,83 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
                        </div>
                         Interactive Sandbox (Rule Testing)
                     </div>
+                     {!compiledJson && !isCompiling && !isAutoFixing && testViolations && (
+                        <button onClick={handleAutoFix} className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-500/20 text-violet-300 text-xs font-bold border border-violet-500/30 hover:bg-violet-500/30 transition-colors animate-pulse">
+                            <Wand2 size={12} /> Auto Fix Rule
+                        </button>
+                     )}
                  </div>
                  
-                 {!compiledJson ? (
-                     <div className="flex-1 flex flex-col items-center justify-center text-slate-500 gap-4 opacity-70 bg-black/20 rounded-xl border border-dashed border-white/5">
-                         <Beaker size={40} className="mb-2" />
+                 {isCompiling || isAutoFixing ? (
+                     <div className="flex-1 flex flex-col bg-black/40 rounded-xl border border-white/5 overflow-hidden">
+                        <div className="flex items-center gap-3 px-4 py-3 bg-violet-500/10 border-b border-white/5">
+                            <span className="w-2 h-2 rounded-full bg-violet-400 animate-ping"></span>
+                            <span className="text-xs font-bold text-violet-300 uppercase tracking-widest">{isAutoFixing ? "AI Auto Healing in progress..." : "AI Engine is thinking..."}</span>
+                        </div>
+                        <div className="p-6 overflow-y-auto max-h-[400px] flex-1 font-mono text-xs leading-relaxed text-slate-300 whitespace-pre-wrap">
+                            {streamingText}
+                        </div>
+                     </div>
+                 ) : !compiledJson ? (
+                     <div className="flex-1 flex flex-col items-center justify-center text-slate-500 gap-4 opacity-70 bg-black/20 rounded-xl border border-dashed border-white/5 min-h-[300px]">
+                         <Beaker size={40} className="mb-2 opacity-50" />
                           <p className="font-bold text-sm">Compile a rule with AI to launch the Sandbox</p>
                      </div>
                  ) : (
                      <div className="flex-1 flex flex-col">
-                         <div className="flex-1 flex flex-col gap-6">
+                         {compiledJson._is_duplicate && (() => {
+                             const meta = defaultRules[compiledJson.existing_rule] || {};
+                             return (
+                                 <div className="bg-[#0d1117] border border-amber-500/30 rounded-xl p-6 mb-6 flex flex-col items-center justify-center text-center relative overflow-hidden shadow-2xl shadow-amber-900/10">
+                                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500"></div>
+                                     <XCircle size={48} className="text-amber-500 mb-4 opacity-80" />
+                                     <h3 className="text-xl font-bold text-amber-400 mb-2 uppercase tracking-wider">Luật Đã Tồn Tại</h3>
+                                     <p className="text-slate-300 text-sm mb-6 max-w-lg leading-relaxed">
+                                         Hệ thống ghi nhận yêu cầu tạo luật của bạn <strong>trùng khớp nội dung</strong> với một Core Rule đã được tích hợp sẵn. Mã nguồn bổ sung đã bị vô hiệu hóa để tối ưu hóa hiệu năng hệ thống.
+                                     </p>
+                                     
+                                     <div className="bg-black/60 border border-amber-500/30 w-full max-w-2xl rounded-lg text-left overflow-hidden mb-8 shadow-inner shadow-black/50">
+                                         <div className="bg-amber-500/10 flex flex-col sm:flex-row sm:items-center justify-between px-4 py-3 border-b border-amber-500/20 gap-3">
+                                             <div className="flex items-center gap-2">
+                                                <span className="text-xs text-amber-500/70 font-bold uppercase tracking-widest hidden sm:inline-block">Mã Tham Chiếu:</span>
+                                                <span className="font-mono text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded">{compiledJson.existing_rule}</span>
+                                             </div>
+                                             <div className="flex gap-2 flex-wrap">
+                                                 {meta.pillar && <span className="text-[10px] uppercase font-bold px-2.5 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-300 shadow-sm">{meta.pillar}</span>}
+                                                 {meta.severity && <span className={cn("text-[10px] uppercase font-bold px-2.5 py-1 rounded-full border shadow-sm", meta.severity === "Blocker" || meta.severity === "Critical" ? "bg-red-900/40 text-red-300 border-red-500/30" : meta.severity === "Major" ? "bg-amber-900/40 text-amber-300 border-amber-500/30" : "bg-blue-900/40 text-blue-300 border-blue-500/30")}>{meta.severity}</span>}
+                                             </div>
+                                         </div>
+                                         <div className="p-5 space-y-4 relative">
+                                             <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                                                 <ShieldCheck size={100} />
+                                             </div>
+                                             <div>
+                                                 <div className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-1.5 flex items-center gap-1.5"><Info size={12} /> Diễn giải (Reason)</div>
+                                                 <div className="text-sm text-slate-200 font-medium leading-relaxed">{meta.reason || "Luật hệ thống mặc định."}</div>
+                                             </div>
+                                             {compiledJson.message && (
+                                                <div>
+                                                    <div className="text-[10px] text-amber-500/70 uppercase font-bold tracking-widest mb-1.5 flex items-center gap-1.5"><Wand2 size={12} /> AI Phân Tích</div>
+                                                    <div className="text-sm text-amber-200/90 italic border-l-2 border-amber-500/30 pl-3 leading-relaxed">{compiledJson.message}</div>
+                                                </div>
+                                             )}
+                                         </div>
+                                     </div>
+
+                                     <button 
+                                         onClick={() => {
+                                             setCompiledJson(null);
+                                             setNaturalText("");
+                                             setStreamingText("");
+                                         }}
+                                         className="px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-amber-950 rounded-lg text-sm font-bold tracking-wide transition-all flex items-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95"
+                                     >
+                                         <RefreshCw size={16} /> Bắt đầu tạo luật mới
+                                     </button>
+                                 </div>
+                             );
+                         })()}
+                         <div className={cn("flex-1 flex flex-col gap-6", compiledJson._is_duplicate ? "hidden" : "")}>
                              <div className="flex flex-col bg-[#0d1117] border border-white/10 rounded-xl relative shrink-0">
                                  <div className="flex text-[10px] font-bold text-slate-500 uppercase border-b border-white/5 bg-black/40 shrink-0">
                                      <button 
@@ -840,14 +1037,43 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
                                         </div>
                                     ) : (
                                         <div className="flex flex-col gap-3">
-                                            <div className="text-sm font-bold text-red-500 flex items-center gap-2 mb-1">
-                                                <XCircle size={18} /> {testViolations.length} Violations
+                                            <div className="text-sm font-bold text-red-500 flex flex-col gap-1 mb-1">
+                                                <div className="flex items-center gap-2">
+                                                    <XCircle size={18} /> {testViolations.length} Violations
+                                                </div>
+                                                <span className="text-[10px] text-slate-500 font-normal ml-6">Đã phân tích qua bộ quét tĩnh & AI Cross-check</span>
                                             </div>
                                             {testViolations.map((v, i) => (
-                                                <div key={i} className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-xs flex flex-col shadow-inner shadow-red-500/5">
-                                                    <span className="font-bold text-red-400 border-b border-red-500/10 pb-1 mb-2">{v.rule_id}</span>
-                                                    <p className="text-slate-200">{v.reason}</p>
-                                                    <div className="text-slate-500 font-mono mt-2 bg-black/30 p-1.5 rounded inline-block w-fit">Line {v.line}</div>
+                                                <div key={i} className={cn("border rounded-xl p-4 text-xs flex flex-col shadow-inner transition-all", v.is_false_positive ? "bg-emerald-500/5 border-emerald-500/20 shadow-emerald-500/5" : "bg-red-500/10 border-red-500/20 shadow-red-500/5")}>
+                                                    <div className="flex items-center justify-between border-b pb-2 mb-2" style={{ borderColor: v.is_false_positive ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)' }}>
+                                                        <span className={cn("font-bold text-sm", v.is_false_positive ? "text-emerald-400 line-through decoration-emerald-500/50" : "text-red-400")} title={v.is_false_positive ? "Được AI đánh giá là báo cáo sai (False Positive)" : ""}>{v.rule_id}</span>
+                                                        {v.is_false_positive ? (
+                                                            <span className="text-[10px] flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded-md font-bold border border-emerald-500/20">
+                                                                <CheckCircle2 size={12}/> AI: Cảnh báo sai
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-[10px] flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse shadow-[0_0_5px_rgba(239,68,68,0.8)]"></span> <span className="text-red-400 font-bold tracking-wide">Vi phạm hợp lệ</span></span>
+                                                        )}
+                                                    </div>
+                                                    
+                                                    <p className={cn(v.is_false_positive ? "text-slate-400 line-through opacity-80" : "text-slate-200 leading-relaxed font-medium")}>{v.reason}</p>
+                                                    
+                                                    {v.ai_explanation && (
+                                                        <div className={cn("mt-3 p-3 rounded-lg flex flex-col gap-1.5 relative overflow-hidden border", v.is_false_positive ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20" : "bg-red-500/5 text-red-200 border-red-500/20")}>
+                                                            <div className={cn("absolute top-0 left-0 w-1 h-full", v.is_false_positive ? "bg-emerald-500/50" : "bg-red-500/50")}></div>
+                                                            <span className={cn("font-bold border-b pb-1 w-fit flex items-center gap-1.5 text-[10px] uppercase tracking-wider", v.is_false_positive ? "border-emerald-500/20" : "border-red-500/20")}>
+                                                                🤖 Giải thích từ AI {v.is_false_positive ? "(Bác bỏ)" : "(Xác nhận)"}:
+                                                            </span> 
+                                                            <span className="leading-relaxed opacity-90">{v.ai_explanation}</span>
+                                                        </div>
+                                                    )}
+                                                    
+                                                    <div className="flex justify-between items-end mt-4">
+                                                        <div className="text-slate-400 font-mono bg-black/40 px-2 py-1 relative z-10 rounded-md shadow-md border border-white/5 flex items-center gap-2">
+                                                            <span className="text-slate-500">Line</span>
+                                                            <span className="text-blue-400 font-bold">{v.line}</span>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             ))}
                                         </div>
@@ -855,32 +1081,41 @@ const RulesConfigurator = ({ targetId, projectName, mode = 'all' }) => {
                                  </div>
                              </div>
                          </div>
-                         <div className="flex justify-end pt-6 shrink-0 gap-4 border-t border-white/10 mt-4">
-                            <button
-                                onClick={handleTestRule}
-                                disabled={isTesting || !testCode.trim() || !compiledJson}
-                                className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-8 rounded-xl flex items-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20"
-                            >
-                                {isTesting ? <span className="animate-spin">◌</span> : <Terminal size={16} />}
-                                Run Test
-                            </button>
-                            
-                            <motion.button
-                                whileHover={isTestRun ? { scale: 1.02, translateY: -2 } : {}}
-                                whileTap={isTestRun ? { scale: 0.98 } : {}}
-                                onClick={handleSave}
-                                disabled={isSaving || !isTestRun}
-                                className={cn(
-                                    "flex items-center gap-2 px-8 py-2.5 rounded-xl font-bold transition-all shadow-xl",
-                                    !isTestRun ? "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700" :
-                                    saved 
-                                        ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 shadow-emerald-500/10" 
-                                        : "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-violet-500/20 border border-white/20"
-                                )}
-                            >
-                                {isSaving ? <span className="animate-spin text-xl">◌</span> : saved ? <CheckCircle2 size={18} /> : <Save size={18} />}
-                                 {saved ? "Saved Successfully" : "Save Rule Locally"}
-                            </motion.button>
+                         <div className="flex justify-between items-center pt-6 shrink-0 border-t border-white/10 mt-4">
+                            <div>
+                                {(testViolations && testViolations.length > 0) || (!compiledJson && !isTestRun) ? (
+                                    <button onClick={handleAutoFix} disabled={isAutoFixing} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/30 transition-all font-bold text-sm disabled:opacity-50 group">
+                                        <Wand2 size={16} className="group-hover:scale-110 transition-transform" /> {isAutoFixing ? 'Fixing...' : 'Tự động sửa bằng AI (Auto-Fix)'}
+                                    </button>
+                                ) : null}
+                            </div>
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={handleTestRule}
+                                    disabled={isTesting || !testCode.trim() || !compiledJson}
+                                    className="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-8 rounded-xl flex items-center gap-2 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-500/20"
+                                >
+                                    {isTesting ? <span className="animate-spin">◌</span> : <Terminal size={16} />}
+                                    Run Test
+                                </button>
+                                
+                                <motion.button
+                                    whileHover={isTestRun ? { scale: 1.02, translateY: -2 } : {}}
+                                    whileTap={isTestRun ? { scale: 0.98 } : {}}
+                                    onClick={handleSave}
+                                    disabled={isSaving || !isTestRun}
+                                    className={cn(
+                                        "flex items-center gap-2 px-8 py-2.5 rounded-xl font-bold transition-all shadow-xl",
+                                        !isTestRun ? "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700" :
+                                        saved 
+                                            ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 shadow-emerald-500/10" 
+                                            : "bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-violet-500/20 border border-white/20"
+                                    )}
+                                >
+                                    {isSaving ? <span className="animate-spin text-xl">◌</span> : saved ? <CheckCircle2 size={18} /> : <Save size={18} />}
+                                     {saved ? "Saved Successfully" : "Save Rule Locally"}
+                                </motion.button>
+                            </div>
                          </div>
                      </div>
                  )}

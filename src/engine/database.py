@@ -72,7 +72,8 @@ class AuditDatabase:
                     total_loc INTEGER NOT NULL,
                     violations_count INTEGER NOT NULL,
                     pillar_scores TEXT NOT NULL,
-                    full_json TEXT
+                    full_json TEXT,
+                    scan_mode TEXT DEFAULT 'full_ai'
                 )
             ''')
             
@@ -94,6 +95,8 @@ class AuditDatabase:
             columns_history = [row[0] for row in cursor.fetchall()]
             if 'full_json' not in columns_history:
                 cursor.execute('ALTER TABLE audit_history ADD COLUMN full_json TEXT')
+            if 'scan_mode' not in columns_history:
+                cursor.execute("ALTER TABLE audit_history ADD COLUMN scan_mode TEXT DEFAULT 'full_ai'")
                 
             cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'project_rules'")
             columns_rules = [row[0] for row in cursor.fetchall()]
@@ -108,14 +111,14 @@ class AuditDatabase:
             logger.error(f"Database Initialization Error: {e}")
 
     @staticmethod
-    def save_audit(target, score, rating, loc, violations_count, pillar_scores, full_json=None):
+    def save_audit(target, score, rating, loc, violations_count, pillar_scores, full_json=None, scan_mode='full_ai'):
         """Saves a new audit session to the database."""
         conn = AuditDatabase.get_connection()
         cursor = conn.cursor()
         cursor.execute('''
-            INSERT INTO audit_history (target, score, rating, total_loc, violations_count, pillar_scores, full_json)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-        ''', (target, score, rating, loc, violations_count, json.dumps(pillar_scores), json.dumps(full_json) if full_json else None))
+            INSERT INTO audit_history (target, score, rating, total_loc, violations_count, pillar_scores, full_json, scan_mode)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        ''', (target, score, rating, loc, violations_count, json.dumps(pillar_scores), json.dumps(full_json) if full_json else None, scan_mode))
         conn.commit()
         cursor.close()
         AuditDatabase.release_connection(conn)
@@ -126,12 +129,12 @@ class AuditDatabase:
         conn = AuditDatabase.get_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
         
-        query_cols = "id, timestamp, target, score, rating, total_loc, violations_count, pillar_scores"
+        query_cols = "id, timestamp, target, score, rating, total_loc, violations_count, pillar_scores, scan_mode"
         
         if target_path:
-            cursor.execute('SELECT id, timestamp, target, score, rating, total_loc, violations_count, pillar_scores FROM audit_history WHERE target = %s ORDER BY timestamp DESC', (target_path,))
+            cursor.execute('SELECT id, timestamp, target, score, rating, total_loc, violations_count, pillar_scores, scan_mode FROM audit_history WHERE target = %s ORDER BY timestamp DESC', (target_path,))
         else:
-            cursor.execute('SELECT id, timestamp, target, score, rating, total_loc, violations_count, pillar_scores FROM audit_history ORDER BY timestamp DESC LIMIT 50')
+            cursor.execute('SELECT id, timestamp, target, score, rating, total_loc, violations_count, pillar_scores, scan_mode FROM audit_history ORDER BY timestamp DESC LIMIT 50')
             
         rows = cursor.fetchall()
         cursor.close()
@@ -157,7 +160,7 @@ class AuditDatabase:
         conn = AuditDatabase.get_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
         
-        cursor.execute('SELECT id, timestamp, target, score, rating, total_loc, violations_count, pillar_scores, full_json FROM audit_history WHERE id = %s', (audit_id,))
+        cursor.execute('SELECT id, timestamp, target, score, rating, total_loc, violations_count, pillar_scores, full_json, scan_mode FROM audit_history WHERE id = %s', (audit_id,))
         row = cursor.fetchone()
         cursor.close()
         AuditDatabase.release_connection(conn)

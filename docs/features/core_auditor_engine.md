@@ -124,6 +124,7 @@ stateDiagram-v2
 Cuối cùng, các vi phạm đọng lại sau nhiều lần bộ lọc (AI) sẽ tiến vào Máy đo lường Điểm Số:
 - **Tính điểm Phân cấp (Feature-based Scoring):** Quy đổi thành Điểm Số cho Từng Tính Năng để xem khu vực nào Nợ lớn nhất (Technical Debt). Tích hợp cấu trúc Phạt Nặng/Nhẹ.
 - **Truy vấn Authorship:** Kiểm toán lại Member Tác quyền nào viết ra Lỗi đó (Tối đa 3 Tháng - The 3 Month Blame limit) để quy trách nhiệm hiệu suất cá nhân.
+- **Audit Mode Tracking:** Ghi nhận lại chế độ quét (`scan_mode`) là `full_ai` (đầy đủ các bước kiểm tra mạnh mẽ nhất) hay `static_only` (chỉ dùng các công cụ tĩnh, tắt AI) vào trong Audit History. Điều này giúp hệ thống/dashboard đối chiếu minh bạch các phiên bản quét với nhau nhằm giải thích sự chênh lệch (nếu có) về số lượng lỗi.
 - **Xuất Báo cáo (Reporting):** Hệ thống tự động tạo báo cáo Markdown (`reports/Final_Audit_Report.md`) với các thành phần thống kê Nâng Cao:
   - **Phân bổ Mức độ Nghiêm trọng (Severity Distribution):** Liệt kê thống kê số lượng lỗi phân loại theo `Blocker`, `Critical`, `Major`, `Minor`, `Info` để nhanh chóng khoanh vùng mức độ nguy hiểm của toàn cục dự án.
   - **Thống kê Theo Luật (Rule Breakdown):** Xác định tần suất và tổng mức phạt của từng Unit Rule (Rule ID) giúp team nhận biết những lỗi sai logic nào team đang mắc phải nhiều nhất để đưa vào quy chuẩn đào tạo.

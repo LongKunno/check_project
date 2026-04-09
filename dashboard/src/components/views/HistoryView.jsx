@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileSearch, Zap, FolderOpen, RefreshCw, Clock, RotateCcw, AlertCircle, TrendingUp, Calendar } from 'lucide-react';
+import { FileSearch, Zap, FolderOpen, RefreshCw, Clock, RotateCcw, AlertCircle, TrendingUp, Calendar, Bot } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { getScoreColorClass } from '../../utils/chartHelpers';
 import { TableSkeleton, CardSkeleton } from '../ui/SkeletonLoader';
@@ -250,9 +250,20 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
                           </div>
                         </td>
                         <td className="px-5 py-4">
-                          <span className={`px-2.5 py-1 rounded-full border text-[11px] font-bold ${getRatingColor(h.rating)}`}>
-                            {h.rating}
-                          </span>
+                          <div className="flex flex-col gap-1.5 items-start">
+                            <span className={`px-2.5 py-1 rounded-full border text-[11px] font-bold ${getRatingColor(h.rating)}`}>
+                              {h.rating}
+                            </span>
+                            {h.scan_mode === 'static_only' ? (
+                              <span className="inline-flex items-center gap-1 text-[9px] uppercase tracking-wider font-bold text-slate-400 bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-700/50" title="Static Analysis Only">
+                                <Zap size={10} className="text-slate-400" /> STATIC
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[9px] uppercase tracking-wider font-bold text-indigo-300 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20" title="AI Augmented Audit">
+                                <Bot size={10} className="text-indigo-400" /> AI SCAN
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-5 py-4">
                           <ScoreMiniBar score={h.score} />
