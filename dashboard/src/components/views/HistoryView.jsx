@@ -17,6 +17,7 @@ import { TableSkeleton, CardSkeleton } from "../ui/SkeletonLoader";
 import EmptyState from "../ui/EmptyState";
 import Pagination from "../ui/Pagination";
 import { useToast } from "../ui/Toast";
+import TopProgressBar from "../ui/TopProgressBar";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -158,22 +159,27 @@ function HistoryStats({ historyList }) {
 
 // ─── Main Component ─────────────────────────────────────────────────────────
 
+// ─── Module Cache ───
+let cachedHistoryParams = {};
+
 const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
-  const [historyList, setHistoryList] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const fetchTarget = targetUrl || selectedRepoId;
+  const [historyList, setHistoryList] = useState(cachedHistoryParams[fetchTarget] || []);
+  const [isLoading, setIsLoading] = useState(true);
   const [loadingId, setLoadingId] = useState(null);
   const [histPage, setHistPage] = useState(1);
   const [histPageSize, setHistPageSize] = useState(10);
   const toast = useToast();
-
-  const fetchTarget = targetUrl || selectedRepoId;
 
   const loadHistory = () => {
     if (!fetchTarget) return;
     setIsLoading(true);
     fetch(`/api/history?target=${encodeURIComponent(fetchTarget)}`)
       .then((r) => r.json())
-      .then((data) => setHistoryList(data))
+      .then((data) => {
+        cachedHistoryParams[fetchTarget] = data;
+        setHistoryList(data);
+      })
       .catch(console.error)
       .finally(() => setIsLoading(false));
   };
@@ -263,6 +269,8 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
       </motion.div>
 
       {/* ── Content ── */}
+      <TopProgressBar isFetching={isLoading && historyList.length > 0} />
+      
       {!fetchTarget ? (
         <EmptyState
           variant="noData"
@@ -270,10 +278,9 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
           description="Please choose a project from the sidebar to view its audit history."
           accentColor="amber"
         />
-      ) : isLoading ? (
-        <div className="space-y-6">
-          <CardSkeleton count={4} />
-          <TableSkeleton rows={4} cols={5} />
+      ) : isLoading && historyList.length === 0 ? (
+        <div className="w-full h-[50vh] flex flex-col items-center justify-center opacity-70">
+          <TopProgressBar isFetching={true} />
         </div>
       ) : historyList.length === 0 ? (
         <EmptyState
@@ -292,7 +299,7 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-            className="bg-[#080c14]/40 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl"
+            className={`bg-[#0f1629]/50 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl transition-all duration-300 ${isLoading ? "opacity-60 pointer-events-none" : ""}`}
           >
             <div className="overflow-x-auto">
               <table className="w-full">

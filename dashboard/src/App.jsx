@@ -581,7 +581,7 @@ function App() {
 
             {(location.pathname.startsWith("/audit") ||
               location.pathname === "/") && (
-              <div className="flex items-center gap-4 flex-wrap justify-end ml-auto bg-black/20 p-2.5 rounded-2xl border border-white/5">
+              <div className="flex items-center gap-4 flex-wrap justify-end ml-auto bg-white/[0.03] p-2.5 rounded-2xl border border-white/5">
                 <button
                   className="btn-audit"
                   onClick={runAudit}
@@ -665,10 +665,7 @@ function App() {
                     </div>
                     <Suspense
                       fallback={
-                        <div className="p-8 space-y-6">
-                          <CardSkeleton count={4} />
-                          <TableSkeleton rows={5} cols={4} />
-                        </div>
+                        <div className="w-full h-full opacity-0 pointer-events-none" />
                       }
                     >
                       <RuleManager

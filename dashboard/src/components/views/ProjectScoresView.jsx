@@ -24,6 +24,7 @@ import TerminalLogs from "../ui/TerminalLogs";
 import { TableSkeleton, CardSkeleton } from "../ui/SkeletonLoader";
 import EmptyState from "../ui/EmptyState";
 import Pagination from "../ui/Pagination";
+import TopProgressBar from "../ui/TopProgressBar";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -456,8 +457,11 @@ function ProjectRow({ project, rank, scanState, onSelect }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
+// ─── Module Cache ───
+let cachedProjects = [];
+
 const ProjectScoresView = ({ cn, onSelectProject }) => {
-  const [projects, setProjects] = useState([]);
+  const [projects, setProjects] = useState(cachedProjects);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sortBy, setSortBy] = useState("latest_score");
@@ -473,6 +477,7 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
       if (!res.ok) throw new Error("Unable to load score data");
       const data = await res.json();
       if (data.status === "success") {
+        cachedProjects = data.data;
         setProjects(data.data);
       } else {
         setError(data.message || "Error parsing response");
@@ -683,12 +688,13 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
       </motion.div>
 
       {/* ── States ── */}
-      {isLoading ? (
-        <div className="space-y-6">
-          <CardSkeleton count={4} />
-          <TableSkeleton rows={6} cols={5} />
+      <TopProgressBar isFetching={isLoading && projects.length > 0} />
+      
+      {isLoading && projects.length === 0 ? (
+        <div className="w-full h-[50vh] flex flex-col items-center justify-center opacity-70">
+          <TopProgressBar isFetching={true} />
         </div>
-      ) : error ? (
+      ) : error && projects.length === 0 ? (
         <EmptyState
           variant="error"
           title="Data fetch error"
@@ -715,7 +721,7 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-[#080c14]/40 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl"
+          className={`bg-[#0f1629]/50 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl transition-all duration-300 ${isLoading ? "opacity-60 pointer-events-none" : ""}`}
         >
           <div className="overflow-x-auto">
             <table

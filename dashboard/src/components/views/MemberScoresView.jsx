@@ -21,9 +21,9 @@ import {
   Zap,
   AlertCircle,
 } from "lucide-react";
-import { TableSkeleton, CardSkeleton } from "../ui/SkeletonLoader";
 import EmptyState from "../ui/EmptyState";
 import Pagination from "../ui/Pagination";
+import TopProgressBar from "../ui/TopProgressBar";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -184,18 +184,18 @@ function MemberDetailModal({ member, onClose }) {
         onClick={onClose}
       >
         {/* Backdrop */}
-        <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+        <div className="absolute inset-0 bg-white/[0.04] backdrop-blur-sm" />
 
         <motion.div
           initial={{ opacity: 0, scale: 0.92, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.92, y: 20 }}
           transition={{ type: "spring", stiffness: 300, damping: 25 }}
-          className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto bg-[#080c14]/80 border border-white/10 rounded-3xl shadow-2xl shadow-black/50 z-10"
+          className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto bg-[#0f1629]/60 border border-white/10 rounded-3xl shadow-2xl shadow-black/50 z-10"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="sticky top-0 bg-[#080c14]/70 backdrop-blur-xl border-b border-white/5 px-6 pt-6 pb-4 flex items-start justify-between z-10">
+          <div className="sticky top-0 bg-[#0f1629]/55 backdrop-blur-xl border-b border-white/5 px-6 pt-6 pb-4 flex items-start justify-between z-10">
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-bold mb-3">
                 <Users size={12} /> Member Profile
@@ -219,7 +219,7 @@ function MemberDetailModal({ member, onClose }) {
           <div className="p-6 space-y-6">
             {/* Score Overview */}
             <div className="grid grid-cols-3 gap-4">
-              <div className="col-span-1 flex flex-col items-center justify-center p-4 rounded-2xl bg-black/40 border border-white/5">
+              <div className="col-span-1 flex flex-col items-center justify-center p-4 rounded-2xl bg-white/[0.06] border border-white/5">
                 <div
                   className={`text-4xl font-black bg-clip-text text-transparent bg-gradient-to-br ${getScoreGradient(member.final_score)}`}
                 >
@@ -483,8 +483,11 @@ function SortTh({ label, field, sortBy, sortDir, onClick, align = "left" }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
+// ─── Module Cache ───
+let cachedMembers = [];
+
 export const MemberScoresView = ({ cn }) => {
-  const [members, setMembers] = useState([]);
+  const [members, setMembers] = useState(cachedMembers);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [sortBy, setSortBy] = useState("final_score");
@@ -501,7 +504,8 @@ export const MemberScoresView = ({ cn }) => {
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
       const data = await res.json();
       if (data.status === "success") {
-        setMembers(data.data || []);
+        cachedMembers = data.data || [];
+        setMembers(cachedMembers);
       } else {
         setError(data.message || "Unknown error");
       }
@@ -647,12 +651,13 @@ export const MemberScoresView = ({ cn }) => {
         )}
       </motion.div>
 
-      {isLoading ? (
-        <div className="space-y-6">
-          <CardSkeleton count={4} />
-          <TableSkeleton rows={6} cols={5} />
+      <TopProgressBar isFetching={isLoading && members.length > 0} />
+      
+      {isLoading && members.length === 0 ? (
+        <div className="w-full h-[50vh] flex flex-col items-center justify-center opacity-70">
+          <TopProgressBar isFetching={true} />
         </div>
-      ) : error ? (
+      ) : error && members.length === 0 ? (
         <EmptyState
           variant="error"
           title="Data load error"
@@ -679,7 +684,7 @@ export const MemberScoresView = ({ cn }) => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-[#080c14]/40 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl"
+          className={`bg-[#0f1629]/50 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl transition-all duration-300 ${isLoading ? "opacity-60 pointer-events-none" : ""}`}
         >
           <div className="overflow-x-auto">
             <table

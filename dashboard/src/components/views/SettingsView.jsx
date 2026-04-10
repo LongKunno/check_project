@@ -160,7 +160,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-[#080c14]/40 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
+          className="bg-[#0f1629]/50 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
         >
           <SectionTitle
             icon={<Server size={18} />}
@@ -197,7 +197,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="bg-[#080c14]/40 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
+          className="bg-[#0f1629]/50 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
         >
           <SectionTitle
             icon={<ShieldCheck size={18} />}
@@ -234,7 +234,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-[#080c14]/40 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
+          className="bg-[#0f1629]/50 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
         >
           <SectionTitle
             icon={<Info size={18} />}
@@ -278,7 +278,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
-          className="bg-[#080c14]/40 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
+          className="bg-[#0f1629]/50 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
         >
           <div className="border border-red-500/20 rounded-2xl p-6 bg-red-900/10">
             <h3 className="text-red-400 font-extrabold text-sm uppercase tracking-wider mb-3 flex items-center gap-2">
@@ -286,7 +286,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
             </h3>
             <p className="text-slate-400 text-sm mb-6 leading-relaxed">
               Reset all audit rules for project{" "}
-              <strong className="text-white px-2 py-0.5 bg-black/50 rounded font-mono">
+              <strong className="text-white px-2 py-0.5 bg-black/35 rounded font-mono">
                 {selectedRepoId || "none selected"}
               </strong>{" "}
               to their original default state. All AI-generated custom rules and

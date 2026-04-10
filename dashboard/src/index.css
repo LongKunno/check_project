@@ -3,12 +3,12 @@
 @tailwind utilities;
 
 :root {
-  --bg-color: #080c14;
-  --card-bg: rgba(13, 17, 28, 0.7);
-  --glass-border: rgba(139, 92, 246, 0.15);
-  --glass-shine: rgba(255, 255, 255, 0.03);
-  --primary-glow: rgba(59, 130, 246, 0.2);
-  --secondary-glow: rgba(139, 92, 246, 0.2);
+  --bg-color: #0c1222;
+  --card-bg: rgba(16, 22, 38, 0.65);
+  --glass-border: rgba(139, 92, 246, 0.2);
+  --glass-shine: rgba(255, 255, 255, 0.06);
+  --primary-glow: rgba(59, 130, 246, 0.25);
+  --secondary-glow: rgba(139, 92, 246, 0.25);
   --accent-emerald: #10b981;
   --accent-green: #10b981;
   --accent-violet: #8b5cf6;
@@ -66,6 +66,44 @@ body {
   position: relative;
 }
 
+/* ─── Global Form Element Dark Reset ─────────────────────────────────────── */
+/* Ngăn browser tự động đổi màu nền sang trắng khi focus, select, autofill */
+textarea,
+input,
+select {
+  background-color: transparent;
+  color: inherit;
+}
+
+textarea:focus,
+input:focus,
+select:focus {
+  background-color: transparent !important;
+  outline: none;
+  box-shadow: none;
+}
+
+/* Tắt vòng sáng focus ring mặc định của browser trên mọi element */
+*:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Chỉ giữ focus ring khi dùng bàn phím (accessibility) - không hiện khi click chuột */
+*:focus-visible {
+  outline: 1px solid rgba(139, 92, 246, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15) !important;
+}
+
+/* Chống autofill trên Chrome/Safari (thường gây màu vàng/trắng) */
+textarea:-webkit-autofill,
+input:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0px 1000px #0c1222 inset !important;
+  -webkit-text-fill-color: #e2e8f0 !important;
+  caret-color: #e2e8f0;
+}
+
 body::before {
   content: "";
   position: fixed;
@@ -76,15 +114,15 @@ body::before {
   background:
     radial-gradient(
       circle at 15% 50%,
-      rgba(139, 92, 246, 0.2),
+      rgba(139, 92, 246, 0.18),
       transparent 50%
     ),
     radial-gradient(
       circle at 85% 30%,
-      rgba(16, 185, 129, 0.15),
+      rgba(16, 185, 129, 0.14),
       transparent 50%
     ),
-    radial-gradient(circle at 50% 80%, rgba(59, 130, 246, 0.2), transparent 50%);
+    radial-gradient(circle at 50% 80%, rgba(59, 130, 246, 0.18), transparent 50%);
   z-index: -1;
 }
 
@@ -338,7 +376,7 @@ h1 {
 .explorer-modal {
   width: 90%;
   max-width: 600px;
-  background: #0f172a;
+  background: #131b2e;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   overflow: hidden;
@@ -707,7 +745,7 @@ h1 {
 }
 
 .repo-select option {
-  background-color: #0f172a;
+  background-color: #131b2e;
   color: #f1f5f9;
   padding: 10px;
 }

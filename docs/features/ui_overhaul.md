@@ -359,3 +359,46 @@ Khi sidebar ở chế độ thu nhỏ (80px wide):
 ---
 *Cập nhật: 2026-04-07 — Sidebar Context Separation Phase 6*
 
+### 23. Global Brightness Uplift (Phase 7 — 2026-04-11)
+
+**Mục tiêu:** Nâng sáng toàn bộ giao diện dashboard để tăng khả năng đọc và giảm cảm giác nặng nề.
+
+#### 23.1 CSS Variables (index.css)
+| Token | Trước | Sau |
+|---|---|---|
+| `--bg-color` | `#080c14` | `#0c1222` |
+| `--card-bg` | `rgba(13,17,28, 0.7)` | `rgba(16,22,38, 0.65)` |
+| `--glass-border` | `rgba(violet, 0.15)` | `rgba(violet, 0.2)` |
+| `--glass-shine` | `rgba(white, 0.03)` | `rgba(white, 0.06)` |
+| `--primary-glow` | `rgba(blue, 0.2)` | `rgba(blue, 0.25)` |
+| `--secondary-glow` | `rgba(violet, 0.2)` | `rgba(violet, 0.25)` |
+
+#### 23.2 Batch Color Migration (tất cả JSX components)
+| Pattern cũ | Pattern mới | Lý do |
+|---|---|---|
+| `bg-[#080c14]/40` | `bg-[#0f1629]/50` | Nền card panel sáng hơn |
+| `bg-[#080c14]/80` | `bg-[#0f1629]/60` | Sidebar, modal overlay |
+| `bg-[#060a10]` | `bg-[#0c1222]` | Terminal/editor backgrounds |
+| `bg-[#0d1117]` | `bg-[#101828]` | Warning/error modals |
+| `bg-black/40` | `bg-white/[0.06]` | Inner element backgrounds |
+| `bg-black/30` | `bg-white/[0.05]` | Secondary backgrounds |
+| `bg-black/20` | `bg-white/[0.03]` | Subtle tinting |
+| `bg-black/10` | `bg-white/[0.02]` | Very subtle tinting |
+| `#0f172a` | `#131b2e` (index.css) | Explorer modal, select options |
+
+#### 23.3 Files bị ảnh hưởng
+- `dashboard/src/index.css` (global variables + body gradient)
+- `dashboard/src/App.jsx` (header controls)
+- `dashboard/src/components/layout/Sidebar.jsx` (sidebar bg)
+- `dashboard/src/components/views/ProjectScoresView.jsx`
+- `dashboard/src/components/views/MemberScoresView.jsx`
+- `dashboard/src/components/views/HistoryView.jsx`
+- `dashboard/src/components/views/SettingsView.jsx`
+- `dashboard/src/components/nlre/RuleManager.jsx`
+- `dashboard/src/components/nlre/RuleBuilder.jsx`
+- `dashboard/src/components/ui/TerminalLogs.jsx`
+- `dashboard/src/components/ui/SkeletonLoader.jsx`
+
+---
+*Cập nhật: 2026-04-11 — Global Brightness Uplift Phase 7*
+

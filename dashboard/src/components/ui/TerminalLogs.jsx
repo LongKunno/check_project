@@ -98,7 +98,7 @@ function StepGroup({ stepLabel, lines, isActive, defaultOpen }) {
       className={`mb-3 rounded-xl border transition-colors duration-300 ${
         isActive
           ? "border-violet-500/40 bg-violet-500/5"
-          : "border-white/5 bg-black/20"
+          : "border-white/5 bg-white/[0.03]"
       }`}
     >
       {/* Accordion Header */}
