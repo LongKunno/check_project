@@ -1197,6 +1197,29 @@ h1 {
   background-color: rgba(255, 255, 255, 0.18);
 }
 
+/* border-white workarounds */
+.border-white\/3 {
+  border-color: rgba(255, 255, 255, 0.03);
+}
+.border-white\/5 {
+  border-color: rgba(255, 255, 255, 0.05);
+}
+.border-white\/8 {
+  border-color: rgba(255, 255, 255, 0.08);
+}
+.border-white\/10 {
+  border-color: rgba(255, 255, 255, 0.10);
+}
+.border-white\/12 {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.border-white\/18 {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+.border-white\/20 {
+  border-color: rgba(255, 255, 255, 0.20);
+}
+
 /* Rule card severity accent */
 .rule-card-disabled {
   filter: grayscale(0.5);
