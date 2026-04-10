@@ -3,17 +3,22 @@ import json
 import subprocess
 from src.config import EXCLUDE_DIRS, SCAN_EXTENSIONS
 
+
 class DiscoveryStep:
     """
     Discovery Phase (Step 1):
     Calculates Lines of Code (LOC) and identifies valid source files for auditing.
     """
+
     def __init__(self, target_dir):
         """Initializes the discovery step with a target directory."""
         self.target_dir = target_dir
         import tempfile
-        self.precheck_script = os.path.join(tempfile.gettempdir(), f'ai_precheck_{abs(hash(target_dir))}.py')
-        self.report_file = os.path.join(target_dir, 'ai_audit_report.json')
+
+        self.precheck_script = os.path.join(
+            tempfile.gettempdir(), f"ai_precheck_{abs(hash(target_dir))}.py"
+        )
+        self.report_file = os.path.join(target_dir, "ai_audit_report.json")
 
     def generate_precheck_script(self):
         script_content = f"""
@@ -141,21 +146,23 @@ def run_precheck():
 if __name__ == "__main__":
     run_precheck()
 """
-        with open(self.precheck_script, 'w') as f:
+        with open(self.precheck_script, "w") as f:
             f.write(script_content)
 
     def run_discovery(self):
         """Executes the precheck script and returns the results."""
         self.generate_precheck_script()
-        
+
         try:
             # Run the script
-            subprocess.run(['python3', self.precheck_script], cwd=self.target_dir, check=True)
-            
+            subprocess.run(
+                ["python3", self.precheck_script], cwd=self.target_dir, check=True
+            )
+
             # Read results
-            with open(self.report_file, 'r') as f:
+            with open(self.report_file, "r") as f:
                 data = json.load(f)
-            
+
             return data
         finally:
             # Cleanup
@@ -164,8 +171,9 @@ if __name__ == "__main__":
             if os.path.exists(self.report_file):
                 os.remove(self.report_file)
 
+
 if __name__ == "__main__":
     # Test discovery on the current project
-    discovery = DiscoveryStep('.')
+    discovery = DiscoveryStep(".")
     report = discovery.run_discovery()
     print(json.dumps(report, indent=2))

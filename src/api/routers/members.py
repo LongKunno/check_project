@@ -4,6 +4,7 @@ Router: Members Overview — Cross-Project Leaderboard.
 Tổng hợp dữ liệu thành viên (author) từ lần audit gần nhất của TẤT CẢ
 repository đã cấu hình, gộp theo email và tính điểm Weighted Average (theo LOC).
 """
+
 import json
 import logging
 from fastapi import APIRouter
@@ -77,12 +78,14 @@ def _aggregate_members(all_member_data: list[dict]) -> dict:
             agg["author_name"] = entry["author_name"]
 
         # Ghi nhận dự án member tham gia
-        agg["projects"].append({
-            "project_name": entry.get("project_name", "Unknown"),
-            "loc": loc,
-            "score": entry.get("final", 0),
-            "debt_mins": entry.get("debt_mins", 0),
-        })
+        agg["projects"].append(
+            {
+                "project_name": entry.get("project_name", "Unknown"),
+                "loc": loc,
+                "score": entry.get("final", 0),
+                "debt_mins": entry.get("debt_mins", 0),
+            }
+        )
 
     # Tính điểm tổng Weighted Average theo LOC xuyên suốt các dự án
     results = []
@@ -103,17 +106,21 @@ def _aggregate_members(all_member_data: list[dict]) -> dict:
         final_score = ScoringEngine.calculate_final_score(pillar_scores)
         rating = ScoringEngine.get_rating(final_score)
 
-        results.append({
-            "email": email,
-            "author_name": agg["author_name"],
-            "total_loc": total_loc,
-            "total_debt_mins": agg["total_debt_mins"],
-            "pillar_scores": pillar_scores,
-            "final_score": final_score,
-            "rating": rating,
-            "projects": sorted(agg["projects"], key=lambda x: x.get("loc", 0), reverse=True),
-            "projects_count": len(agg["projects"]),
-        })
+        results.append(
+            {
+                "email": email,
+                "author_name": agg["author_name"],
+                "total_loc": total_loc,
+                "total_debt_mins": agg["total_debt_mins"],
+                "pillar_scores": pillar_scores,
+                "final_score": final_score,
+                "rating": rating,
+                "projects": sorted(
+                    agg["projects"], key=lambda x: x.get("loc", 0), reverse=True
+                ),
+                "projects_count": len(agg["projects"]),
+            }
+        )
 
     # Sắp xếp theo điểm giảm dần
     results.sort(key=lambda x: x["final_score"], reverse=True)
@@ -153,7 +160,11 @@ async def get_members_scores():
 
     for repo in CONFIGURED_REPOSITORIES:
         repo_url = repo.get("url", "")
-        project_name = repo_url.split("/")[-1].replace(".git", "") if repo_url else repo.get("name", repo.get("id", "unknown"))
+        project_name = (
+            repo_url.split("/")[-1].replace(".git", "")
+            if repo_url
+            else repo.get("name", repo.get("id", "unknown"))
+        )
 
         try:
             history = AuditDatabase.get_history(repo_url)
@@ -174,11 +185,13 @@ async def get_members_scores():
             for email, m_data in members_in_repo.items():
                 # Đảm bảo backward-compat: audit cũ có thể không có "email" key
                 email_key = m_data.get("email", email)
-                all_member_entries.append({
-                    **m_data,
-                    "email": email_key,
-                    "project_name": project_name,
-                })
+                all_member_entries.append(
+                    {
+                        **m_data,
+                        "email": email_key,
+                        "project_name": project_name,
+                    }
+                )
 
         except Exception as e:
             logger.warning(f"Lỗi khi lấy member data từ repo {repo_url}: {e}")

@@ -1,5 +1,12 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Zap, ChevronDown, ChevronRight, Cpu, FileCode2, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import {
+  Zap,
+  ChevronDown,
+  ChevronRight,
+  Cpu,
+  FileCode2,
+  Loader2,
+} from "lucide-react";
 
 // --------------- Helpers ---------------
 
@@ -14,42 +21,60 @@ function colorizeLog(text) {
   // Mapping từ keyword → CSS class
   const patterns = [
     // File paths (src/..., path/to/file.py)
-    { re: /((?:[\w.\-]+\/)+[\w.\-]+\.\w+)/g, cls: 'text-cyan-400 font-semibold' },
+    {
+      re: /((?:[\w.\-]+\/)+[\w.\-]+\.\w+)/g,
+      cls: "text-cyan-400 font-semibold",
+    },
     // False Positive removal
-    { re: /(False Positive|FP|✨|🛡️)/g, cls: 'text-emerald-400 font-bold' },
+    { re: /(False Positive|FP|✨|🛡️)/g, cls: "text-emerald-400 font-bold" },
     // Error / warning keywords
-    { re: /(\bError\b|\bFailed\b|❌|⚠️|🚨)/g, cls: 'text-rose-400 font-bold' },
+    { re: /(\bError\b|\bFailed\b|❌|⚠️|🚨)/g, cls: "text-rose-400 font-bold" },
     // Success keywords
-    { re: /(\bCompleted\b|✅|done|COMPLETED)/g, cls: 'text-emerald-300 font-bold' },
+    {
+      re: /(\bCompleted\b|✅|done|COMPLETED)/g,
+      cls: "text-emerald-300 font-bold",
+    },
     // Numbers like violations, scores
-    { re: /\b(\d+)\s*(vi phạm|violations?|files?|batches?|LOC)\b/gi, cls: 'text-amber-300 font-semibold' },
+    {
+      re: /\b(\d+)\s*(vi phạm|violations?|files?|batches?|LOC)\b/gi,
+      cls: "text-amber-300 font-semibold",
+    },
     // Step labels [X/5]
-    { re: /(\[\d+[\.\-]?\d*\/\d+\])/g, cls: 'text-violet-300 font-extrabold' },
+    { re: /(\[\d+[\.\-]?\d*\/\d+\])/g, cls: "text-violet-300 font-extrabold" },
     // Brackets like CUSTOM, AI_REASONING
-    { re: /\[(Custom|Core|AI|AI_REASONING|AI_ONLY)\]/g, cls: 'text-sky-300 font-semibold' },
+    {
+      re: /\[(Custom|Core|AI|AI_REASONING|AI_ONLY)\]/g,
+      cls: "text-sky-300 font-semibold",
+    },
   ];
 
   // Apply first match greedily, build array of spans
-  const combined = patterns.map(p => p.re.source).join('|');
-  const globalRe = new RegExp(combined, 'gi');
+  const combined = patterns.map((p) => p.re.source).join("|");
+  const globalRe = new RegExp(combined, "gi");
 
   let lastIndex = 0;
   let i = 0;
   const allMatches = [...remaining.matchAll(globalRe)];
-  
+
   for (const match of allMatches) {
     if (match.index > lastIndex) {
-      parts.push(<span key={i++}>{remaining.slice(lastIndex, match.index)}</span>);
+      parts.push(
+        <span key={i++}>{remaining.slice(lastIndex, match.index)}</span>,
+      );
     }
     // Find which pattern matched
-    let matchedCls = 'text-slate-200';
+    let matchedCls = "text-slate-200";
     for (const p of patterns) {
-      if (new RegExp(p.re.source, 'i').test(match[0])) {
+      if (new RegExp(p.re.source, "i").test(match[0])) {
         matchedCls = p.cls;
         break;
       }
     }
-    parts.push(<span key={i++} className={matchedCls}>{match[0]}</span>);
+    parts.push(
+      <span key={i++} className={matchedCls}>
+        {match[0]}
+      </span>,
+    );
     lastIndex = match.index + match[0].length;
   }
   if (lastIndex < remaining.length) {
@@ -69,29 +94,40 @@ function StepGroup({ stepLabel, lines, isActive, defaultOpen }) {
   }, [isActive]);
 
   return (
-    <div className={`mb-3 rounded-xl border transition-colors duration-300 ${
-      isActive 
-        ? 'border-violet-500/40 bg-violet-500/5' 
-        : 'border-white/5 bg-black/20'
-    }`}>
+    <div
+      className={`mb-3 rounded-xl border transition-colors duration-300 ${
+        isActive
+          ? "border-violet-500/40 bg-violet-500/5"
+          : "border-white/5 bg-black/20"
+      }`}
+    >
       {/* Accordion Header */}
       <button
-        onClick={() => setOpen(o => !o)}
+        onClick={() => setOpen((o) => !o)}
         className="w-full flex items-center gap-3 px-4 py-2.5 text-left group"
       >
-        <div className={`shrink-0 transition-colors ${isActive ? 'text-violet-400' : 'text-slate-500'}`}>
+        <div
+          className={`shrink-0 transition-colors ${isActive ? "text-violet-400" : "text-slate-500"}`}
+        >
           {open ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
         </div>
-        <span className={`font-extrabold text-sm tracking-wide uppercase ${
-          isActive ? 'text-violet-300' : 'text-slate-400'
-        }`}>
+        <span
+          className={`font-extrabold text-sm tracking-wide uppercase ${
+            isActive ? "text-violet-300" : "text-slate-400"
+          }`}
+        >
           {stepLabel}
         </span>
         {isActive && (
-          <Loader2 size={13} className="text-violet-400 animate-spin ml-auto shrink-0" />
+          <Loader2
+            size={13}
+            className="text-violet-400 animate-spin ml-auto shrink-0"
+          />
         )}
         {!isActive && (
-          <span className="ml-auto text-xs text-slate-600 font-medium shrink-0">{lines.length} lines</span>
+          <span className="ml-auto text-xs text-slate-600 font-medium shrink-0">
+            {lines.length} lines
+          </span>
         )}
       </button>
 
@@ -124,13 +160,13 @@ const TerminalLogs = React.memo(({ isAuditing, jobId }) => {
 
   const processLine = useCallback((rawLine) => {
     // Filter out PROGRESS lines → only update StatusBar, don't store in terminal
-    if (rawLine.startsWith('[PROGRESS]')) {
-      const filePart = rawLine.replace('[PROGRESS]', '').trim();
+    if (rawLine.startsWith("[PROGRESS]")) {
+      const filePart = rawLine.replace("[PROGRESS]", "").trim();
       setCurrentFile(filePart);
-      return; 
+      return;
     }
 
-    setGroups(prev => {
+    setGroups((prev) => {
       const isStepHeader = STEP_REGEX.test(rawLine);
 
       if (isStepHeader || prev.length === 0) {
@@ -156,10 +192,10 @@ const TerminalLogs = React.memo(({ isAuditing, jobId }) => {
       setGroups([]);
       setCurrentFile(null);
       setActiveGroupIdx(0);
-      
+
       eventSource = new EventSource(`/api/audit/jobs/${jobId}/logs`);
       eventSource.onmessage = (e) => {
-        if (e.data === '[END_OF_STREAM]') {
+        if (e.data === "[END_OF_STREAM]") {
           eventSource.close();
           setCurrentFile(null);
           return;
@@ -184,7 +220,7 @@ const TerminalLogs = React.memo(({ isAuditing, jobId }) => {
 
   return (
     <div
-      style={{ marginBottom: '2rem' }}
+      style={{ marginBottom: "2rem" }}
       className="rounded-2xl border border-white/10 overflow-hidden shadow-2xl"
     >
       {/* ── Terminal Header ── */}
@@ -195,23 +231,32 @@ const TerminalLogs = React.memo(({ isAuditing, jobId }) => {
           <div className="w-3 h-3 rounded-full bg-emerald-500/70" />
         </div>
         <Zap size={14} className="text-violet-400" />
-        <span className="text-slate-400 font-bold text-xs uppercase tracking-widest">CORE AUDITOR LOGS</span>
+        <span className="text-slate-400 font-bold text-xs uppercase tracking-widest">
+          CORE AUDITOR LOGS
+        </span>
         <div className="ml-auto flex items-center gap-2">
           <Loader2 size={13} className="text-violet-400 animate-spin" />
-          <span className="text-violet-400 text-xs font-bold animate-pulse">RUNNING</span>
+          <span className="text-violet-400 text-xs font-bold animate-pulse">
+            RUNNING
+          </span>
         </div>
       </div>
 
       {/* ── Status Bar — Progress Ticker ── */}
       {currentFile && (
         <div className="flex items-center gap-3 px-5 py-2 bg-cyan-500/5 border-b border-cyan-500/20">
-          <FileCode2 size={14} className="text-cyan-400 shrink-0 animate-pulse" />
+          <FileCode2
+            size={14}
+            className="text-cyan-400 shrink-0 animate-pulse"
+          />
           <span className="text-cyan-300 text-xs font-mono font-semibold overflow-hidden text-ellipsis whitespace-nowrap">
             {currentFile}
           </span>
           <div className="ml-auto flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
-            <span className="text-cyan-500 text-[10px] font-bold uppercase tracking-widest">Processing</span>
+            <span className="text-cyan-500 text-[10px] font-bold uppercase tracking-widest">
+              Processing
+            </span>
           </div>
         </div>
       )}
@@ -221,11 +266,11 @@ const TerminalLogs = React.memo(({ isAuditing, jobId }) => {
         ref={scrollContainerRef}
         className="overflow-y-auto p-4"
         style={{
-          height: '60vh',
-          minHeight: '420px',
-          background: 'rgba(2, 6, 23, 0.92)',
-          fontFamily: 'JetBrains Mono, Menlo, monospace',
-          fontSize: '0.78rem',
+          height: "60vh",
+          minHeight: "420px",
+          background: "rgba(2, 6, 23, 0.92)",
+          fontFamily: "JetBrains Mono, Menlo, monospace",
+          fontSize: "0.78rem",
         }}
       >
         {groups.length === 0 && (

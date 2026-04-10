@@ -15,15 +15,19 @@ logger = logging.getLogger(__name__)
 
 # Database URL: PHẢI được cấu hình qua biến môi trường DATABASE_URL hoặc docker-compose.yml
 # Fallback chỉ dùng cho local development (yêu cầu cấu hình riêng)
-DB_URL = os.environ.get('DATABASE_URL')
+DB_URL = os.environ.get("DATABASE_URL")
 if not DB_URL:
-    logger.warning("DATABASE_URL not set! Database operations will fail. Set it in .env or docker-compose.yml.")
-    DB_URL = 'postgresql://localhost:5432/auditor_v2'  # Sẽ fail-fast nếu chưa cấu hình
+    logger.warning(
+        "DATABASE_URL not set! Database operations will fail. Set it in .env or docker-compose.yml."
+    )
+    DB_URL = "postgresql://localhost:5432/auditor_v2"  # Sẽ fail-fast nếu chưa cấu hình
+
 
 class AuditDatabase:
     """
     Manages the PostgreSQL database for audit history.
     """
+
     _pool = None
 
     @staticmethod
@@ -42,6 +46,7 @@ class AuditDatabase:
     def initialize():
         """Creates the necessary tables if they don't exist, retries connection on startup."""
         import time
+
         max_retries = 10
         conn = None
         for i in range(max_retries):
@@ -51,18 +56,22 @@ class AuditDatabase:
                 conn = AuditDatabase._pool.getconn()
                 break
             except psycopg2.OperationalError as e:
-                logger.info(f"Waiting for Postgres to start (Attempt {i+1}/{max_retries})...")
+                logger.info(
+                    f"Waiting for Postgres to start (Attempt {i+1}/{max_retries})..."
+                )
                 time.sleep(2)
-        
+
         if not conn:
-            logger.error("Failed to connect to Postgres after multiple retries. Database not initialized.")
+            logger.error(
+                "Failed to connect to Postgres after multiple retries. Database not initialized."
+            )
             return
 
         try:
             conn.autocommit = True
             cursor = conn.cursor()
-            
-            cursor.execute('''
+
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS audit_history (
                     id SERIAL PRIMARY KEY,
                     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -75,9 +84,9 @@ class AuditDatabase:
                     full_json TEXT,
                     scan_mode TEXT DEFAULT 'full_ai'
                 )
-            ''')
-            
-            cursor.execute('''
+            """)
+
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS project_rules (
                     id SERIAL PRIMARY KEY,
                     target_id TEXT NOT NULL UNIQUE,
@@ -88,37 +97,68 @@ class AuditDatabase:
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
-            ''')
-            
+            """)
+
             # Check for existing columns to support older schema updates
-            cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'audit_history'")
+            cursor.execute(
+                "SELECT column_name FROM information_schema.columns WHERE table_name = 'audit_history'"
+            )
             columns_history = [row[0] for row in cursor.fetchall()]
-            if 'full_json' not in columns_history:
-                cursor.execute('ALTER TABLE audit_history ADD COLUMN full_json TEXT')
-            if 'scan_mode' not in columns_history:
-                cursor.execute("ALTER TABLE audit_history ADD COLUMN scan_mode TEXT DEFAULT 'full_ai'")
-                
-            cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'project_rules'")
+            if "full_json" not in columns_history:
+                cursor.execute("ALTER TABLE audit_history ADD COLUMN full_json TEXT")
+            if "scan_mode" not in columns_history:
+                cursor.execute(
+                    "ALTER TABLE audit_history ADD COLUMN scan_mode TEXT DEFAULT 'full_ai'"
+                )
+
+            cursor.execute(
+                "SELECT column_name FROM information_schema.columns WHERE table_name = 'project_rules'"
+            )
             columns_rules = [row[0] for row in cursor.fetchall()]
-            if 'disabled_core_rules' not in columns_rules:
-                cursor.execute("ALTER TABLE project_rules ADD COLUMN disabled_core_rules TEXT DEFAULT '[]'")
-            if 'custom_weights' not in columns_rules:
-                cursor.execute("ALTER TABLE project_rules ADD COLUMN custom_weights TEXT DEFAULT '{}'")
-                
+            if "disabled_core_rules" not in columns_rules:
+                cursor.execute(
+                    "ALTER TABLE project_rules ADD COLUMN disabled_core_rules TEXT DEFAULT '[]'"
+                )
+            if "custom_weights" not in columns_rules:
+                cursor.execute(
+                    "ALTER TABLE project_rules ADD COLUMN custom_weights TEXT DEFAULT '{}'"
+                )
+
             cursor.close()
             AuditDatabase.release_connection(conn)
         except Exception as e:
             logger.error(f"Database Initialization Error: {e}")
 
     @staticmethod
-    def save_audit(target, score, rating, loc, violations_count, pillar_scores, full_json=None, scan_mode='full_ai'):
+    def save_audit(
+        target,
+        score,
+        rating,
+        loc,
+        violations_count,
+        pillar_scores,
+        full_json=None,
+        scan_mode="full_ai",
+    ):
         """Saves a new audit session to the database."""
         conn = AuditDatabase.get_connection()
         cursor = conn.cursor()
-        cursor.execute('''
+        cursor.execute(
+            """
             INSERT INTO audit_history (target, score, rating, total_loc, violations_count, pillar_scores, full_json, scan_mode)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        ''', (target, score, rating, loc, violations_count, json.dumps(pillar_scores), json.dumps(full_json) if full_json else None, scan_mode))
+        """,
+            (
+                target,
+                score,
+                rating,
+                loc,
+                violations_count,
+                json.dumps(pillar_scores),
+                json.dumps(full_json) if full_json else None,
+                scan_mode,
+            ),
+        )
         conn.commit()
         cursor.close()
         AuditDatabase.release_connection(conn)
@@ -128,29 +168,34 @@ class AuditDatabase:
         """Retrieves lightweight history, optionally filtered by target path."""
         conn = AuditDatabase.get_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
-        
+
         query_cols = "id, timestamp, target, score, rating, total_loc, violations_count, pillar_scores, scan_mode"
-        
+
         if target_path:
-            cursor.execute('SELECT id, timestamp, target, score, rating, total_loc, violations_count, pillar_scores, scan_mode FROM audit_history WHERE target = %s ORDER BY timestamp DESC', (target_path,))
+            cursor.execute(
+                "SELECT id, timestamp, target, score, rating, total_loc, violations_count, pillar_scores, scan_mode FROM audit_history WHERE target = %s ORDER BY timestamp DESC",
+                (target_path,),
+            )
         else:
-            cursor.execute('SELECT id, timestamp, target, score, rating, total_loc, violations_count, pillar_scores, scan_mode FROM audit_history ORDER BY timestamp DESC LIMIT 50')
-            
+            cursor.execute(
+                "SELECT id, timestamp, target, score, rating, total_loc, violations_count, pillar_scores, scan_mode FROM audit_history ORDER BY timestamp DESC LIMIT 50"
+            )
+
         rows = cursor.fetchall()
         cursor.close()
         AuditDatabase.release_connection(conn)
-        
+
         results = []
         for row in rows:
             d = dict(row)
             # Chuyển đổi datetime sang ISO string để tương thích với Frontend
-            if 'timestamp' in d and isinstance(d['timestamp'], datetime):
-                d['timestamp'] = d['timestamp'].isoformat()
+            if "timestamp" in d and isinstance(d["timestamp"], datetime):
+                d["timestamp"] = d["timestamp"].isoformat()
             try:
-                d['pillar_scores'] = json.loads(d.get('pillar_scores', '{}'))
+                d["pillar_scores"] = json.loads(d.get("pillar_scores", "{}"))
             except Exception as e:
                 logger.warning(f"Error parsing pillar_scores: {e}")
-                d['pillar_scores'] = {}
+                d["pillar_scores"] = {}
             results.append(d)
         return results
 
@@ -159,57 +204,73 @@ class AuditDatabase:
         """Retrieves details of a single audit including the full JSON payload by ID."""
         conn = AuditDatabase.get_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
-        
-        cursor.execute('SELECT id, timestamp, target, score, rating, total_loc, violations_count, pillar_scores, full_json, scan_mode FROM audit_history WHERE id = %s', (audit_id,))
+
+        cursor.execute(
+            "SELECT id, timestamp, target, score, rating, total_loc, violations_count, pillar_scores, full_json, scan_mode FROM audit_history WHERE id = %s",
+            (audit_id,),
+        )
         row = cursor.fetchone()
         cursor.close()
         AuditDatabase.release_connection(conn)
-        
+
         if not row:
             return None
-            
+
         d = dict(row)
-        if 'timestamp' in d and isinstance(d['timestamp'], datetime):
-            d['timestamp'] = d['timestamp'].isoformat()
-            
+        if "timestamp" in d and isinstance(d["timestamp"], datetime):
+            d["timestamp"] = d["timestamp"].isoformat()
+
         try:
-            d['pillar_scores'] = json.loads(d.get('pillar_scores', '{}'))
+            d["pillar_scores"] = json.loads(d.get("pillar_scores", "{}"))
         except Exception as e:
             logger.warning(f"Error parsing pillar_scores in get_audit_by_id: {e}")
-            d['pillar_scores'] = {}
-            
-        if d.get('full_json'):
+            d["pillar_scores"] = {}
+
+        if d.get("full_json"):
             try:
-                d['full_json'] = json.loads(d['full_json'])
+                d["full_json"] = json.loads(d["full_json"])
             except Exception as e:
                 logger.warning(f"Error parsing full_json: {e}")
-                d['full_json'] = None
+                d["full_json"] = None
         return d
 
     @staticmethod
-    def save_project_rules(target_id, natural_text, compiled_json, disabled_core_rules="[]"):
+    def save_project_rules(
+        target_id, natural_text, compiled_json, disabled_core_rules="[]"
+    ):
         """Saves or updates project rules."""
         conn = AuditDatabase.get_connection()
         cursor = conn.cursor()
-        
-        cursor.execute('SELECT id, disabled_core_rules, custom_weights FROM project_rules WHERE target_id = %s', (target_id,))
+
+        cursor.execute(
+            "SELECT id, disabled_core_rules, custom_weights FROM project_rules WHERE target_id = %s",
+            (target_id,),
+        )
         row = cursor.fetchone()
-        
+
         compiled_str = json.dumps(compiled_json) if compiled_json is not None else None
-        
+
         if row:
-            final_disabled = disabled_core_rules if disabled_core_rules != "[]" else row[1]
-            cursor.execute('''
+            final_disabled = (
+                disabled_core_rules if disabled_core_rules != "[]" else row[1]
+            )
+            cursor.execute(
+                """
                 UPDATE project_rules 
                 SET natural_text = %s, compiled_json = %s, disabled_core_rules = %s, updated_at = CURRENT_TIMESTAMP
                 WHERE target_id = %s
-            ''', (natural_text, compiled_str, final_disabled, target_id))
+            """,
+                (natural_text, compiled_str, final_disabled, target_id),
+            )
         else:
-            cursor.execute('''
+            cursor.execute(
+                """
                 INSERT INTO project_rules (target_id, natural_text, compiled_json, disabled_core_rules, custom_weights)
                 VALUES (%s, %s, %s, %s, '{}')
-            ''', (target_id, natural_text, compiled_str, disabled_core_rules))
-            
+            """,
+                (target_id, natural_text, compiled_str, disabled_core_rules),
+            )
+
         conn.commit()
         cursor.close()
         AuditDatabase.release_connection(conn)
@@ -221,62 +282,87 @@ class AuditDatabase:
         cursor = conn.cursor()
         try:
             # SELECT ... FOR UPDATE: Lock row để đảm bảo atomic read-modify-write
-            cursor.execute('SELECT id, disabled_core_rules FROM project_rules WHERE target_id = %s FOR UPDATE', (target_id,))
+            cursor.execute(
+                "SELECT id, disabled_core_rules FROM project_rules WHERE target_id = %s FOR UPDATE",
+                (target_id,),
+            )
             row = cursor.fetchone()
-            
+
             if not row:
-                cursor.execute('INSERT INTO project_rules (target_id, natural_text, compiled_json, disabled_core_rules) VALUES (%s, %s, %s, %s) ON CONFLICT (target_id) DO NOTHING', (target_id, "", None, "[]"))
-                cursor.execute('SELECT id, disabled_core_rules FROM project_rules WHERE target_id = %s FOR UPDATE', (target_id,))
+                cursor.execute(
+                    "INSERT INTO project_rules (target_id, natural_text, compiled_json, disabled_core_rules) VALUES (%s, %s, %s, %s) ON CONFLICT (target_id) DO NOTHING",
+                    (target_id, "", None, "[]"),
+                )
+                cursor.execute(
+                    "SELECT id, disabled_core_rules FROM project_rules WHERE target_id = %s FOR UPDATE",
+                    (target_id,),
+                )
                 row = cursor.fetchone()
-                
+
             disabled_rules = []
             if row and row[1]:
                 try:
                     disabled_rules = json.loads(row[1])
                 except (json.JSONDecodeError, TypeError) as e:
                     logger.warning(f"Error parsing disabled_core_rules: {e}")
-                    
+
             if is_disabled and rule_id not in disabled_rules:
                 disabled_rules.append(rule_id)
             elif not is_disabled and rule_id in disabled_rules:
                 disabled_rules.remove(rule_id)
-                
+
             disabled_str = json.dumps(disabled_rules)
-            
+
             if row:
-                cursor.execute('UPDATE project_rules SET disabled_core_rules = %s, updated_at = CURRENT_TIMESTAMP WHERE target_id = %s', (disabled_str, target_id))
+                cursor.execute(
+                    "UPDATE project_rules SET disabled_core_rules = %s, updated_at = CURRENT_TIMESTAMP WHERE target_id = %s",
+                    (disabled_str, target_id),
+                )
             else:
-                cursor.execute('INSERT INTO project_rules (target_id, natural_text, compiled_json, disabled_core_rules) VALUES (%s, %s, %s, %s)', (target_id, "", None, disabled_str))
-                
+                cursor.execute(
+                    "INSERT INTO project_rules (target_id, natural_text, compiled_json, disabled_core_rules) VALUES (%s, %s, %s, %s)",
+                    (target_id, "", None, disabled_str),
+                )
+
             conn.commit()
         except Exception:
             conn.rollback()
             raise
         finally:
-            if cursor: cursor.close()
-            if conn: AuditDatabase.release_connection(conn)
+            if cursor:
+                cursor.close()
+            if conn:
+                AuditDatabase.release_connection(conn)
 
     @staticmethod
     def save_custom_weights(target_id, custom_weights):
         """Lưu lại trọng số tuỳ chỉnh của các rules cho dự án."""
         conn = AuditDatabase.get_connection()
         cursor = conn.cursor()
-        
+
         weights_str = json.dumps(custom_weights) if custom_weights is not None else "{}"
-        
-        cursor.execute('SELECT id FROM project_rules WHERE target_id = %s', (target_id,))
+
+        cursor.execute(
+            "SELECT id FROM project_rules WHERE target_id = %s", (target_id,)
+        )
         if cursor.fetchone():
-            cursor.execute('''
+            cursor.execute(
+                """
                 UPDATE project_rules 
                 SET custom_weights = %s, updated_at = CURRENT_TIMESTAMP
                 WHERE target_id = %s
-            ''', (weights_str, target_id))
+            """,
+                (weights_str, target_id),
+            )
         else:
-            cursor.execute('''
+            cursor.execute(
+                """
                 INSERT INTO project_rules (target_id, natural_text, compiled_json, disabled_core_rules, custom_weights)
                 VALUES (%s, '', NULL, '[]', %s)
-            ''', (target_id, weights_str))
-            
+            """,
+                (target_id, weights_str),
+            )
+
         conn.commit()
         cursor.close()
         AuditDatabase.release_connection(conn)
@@ -286,32 +372,41 @@ class AuditDatabase:
         """Retrieves saved rules for a target."""
         conn = AuditDatabase.get_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
-        cursor.execute('SELECT natural_text, compiled_json, disabled_core_rules, custom_weights FROM project_rules WHERE target_id = %s', (target_id,))
+        cursor.execute(
+            "SELECT natural_text, compiled_json, disabled_core_rules, custom_weights FROM project_rules WHERE target_id = %s",
+            (target_id,),
+        )
         row = cursor.fetchone()
         cursor.close()
         AuditDatabase.release_connection(conn)
-        
+
         if row:
             compiled = None
-            if row['compiled_json']:
-                try: compiled = json.loads(row['compiled_json'])
-                except Exception as e: logger.warning(f"Error parsing compiled_json: {e}")
-                
+            if row["compiled_json"]:
+                try:
+                    compiled = json.loads(row["compiled_json"])
+                except Exception as e:
+                    logger.warning(f"Error parsing compiled_json: {e}")
+
             disabled = []
-            if row['disabled_core_rules']:
-                try: disabled = json.loads(row['disabled_core_rules'])
-                except Exception as e: logger.warning(f"Error parsing disabled_core_rules: {e}")
-                
+            if row["disabled_core_rules"]:
+                try:
+                    disabled = json.loads(row["disabled_core_rules"])
+                except Exception as e:
+                    logger.warning(f"Error parsing disabled_core_rules: {e}")
+
             weights = {}
-            if row['custom_weights']:
-                try: weights = json.loads(row['custom_weights'])
-                except Exception as e: logger.warning(f"Error parsing custom_weights: {e}")
-                
+            if row["custom_weights"]:
+                try:
+                    weights = json.loads(row["custom_weights"])
+                except Exception as e:
+                    logger.warning(f"Error parsing custom_weights: {e}")
+
             return {
-                "natural_text": row['natural_text'],
+                "natural_text": row["natural_text"],
                 "compiled_json": compiled,
                 "disabled_core_rules": disabled,
-                "custom_weights": weights
+                "custom_weights": weights,
             }
         return None
 
@@ -320,10 +415,11 @@ class AuditDatabase:
         """Deletes project rules for a specific target."""
         conn = AuditDatabase.get_connection()
         cursor = conn.cursor()
-        cursor.execute('DELETE FROM project_rules WHERE target_id = %s', (target_id,))
+        cursor.execute("DELETE FROM project_rules WHERE target_id = %s", (target_id,))
         conn.commit()
         cursor.close()
         AuditDatabase.release_connection(conn)
+
 
 # Avoid initializing DB on import immediately if docker is not up
 # AuditDatabase.initialize()

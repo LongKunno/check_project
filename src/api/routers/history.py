@@ -1,6 +1,7 @@
 """
 Router: History — Tra cứu lịch sử các lần kiểm toán.
 """
+
 from fastapi import APIRouter, HTTPException
 from src.engine.database import AuditDatabase
 
@@ -23,7 +24,9 @@ async def get_audit_detail(audit_id: int):
     try:
         detail = AuditDatabase.get_audit_by_id(audit_id)
         if not detail:
-            raise HTTPException(status_code=404, detail="Không tìm thấy lịch sử kiểm toán.")
+            raise HTTPException(
+                status_code=404, detail="Không tìm thấy lịch sử kiểm toán."
+            )
         return detail
     except HTTPException:
         raise

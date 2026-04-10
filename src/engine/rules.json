@@ -189,7 +189,7 @@
       "category": "Reliability",
       "severity": "Minor",
       "debt": 10,
-      "reason": "Bare except: block detected (Catches SystemExit/KeyboardInterrupt)",
+      "reason": "Bare except hoặc except Exception mà không xử lý gì (chỉ pass/rỗng). Có logging, raise hoặc bất kỳ xử lý nào thì bỏ qua.",
       "weight": -2.0,
       "regex": null,
       "ast": {

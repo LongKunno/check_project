@@ -14,12 +14,15 @@ load_dotenv()
 # Monkey-patch: Tăng giới hạn multipart upload cho Starlette
 # Mặc định 1000 file → 10,000 (đủ cho dự án lớn, hạn chế DoS)
 import starlette.formparsers
+
 _original_multipart_init = starlette.formparsers.MultiPartParser.__init__
 
+
 def _patched_multipart_init(self, *args, **kwargs):
-    kwargs['max_files'] = 10000
-    kwargs['max_fields'] = 10000
+    kwargs["max_files"] = 10000
+    kwargs["max_fields"] = 10000
     _original_multipart_init(self, *args, **kwargs)
+
 
 starlette.formparsers.MultiPartParser.__init__ = _patched_multipart_init
 
@@ -34,19 +37,21 @@ from src.api.audit_state import AuditState, JobManager
 
 logging.basicConfig(level=logging.INFO)
 
+
 class AuditLogHandler(logging.Handler):
     """
     Chuyển tiếp log từ Engine vào SSE stream của Frontend.
     - Chỉ forward log từ 'src.engine.*' để tránh nhiễu (uvicorn access, DB connect, ...)
     - Tự động route vào Job-specific logs nếu có Job đang active trên thread hiện tại.
     """
+
     def emit(self, record):
         try:
             msg = self.format(record)
             if not msg.strip():
                 return
             clean_msg = msg.strip()
-            
+
             # Route vào Job-specific SSE nếu có Job đang active
             active_job = JobManager.get_active_job_id()
             if active_job:
@@ -57,13 +62,16 @@ class AuditLogHandler(logging.Handler):
         except Exception:
             self.handleError(record)
 
+
 class EngineLogFilter(logging.Filter):
     """Chỉ cho phép log từ namespace 'src.engine.*' đi qua."""
+
     def filter(self, record):
-        return record.name.startswith('src.engine')
+        return record.name.startswith("src.engine")
+
 
 audit_log_handler = AuditLogHandler()
-audit_log_handler.setFormatter(logging.Formatter('%(message)s'))
+audit_log_handler.setFormatter(logging.Formatter("%(message)s"))
 audit_log_handler.addFilter(EngineLogFilter())
 logging.getLogger().addHandler(audit_log_handler)
 
@@ -74,20 +82,26 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="AI Static Analysis API (V1)",
     description="Hệ thống kiểm toán mã nguồn tự động dựa trên AI Framework V1.0.0.",
-    version="1.0.0"
+    version="1.0.0",
 )
+
 
 @app.on_event("startup")
 async def startup_event():
     import asyncio
+
     logger.info("Initializing PostgreSQL Database in background thread...")
     try:
         await asyncio.to_thread(AuditDatabase.initialize)
-        logger.info("Database initialized successfully without blocking the event loop.")
+        logger.info(
+            "Database initialized successfully without blocking the event loop."
+        )
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
 
+
 # ── Middleware ────────────────────────────────────────────────────────────────
+
 
 @app.middleware("http")
 async def add_private_network_header(request: Request, call_next):
@@ -99,8 +113,9 @@ async def add_private_network_header(request: Request, call_next):
         response.headers["Access-Control-Allow-Headers"] = "*"
     return response
 
+
 # CORS origins: Đọc từ env hoặc mặc định cho local development
-_cors_origins = os.environ.get('CORS_ORIGINS', 'http://localhost:3000').split(',')
+_cors_origins = os.environ.get("CORS_ORIGINS", "http://localhost:3000").split(",")
 
 app.add_middleware(
     CORSMiddleware,
@@ -110,16 +125,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc):
     logger.error(f"Validation Error: {exc.errors()}")
     return {"detail": exc.errors()}
 
+
 # ── Root ──────────────────────────────────────────────────────────────────────
+
 
 @app.get("/")
 async def root():
-    return {"status": "ready", "engine": "AI Static Analysis V1.0.0", "message": "API đang hoạt động."}
+    return {
+        "status": "ready",
+        "engine": "AI Static Analysis V1.0.0",
+        "message": "API đang hoạt động.",
+    }
+
 
 # ── Register Routers ─────────────────────────────────────────────────────────
 
@@ -137,4 +160,5 @@ app.include_router(members_router)
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8000)))

@@ -1,14 +1,14 @@
-import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const pageVariants = {
-  initial: { opacity: 0, y: 14, filter: 'blur(4px)' },
-  enter: { opacity: 1, y: 0, filter: 'blur(0px)' },
-  exit: { opacity: 0, y: -8, filter: 'blur(2px)' },
+  initial: { opacity: 0, y: 14, filter: "blur(4px)" },
+  enter: { opacity: 1, y: 0, filter: "blur(0px)" },
+  exit: { opacity: 0, y: -8, filter: "blur(2px)" },
 };
 
 const pageTransition = {
-  type: 'tween',
+  type: "tween",
   ease: [0.4, 0, 0.2, 1],
   duration: 0.3,
 };

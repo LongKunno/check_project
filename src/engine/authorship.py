@@ -3,21 +3,23 @@ import subprocess
 import re
 import logging
 
+
 class AuthorshipTracker:
     """
     Theo dõi tác giả của từng dòng mã nguồn dựa trên Git blame.
     Chỉ tính toán các dòng mã được commit trong vòng 3 tháng gần đây
     để đảm bảo tính chính xác và không đánh giá code legacy.
-    
+
     Sử dụng author-mail (email) làm khóa chính để phân biệt thành viên,
     tránh trùng lặp khi cùng một người dùng nhiều tên khác nhau.
     """
+
     def __init__(self, target_dir):
         self.target_dir = os.path.abspath(target_dir)
-        self.is_git_repo = os.path.exists(os.path.join(self.target_dir, '.git'))
+        self.is_git_repo = os.path.exists(os.path.join(self.target_dir, ".git"))
         self.file_authors_cache = {}
-        self.member_loc = {}          # { email: int } — LOC trong 3 tháng
-        self.member_names = {}        # { email: name } — Mapping email → display name
+        self.member_loc = {}  # { email: int } — LOC trong 3 tháng
+        self.member_names = {}  # { email: name } — Mapping email → display name
 
     def parse_blame(self, file_path):
         """
@@ -27,7 +29,7 @@ class AuthorshipTracker:
         """
         if file_path in self.file_authors_cache:
             return self.file_authors_cache[file_path]
-            
+
         line_authors = {}
         if not self.is_git_repo:
             return line_authors
@@ -35,64 +37,74 @@ class AuthorshipTracker:
         try:
             # Chạy git blame với giới hạn 3 tháng
             result = subprocess.run(
-                ['git', 'blame', '--line-porcelain', '--since=3.months', file_path],
+                ["git", "blame", "--line-porcelain", "--since=3.months", file_path],
                 cwd=self.target_dir,
                 capture_output=True,
                 text=True,
-                check=False
+                check=False,
             )
-            
+
             if result.returncode != 0:
                 return line_authors
-                
+
             lines = result.stdout.splitlines()
-            
+
             current_commit = None
             is_boundary = False
             current_author = "Unknown"
             current_email = "unknown@unknown"
-            
+
             i = 0
             while i < len(lines):
                 line = lines[i]
-                
+
                 # Bắt đầu một block mô tả commit của 1 dòng (40 kí tự hash + số dòng)
-                if re.match(r'^[0-9a-f]{40}\s', line):
+                if re.match(r"^[0-9a-f]{40}\s", line):
                     parts = line.split()
                     current_commit = parts[0]
                     # Nếu commit bắt đầu bằng '^', nó là boundary (ngoài phạm vi 6 tháng)
-                    is_boundary = current_commit.startswith('^')
-                    
-                elif line.startswith('author '):
+                    is_boundary = current_commit.startswith("^")
+
+                elif line.startswith("author "):
                     current_author = line[7:].strip()
-                elif line.startswith('author-mail '):
+                elif line.startswith("author-mail "):
                     # Format: author-mail <email@example.com>
                     raw_email = line[12:].strip()
-                    current_email = raw_email.strip('<>')
-                elif line.startswith('boundary'):
+                    current_email = raw_email.strip("<>")
+                elif line.startswith("boundary"):
                     is_boundary = True
-                elif line.startswith('\t'):
+                elif line.startswith("\t"):
                     # Kết thúc block của một dòng mã
                     line_no = len(line_authors) + 1
-                    
+
                     if is_boundary:
-                        line_authors[line_no] = {"author": current_author, "email": current_email, "boundary": True}
+                        line_authors[line_no] = {
+                            "author": current_author,
+                            "email": current_email,
+                            "boundary": True,
+                        }
                     else:
-                        line_authors[line_no] = {"author": current_author, "email": current_email, "boundary": False}
+                        line_authors[line_no] = {
+                            "author": current_author,
+                            "email": current_email,
+                            "boundary": False,
+                        }
                         # Cộng dồn LOC theo email (khóa chính)
                         if current_email not in self.member_loc:
                             self.member_loc[current_email] = 0
                         self.member_loc[current_email] += 1
                         # Lưu mapping email → tên hiển thị (lấy tên gần nhất)
                         self.member_names[current_email] = current_author
-                        
+
                     # Reset data for next line
                     is_boundary = False
                 i += 1
-                
+
         except Exception as e:
-            logging.getLogger(__name__).warning(f"Error parsing Git blame for {file_path}: {e}")
-            
+            logging.getLogger(__name__).warning(
+                f"Error parsing Git blame for {file_path}: {e}"
+            )
+
         self.file_authors_cache[file_path] = line_authors
         return line_authors
 
@@ -103,10 +115,13 @@ class AuthorshipTracker:
         """
         rel_path = os.path.relpath(file_path, self.target_dir)
         # Fix cho trường hợp file path đã tương đối rồi thì để nguyên
-        if not file_path.startswith('/'): rel_path = file_path
-            
+        if not file_path.startswith("/"):
+            rel_path = file_path
+
         authors = self.parse_blame(rel_path)
-        return authors.get(line_no, {"author": "Unknown", "email": "unknown@unknown", "boundary": True})
+        return authors.get(
+            line_no, {"author": "Unknown", "email": "unknown@unknown", "boundary": True}
+        )
 
     def get_all_member_loc(self):
         """Trả về tổng số dòng code (trong 3 tháng) của từng member, keyed by email."""
