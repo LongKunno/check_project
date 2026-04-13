@@ -402,3 +402,57 @@ Khi sidebar ở chế độ thu nhỏ (80px wide):
 ---
 *Cập nhật: 2026-04-11 — Global Brightness Uplift Phase 7*
 
+### 24. Rule Manager Color Sync (Phase 8 — 2026-04-13)
+
+**Vấn đề:** Màn hình Rule Manager (`/rules`) có tone màu sáng hơn đáng kể so với các trang còn lại (Audit Dashboard, Project Leaderboard, etc.) do sử dụng `bg-white/[0.025]`, `bg-white/[0.04]` — tạo nền sáng trắng đục, trong khi các trang khác dùng `var(--card-bg): rgba(16, 22, 38, 0.65)` tối navy.
+
+**Giải pháp:** Thay thế toàn bộ background Tailwind `bg-white/[...]` bằng rgba tối navy tương đồng với `var(--card-bg)`.
+
+#### 24.1 Bảng thay đổi chi tiết
+
+| Thành phần | Pattern cũ (sáng) | Pattern mới (tối) |
+|---|---|---|
+| **KPI Card background** | `linear-gradient(135deg, ${accent}10, ${accent}05)` | `linear-gradient(135deg, rgba(16,22,38,0.8), rgba(12,18,34,0.9))` |
+| **KPI Card border/shadow** | `${accent}40` / `${accent}35` | `${accent}30` / `${accent}25` |
+| **Main Panel** | `bg-white/[0.025]` | `bg-[rgba(16,22,38,0.55)]` |
+| **Tab bar** | `bg-white/[0.02]` | `bg-[rgba(10,15,28,0.4)]` |
+| **Filter area** | `bg-white/[0.02]` | `bg-[rgba(10,15,28,0.3)]` |
+| **Search input** | `bg-white/[0.06]` | `bg-[rgba(10,15,28,0.5)]` |
+| **PillGroup container** | `bg-white/[0.05]` | `bg-[rgba(16,22,38,0.5)]` |
+| **Pillar filter container** | `bg-white/[0.04]` | `bg-[rgba(16,22,38,0.5)]` |
+| **Rule card (normal)** | `bg-white/[0.04]` | `bg-[rgba(16,22,38,0.55)]` |
+| **Rule card (disabled)** | `bg-white/[0.015]` | `bg-[rgba(10,15,28,0.5)]` |
+| **Rule card (override)** | `rgba(139,92,246,0.12), transparent` | `rgba(139,92,246,0.1), rgba(12,18,34,0.85)` |
+| **Category accordion** | `bg-white/[0.03]` | `bg-[rgba(16,22,38,0.45)]` |
+| **Custom rule card (regex/ast)** | `bg-violet-900/8` | `bg-[rgba(16,18,38,0.6)]` |
+| **Expandable detail panels** | `bg-white/[0.06]` | `bg-[rgba(10,15,28,0.5)]` |
+
+#### 24.2 File bị ảnh hưởng
+- `dashboard/src/components/nlre/RuleManager.jsx` — 12 đoạn background class thay đổi
+- `dashboard/src/components/nlre/RuleBuilder.jsx` — 15 đoạn background class thay đổi
+
+#### 24.3 RuleBuilder — Bảng thay đổi bổ sung
+
+| Thành phần | Pattern cũ (sáng) | Pattern mới (tối) |
+|---|---|---|
+| **Stepper container** | `bg-[#0f1629]/60` | `bg-[rgba(16,22,38,0.55)]` |
+| **Main panel** | `bg-[#0f1629]/60` | `bg-[rgba(16,22,38,0.55)]` |
+| **Textarea prompt (empty)** | `bg-white/[0.06]` | `bg-[rgba(10,15,28,0.5)]` |
+| **Textarea prompt (focused)** | `bg-violet-900/8` | `bg-[rgba(16,18,38,0.5)]` |
+| **Template gallery** | `bg-white/[0.03]` | `bg-[rgba(16,22,38,0.4)]` |
+| **Template item (selected)** | `bg-violet-900/20` | `bg-[rgba(16,18,38,0.6)]` |
+| **Template item (default)** | `bg-white/[0.05]` | `bg-[rgba(16,22,38,0.45)]` |
+| **Back buttons** | `bg-white/[0.06]` | `bg-[rgba(10,15,28,0.5)]` |
+| **JSON config header** | `bg-white/[0.04]` | `bg-[rgba(10,15,28,0.4)]` |
+| **Empty state** | `bg-white/[0.03]` | `bg-[rgba(16,22,38,0.4)]` |
+| **Sandbox panel headers** | `bg-white/[0.04]` | `bg-[rgba(10,15,28,0.4)]` |
+| **Results panel content** | `bg-white/[0.02]` | `bg-[rgba(10,15,28,0.25)]` |
+
+#### 24.4 Nguyên tắc thiết kế
+- Giữ nguyên cấu trúc component, chỉ thay đổi giá trị background
+- Sử dụng palette `rgba(16, 22, 38, ...)` và `rgba(10, 15, 28, ...)` nhất quán với `var(--card-bg)` global
+- Border opacity giảm nhẹ (`/[0.08]` → `/[0.06]`) để không nổi bật quá trên nền tối hơn
+
+---
+*Cập nhật: 2026-04-13 — Rule Manager & Rule Builder Color Sync Phase 8*
+

@@ -488,12 +488,12 @@ const RuleBuilder = ({ targetId, projectName }) => {
 
       <div className="flex-1 w-full relative z-10 flex flex-col gap-5 max-w-7xl mx-auto h-[calc(100vh-160px)]">
         {/* ── Stepper ── */}
-        <div className="bg-[#0f1629]/60 backdrop-blur-xl border border-white/[0.07] rounded-2xl px-8 py-5 shrink-0 shadow-lg">
+        <div className="bg-[rgba(16,22,38,0.55)] backdrop-blur-xl border border-white/[0.07] rounded-2xl px-8 py-5 shrink-0 shadow-lg">
           <Stepper current={wizardStep} />
         </div>
 
         {/* ── Main panel ── */}
-        <div className="flex-1 bg-[#0f1629]/60 backdrop-blur-xl border border-white/[0.07] rounded-2xl shadow-2xl relative overflow-hidden flex flex-col min-h-0">
+        <div className="flex-1 bg-[rgba(16,22,38,0.55)] backdrop-blur-xl border border-white/[0.07] rounded-2xl shadow-2xl relative overflow-hidden flex flex-col min-h-0">
           <AnimatePresence mode="wait">
             {/* ════ STEP 1 ════ */}
             {wizardStep === 1 && (
@@ -528,11 +528,11 @@ const RuleBuilder = ({ targetId, projectName }) => {
                       onChange={(e) => setNaturalText(e.target.value)}
                       placeholder={`Ví dụ:\n"Cấm import os và subprocess vì lý do bảo mật, chỉ cho phép dùng pathlib."\n"Mỗi file không được có quá 3 class Python."`}
                       className={cn(
-                        "flex-1 min-h-[200px] bg-white/[0.06] border rounded-2xl p-5 text-slate-100 font-medium",
+                        "flex-1 min-h-[200px] bg-[rgba(10,15,28,0.5)] border rounded-2xl p-5 text-slate-100 font-medium",
                         "placeholder-slate-600 outline-none resize-none text-base leading-relaxed",
                         "transition-all duration-300 shadow-inner",
                         naturalText
-                          ? "border-violet-500/40 bg-violet-900/8 focus:border-violet-500/70"
+                          ? "border-violet-500/40 bg-[rgba(16,18,38,0.5)] focus:border-violet-500/70"
                           : "border-white/8 hover:border-violet-500/25 focus:border-violet-500/50",
                       )}
                     />
@@ -557,7 +557,7 @@ const RuleBuilder = ({ targetId, projectName }) => {
                   </div>
 
                   {/* Right — Template gallery */}
-                  <div className="flex flex-col bg-white/[0.03] rounded-2xl border border-white/5 overflow-hidden min-h-0">
+                  <div className="flex flex-col bg-[rgba(16,22,38,0.4)] rounded-2xl border border-white/[0.06] overflow-hidden min-h-0">
                     <div className="px-5 py-3 border-b border-white/5 shrink-0">
                       <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
                         <Sparkles size={12} /> Prompt Mẫu Tham Khảo
@@ -590,8 +590,8 @@ const RuleBuilder = ({ targetId, projectName }) => {
                                   className={cn(
                                     "text-left p-4 rounded-xl border transition-all duration-200 group flex gap-3",
                                     isSelected
-                                      ? "bg-violet-900/20 border-violet-500/50 shadow-[0_0_12px_rgba(139,92,246,0.15)]"
-                                      : "bg-white/[0.05] border-white/5 hover:border-violet-500/30 hover:bg-violet-900/10",
+                                      ? "bg-[rgba(16,18,38,0.6)] border-violet-500/50 shadow-[0_0_12px_rgba(139,92,246,0.15)]"
+                                      : "bg-[rgba(16,22,38,0.45)] border-white/[0.06] hover:border-violet-500/30 hover:bg-[rgba(16,18,38,0.55)]",
                                   )}
                                 >
                                   <div
@@ -674,7 +674,7 @@ const RuleBuilder = ({ targetId, projectName }) => {
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setWizardStep(1)}
-                      className="p-2 bg-white/[0.06] hover:bg-white/10 border border-white/8 rounded-xl text-slate-400 hover:text-white transition-colors"
+                      className="p-2 bg-[rgba(10,15,28,0.5)] hover:bg-[rgba(16,22,38,0.7)] border border-white/[0.08] rounded-xl text-slate-400 hover:text-white transition-colors"
                     >
                       <ChevronLeft size={18} />
                     </button>
@@ -747,7 +747,7 @@ const RuleBuilder = ({ targetId, projectName }) => {
                       "border-emerald-500/30 shadow-[0_0_30px_rgba(16,185,129,0.08)]",
                     )}
                   >
-                    <div className="flex justify-between items-center bg-white/[0.04] border-b border-emerald-500/20 py-3 px-5 shrink-0">
+                    <div className="flex justify-between items-center bg-[rgba(10,15,28,0.4)] border-b border-emerald-500/20 py-3 px-5 shrink-0">
                       <span className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                         <Database size={13} className="text-violet-400" /> JSON
                         Cấu Hình
@@ -771,7 +771,7 @@ const RuleBuilder = ({ targetId, projectName }) => {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex-1 flex items-center justify-center text-slate-600 gap-3 bg-white/[0.03] rounded-2xl border border-dashed border-white/5">
+                  <div className="flex-1 flex items-center justify-center text-slate-600 gap-3 bg-[rgba(16,22,38,0.4)] rounded-2xl border border-dashed border-white/[0.06]">
                     <RefreshCw size={32} className="opacity-20" />
                     <p className="font-bold text-sm uppercase tracking-widest">
                       Chưa có JSON
@@ -824,7 +824,7 @@ const RuleBuilder = ({ targetId, projectName }) => {
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setWizardStep(2)}
-                      className="p-2 bg-white/[0.06] hover:bg-white/10 border border-white/8 rounded-xl text-slate-400 hover:text-white transition-colors"
+                      className="p-2 bg-[rgba(10,15,28,0.5)] hover:bg-[rgba(16,22,38,0.7)] border border-white/[0.08] rounded-xl text-slate-400 hover:text-white transition-colors"
                     >
                       <ChevronLeft size={18} />
                     </button>
@@ -849,7 +849,7 @@ const RuleBuilder = ({ targetId, projectName }) => {
                 <div className="flex-1 flex gap-4 min-h-0">
                   {/* Left: JSON editor */}
                   <div className="w-[38%] flex flex-col bg-[#0c1222] border border-white/8 rounded-2xl overflow-hidden focus-within:border-violet-500/40 transition-colors">
-                    <div className="flex items-center justify-between bg-white/[0.04] border-b border-white/5 py-2.5 px-4 shrink-0">
+                    <div className="flex items-center justify-between bg-[rgba(10,15,28,0.4)] border-b border-white/[0.06] py-2.5 px-4 shrink-0">
                       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
                         <Database size={12} className="text-violet-400" /> Tinh
                         Chỉnh JSON
@@ -886,7 +886,7 @@ const RuleBuilder = ({ targetId, projectName }) => {
                   <div className="flex-1 flex flex-col gap-3 min-h-0">
                     {/* Code input */}
                     <div className="flex-1 flex flex-col bg-[#0c1222] border border-white/8 rounded-2xl overflow-hidden focus-within:border-blue-500/40 transition-colors min-h-0">
-                      <div className="flex items-center bg-white/[0.04] border-b border-white/5 py-2.5 px-4 shrink-0">
+                      <div className="flex items-center bg-[rgba(10,15,28,0.4)] border-b border-white/[0.06] py-2.5 px-4 shrink-0">
                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
                           <Terminal size={12} className="text-blue-400" /> Mã
                           Nguồn Mô Phỏng
@@ -907,7 +907,7 @@ const RuleBuilder = ({ targetId, projectName }) => {
 
                     {/* Results */}
                     <div className="flex-1 flex flex-col bg-[#0c1222] border border-white/8 rounded-2xl overflow-hidden min-h-0">
-                      <div className="flex items-center justify-between bg-white/[0.04] border-b border-white/5 py-2.5 px-4 shrink-0">
+                      <div className="flex items-center justify-between bg-[rgba(10,15,28,0.4)] border-b border-white/[0.06] py-2.5 px-4 shrink-0">
                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
                           <Box size={12} /> Kết Quả Phân Tích
                         </span>
@@ -933,7 +933,7 @@ const RuleBuilder = ({ targetId, projectName }) => {
                         </button>
                       </div>
 
-                      <div className="flex-1 overflow-auto p-4 bg-white/[0.02]">
+                      <div className="flex-1 overflow-auto p-4 bg-[rgba(10,15,28,0.25)]">
                         {isTesting ? (
                           <div className="flex flex-col items-center justify-center h-full text-blue-400 gap-3">
                             <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin" />

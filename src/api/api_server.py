@@ -81,8 +81,8 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="AI Static Analysis API (V1)",
-    description="Hệ thống kiểm toán mã nguồn tự động dựa trên AI Framework V1.0.0.",
-    version="1.0.0",
+    description=f"Hệ thống kiểm toán mã nguồn tự động dựa trên AI Framework V{os.environ.get('APP_VERSION', '1.0.0')}.",
+    version=os.environ.get("APP_VERSION", "1.0.0"),
 )
 
 
@@ -139,7 +139,7 @@ async def validation_exception_handler(request: Request, exc):
 async def root():
     return {
         "status": "ready",
-        "engine": "AI Static Analysis V1.0.0",
+        "engine": f"AI Static Analysis V{os.environ.get('APP_VERSION', '1.0.0')}",
         "message": "API đang hoạt động.",
     }
 
@@ -151,12 +151,14 @@ from src.api.routers.rules import router as rules_router
 from src.api.routers.history import router as history_router
 from src.api.routers.repositories import router as repositories_router
 from src.api.routers.members import router as members_router
+from src.api.routers.auth import router as auth_router
 
 app.include_router(audit_router)
 app.include_router(rules_router)
 app.include_router(history_router)
 app.include_router(repositories_router)
 app.include_router(members_router)
+app.include_router(auth_router)
 
 if __name__ == "__main__":
     import uvicorn

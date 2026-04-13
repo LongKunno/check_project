@@ -75,6 +75,8 @@ import { Sidebar } from "./components/layout/Sidebar";
 import PageTransition from "./components/ui/PageTransition";
 import { CardSkeleton, TableSkeleton } from "./components/ui/SkeletonLoader";
 import { useAuditJob } from "./hooks/useAuditJob";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+const LoginPage = React.lazy(() => import("./components/auth/LoginPage"));
 import {
   Routes,
   Route,
@@ -474,8 +476,20 @@ function App() {
 
   // Removed duplicate getScoreColorClass
 
+  // ── LOGIN PAGE: render outside dashboard layout ──
+  if (location.pathname === "/login") {
+    return (
+      <Suspense fallback={<div className="flex items-center justify-center h-screen w-full bg-[#0c1222]" />}>
+        <LoginPage />
+      </Suspense>
+    );
+  }
+
+  // ── DASHBOARD: protected by auth ──
   return (
-    <div className="flex h-screen w-screen overflow-hidden font-sans text-slate-300">
+    <ProtectedRoute>
+      <div className="flex h-screen w-screen overflow-hidden font-sans text-slate-300">
+
       {/* SIDEBAR */}
       <Sidebar
         isSidebarCollapsed={isSidebarCollapsed}
@@ -890,6 +904,7 @@ function App() {
         </div>
       </div>
     </div>
+    </ProtectedRoute>
   );
 }
 

@@ -194,9 +194,9 @@ const KpiCard = ({ icon: Icon, value, label, accent, delay = 0 }) => (
       "backdrop-blur-sm transition-all duration-300",
     )}
     style={{
-      background: `linear-gradient(135deg, ${accent}10 0%, ${accent}05 100%)`,
-      borderColor: `${accent}40`,
-      boxShadow: `0 0 24px -6px ${accent}35, inset 0 1px 0 ${accent}20`,
+      background: `linear-gradient(135deg, rgba(16, 22, 38, 0.8) 0%, rgba(12, 18, 34, 0.9) 100%)`,
+      borderColor: `${accent}30`,
+      boxShadow: `0 0 24px -6px ${accent}25, inset 0 1px 0 ${accent}15`,
     }}
   >
     {/* Glow orb */}
@@ -230,7 +230,7 @@ const PillGroup = ({ options, value, onChange, label }) => (
     <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 px-1">
       {label}
     </span>
-    <div className="flex items-center gap-1 bg-white/[0.05] rounded-xl p-1 border border-white/5">
+    <div className="flex items-center gap-1 bg-[rgba(16,22,38,0.5)] rounded-xl p-1 border border-white/[0.06]">
       {options.map((opt) => (
         <button
           key={opt.value}
@@ -316,10 +316,10 @@ const RuleCard = ({
       className={cn(
         "rounded-xl border transition-all duration-300 overflow-hidden",
         isDisabled
-          ? "bg-white/[0.015] border-white/[0.04] grayscale-[50%]"
+          ? "bg-[rgba(10,15,28,0.5)] border-white/[0.04] grayscale-[50%]"
           : isCustomWeight
-            ? "bg-[radial-gradient(ellipse_at_top_right,rgba(139,92,246,0.12),transparent_60%)] border-violet-500/35 hover:border-violet-500/55 shadow-[0_0_20px_-6px_rgba(139,92,246,0.25)]"
-            : "bg-white/[0.04] border-white/[0.08] hover:border-white/[0.15] hover:bg-white/[0.07]",
+            ? "bg-[radial-gradient(ellipse_at_top_right,rgba(139,92,246,0.1),rgba(12,18,34,0.85)_60%)] border-violet-500/30 hover:border-violet-500/45 shadow-[0_0_20px_-6px_rgba(139,92,246,0.2)]"
+            : "bg-[rgba(16,22,38,0.55)] border-white/[0.07] hover:border-white/[0.12] hover:bg-[rgba(16,22,38,0.7)]",
       )}
     >
       {/* Severity accent top line */}
@@ -412,7 +412,7 @@ const RuleCard = ({
             >
               <div className="flex flex-col gap-2 pt-2 border-t border-white/5">
                 {meta.regex?.pattern && (
-                  <div className="bg-white/[0.06] rounded-lg p-3 border border-emerald-500/10">
+                  <div className="bg-[rgba(10,15,28,0.5)] rounded-lg p-3 border border-emerald-500/10">
                     <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-widest block mb-1.5">
                       Regex Pattern
                     </span>
@@ -422,7 +422,7 @@ const RuleCard = ({
                   </div>
                 )}
                 {meta.ast?.type && (
-                  <div className="bg-white/[0.06] rounded-lg p-3 border border-blue-500/10 flex gap-6">
+                  <div className="bg-[rgba(10,15,28,0.5)] rounded-lg p-3 border border-blue-500/10 flex gap-6">
                     <div>
                       <span className="text-[9px] font-bold text-blue-600 uppercase tracking-widest block mb-1">
                         AST Type
@@ -792,9 +792,9 @@ const RuleManager = ({ targetId, projectName }) => {
         </div>
 
         {/* ── Main Panel ── */}
-        <div className="bg-white/[0.025] backdrop-blur-xl border border-white/[0.1] rounded-2xl flex flex-col flex-1 shadow-2xl overflow-hidden">
+        <div className="bg-[rgba(16,22,38,0.55)] backdrop-blur-xl border border-white/[0.08] rounded-2xl flex flex-col flex-1 shadow-2xl overflow-hidden">
           {/* Tabs */}
-          <div className="flex items-center gap-1 p-2 border-b border-white/[0.08] shrink-0 bg-white/[0.02]">
+          <div className="flex items-center gap-1 p-2 border-b border-white/[0.06] shrink-0 bg-[rgba(10,15,28,0.4)]">
             {[
               {
                 id: "core",
@@ -846,7 +846,7 @@ const RuleManager = ({ targetId, projectName }) => {
                 exit={{ height: 0, opacity: 0 }}
                 className="overflow-hidden border-b border-white/[0.05] shrink-0"
               >
-                <div className="p-4 flex flex-col lg:flex-row items-start lg:items-end gap-3 flex-wrap bg-white/[0.02]">
+                <div className="p-4 flex flex-col lg:flex-row items-start lg:items-end gap-3 flex-wrap bg-[rgba(10,15,28,0.3)]">
                   {/* Search */}
                   <div className="relative flex-1 min-w-[200px]">
                     <Search
@@ -858,7 +858,7 @@ const RuleManager = ({ targetId, projectName }) => {
                       placeholder="Search rule ID, description..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full bg-white/[0.06] border border-white/[0.1] rounded-xl py-2 pl-9 pr-3 text-sm text-slate-200 focus:border-emerald-500/50 outline-none placeholder-slate-500 transition-colors"
+                      className="w-full bg-[rgba(10,15,28,0.5)] border border-white/[0.08] rounded-xl py-2 pl-9 pr-3 text-sm text-slate-200 focus:border-emerald-500/50 outline-none placeholder-slate-500 transition-colors"
                     />
                     {searchTerm && (
                       <button
@@ -889,7 +889,7 @@ const RuleManager = ({ targetId, projectName }) => {
                     <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 px-1">
                       Pillar
                     </span>
-                    <div className="flex items-center gap-1 bg-white/[0.04] rounded-xl p-1 border border-white/[0.08] flex-wrap">
+                    <div className="flex items-center gap-1 bg-[rgba(16,22,38,0.5)] rounded-xl p-1 border border-white/[0.06] flex-wrap">
                       <button
                         onClick={() => setFilterPillar("ALL")}
                         className={cn(
@@ -967,7 +967,7 @@ const RuleManager = ({ targetId, projectName }) => {
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: idx * 0.05 }}
-                        className="bg-violet-900/8 border border-violet-500/20 rounded-xl overflow-hidden group hover:border-violet-500/40 transition-all"
+                        className="bg-[rgba(16,18,38,0.6)] border border-violet-500/15 rounded-xl overflow-hidden group hover:border-violet-500/35 transition-all"
                       >
                         <div className="h-[2px] bg-gradient-to-r from-violet-500/60 to-transparent" />
                         <div className="p-4 flex flex-col gap-3">
@@ -1035,7 +1035,7 @@ const RuleManager = ({ targetId, projectName }) => {
                               (compiledJson?.regex_rules?.length || 0) * 0.05 +
                               idx * 0.05,
                           }}
-                          className="bg-violet-900/8 border border-violet-500/20 rounded-xl overflow-hidden group hover:border-violet-500/40 transition-all"
+                          className="bg-[rgba(16,18,38,0.6)] border border-violet-500/15 rounded-xl overflow-hidden group hover:border-violet-500/35 transition-all"
                         >
                           <div className="h-[2px] bg-gradient-to-r from-amber-500/60 to-transparent" />
                           <div className="p-4 flex flex-col gap-3">
@@ -1139,7 +1139,7 @@ const RuleManager = ({ targetId, projectName }) => {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: catIdx * 0.04 }}
-                    className="rounded-2xl border border-white/[0.09] overflow-hidden shadow-xl bg-white/[0.03]"
+                    className="rounded-2xl border border-white/[0.07] overflow-hidden shadow-xl bg-[rgba(16,22,38,0.45)]"
                   >
                     {/* Accordion header */}
                     <div

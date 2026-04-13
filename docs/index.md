@@ -1,11 +1,11 @@
-# AI Static Analysis - Framework V1.0.0
+# AI Static Analysis - Framework
 
-Chào mừng bạn đến với hệ thống **AI Static Analysis Documentation**. Dự án này cung cấp một nền tảng phân tích mã nguồn thông minh, tự động đánh giá kiến trúc, bảo mật và chất lượng code.
+Chào mừng bạn đến với hệ thống **AI Static Analysis Documentation**. Dự án này cung cấp một nền tảng phân tích mã nguồn thông minh, tự động đánh giá kiến trúc, bảo mật và chất lượng code. Phiên bản hệ thống được tuỳ biến thông qua cấu hình biến môi trường `APP_VERSION` (ví dụ: `1.0.0`, `1.1.0`).
 
 ## 🚀 Mục tiêu Dự án
 - **Tự động hóa**: Giảm thiểu việc rà soát code thủ công bằng AI.
 - **Tiêu chuẩn hóa**: Áp dụng các quy tắc lập trình nghiêm ngặt cho toàn dự án.
-- **Định lượng**: Chuyển đổi các vi phạm thành điểm số để dễ dàng quản lý chất lượng (Framework V1.0.0).
+- **Định lượng**: Chuyển đổi các vi phạm thành điểm số để dễ dàng quản lý chất lượng.
 
 ## 🧩 Cấu trúc Tài liệu
 Hệ thống tài liệu bao gồm các phần chính sau:

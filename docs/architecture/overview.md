@@ -1,6 +1,6 @@
 # Architecture Overview
 
-Hệ thống AI Static Analysis (V1.0.0) được thiết kế theo mô hình 5 bước kiểm toán tự động, tích hợp giữa Backend (FastAPI), Engine (Auditor) và Frontend (React Dashboard).
+Hệ thống AI Static Analysis được thiết kế theo mô hình 5 bước kiểm toán tự động, tích hợp giữa Backend (FastAPI), Engine (Auditor) và Frontend (React Dashboard). Phiên bản của hệ thống được quản lý qua biến môi trường `APP_VERSION`.
 
 ## 📊 Quy trình Kiểm toán (5-Step Audit Pipeline)
 

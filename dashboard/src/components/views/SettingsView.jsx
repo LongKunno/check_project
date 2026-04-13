@@ -171,7 +171,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
             <InfoCard
               icon={<Cpu size={16} />}
               label="Engine"
-              value="V4 Stable"
+              value={`V${import.meta.env.VITE_APP_VERSION || "1.0.0"} Stable`}
               iconClass="bg-blue-500/10 border-blue-500/20 text-blue-400"
               accent="border-blue-500/25 shadow-[0_0_15px_-5px_rgba(59,130,246,0.15)]"
             />

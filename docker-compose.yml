@@ -29,6 +29,9 @@ services:
       - MAX_MULTIPART_FIELDS=100000
       - UVICORN_TIMEOUT_KEEP_ALIVE=600
       - DATABASE_URL=postgresql://postgres:postgrespassword@db:5432/auditor_v2
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - ALLOWED_EMAILS=${ALLOWED_EMAILS}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
     depends_on:
       - db
     extra_hosts:
@@ -44,6 +47,9 @@ services:
     volumes:
       - ./dashboard:/app
       - /app/node_modules
+    environment:
+      - VITE_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - VITE_APP_VERSION=${APP_VERSION}
     # Vite HMR: cập nhật trình duyệt ngay khi sửa JSX/CSS, không cần rebuild
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
     depends_on:

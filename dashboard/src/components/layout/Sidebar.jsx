@@ -16,8 +16,10 @@ import {
   X,
   MonitorPlay,
   Globe,
+  LogOut,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 
 export const Sidebar = ({
   isSidebarCollapsed,
@@ -31,6 +33,7 @@ export const Sidebar = ({
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const { user, logout } = useAuth();
 
   const isPathActive = (path) =>
     location.pathname.startsWith(path) ||
@@ -158,7 +161,7 @@ export const Sidebar = ({
                 AUDIT ENGINE
               </span>
               <span className="text-[9px] uppercase font-bold text-violet-400 tracking-widest bg-violet-500/10 px-1.5 rounded w-fit">
-                Framework V4
+                Framework V{import.meta.env.VITE_APP_VERSION || "1.0.0"}
               </span>
             </motion.div>
           )}
@@ -323,6 +326,41 @@ export const Sidebar = ({
             </span>
           )}
         </div>
+        {/* ── User Profile ── */}
+        {user && (
+          <div
+            className={cn(
+              "flex items-center rounded-xl border border-white/[0.06] bg-[rgba(16,22,38,0.5)] mb-1 transition-all",
+              isSidebarCollapsed ? "p-2 justify-center" : "p-3 gap-3",
+            )}
+          >
+            <img
+              src={user.picture}
+              alt={user.name}
+              className="w-8 h-8 rounded-full shrink-0 border-2 border-violet-500/40 shadow-[0_0_8px_rgba(139,92,246,0.3)]"
+              referrerPolicy="no-referrer"
+            />
+            {!isSidebarCollapsed && (
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold text-slate-200 truncate">
+                  {user.name}
+                </p>
+                <p className="text-[10px] text-slate-500 truncate">
+                  {user.email}
+                </p>
+              </div>
+            )}
+            {!isSidebarCollapsed && (
+              <button
+                onClick={logout}
+                className="p-1.5 rounded-lg hover:bg-rose-500/15 text-slate-500 hover:text-rose-400 transition-colors shrink-0"
+                title="Đăng xuất"
+              >
+                <LogOut size={14} />
+              </button>
+            )}
+          </div>
+        )}
         <button
           onClick={() => handleNav("/settings")}
           className={cn(
