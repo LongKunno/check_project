@@ -510,6 +510,232 @@
       "ai": {
         "prompt": "Tìm các trường hợp sử dụng module `random` (random.randint, random.choice, random.sample, random.getrandbits) cho mục đích BẢO MẬT — sinh OTP, token, session ID, password reset code, verification code, API key. Module `random` dùng PRNG không an toàn, phải dùng `secrets` hoặc `os.urandom()`. Bỏ qua nếu `random` được dùng cho mục đích phi bảo mật (shuffle UI, test data, game logic, sampling thống kê)."
       }
+    },
+    {
+      "id": "PEP8_WILDCARD_IMPORT",
+      "pillar": "Maintainability",
+      "category": "Maintainability",
+      "severity": "Minor",
+      "debt": 5,
+      "reason": "Sử dụng wildcard imports (from module import *) gây khó khăn trong việc theo dõi namespace (PEP 8).",
+      "weight": -1.0,
+      "regex": {
+        "pattern": "^from\\s+\\S+\\s+import\\s+\\*$"
+      },
+      "ast": null,
+      "ai": {
+        "prompt": "Kiểm tra xem code có sử dụng `from module import *` hay không. Việc này vi phạm PEP8 và làm khó xác định nguồn gốc biến. Bỏ qua nếu là file `__init__.py` cố tình export."
+      }
+    },
+    {
+      "id": "PEP8_NAMING_CONVENTION",
+      "pillar": "Maintainability",
+      "category": "Maintainability",
+      "severity": "Minor",
+      "debt": 10,
+      "reason": "Vi phạm quy tắc đặt tên PEP8 (CamelCase cho class, snake_case cho biến/hàm).",
+      "weight": -1.5,
+      "regex": null,
+      "ast": null,
+      "ai": {
+        "prompt": "Kiểm tra mã nguồn có vi phạm PEP8 Naming Convention không (VD: Class name nên là CamelCase, variable/function name nên là snake_case, hằng số nên là UPPER_SNAKE_CASE). Chỉ tính là lỗi khi xuất hiện rõ rệt, do user tự định nghĩa. Bỏ qua nếu đang override hàm class bên thứ ba có sẵn tên đó."
+      }
+    },
+    {
+      "id": "PEP8_TAB_INDENTATION",
+      "pillar": "Maintainability",
+      "category": "Maintainability",
+      "severity": "Major",
+      "debt": 15,
+      "reason": "Tuyệt đối không dùng chữ Tab (\\t) để thụt lề trong Python vì nó đi ngược lại quy tắc PEP8 (4 spaces) và gây ra rủi ro IndentationError nếu trộn lẫn không gian (Mixed spaces & tabs).",
+      "weight": -2.0,
+      "regex": {
+        "pattern": "^\\t+|[ ]+\\t+"
+      },
+      "ast": null,
+      "ai": null
+    },
+    {
+      "id": "SHADOWING_BUILTINS",
+      "pillar": "Maintainability",
+      "category": "Maintainability",
+      "severity": "Minor",
+      "debt": 15,
+      "reason": "Ghi đè hoặc khai báo biến bằng các từ khóa/hàm nội tại dựng sẵn của Python như `list`, `dict`, `str`, `id`, `type`, `sum`, `min`, `max` v.v. Điều này gây lỗi TypeError không đáng có và che khuất logic hàm dựng sẵn.",
+      "weight": -2.0,
+      "regex": null,
+      "ast": null,
+      "ai": {
+        "prompt": "Xác nhận xem đoạn code có lạm dụng khai báo các biến trùng tên với Built-in function hay không (Ví dụ: `list = [1,2]`, `dict = {}`, `max = 50`). Nếu có, hãy đánh dấu vi phạm. KHÔNG đánh dấu nếu nó chỉ là các biến instance (`self.list = []`) hoặc các biến có chứa thêm từ khác (`my_list` / `word_list`)."
+      }
+    },
+    {
+      "id": "COMPLEX_COMPREHENSION",
+      "pillar": "Maintainability",
+      "category": "Maintainability",
+      "severity": "Minor",
+      "debt": 10,
+      "reason": "List / Dict Comprehension quá cồng kềnh và phức tạp (Lồng 2-3 vòng for trở lên, hoặc nhiều điều kiện if). Rất khó đọc dòng code như vậy.",
+      "weight": -2.0,
+      "regex": null,
+      "ast": null,
+      "ai": {
+        "prompt": "Kiểm tra biểu thức dồn (List/Dict Comprehension) xem có chứa từ mức độ 2 vòng `for` kèm theo nhiều điều kiện `if` lồng nhau hay không. Nếu đoạn code nhồi nhét quá nhiều logic (vượt quá mục đích lọc dữ liệu đơn giản), hãy yêu cầu tác giả tách ra thành vòng lặp truyền thống cho dễ bảo trì."
+      }
+    },
+    {
+      "id": "PEP8_LAMBDA_ASSIGNMENT",
+      "pillar": "Maintainability",
+      "category": "Maintainability",
+      "severity": "Minor",
+      "debt": 5,
+      "reason": "PEP8 E731: Tuyệt đối không gán một biểu thức lambda vô danh vào tên biến. Phải sử dụng định nghĩa 'def' hoàn chỉnh để tối ưu tính năng debug (stack trace hiện tên hàm).",
+      "weight": -1.0,
+      "regex": {
+        "pattern": "^\\s*\\w+\\s*=\\s*lambda\\s+"
+      },
+      "ast": null,
+      "ai": null
+    },
+    {
+      "id": "PEP8_BAD_NEGATIVE_KEYWORD",
+      "pillar": "Maintainability",
+      "category": "Maintainability",
+      "severity": "Minor",
+      "debt": 5,
+      "reason": "PEP8 E713 & E714: Kiểm tra phủ định sai cấu trúc. Nên dùng 'x not in y' thay vì 'not x in y' và dùng 'x is not None' thay vì 'not x is None'.",
+      "weight": -1.0,
+      "regex": null,
+      "ast": null,
+      "ai": {
+        "prompt": "Tìm các trường hợp vi phạm nguyên tắc ngôn ngữ phủ định của Python. Đánh dấu vi phạm nếu bắt gặp chữ 'not x in y' (phải sửa thành 'x not in y') hoặc 'not x is y' (phải sửa thành 'x is not y')."
+      }
+    },
+    {
+      "id": "PEP8_AMBIGUOUS_VARIABLE_NAME",
+      "pillar": "Maintainability",
+      "category": "Maintainability",
+      "severity": "Minor",
+      "debt": 10,
+      "reason": "PEP8 E741: Không bao giờ được đặt tên biến bằng đúng một ký tự 'l' (chữ L thường), 'O' (chữ o hoa) hoặc 'I' (chữ i hoa) do nhầm lẫn nghiêm trọng với số 1 và số 0 ở vài font chữ lập trình.",
+      "weight": -1.5,
+      "regex": {
+        "pattern": "^\\s*([lOI])\\s*="
+      },
+      "ast": null,
+      "ai": null
+    },
+    {
+      "id": "PEP8_ISINSTANCE_OVER_TYPE",
+      "pillar": "Maintainability",
+      "category": "Maintainability",
+      "severity": "Minor",
+      "debt": 10,
+      "reason": "PEP8 E721: Không được so sánh định danh kiểu dữ liệu bằng hàm type() vì nó phá vỡ tính đa hình của Khách thể (OOP). Hãy dùng isinstance().",
+      "weight": -1.5,
+      "regex": null,
+      "ast": null,
+      "ai": {
+        "prompt": "Gắn cờ vi phạm nếu phát hiện mã nguồn so sánh biến theo cú pháp 'type(x) == ...' hoặc 'type(x) is ...'. Phải yêu cầu lập trình viên dùng 'isinstance(x, ...)' để kiểm tra đúng cây kế thừa."
+      }
+    },
+    {
+      "id": "PEP8_MODULE_LEVEL_IMPORTS",
+      "pillar": "Maintainability",
+      "category": "Maintainability",
+      "severity": "Minor",
+      "debt": 10,
+      "reason": "PEP8 E402: Khai báo import thư viện phải nằm trên cùng của mã nguồn (top of file) để tránh việc làm rối namespace nội bộ và phân mảnh quản lý thư viện.",
+      "weight": -1.5,
+      "regex": null,
+      "ast": null,
+      "ai": {
+        "prompt": "Quét tệp xem có khai báo 'import ...' hay 'from ... import ...' nằm lọt thỏm trong phần thân của hàm (đặc biệt là ngoài logic tránh circular import) hay ở giữa file không. Nếu khai báo import không nằm ở phần đầu tệp, đánh dấu lỗi."
+      }
+    },
+    {
+      "id": "PEP8_STRING_SLICING_PREFIX",
+      "pillar": "Maintainability",
+      "category": "Maintainability",
+      "severity": "Minor",
+      "debt": 5,
+      "reason": "PEP8 khuyến nghị: Sử dụng .startswith() và .endswith() thay cho việc cắt chuỗi (string slicing) để kiểm tra tiền tố hoặc hậu tố. Giảm rủi ro index out of bounds.",
+      "weight": -1.0,
+      "regex": null,
+      "ast": null,
+      "ai": {
+        "prompt": "Tìm các biểu thức dùng toán tử cắt chuỗi kết hợp với so sánh bằng (vd: 'text[:4] == \"http\"' hoặc 'name[-3:] == \"txt\"'). Đánh cờ và yêu cầu thay bằng các phương thức an toàn '.startswith()' và '.endswith()'."
+      }
+    },
+    {
+      "id": "PEP8_CONSISTENT_RETURNS",
+      "pillar": "Maintainability",
+      "category": "Maintainability",
+      "severity": "Minor",
+      "debt": 10,
+      "reason": "PEP8: Hàm phải nhất quán trong việc trả về. Nếu một nhánh có trả về giá trị (thí dụ 'return True'), thì nhánh 'else' không được dùng 'return' rỗng mà phải khai báo 'return None'.",
+      "weight": -1.5,
+      "regex": null,
+      "ast": null,
+      "ai": {
+        "prompt": "Đọc tất cả các điểm 'return' trong cùng một hàm. Nếu phát hiện một nhánh trả về biến (ví dụ 'return x') nhưng một nhánh khác chỉ dùng chữ 'return' rỗng không (bare return), tức là vi phạm tính nhất quán. Ngoại lệ: Nếu tất cả đều là 'return' rỗng thì hợp lệ."
+      }
+    },
+    {
+      "id": "FLOAT_EQUALITY_DANGER",
+      "pillar": "Reliability",
+      "category": "Reliability",
+      "severity": "Major",
+      "debt": 25,
+      "reason": "Sử dụng dấu == để so sánh 2 biến số nguyên thập phân (Float). Ở chuẩn IEEE-754, 0.1+0.2 != 0.3. Việc lạm dụng == có thể gây bug nghiêm trọng ở hệ thống tài chính.",
+      "weight": -5.0,
+      "regex": null,
+      "ast": null,
+      "ai": {
+        "prompt": "Quét luồng điều kiện (if, while) xem có so sánh bằng (==) giữa 2 biến Float (Số thập phân) hay không. Yêu cầu lập trình viên phải chuyển qua thư viện 'math.isclose(a, b)' nếu phát hiện dấu == bị lạm dụng trên nền Float."
+      }
+    },
+    {
+      "id": "NAIVE_DATETIME",
+      "pillar": "Reliability",
+      "category": "Reliability",
+      "severity": "Minor",
+      "debt": 15,
+      "reason": "Gọi hàm datetime.now() hoặc datetime.utcnow() (đã bị deprecate) mà không đính kèm múi giờ (tzinfo), khiến dữ liệu trên server bị lệch múi giờ liên tục.",
+      "weight": -2.0,
+      "regex": null,
+      "ast": null,
+      "ai": {
+        "prompt": "Tìm các trường hợp khởi tạo đối tượng thời gian như 'datetime.now()'. Đánh cờ vi phạm nếu dev quên không gán 'timezone.utc', khuyến nghị sử dụng 'datetime.now(timezone.utc)'."
+      }
+    },
+    {
+      "id": "F_STRING_MISUSE",
+      "pillar": "Maintainability",
+      "category": "Maintainability",
+      "severity": "Minor",
+      "debt": 5,
+      "reason": "Hoặc là quên biến dấu '{ }' bên trong hàm f-string (gây hao tốn bộ nhớ thông dịch), hoặc là quên gắn chữ 'f' ở đầu.",
+      "weight": -1.0,
+      "regex": null,
+      "ast": null,
+      "ai": {
+        "prompt": "Phát hiện F-String vô dụng: Bắt đầu khai báo f'...' nhưng bên trong hoàn toàn rỗng không có biến nào. Hoặc ngược lại, một chuỗi String thông thường chứa dấu '{...}' nhưng tác giả lại bất cẩn quên mất chữ 'f' ở đầu chuỗi."
+      }
+    },
+    {
+      "id": "REDUNDANT_DICT_GET",
+      "pillar": "Maintainability",
+      "category": "Maintainability",
+      "severity": "Minor",
+      "debt": 5,
+      "reason": "Sử dụng dictionary.get('key', None). Hành động ghi số 'None' bị dư thừa và làm rườm rà mã nguồn vì bản chất hàm get() đã mặc định nhả về None.",
+      "weight": -0.5,
+      "regex": {
+        "pattern": "\\.get\\([\"'][^\"']+[\"']\\s*,\\s*None\\)"
+      },
+      "ast": null,
+      "ai": null
     }
   ]
 }

@@ -148,10 +148,24 @@ async def get_rules(target: str = Query(..., description="Target ID")):
     except Exception as e:
         logger.error(f"Error reading rules.json: {e}")
 
-    rules = AuditDatabase.get_project_rules(target)
-    response_data = {"default_rules": default_rules_with_weight}
-    if rules:
-        response_data.update(rules)
+    global_rules = AuditDatabase.get_project_rules("GLOBAL") or {}
+    project_rules = AuditDatabase.get_project_rules(target) or {}
+
+    response_data = {
+        "default_rules": default_rules_with_weight,
+        "global_overrides": {
+            "disabled_core_rules": global_rules.get("disabled_core_rules", []),
+            "enabled_core_rules": global_rules.get("enabled_core_rules", []),
+            "custom_weights": global_rules.get("custom_weights", {})
+        },
+        "project_rules": {
+            "disabled_core_rules": project_rules.get("disabled_core_rules", []),
+            "enabled_core_rules": project_rules.get("enabled_core_rules", []),
+            "custom_weights": project_rules.get("custom_weights", {}),
+            "compiled_json": project_rules.get("compiled_json", {}),
+            "natural_text": project_rules.get("natural_text", "")
+        }
+    }
     return {"status": "success", "data": response_data}
 
 
@@ -198,6 +212,7 @@ class ToggleRuleRequest(BaseModel):
     target: str
     rule_id: str
     is_disabled: bool
+    is_override_reset: Optional[bool] = False
 
 
 @router.post("/rules/toggle")
@@ -205,7 +220,7 @@ async def toggle_rule(request: ToggleRuleRequest):
     """Bật/tắt một rule cụ thể cho một dự án."""
     try:
         AuditDatabase.toggle_core_rule(
-            request.target, request.rule_id, request.is_disabled
+            request.target, request.rule_id, request.is_disabled, request.is_override_reset
         )
         return {"status": "success", "message": f"Rule {request.rule_id} toggled."}
     except Exception as e:

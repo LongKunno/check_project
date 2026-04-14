@@ -192,22 +192,44 @@ const StreamingTerminal = ({ text, isPending, label }) => {
     }
   }, [text]);
 
+  const loadingMessages = [
+    "Initializing neural network...",
+    "Parsing language features...",
+    "Extracting logic constraints...",
+    "Building AST syntax trees...",
+    "Compiling regex patterns..."
+  ];
+
+  const [loadingMsgIdx, setLoadingMsgIdx] = useState(0);
+
+  useEffect(() => {
+    if (!isPending) return;
+    const msgTimer = setInterval(() => {
+      setLoadingMsgIdx((prev) => (prev + 1) % loadingMessages.length);
+    }, 2000);
+    return () => clearInterval(msgTimer);
+  }, [isPending]);
+
   return (
-    <div className="flex-1 flex flex-col bg-[#0c1222] border border-white/8 rounded-2xl overflow-hidden shadow-inner max-w-4xl mx-auto w-full">
+    <div className="flex-1 flex flex-col bg-[#0c1222] border border-white/10 rounded-2xl overflow-hidden shadow-2xl max-w-4xl mx-auto w-full relative">
+      <div className="absolute inset-0 bg-gradient-to-b from-violet-500/5 to-transparent pointer-events-none" />
       {/* Terminal header */}
-      <div className="flex items-center justify-between px-5 py-3 bg-violet-900/25 border-b border-violet-500/20 shrink-0">
+      <div className="flex items-center justify-between px-5 py-3 bg-violet-900/40 border-b border-violet-500/30 shrink-0 relative z-10">
         <div className="flex items-center gap-3">
           {isPending ? (
-            <span className="w-2.5 h-2.5 rounded-full bg-violet-400 animate-ping" />
+            <div className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-violet-500 shadow-[0_0_8px_rgba(139,92,246,0.8)]"></span>
+            </div>
           ) : (
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
           )}
-          <span className="text-xs font-black text-violet-300 uppercase tracking-widest">
+          <span className="text-xs font-black text-violet-200 uppercase tracking-[0.2em] drop-shadow-md">
             {label || (isPending ? "AI đang tư duy…" : "Hoàn tất")}
           </span>
         </div>
         {isPending && (
-          <div className="flex items-center gap-1.5 text-[10px] font-bold text-violet-500">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-violet-400 bg-violet-500/10 px-2 py-0.5 rounded border border-violet-500/20">
             <Clock size={11} />
             {elapsed}s
           </div>
@@ -217,15 +239,189 @@ const StreamingTerminal = ({ text, isPending, label }) => {
       {/* Content */}
       <div
         ref={containerRef}
-        className="flex-1 p-6 overflow-y-auto font-mono text-sm leading-relaxed text-slate-300 whitespace-pre-wrap"
+        className="flex-1 p-6 overflow-y-auto font-mono text-[13px] leading-relaxed whitespace-pre-wrap relative z-10"
       >
-        {text || (
-          <span className="text-slate-600 italic">
-            Đang kết nối tới mô hình AI…
-          </span>
+        {text ? (
+          <span className="text-emerald-300">{text}</span>
+        ) : (
+          <div className="flex flex-col gap-2">
+             <span className="text-violet-300 font-bold animate-pulse">
+               Đang kết nối tới mô hình AI...
+             </span>
+             <span className="text-slate-500 text-xs">
+               &gt; {loadingMessages[loadingMsgIdx]}
+             </span>
+          </div>
         )}
         {isPending && (
-          <span className="inline-block w-2 h-4 bg-violet-400 ml-0.5 rounded-sm animate-pulse" />
+          <span className="inline-block w-2 h-4 bg-emerald-400 ml-0.5 rounded-sm animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+        )}
+      </div>
+    </div>
+  );
+};
+
+/* ─── Visual Rule Configurator ─────────────────────────────────────────── */
+const VisualRuleConfigurator = ({ config, onChange, readOnly = false }) => {
+  if (!config) return null;
+
+  const handleChange = (cat, subCat, idx, field, val) => {
+    if (readOnly || !onChange) return;
+    const clone = JSON.parse(JSON.stringify(config));
+    if (cat === "ast_rules") {
+      clone[cat][subCat][idx][field] = val;
+    } else {
+      clone[cat][idx][field] = val;
+    }
+    onChange(clone);
+  };
+
+  const renderCard = (item, cat, subCat, idx) => (
+    <div key={`${cat}-${subCat}-${idx}`} className="bg-[rgba(16,22,38,0.7)] backdrop-blur-md border border-white/10 rounded-2xl p-6 flex flex-col gap-5 hover:border-violet-400/40 transition-all shadow-xl shrink-0 relative overflow-hidden group">
+      <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-violet-500 to-purple-600 opacity-60 group-hover:opacity-100 transition-opacity" />
+      <div className="flex flex-col gap-4 shrink-0 pl-2">
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="text-xl font-black text-white truncate drop-shadow-md">{item.id || item.name || "UNNAMED_RULE"}</span>
+          <span className="text-[11px] font-bold text-violet-300 bg-violet-500/20 px-3 py-1 rounded-md border border-violet-400/30 whitespace-nowrap uppercase tracking-widest shadow-sm">
+            {item.pillar || "N/A"}
+          </span>
+        </div>
+
+        <div className="flex items-start justify-between gap-5">
+          {readOnly ? (
+            <div className="flex-1 flex flex-col gap-1.5">
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Lý Do (Reason)</span>
+              <p className="text-sm text-slate-300 leading-relaxed bg-white/5 border border-white/10 p-3 rounded-xl min-h-[42px]">{item.reason}</p>
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col gap-1.5">
+              <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Lý Do (Reason)</label>
+              <input 
+                className="text-sm text-white leading-relaxed bg-[rgba(0,0,0,0.2)] border border-white/10 hover:border-white/20 focus:border-violet-500 focus:bg-[rgba(16,18,38,0.8)] focus:outline-none focus:ring-2 focus:ring-violet-500/20 rounded-xl w-full px-4 py-2.5 transition-all shadow-inner"
+                value={item.reason || ""}
+                onChange={(e) => handleChange(cat, subCat, idx, "reason", e.target.value)}
+                placeholder="Nhập giải thích cho quy tắc này..."
+              />
+            </div>
+          )}
+
+          <div className="flex flex-col items-end gap-1.5 shrink-0">
+            <label className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Trọng Số (Weight)</label>
+            {readOnly ? (
+               <span className="text-sm font-black text-rose-300 bg-rose-500/15 px-4 py-[9px] rounded-xl border border-rose-500/30 shadow-sm min-w-[96px] text-center">{item.weight || 0}</span>
+            ) : (
+               <input type="number" 
+                      className="w-24 bg-[rgba(0,0,0,0.2)] border border-white/10 hover:border-white/20 rounded-xl px-4 py-2.5 text-sm font-black text-rose-400 text-center focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all shadow-inner"
+                      value={item.weight || 0}
+                      onChange={(e) => handleChange(cat, subCat, idx, "weight", parseFloat(e.target.value))} />
+            )}
+          </div>
+        </div>
+      </div>
+      
+      {/* Detail field based on rule type */}
+      <div className="bg-[#0c1222]/80 backdrop-blur-md rounded-xl p-5 border border-white/10 font-mono text-sm text-slate-300 break-all overflow-hidden flex flex-col gap-3 shadow-inner shrink-0">
+        {(cat === "ai_rules" && item.prompt) && (
+           <div className="flex flex-col gap-2 shrink-0">
+              <label className="text-[10px] text-emerald-400 font-bold uppercase tracking-[0.15em]">Lệnh Gọi Trí Tuệ Nhân Tạo (AI Prompt)</label>
+              {readOnly ? (
+                 <div className="bg-white/5 border border-white/10 p-4 rounded-xl text-slate-300 text-[13px] leading-relaxed">
+                   {item.prompt}
+                 </div>
+              ) : (
+                 <textarea 
+                   className="flex-1 w-full bg-[rgba(0,0,0,0.3)] border border-white/10 hover:border-white/20 rounded-xl focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 p-4 text-emerald-100 outline-none resize-none leading-relaxed text-[13px] transition-all shadow-inner" 
+                   value={item.prompt} 
+                   onChange={e => handleChange(cat, subCat, idx, "prompt", e.target.value)}
+                 />
+              )}
+           </div>
+        )}
+        {(cat === "regex_rules" && item.pattern) && (
+           <div className="flex flex-col gap-2">
+              <label className="text-[10px] text-blue-400 font-bold uppercase tracking-[0.15em]">Biểu Thức Chính Quy (Regex Pattern)</label>
+              {readOnly ? (
+                 <div className="bg-white/5 border border-white/10 px-4 py-3 rounded-xl text-blue-200">
+                   {item.pattern}
+                 </div>
+              ) : (
+                 <input 
+                   className="w-full bg-[rgba(0,0,0,0.3)] border border-white/10 hover:border-white/20 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 px-4 py-3 text-blue-300 outline-none transition-all shadow-inner font-bold" 
+                   value={item.pattern} 
+                   onChange={e => handleChange(cat, subCat, idx, "pattern", e.target.value)} 
+                 />
+              )}
+           </div>
+        )}
+        {(cat === "ast_rules" && item.name) && (
+           <div className="flex flex-col gap-2">
+              <span className="text-[10px] text-teal-400 font-bold uppercase tracking-[0.15em]">Target Node (AST)</span>
+              <div className="bg-white/5 border border-white/10 px-4 py-3 rounded-xl">
+                 <span className="text-teal-200 font-bold">{item.name}</span>
+                 {item.args ? <span className="text-slate-400 ml-2">(Args: {item.args})</span> : ""}
+              </div>
+           </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const hasAst = config.ast_rules && Object.keys(config.ast_rules).length > 0;
+  const hasRegex = config.regex_rules && config.regex_rules.length > 0;
+  const hasAI = config.ai_rules && config.ai_rules.length > 0;
+
+  return (
+    <div className="flex flex-col gap-8 flex-1 px-8 pb-8">
+      <div className="flex flex-col gap-5 shrink-0">
+        <div className="flex flex-col shrink-0">
+          <span className="text-lg font-black text-white flex items-center gap-2"><Sparkles size={20} className="text-violet-400"/> Phân Tích Logic Bằng AI (AI Rules)</span>
+        </div>
+        {hasAI ? (
+          <div className="flex flex-col gap-4 shrink-0 mt-2">
+            {config.ai_rules.map((rule, i) => renderCard(rule, "ai_rules", null, i))}
+          </div>
+        ) : (
+          <div className="bg-[rgba(10,15,28,0.5)] border border-white/5 border-dashed rounded-xl p-5 flex items-center gap-3 text-slate-500 text-[13px] italic shadow-inner mt-2">
+            <Info size={18} className="opacity-50" /> Không có chỉ thị lệnh phân tích ngữ nghĩa nào được sinh ra.
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-5 shrink-0 pt-6 border-t border-white/[0.05]">
+        <div className="flex flex-col shrink-0">
+          <span className="text-lg font-black text-white flex items-center gap-2"><Code2 size={20} className="text-blue-400"/> Quét Mã Bằng Biểu Thức Chính Quy (Regex Rules)</span>
+        </div>
+        {hasRegex ? (
+          <div className="flex flex-col gap-4 mt-2">
+            {config.regex_rules.map((rule, i) => renderCard(rule, "regex_rules", null, i))}
+          </div>
+        ) : (
+          <div className="bg-[rgba(10,15,28,0.5)] border border-white/5 border-dashed rounded-xl p-5 flex items-center gap-3 text-slate-500 text-[13px] italic shadow-inner mt-2">
+            <Info size={18} className="opacity-50" /> Không có luật biểu thức chính quy (Regex) nào được tạo đối với rule này.
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-col gap-5 shrink-0 pt-6 border-t border-white/[0.05]">
+        <div className="flex flex-col shrink-0">
+          <span className="text-lg font-black text-white flex items-center gap-2"><Box size={20} className="text-emerald-400"/> Phân Tích Cú Pháp Python (AST Rules)</span>
+        </div>
+        {hasAst ? (
+          <div className="border-l-2 border-emerald-500/20 pl-5 flex flex-col gap-5 mt-2 ml-2">
+             {Object.entries(config.ast_rules).map(([type, rules]) => {
+                if (!Array.isArray(rules) || rules.length === 0) return null;
+                return (
+                   <div key={type} className="flex flex-col gap-3">
+                     <span className="text-sm font-black text-emerald-400/80 uppercase tracking-widest">{type}</span>
+                     {rules.map((rule, i) => renderCard(rule, "ast_rules", type, i))}
+                   </div>
+                )
+             })}
+          </div>
+        ) : (
+          <div className="bg-[rgba(10,15,28,0.5)] border border-white/5 border-dashed rounded-xl p-5 flex items-center gap-3 text-slate-500 text-[13px] italic shadow-inner mt-2">
+            <Info size={18} className="opacity-50" /> Không có luật phân tích cú pháp (AST) nào được tạo đối với rule này.
+          </div>
         )}
       </div>
     </div>
@@ -486,14 +682,17 @@ const RuleBuilder = ({ targetId, projectName }) => {
         )}
       </AnimatePresence>
 
-      <div className="flex-1 w-full relative z-10 flex flex-col gap-5 max-w-7xl mx-auto h-[calc(100vh-160px)]">
+      <div className={cn(
+        "flex-1 w-full relative z-10 flex flex-col gap-5 mx-auto min-h-[calc(100vh-160px)] transition-all duration-500",
+        wizardStep === 2 ? "max-w-full px-2 lg:px-4" : "max-w-7xl"
+      )}>
         {/* ── Stepper ── */}
         <div className="bg-[rgba(16,22,38,0.55)] backdrop-blur-xl border border-white/[0.07] rounded-2xl px-8 py-5 shrink-0 shadow-lg">
           <Stepper current={wizardStep} />
         </div>
 
         {/* ── Main panel ── */}
-        <div className="flex-1 bg-[rgba(16,22,38,0.55)] backdrop-blur-xl border border-white/[0.07] rounded-2xl shadow-2xl relative overflow-hidden flex flex-col min-h-0">
+        <div className="flex-1 bg-[rgba(16,22,38,0.55)] backdrop-blur-xl border border-white/[0.07] rounded-2xl shadow-2xl relative flex flex-col w-full h-full">
           <AnimatePresence mode="wait">
             {/* ════ STEP 1 ════ */}
             {wizardStep === 1 && (
@@ -503,7 +702,7 @@ const RuleBuilder = ({ targetId, projectName }) => {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -24 }}
                 transition={{ duration: 0.22 }}
-                className="absolute inset-0 flex flex-col p-6 lg:p-8"
+                className="flex flex-col p-6 lg:p-8 flex-1 min-h-[500px] w-full"
               >
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 flex-1 min-h-0">
                   {/* Left — Prompt area */}
@@ -667,10 +866,10 @@ const RuleBuilder = ({ targetId, projectName }) => {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -24 }}
                 transition={{ duration: 0.22 }}
-                className="absolute inset-0 flex flex-col p-6 lg:p-8"
+                className="flex flex-col pt-6 lg:pt-8 flex-1 w-full"
               >
                 {/* Sub-header */}
-                <div className="flex items-center justify-between mb-5 shrink-0">
+                <div className="flex items-center justify-between mb-5 shrink-0 px-6 lg:px-8">
                   <div className="flex items-center gap-3">
                     <button
                       onClick={() => setWizardStep(1)}
@@ -687,21 +886,28 @@ const RuleBuilder = ({ targetId, projectName }) => {
                       </p>
                     </div>
                   </div>
-                  {!isCompiling &&
-                    !isAutoFixing &&
-                    compiledJson &&
-                    !compiledJson._is_duplicate && (
-                      <button
-                        onClick={handleAutoFix}
-                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-500/10 text-orange-400 text-xs font-bold border border-orange-500/20 hover:bg-orange-500/20 transition-all group"
-                      >
-                        <Wand2
-                          size={15}
-                          className="group-hover:rotate-12 transition-transform"
-                        />
-                        ✨ Tự Động Sửa Bằng AI
-                      </button>
+                  <div className="flex items-center gap-3">
+                    {!isCompiling && !isAutoFixing && compiledJson && !compiledJson._is_duplicate && (
+                      <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-4 py-2 rounded-xl border border-emerald-500/20 font-black uppercase tracking-widest flex items-center gap-2 shadow-[0_0_15px_rgba(16,185,129,0.15)]">
+                        <CheckCircle2 size={14} /> BIÊN DỊCH THÀNH CÔNG
+                      </span>
                     )}
+                    {!isCompiling &&
+                      !isAutoFixing &&
+                      compiledJson &&
+                      !compiledJson._is_duplicate && (
+                        <button
+                          onClick={handleAutoFix}
+                          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-500/10 text-orange-400 text-xs font-bold border border-orange-500/20 hover:bg-orange-500/20 transition-all group"
+                        >
+                          <Wand2
+                            size={15}
+                            className="group-hover:rotate-12 transition-transform"
+                          />
+                          ✨ Tự Động Sửa Bằng AI
+                        </button>
+                      )}
+                  </div>
                 </div>
 
                 {/* Content */}
@@ -741,34 +947,8 @@ const RuleBuilder = ({ targetId, projectName }) => {
                     </button>
                   </motion.div>
                 ) : compiledJson ? (
-                  <div
-                    className={cn(
-                      "flex-1 flex flex-col rounded-2xl overflow-hidden border transition-all duration-500 shadow-2xl",
-                      "border-emerald-500/30 shadow-[0_0_30px_rgba(16,185,129,0.08)]",
-                    )}
-                  >
-                    <div className="flex justify-between items-center bg-[rgba(10,15,28,0.4)] border-b border-emerald-500/20 py-3 px-5 shrink-0">
-                      <span className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                        <Database size={13} className="text-violet-400" /> JSON
-                        Cấu Hình
-                      </span>
-                      <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 font-black uppercase tracking-widest">
-                        ✓ Biên dịch thành công
-                      </span>
-                    </div>
-                    <div className="flex-1 relative bg-[#0c1222]">
-                      <textarea
-                        value={jsonStr}
-                        onChange={(e) => {
-                          try {
-                            setCompiledJson(JSON.parse(e.target.value));
-                            setIsTestRun(false);
-                          } catch (err) {}
-                        }}
-                        className="absolute inset-0 w-full h-full font-mono text-[13px] bg-transparent p-5 text-violet-200 outline-none resize-none leading-relaxed border-none focus:ring-0"
-                        spellCheck={false}
-                      />
-                    </div>
+                  <div className="flex-1 relative flex flex-col">
+                     <VisualRuleConfigurator config={compiledJson} onChange={setCompiledJson} />
                   </div>
                 ) : (
                   <div className="flex-1 flex items-center justify-center text-slate-600 gap-3 bg-[rgba(16,22,38,0.4)] rounded-2xl border border-dashed border-white/[0.06]">
@@ -817,7 +997,7 @@ const RuleBuilder = ({ targetId, projectName }) => {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -24 }}
                 transition={{ duration: 0.22 }}
-                className="absolute inset-0 flex flex-col p-6 lg:p-8"
+                className="flex flex-col p-6 lg:p-8 flex-1 h-[600px] xl:h-[800px] w-full"
               >
                 {/* Sub-header */}
                 <div className="flex items-center justify-between mb-4 shrink-0">
@@ -847,25 +1027,19 @@ const RuleBuilder = ({ targetId, projectName }) => {
 
                 {/* Split pane */}
                 <div className="flex-1 flex gap-4 min-h-0">
-                  {/* Left: JSON editor */}
-                  <div className="w-[38%] flex flex-col bg-[#0c1222] border border-white/8 rounded-2xl overflow-hidden focus-within:border-violet-500/40 transition-colors">
+                  <div className="w-[45%] flex flex-col bg-[#0c1222] border border-white/8 rounded-2xl overflow-hidden focus-within:border-violet-500/40 transition-colors">
                     <div className="flex items-center justify-between bg-[rgba(10,15,28,0.4)] border-b border-white/[0.06] py-2.5 px-4 shrink-0">
                       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-                        <Database size={12} className="text-violet-400" /> Tinh
-                        Chỉnh JSON
+                        <Database size={12} className="text-violet-400" /> Trình Quản Lý & Tinh Chỉnh
                       </span>
                     </div>
-                    <textarea
-                      value={jsonStr}
-                      onChange={(e) => {
-                        try {
-                          setCompiledJson(JSON.parse(e.target.value));
+                    <div className="flex-1 flex flex-col overflow-hidden min-h-0 relative">
+                       {/* Cung cấp quyền edit thẳng trên màn hình Sandbox */}
+                       <VisualRuleConfigurator config={compiledJson} onChange={(newConfig) => {
+                          setCompiledJson(newConfig);
                           setIsTestRun(false);
-                        } catch (err) {}
-                      }}
-                      className="flex-1 w-full font-mono text-[12px] bg-transparent p-4 text-violet-200 outline-none resize-none leading-relaxed border-none focus:ring-0"
-                      spellCheck={false}
-                    />
+                       }} />
+                    </div>
                   </div>
 
                   {/* Gutter */}

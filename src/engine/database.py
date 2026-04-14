@@ -93,6 +93,7 @@ class AuditDatabase:
                     natural_text TEXT NOT NULL,
                     compiled_json TEXT,
                     disabled_core_rules TEXT DEFAULT '[]',
+                    enabled_core_rules TEXT DEFAULT '[]',
                     custom_weights TEXT DEFAULT '{}',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -118,6 +119,10 @@ class AuditDatabase:
             if "disabled_core_rules" not in columns_rules:
                 cursor.execute(
                     "ALTER TABLE project_rules ADD COLUMN disabled_core_rules TEXT DEFAULT '[]'"
+                )
+            if "enabled_core_rules" not in columns_rules:
+                cursor.execute(
+                    "ALTER TABLE project_rules ADD COLUMN enabled_core_rules TEXT DEFAULT '[]'"
                 )
             if "custom_weights" not in columns_rules:
                 cursor.execute(
@@ -276,52 +281,82 @@ class AuditDatabase:
         AuditDatabase.release_connection(conn)
 
     @staticmethod
-    def toggle_core_rule(target_id, rule_id, is_disabled):
-        """Toggles a specific core rule for a project (atomic operation)."""
+    def toggle_core_rule(target_id, rule_id, is_disabled, is_override_reset=False):
+        """Toggles a specific core rule for a target.
+        If is_override_reset is True, it removes the override, meaning it falls back to GLOBAL."""
         conn = AuditDatabase.get_connection()
         cursor = conn.cursor()
         try:
             # SELECT ... FOR UPDATE: Lock row để đảm bảo atomic read-modify-write
             cursor.execute(
-                "SELECT id, disabled_core_rules FROM project_rules WHERE target_id = %s FOR UPDATE",
+                "SELECT id, disabled_core_rules, enabled_core_rules, custom_weights FROM project_rules WHERE target_id = %s FOR UPDATE",
                 (target_id,),
             )
             row = cursor.fetchone()
 
             if not row:
                 cursor.execute(
-                    "INSERT INTO project_rules (target_id, natural_text, compiled_json, disabled_core_rules) VALUES (%s, %s, %s, %s) ON CONFLICT (target_id) DO NOTHING",
-                    (target_id, "", None, "[]"),
+                    "INSERT INTO project_rules (target_id, natural_text, compiled_json, disabled_core_rules, enabled_core_rules, custom_weights) VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT (target_id) DO NOTHING",
+                    (target_id, "", None, "[]", "[]", "{}"),
                 )
                 cursor.execute(
-                    "SELECT id, disabled_core_rules FROM project_rules WHERE target_id = %s FOR UPDATE",
+                    "SELECT id, disabled_core_rules, enabled_core_rules, custom_weights FROM project_rules WHERE target_id = %s FOR UPDATE",
                     (target_id,),
                 )
                 row = cursor.fetchone()
 
             disabled_rules = []
-            if row and row[1]:
-                try:
-                    disabled_rules = json.loads(row[1])
-                except (json.JSONDecodeError, TypeError) as e:
-                    logger.warning(f"Error parsing disabled_core_rules: {e}")
+            enabled_rules = []
+            custom_weights = {}
+            if row:
+                if row[1]:
+                    try:
+                        disabled_rules = json.loads(row[1])
+                    except (json.JSONDecodeError, TypeError) as e:
+                        logger.warning(f"Error parsing disabled_core_rules: {e}")
+                if len(row) > 2 and row[2]:
+                    try:
+                        enabled_rules = json.loads(row[2])
+                    except (json.JSONDecodeError, TypeError) as e:
+                        logger.warning(f"Error parsing enabled_core_rules: {e}")
+                if len(row) > 3 and row[3]:
+                    try:
+                        custom_weights = json.loads(row[3])
+                    except (json.JSONDecodeError, TypeError) as e:
+                        logger.warning(f"Error parsing custom_weights: {e}")
 
-            if is_disabled and rule_id not in disabled_rules:
-                disabled_rules.append(rule_id)
-            elif not is_disabled and rule_id in disabled_rules:
-                disabled_rules.remove(rule_id)
+            if is_override_reset:
+                # Remove from both so it falls back to global
+                if rule_id in disabled_rules:
+                    disabled_rules.remove(rule_id)
+                if rule_id in enabled_rules:
+                    enabled_rules.remove(rule_id)
+                if rule_id in custom_weights:
+                    del custom_weights[rule_id]
+            elif is_disabled:
+                if rule_id not in disabled_rules:
+                    disabled_rules.append(rule_id)
+                if rule_id in enabled_rules:
+                    enabled_rules.remove(rule_id)
+            else:
+                if rule_id in disabled_rules:
+                    disabled_rules.remove(rule_id)
+                if rule_id not in enabled_rules:
+                    enabled_rules.append(rule_id)
 
             disabled_str = json.dumps(disabled_rules)
+            enabled_str = json.dumps(enabled_rules)
+            weights_str = json.dumps(custom_weights)
 
             if row:
                 cursor.execute(
-                    "UPDATE project_rules SET disabled_core_rules = %s, updated_at = CURRENT_TIMESTAMP WHERE target_id = %s",
-                    (disabled_str, target_id),
+                    "UPDATE project_rules SET disabled_core_rules = %s, enabled_core_rules = %s, custom_weights = %s, updated_at = CURRENT_TIMESTAMP WHERE target_id = %s",
+                    (disabled_str, enabled_str, weights_str, target_id),
                 )
             else:
                 cursor.execute(
-                    "INSERT INTO project_rules (target_id, natural_text, compiled_json, disabled_core_rules) VALUES (%s, %s, %s, %s)",
-                    (target_id, "", None, disabled_str),
+                    "INSERT INTO project_rules (target_id, natural_text, compiled_json, disabled_core_rules, enabled_core_rules, custom_weights) VALUES (%s, %s, %s, %s, %s, %s)",
+                    (target_id, "", None, disabled_str, enabled_str, weights_str),
                 )
 
             conn.commit()
@@ -357,8 +392,8 @@ class AuditDatabase:
         else:
             cursor.execute(
                 """
-                INSERT INTO project_rules (target_id, natural_text, compiled_json, disabled_core_rules, custom_weights)
-                VALUES (%s, '', NULL, '[]', %s)
+                INSERT INTO project_rules (target_id, natural_text, compiled_json, disabled_core_rules, enabled_core_rules, custom_weights)
+                VALUES (%s, '', NULL, '[]', '[]', %s)
             """,
                 (target_id, weights_str),
             )
@@ -373,7 +408,7 @@ class AuditDatabase:
         conn = AuditDatabase.get_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
         cursor.execute(
-            "SELECT natural_text, compiled_json, disabled_core_rules, custom_weights FROM project_rules WHERE target_id = %s",
+            "SELECT natural_text, compiled_json, disabled_core_rules, enabled_core_rules, custom_weights FROM project_rules WHERE target_id = %s",
             (target_id,),
         )
         row = cursor.fetchone()
@@ -389,14 +424,21 @@ class AuditDatabase:
                     logger.warning(f"Error parsing compiled_json: {e}")
 
             disabled = []
-            if row["disabled_core_rules"]:
+            if row.get("disabled_core_rules"):
                 try:
                     disabled = json.loads(row["disabled_core_rules"])
                 except Exception as e:
                     logger.warning(f"Error parsing disabled_core_rules: {e}")
 
+            enabled = []
+            if row.get("enabled_core_rules"):
+                try:
+                    enabled = json.loads(row["enabled_core_rules"])
+                except Exception as e:
+                    logger.warning(f"Error parsing enabled_core_rules: {e}")
+
             weights = {}
-            if row["custom_weights"]:
+            if row.get("custom_weights"):
                 try:
                     weights = json.loads(row["custom_weights"])
                 except Exception as e:
@@ -406,6 +448,7 @@ class AuditDatabase:
                 "natural_text": row["natural_text"],
                 "compiled_json": compiled,
                 "disabled_core_rules": disabled,
+                "enabled_core_rules": enabled,
                 "custom_weights": weights,
             }
         return None
@@ -420,6 +463,30 @@ class AuditDatabase:
         cursor.close()
         AuditDatabase.release_connection(conn)
 
+
+    @staticmethod
+    def get_effective_rules(target_id):
+        """Retrieves and merges GLOBAL rules with project-specific rules."""
+        global_rules = AuditDatabase.get_project_rules("GLOBAL") or {}
+        project_rules = AuditDatabase.get_project_rules(target_id) or {} if target_id != "GLOBAL" else {}
+
+        # Merge disabled
+        g_dis = set(global_rules.get("disabled_core_rules", []))
+        p_dis = set(project_rules.get("disabled_core_rules", []))
+        p_en = set(project_rules.get("enabled_core_rules", []))
+        
+        effective_disabled = list((g_dis | p_dis) - p_en)
+
+        # Merge weights
+        effective_weights = global_rules.get("custom_weights", {}).copy()
+        effective_weights.update(project_rules.get("custom_weights", {}))
+
+        return {
+            "disabled_core_rules": effective_disabled,
+            "custom_weights": effective_weights,
+            "compiled_json": project_rules.get("compiled_json", {}),
+            "natural_text": project_rules.get("natural_text", "")
+        }
 
 # Avoid initializing DB on import immediately if docker is not up
 # AuditDatabase.initialize()

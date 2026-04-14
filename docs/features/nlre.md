@@ -95,3 +95,38 @@ Nâng cấp toàn diện giao diện 2 trang `/rules` và `/sandbox` lên tiêu 
 | `.animate-spin-slow` | Slow 3s rotation |
 | `.template-card-selected` | Selected ring violet trên template button |
 | `.stepper-line-done` | Gradient fill line cho progress tracker |
+
+---
+
+## 3-Tier Rule Architecture & Override Manager (Phiên bản V3)
+
+Kiến trúc Rule Manager hiện tại đã được nâng cấp lên mô hình 3 tầng (3-Tier Architecture) giúp quản lý phức tạp và cô lập rủi ro qua từng mức cấu hình.
+
+### 1. Kiến trúc 3 Cấp Độ (3-Tier)
+- **Tầng 1: Global Rules (Mặc định Hệ thống):** Toàn bộ nền tảng áp dụng chung một bộ luật (core rules). Quản trị viên (Global Admin) có quyền định dạng các thuộc tính như Trạng Thái (Bật/Tắt) hoặc Mật Độ (Weight) cho mục tiêu `target_id='GLOBAL'`.
+- **Tầng 2: Project Overrides (Ngoại lệ Dự án):** Các dự án cụ thể sẽ kế thừa quy tắc của Global, nhưng có thể "Ghi Đè" (Override) một trạng thái cụ thể. Ví dụ: Global Tắt rule "A", nhưng Dự Án 1 thiết lập Bật rule "A". Điểm đặc biệt là nếu Global cập nhật các rule "B", Dự Án 1 vẫn tự động được hưởng sái thay đổi đó do tính cô lập.
+- **Tầng 3: Custom AI Rules (Luật AI Cá thể):** Cơ chế JSON Độc Lập cho mỗi `target_id` do AI tự tạo, không bị ảnh hưởng và không ảnh hưởng chéo dự án khác.
+
+**Data Flow của Engine CodeAuditor:**
+```mermaid
+graph TD
+    A[Core System `rules.json`] --> B(Hợp nhất)
+    G[AuditDatabase - `target_id='GLOBAL'`] --> B
+    B -->|Base Rules| C{Xác định Target ID}
+    C -->|Project Target| D[AuditDatabase - `target_id='PROJECT_X'`]
+    D -->|Enabled/Disabled Core Rules & Weights| E((Effective Rules Merge))
+    B --> E
+    E --> F[Verification Step & Auditor Engine]
+```
+
+### 2. Giao diện 4 Tabs & Override Manager
+- RuleManager UI áp dụng 4 thanh tab độc lập:
+  - **Tab 1 - Global Rules:** Chỉnh sửa luật trực tiếp trên Global (Ảnh hưởng đa dự án).
+  - **Tab 2 - Project Overrides:** Chỉnh sửa trên dự án hiện tại. Giao diện sẽ hiển thị Badge "Override Active" cảnh báo luật này đang đè lên Global.
+  - **Tab 3 - Custom AI Rules:** Quản lý JSON Custom.
+  - **Tab 4 - Override Manager:** Thống kê siêu cấp (Diff View) mô tả sự khác biệt giữa Dự án và Hệ Thống, kèm nút `Reset to Global` để xóa bỏ nhanh các sai lệch.
+
+### 3. Database Schema `project_rules`
+- `disabled_core_rules` (JSON Array): Các rules bị tắt bởi Project.
+- `enabled_core_rules` (JSON Array): Các rules được bạt ép buộc bởi Project nhằm thoát khỏi sự cấm cản từ Global.
+- `custom_weights` (JSON Object): Các trọng số bị ghi đè riêng của Project.

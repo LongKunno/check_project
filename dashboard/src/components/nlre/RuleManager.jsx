@@ -25,6 +25,8 @@ import {
   Eye,
   EyeOff,
   Layers,
+  Globe,
+  GitCompare,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -116,6 +118,12 @@ const getSeverityMeta = (sev) => SEVERITY_META[sev] || SEVERITY_META["Info"];
 const WeightInput = ({ value, onChange, disabled, isOverride }) => {
   const step = 0.5;
   const inputRef = useRef(null);
+  // Use ref to always have latest values in wheel handler (avoid stale closure)
+  const stateRef = useRef({ value, onChange, disabled });
+  useEffect(() => {
+    stateRef.current = { value, onChange, disabled };
+  });
+
   const currentVal = parseFloat(value);
   const displayVal = isNaN(currentVal) ? -2.0 : currentVal;
 
@@ -128,17 +136,20 @@ const WeightInput = ({ value, onChange, disabled, isOverride }) => {
 
   useEffect(() => {
     const handleWheel = (e) => {
-      if (disabled) return;
+      const { value: v, onChange: cb, disabled: dis } = stateRef.current;
+      if (dis) return;
       e.preventDefault();
-      if (e.deltaY < 0) increment();
-      else decrement();
+      const cur = parseFloat(v);
+      const base = isNaN(cur) ? -2.0 : cur;
+      if (e.deltaY < 0) cb((base + step).toFixed(1));
+      else cb((base - step).toFixed(1));
     };
     const el = inputRef.current;
     if (el) el.addEventListener("wheel", handleWheel, { passive: false });
     return () => {
       if (el) el.removeEventListener("wheel", handleWheel);
     };
-  }, [displayVal, disabled]);
+  }, []); // mount once, ref dùng để lấy latest values
 
   return (
     <div
@@ -302,6 +313,8 @@ const RuleCard = ({
   customWeight,
   onToggle,
   onWeightChange,
+  isOverridden = false,
+  onResetOverride = undefined,
 }) => {
   const [expanded, setExpanded] = useState(false);
   const sevMeta = getSeverityMeta(meta.severity);
@@ -356,16 +369,28 @@ const RuleCard = ({
             >
               {meta.severity}
             </span>
-            {isCustomWeight && (
+            {isCustomWeight && !isOverridden && (
               <span className="text-[9px] bg-violet-500/15 text-violet-300 px-2 py-0.5 rounded-full border border-violet-500/25 font-black uppercase tracking-wide">
-                ✦ Override
+                ✦ Custom Weight
+              </span>
+            )}
+            {isOverridden && (
+              <span className="text-[9px] bg-orange-500/15 text-orange-400 px-2 py-0.5 rounded-full border border-orange-500/25 font-black uppercase tracking-wide flex items-center gap-1 cursor-pointer hover:bg-orange-500/30 transition-colors" title="This rule setting is explicitly overriding the Global preset">
+                <GitCompare size={10} /> Override Active
               </span>
             )}
           </div>
-          <ToggleSwitch
-            checked={!isDisabled}
-            onChange={() => onToggle(!isDisabled)}
-          />
+          <div className="flex items-center gap-3">
+             {isOverridden && onResetOverride && (
+               <button onClick={onResetOverride} className="text-[10px] text-slate-500 hover:text-white capitalize transition-colors font-bold bg-white/5 hover:bg-white/10 px-2 py-1 rounded">
+                 Reset
+               </button>
+             )}
+            <ToggleSwitch
+              checked={!isDisabled}
+              onChange={() => onToggle(!isDisabled)}
+            />
+          </div>
         </div>
 
         {/* Row 2: Description */}
@@ -460,18 +485,20 @@ const RuleCard = ({
 /* ─── Main Component ───────────────────────────────────────────────────── */
 const RuleManager = ({ targetId, projectName }) => {
   const [defaultRules, setDefaultRules] = useState({});
-  const [disabledCoreRules, setDisabledCoreRules] = useState([]);
-  const [customWeights, setCustomWeights] = useState({});
+  const [globalOverrides, setGlobalOverrides] = useState({ disabled_core_rules: [], enabled_core_rules: [], custom_weights: {} });
+  const [projectOverrides, setProjectOverrides] = useState({ disabled_core_rules: [], enabled_core_rules: [], custom_weights: {} });
   const [compiledJson, setCompiledJson] = useState(null);
   const [naturalText, setNaturalText] = useState("");
   const [toast, setToast] = useState(null);
 
-  const [activeTab, setActiveTab] = useState("core");
+  const [activeTab, setActiveTab] = useState("global");
   const [searchTerm, setSearchTerm] = useState("");
   const [filterPillar, setFilterPillar] = useState("ALL");
   const [severityFilter, setSeverityFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [expandedCategories, setExpandedCategories] = useState({});
+  const weightDebounceRef = useRef(null);
+  const pendingWeightsRef = useRef({ global: null, project: null });
 
   const showToast = (message, type = "success") => {
     setToast({ message, type });
@@ -481,16 +508,14 @@ const RuleManager = ({ targetId, projectName }) => {
   const fetchRules = async () => {
     if (!targetId) return;
     try {
-      const res = await fetch(
-        `/api/rules?target=${encodeURIComponent(targetId)}`,
-      );
+      const res = await fetch(`/api/rules?target=${encodeURIComponent(targetId)}`);
       const result = await res.json();
       if (result.status === "success" && result.data) {
         setDefaultRules(result.data.default_rules || {});
-        setDisabledCoreRules(result.data.disabled_core_rules || []);
-        setCustomWeights(result.data.custom_weights || {});
-        setCompiledJson(result.data.compiled_json || null);
-        setNaturalText(result.data.natural_text || "");
+        setGlobalOverrides(result.data.global_overrides || { disabled_core_rules: [], enabled_core_rules: [], custom_weights: {} });
+        setProjectOverrides(result.data.project_rules || { disabled_core_rules: [], enabled_core_rules: [], custom_weights: {} });
+        setCompiledJson(result.data.project_rules?.compiled_json || null);
+        setNaturalText(result.data.project_rules?.natural_text || "");
       }
     } catch (e) {
       console.error("Fetch rules error", e);
@@ -501,22 +526,22 @@ const RuleManager = ({ targetId, projectName }) => {
     fetchRules();
   }, [targetId]);
 
-  const handleToggleRule = async (ruleId, isDisable) => {
+  const handleToggleRule = async (ruleId, isDisable, reset = false) => {
+    const scope = activeTab === "global" ? "GLOBAL" : targetId;
     try {
       const res = await fetch("/api/rules/toggle", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          target: targetId,
+          target: scope,
           rule_id: ruleId,
           is_disabled: isDisable,
+          is_override_reset: reset
         }),
       });
       if (res.ok) {
-        showToast(`Rule ${ruleId} ${isDisable ? "disabled" : "enabled"}`);
-        setDisabledCoreRules((prev) =>
-          isDisable ? [...prev, ruleId] : prev.filter((r) => r !== ruleId),
-        );
+        showToast(`Rule ${ruleId} updated in ${activeTab === "global" ? "GLOBAL" : "PROJECT"}`);
+        fetchRules();
       }
     } catch (e) {
       showToast("Error updating rule", "error");
@@ -538,6 +563,26 @@ const RuleManager = ({ targetId, projectName }) => {
     } catch (e) {}
   };
 
+  const syncWeightWithServer = async (scope, newWeights) => {
+    const target = scope === "GLOBAL" ? "GLOBAL" : targetId;
+    try {
+      await fetch("/api/rules/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          target: target,
+          natural_text: scope === "GLOBAL" ? "" : naturalText,
+          compiled_json: scope === "GLOBAL" ? null : compiledJson,
+          custom_weights: newWeights,
+        }),
+      });
+      // KHÔNG gọi fetchRules() ở đây — optimistic update đã đủ
+      // fetchRules sẽ ghi đè state trước khi render kịp
+    } catch (e) {
+      showToast("Lỗi lưu trọng số", "error");
+    }
+  };
+
   const handleWeightChange = async (
     ruleId,
     newWeight,
@@ -553,26 +598,38 @@ const RuleManager = ({ targetId, projectName }) => {
       const updatedJson = JSON.parse(JSON.stringify(compiledJson));
       if (customRuleType === "regex" && Array.isArray(updatedJson.regex_rules))
         updatedJson.regex_rules[customRuleIdx].weight = val;
-      else if (
-        customRuleType === "ast" &&
-        updatedJson.ast_rules?.dangerous_functions
-      )
+      else if (customRuleType === "ast" && updatedJson.ast_rules?.dangerous_functions)
         updatedJson.ast_rules.dangerous_functions[customRuleIdx].weight = val;
       setCompiledJson(updatedJson);
-      syncStateWithServer(updatedJson, customWeights);
+      syncStateWithServer(updatedJson, projectOverrides.custom_weights || {});
       return;
     }
 
-    const updatedWeights = { ...customWeights, [ruleId]: val };
-    setCustomWeights(updatedWeights);
-    syncStateWithServer(compiledJson, updatedWeights);
+    const scope = activeTab === "global" ? "GLOBAL" : "PROJECT";
+    const refKey = scope === "GLOBAL" ? "global" : "project";
+    
+    const currentWeights = scope === "GLOBAL" ? globalOverrides.custom_weights : projectOverrides.custom_weights;
+    const baseWeights = pendingWeightsRef.current[refKey] || currentWeights || {};
+    const updatedWeights = { ...baseWeights, [ruleId]: val };
+    
+    pendingWeightsRef.current[refKey] = updatedWeights;
+
+    // Optimistic update trước, debounce save sau 600ms
+    if (scope === "GLOBAL") setGlobalOverrides(p => ({...p, custom_weights: updatedWeights}));
+    else setProjectOverrides(p => ({...p, custom_weights: updatedWeights}));
+
+    if (weightDebounceRef.current) clearTimeout(weightDebounceRef.current);
+    weightDebounceRef.current = setTimeout(() => {
+      const weightsToSend = pendingWeightsRef.current[refKey];
+      pendingWeightsRef.current[refKey] = null;
+      if (weightsToSend) syncWeightWithServer(scope, weightsToSend);
+    }, 600);
   };
 
   const handleDeleteCustomRule = async (type, index) => {
     const newJson = JSON.parse(JSON.stringify(compiledJson));
     if (type === "regex") newJson.regex_rules.splice(index, 1);
-    else if (type === "ast")
-      newJson.ast_rules.dangerous_functions.splice(index, 1);
+    else if (type === "ast") newJson.ast_rules.dangerous_functions.splice(index, 1);
     setCompiledJson(newJson);
     try {
       const res = await fetch("/api/rules/save", {
@@ -582,7 +639,7 @@ const RuleManager = ({ targetId, projectName }) => {
           target: targetId,
           natural_text: naturalText,
           compiled_json: newJson,
-          custom_weights: customWeights,
+          custom_weights: projectOverrides.custom_weights || {},
         }),
       });
       if (res.ok) showToast("Custom rule deleted!");
@@ -602,6 +659,28 @@ const RuleManager = ({ targetId, projectName }) => {
     [defaultRules],
   );
 
+  // Calculate effective lists based on active tab
+  const tabEffectiveDisabled = useMemo(() => {
+    if (activeTab === "global") return globalOverrides.disabled_core_rules || [];
+    else if (activeTab === "project") {
+        const g_dis = new Set(globalOverrides.disabled_core_rules || []);
+        const p_dis = new Set(projectOverrides.disabled_core_rules || []);
+        const p_en = new Set(projectOverrides.enabled_core_rules || []);
+        const merged = new Set([...g_dis, ...p_dis]);
+        for(let rm of p_en) merged.delete(rm);
+        return Array.from(merged);
+    }
+    return [];
+  }, [activeTab, globalOverrides, projectOverrides]);
+
+  const tabEffectiveWeights = useMemo(() => {
+    if (activeTab === "global") return globalOverrides.custom_weights || {};
+    else if (activeTab === "project") {
+        return { ...(globalOverrides.custom_weights || {}), ...(projectOverrides.custom_weights || {}) };
+    }
+    return {};
+  }, [activeTab, globalOverrides, projectOverrides]);
+
   const filteredCoreRules = useMemo(() => {
     return Object.entries(defaultRules).filter(([key, meta]) => {
       if (
@@ -611,7 +690,7 @@ const RuleManager = ({ targetId, projectName }) => {
         return false;
       if (severityFilter !== "ALL" && meta.severity !== severityFilter)
         return false;
-      const isDisabled = disabledCoreRules.includes(key);
+      const isDisabled = tabEffectiveDisabled.includes(key);
       if (statusFilter === "ON" && isDisabled) return false;
       if (statusFilter === "OFF" && !isDisabled) return false;
       if (searchTerm) {
@@ -631,7 +710,7 @@ const RuleManager = ({ targetId, projectName }) => {
     severityFilter,
     statusFilter,
     searchTerm,
-    disabledCoreRules,
+    tabEffectiveDisabled,
   ]);
 
   const groupedRules = useMemo(() => {
@@ -645,8 +724,11 @@ const RuleManager = ({ targetId, projectName }) => {
   }, [filteredCoreRules]);
 
   const dbStats = useMemo(() => {
-    const total = Object.keys(defaultRules).length;
-    const active = total - disabledCoreRules.length;
+    const activeGlobal = Object.keys(defaultRules).length - (globalOverrides?.disabled_core_rules?.length || 0);
+    const activeProject = Object.keys(defaultRules).length - (
+        new Set([...(globalOverrides?.disabled_core_rules||[]), ...(projectOverrides?.disabled_core_rules||[])]).size -
+        (projectOverrides?.enabled_core_rules||[]).length
+    );
     let critical = 0;
     Object.values(defaultRules).forEach((v) => {
       if (v.severity === "Blocker" || v.severity === "Critical") critical++;
@@ -655,26 +737,24 @@ const RuleManager = ({ targetId, projectName }) => {
       ...(compiledJson?.regex_rules || []),
       ...(compiledJson?.ast_rules?.dangerous_functions || []),
     ].length;
-    return { total, active, critical, customCount };
-  }, [defaultRules, disabledCoreRules, compiledJson]);
+    return { activeGlobal, activeProject, critical, customCount };
+  }, [defaultRules, globalOverrides, projectOverrides, compiledJson]);
 
   const handleBulkToggle = async (category, enable) => {
     const categoryRules = Object.entries(defaultRules)
       .filter(([_, m]) => (m.category || "Uncategorized") === category)
       .map(([k]) => k);
     if (categoryRules.length === 0) return;
-    let newDisabled = [...disabledCoreRules];
+    
+    // Instead of looping individual toggles, optimally just toggle sequentially. For now we loop.
     for (const r of categoryRules) {
-      const isCurrentlyDisabled = disabledCoreRules.includes(r);
+      const isCurrentlyDisabled = tabEffectiveDisabled.includes(r);
       if (enable && isCurrentlyDisabled) {
-        handleToggleRule(r, false);
-        newDisabled = newDisabled.filter((x) => x !== r);
+        await handleToggleRule(r, false);
       } else if (!enable && !isCurrentlyDisabled) {
-        handleToggleRule(r, true);
-        newDisabled.push(r);
+        await handleToggleRule(r, true);
       }
     }
-    setDisabledCoreRules(newDisabled);
   };
 
   const customRuleCount =
@@ -762,16 +842,16 @@ const RuleManager = ({ targetId, projectName }) => {
         {/* ── KPI Strip ── */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 shrink-0">
           <KpiCard
-            icon={ShieldCheck}
-            value={dbStats.total}
-            label="Total Rules"
-            accent="#8b5cf6"
+            icon={Globe}
+            value={dbStats.activeGlobal}
+            label="Active Global Rules"
+            accent="#3b82f6"
             delay={0}
           />
           <KpiCard
-            icon={Zap}
-            value={dbStats.active}
-            label="Active Rules"
+            icon={ShieldCheck}
+            value={dbStats.activeProject}
+            label="Active Project Rules"
             accent="#10b981"
             delay={0.05}
           />
@@ -792,13 +872,20 @@ const RuleManager = ({ targetId, projectName }) => {
         </div>
 
         {/* ── Main Panel ── */}
-        <div className="bg-[rgba(16,22,38,0.55)] backdrop-blur-xl border border-white/[0.08] rounded-2xl flex flex-col flex-1 shadow-2xl overflow-hidden">
+        <div className="bg-[rgba(16,22,38,0.55)] backdrop-blur-xl border border-white/[0.08] rounded-2xl flex flex-col flex-1 shadow-2xl overflow-hidden min-h-[500px]">
           {/* Tabs */}
-          <div className="flex items-center gap-1 p-2 border-b border-white/[0.06] shrink-0 bg-[rgba(10,15,28,0.4)]">
+          <div className="flex items-center gap-1 p-2 border-b border-white/[0.06] shrink-0 bg-[rgba(10,15,28,0.4)] overflow-x-auto scroller-hide">
             {[
               {
-                id: "core",
-                label: "Core Rules",
+                id: "global",
+                label: "Global Rules",
+                icon: Globe,
+                count: Object.keys(defaultRules).length,
+                activeGrad: "from-blue-600 to-indigo-600",
+              },
+              {
+                id: "project",
+                label: "Project Overrides",
                 icon: ShieldCheck,
                 count: Object.keys(defaultRules).length,
                 activeGrad: "from-emerald-600 to-teal-600",
@@ -809,6 +896,13 @@ const RuleManager = ({ targetId, projectName }) => {
                 icon: Wand2,
                 count: customRuleCount,
                 activeGrad: "from-violet-600 to-purple-600",
+              },
+              {
+                id: "diff",
+                label: "Override Manager",
+                icon: GitCompare,
+                count: Object.keys(projectOverrides?.custom_weights || {}).length + (projectOverrides?.disabled_core_rules || []).length + (projectOverrides?.enabled_core_rules || []).length,
+                activeGrad: "from-orange-600 to-amber-600",
               },
             ].map((tab) => (
               <button
@@ -837,9 +931,9 @@ const RuleManager = ({ targetId, projectName }) => {
             ))}
           </div>
 
-          {/* Filters (Core tab only) */}
+          {/* Filters (Global and Project tabs only) */}
           <AnimatePresence>
-            {activeTab === "core" && (
+            {(activeTab === "global" || activeTab === "project") && (
               <motion.div
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}
@@ -1103,8 +1197,8 @@ const RuleManager = ({ targetId, projectName }) => {
               </div>
             )}
 
-            {/* Core tab */}
-            {activeTab === "core" && Object.keys(groupedRules).length === 0 && (
+            {/* Global/Project tab */}
+            {(activeTab === "global" || activeTab === "project") && Object.keys(groupedRules).length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-600">
                 <Search size={32} className="opacity-20" />
                 <p className="text-sm font-bold text-slate-500">
@@ -1124,13 +1218,13 @@ const RuleManager = ({ targetId, projectName }) => {
               </div>
             )}
 
-            {activeTab === "core" &&
+            {(activeTab === "global" || activeTab === "project") &&
               Object.entries(groupedRules).map(([category, rules], catIdx) => {
                 const isExpanded = expandedCategories[category] !== false;
                 const pm = getPillarMeta(category);
                 const PIcon = pm.icon;
                 const activeCount = rules.filter(
-                  ([k]) => !disabledCoreRules.includes(k),
+                  ([k]) => !tabEffectiveDisabled.includes(k),
                 ).length;
 
                 return (
@@ -1229,24 +1323,32 @@ const RuleManager = ({ targetId, projectName }) => {
                           className="overflow-hidden"
                         >
                           <div className="p-4 grid grid-cols-1 xl:grid-cols-2 gap-3">
-                            {rules.map(([ruleKey, meta]) => (
+                            {rules.map(([ruleKey, meta]) => {
+                              const isOverridden = activeTab === "project" && (
+                                projectOverrides?.disabled_core_rules?.includes(ruleKey) ||
+                                projectOverrides?.enabled_core_rules?.includes(ruleKey) ||
+                                projectOverrides?.custom_weights?.[ruleKey] !== undefined
+                              );
+                              return (
                               <RuleCard
                                 key={ruleKey}
                                 ruleKey={ruleKey}
                                 meta={meta}
-                                isDisabled={disabledCoreRules.includes(ruleKey)}
+                                isDisabled={tabEffectiveDisabled.includes(ruleKey)}
                                 isCustomWeight={
-                                  customWeights[ruleKey] !== undefined
+                                  tabEffectiveWeights[ruleKey] !== undefined
                                 }
-                                customWeight={customWeights[ruleKey]}
+                                customWeight={tabEffectiveWeights[ruleKey]}
                                 onToggle={(isCurrentlyEnabled) =>
-                                  handleToggleRule(ruleKey, isCurrentlyEnabled)
+                                  handleToggleRule(ruleKey, isCurrentlyEnabled, false)
                                 }
                                 onWeightChange={(val) =>
                                   handleWeightChange(ruleKey, val)
                                 }
+                                isOverridden={isOverridden}
+                                onResetOverride={() => handleToggleRule(ruleKey, false, true)}
                               />
-                            ))}
+                            )})}
                           </div>
                         </motion.div>
                       )}
@@ -1254,10 +1356,88 @@ const RuleManager = ({ targetId, projectName }) => {
                   </motion.div>
                 );
               })}
+              
+            {/* Diff/Override Manager Tab */}
+            {activeTab === "diff" && (
+              <div className="flex flex-col gap-4">
+                <div className="bg-orange-500/10 border border-orange-500/20 text-orange-200 p-4 rounded-xl text-sm leading-relaxed">
+                  <div className="font-bold mb-1 flex items-center gap-2">
+                    <GitCompare size={16} /> Override Manager
+                  </div>
+                  Màn hình này hiển thị tất cả các tùy chỉnh Rule (mật độ, trọng số, trạng thái) của dự án này so với thiết lập Global (Mặc định cho toàn hệ thống).
+                </div>
+                
+                {(!projectOverrides?.disabled_core_rules?.length && !projectOverrides?.enabled_core_rules?.length && !Object.keys(projectOverrides?.custom_weights || {}).length) ? (
+                  <div className="py-20 flex flex-col items-center justify-center opacity-60">
+                    <CheckCircle2 size={40} className="text-emerald-500 mb-3" />
+                    <p className="text-emerald-400 font-bold">Dự án hoàn toàn đồng bộ với Global.</p>
+                    <p className="text-sm text-slate-500 mt-1">Chưa có ngoại lệ nào được cấu hình cho dự án này.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-3">
+                    {(() => {
+                      const uniqueOverrides = {};
+                      (projectOverrides?.disabled_core_rules || []).forEach(r => {
+                         if (!uniqueOverrides[r]) uniqueOverrides[r] = {};
+                         uniqueOverrides[r].status = "DISABLED";
+                      });
+                      (projectOverrides?.enabled_core_rules || []).forEach(r => {
+                         if (!uniqueOverrides[r]) uniqueOverrides[r] = {};
+                         uniqueOverrides[r].status = "ENABLED";
+                      });
+                      Object.entries(projectOverrides?.custom_weights || {}).forEach(([r, w]) => {
+                         if (!uniqueOverrides[r]) uniqueOverrides[r] = {};
+                         uniqueOverrides[r].weight = w;
+                      });
+                      return Object.entries(uniqueOverrides).map(([r, overrides]) => (
+                        <DiffCard 
+                          key={`diff-${r}`} 
+                          ruleId={r} 
+                          defaultRules={defaultRules} 
+                          overrides={overrides} 
+                          onReset={() => handleToggleRule(r, false, true)} 
+                        />
+                      ));
+                    })()}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
     </div>
+  );
+};
+
+// ... Diff Card component helper
+const DiffCard = ({ ruleId, defaultRules, overrides, onReset }) => {
+  const meta = defaultRules[ruleId] || {};
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="bg-[rgba(16,18,38,0.6)] border border-orange-500/15 rounded-xl overflow-hidden flex flex-col group">
+      <div className="h-1 bg-gradient-to-r from-orange-500/50 to-transparent" />
+      <div className="p-4 flex flex-col gap-2 relative">
+        <div className="flex justify-between items-start">
+          <div className="font-mono text-sm font-bold text-orange-200">{ruleId}</div>
+          <button onClick={onReset} className="text-slate-500 hover:text-white bg-white/5 hover:bg-white/10 px-2 py-1 rounded-md text-xs font-bold transition-colors">
+            Reset to Global
+          </button>
+        </div>
+        <div className="text-xs text-slate-400 truncate pr-4">{meta.reason || "Unknown rule description"}</div>
+        <div className="mt-2 flex items-center gap-2 border-t border-white/5 pt-2">
+          {overrides.status && (
+            <span className={cn("text-[10px] font-black px-2 py-0.5 rounded-full", overrides.status === "ENABLED" ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400")}>
+              OVERRIDE: {overrides.status}
+            </span>
+          )}
+          {overrides.weight !== undefined && (
+            <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-400">
+              OVERRIDE: WEIGHT={overrides.weight}
+            </span>
+          )}
+        </div>
+      </div>
+    </motion.div>
   );
 };
 

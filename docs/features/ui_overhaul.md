@@ -456,3 +456,21 @@ Khi sidebar ở chế độ thu nhỏ (80px wide):
 ---
 *Cập nhật: 2026-04-13 — Rule Manager & Rule Builder Color Sync Phase 8*
 
+### 25. Rule Builder Step 2 UX Polish (Phase 9 — 2026-04-13)
+
+**Vấn đề:** Màn hình Step 2 (Biên dịch AI) hiển thị terminal có độ tương phản quá thấp (`text-slate-600` trên nền tối) trong lúc chờ AI phản hồi, không có báo hiệu rõ ràng khiến người dùng cảm giác bị treo. Tương tự, sau khi biên dịch xong, Form chỉnh sửa hiển thị các input ẩn dưới nền `bg-transparent`, không có labels nhận diện gây khó khăn cho việc cấu hình.
+
+**Giải pháp:** Tối ưu hóa UI/UX với micro-animations và Glassmorphism form inputs.
+
+#### 25.1 Cải tiến StreamingTerminal (Pending State)
+- Đổi placeholder text thành "Đang kết nối tới mô hình AI..." nổi bật (`text-violet-300 font-bold animate-pulse`).
+- Bổ sung hiệu ứng văn bản log chạy ngẫu nhiên (vd: "Parsing language features...", "Building AST syntax trees...") theo chu kỳ 2s.
+- Cải tiến aesthetic với glowing shadow pulse `shadow-[0_0_8px_rgba(...)]` và gradient overlay.
+
+#### 25.2 Cải tiến VisualRuleConfigurator (Form Editor)
+- **Labels & Focus Cues:** Bổ sung `label` uppercase rõ ràng cho mỗi trường. 
+- Biến các input/textarea tàng hình thành dạng form `bg-[rgba(0,0,0,0.2)] border-white/10 rounded-xl`.
+- Bổ sung state `focus:ring-2` với màu sắc theme định danh theo loại luật: AI (Emerald), Regex (Blue), AST (Teal).
+
+---
+*Cập nhật: 2026-04-13 — Rule Builder Step 2 UX Polish Phase 9*

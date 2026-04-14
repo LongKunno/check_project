@@ -49,7 +49,7 @@ def run_auditor_with_capture(target_path, target_id=None, job_id=None):
     try:
         custom_rules = None
         if target_id:
-            db_rules = AuditDatabase.get_project_rules(target_id)
+            db_rules = AuditDatabase.get_effective_rules(target_id)
             if db_rules:
                 custom_rules = db_rules
         auditor = CodeAuditor(target_path, custom_rules=custom_rules)

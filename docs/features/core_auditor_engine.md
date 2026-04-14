@@ -43,6 +43,7 @@ graph TD
 - **SLOW_STRING_CONCAT:** Chuyển sang AI-only, không bắt `integer += 1`.
 - **dangerous_functions ghi đè:** Fix bug chỉ giữ 1 rule `dangerous_functions` → **hỗ trợ nhiều rules** cùng type (eval + print cùng tồn tại).
 - **Regex compile caching:** Thêm `_pattern_cache` class-level tránh recompile pattern cho mỗi file.
+- **Bổ sung PEP8 / Clean Code Rules:** Thêm nhóm quy tắc làm sạch mã gồm: `PEP8_WILDCARD_IMPORT`, `PEP8_NAMING_CONVENTION`, `PEP8_TAB_INDENTATION`, `SHADOWING_BUILTINS`, `COMPLEX_COMPREHENSION`, `PEP8_LAMBDA_ASSIGNMENT`, `PEP8_BAD_NEGATIVE_KEYWORD`, `PEP8_AMBIGUOUS_VARIABLE_NAME`, `PEP8_ISINSTANCE_OVER_TYPE`, `PEP8_MODULE_LEVEL_IMPORTS`, `PEP8_STRING_SLICING_PREFIX`, và `PEP8_CONSISTENT_RETURNS`. Đồng thời bổ sung 4 lỗi cảnh báo (Python Gotchas): `FLOAT_EQUALITY_DANGER`, `NAIVE_DATETIME`, `F_STRING_MISUSE`, `REDUNDANT_DICT_GET` để tối ưu toàn diện chất lượng dự án.
 
 **Code Quality Fixes:**
 - `database.py`: Xóa hardcoded password, thêm `SELECT...FOR UPDATE` cho toggle_core_rule.
