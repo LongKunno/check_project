@@ -26,7 +26,7 @@ from src.engine.scoring import ScoringEngine
 from src.engine.database import AuditDatabase
 from src.api.git_helper import GitHelper
 from src.api.audit_state import AuditState, JobManager
-from src.config import CONFIGURED_REPOSITORIES, AI_ENABLED
+from src.config import AI_ENABLED
 
 router = APIRouter()
 
@@ -270,11 +270,9 @@ async def audit_repository(
     branch = request.branch
 
     if request.id:
-        config_repo = next(
-            (r for r in CONFIGURED_REPOSITORIES if r["id"] == request.id), None
-        )
+        config_repo = AuditDatabase.get_repository(request.id)
         if not config_repo:
-            raise HTTPException(status_code=400, detail="Không tìm thấy ID dự án.")
+            raise HTTPException(status_code=400, detail="Không tìm thấy ID dự án trong database.")
         repo_url = config_repo["url"]
         username = config_repo["username"]
         token = config_repo["token"]
@@ -376,9 +374,7 @@ async def audit_batch(request: BatchAuditRequest, background_tasks: BackgroundTa
 
             temp_dir = None
             try:
-                config_repo = next(
-                    (r for r in CONFIGURED_REPOSITORIES if r["id"] == pid), None
-                )
+                config_repo = AuditDatabase.get_repository(pid)
 
                 job = JobManager.get_job(job_id)
                 # Dừng nếu job bị huỷ từ API /audit/cancel

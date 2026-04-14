@@ -112,6 +112,20 @@ class AuditDatabase:
                     "ALTER TABLE audit_history ADD COLUMN scan_mode TEXT DEFAULT 'full_ai'"
                 )
 
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS configured_repositories (
+                    id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    url TEXT NOT NULL,
+                    username TEXT DEFAULT '',
+                    token TEXT DEFAULT '',
+                    branch TEXT DEFAULT 'main',
+                    is_active BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
             cursor.execute(
                 "SELECT column_name FROM information_schema.columns WHERE table_name = 'project_rules'"
             )
@@ -131,6 +145,9 @@ class AuditDatabase:
 
             cursor.close()
             AuditDatabase.release_connection(conn)
+
+            # Auto-seed repositories từ config.py nếu bảng trống (Option A)
+            AuditDatabase.seed_default_repositories()
         except Exception as e:
             logger.error(f"Database Initialization Error: {e}")
 
@@ -463,6 +480,125 @@ class AuditDatabase:
         cursor.close()
         AuditDatabase.release_connection(conn)
 
+
+    # ── Repository Management ─────────────────────────────────────────────────
+
+    @staticmethod
+    def seed_default_repositories():
+        """Import repositories từ CONFIGURED_REPOSITORIES (config.py) nếu bảng trống.
+        Chỉ chạy 1 lần khi lần đầu khởi động với bảng mới."""
+        conn = AuditDatabase.get_connection()
+        cursor = conn.cursor()
+        try:
+            cursor.execute("SELECT COUNT(*) FROM configured_repositories")
+            count = cursor.fetchone()[0]
+            if count > 0:
+                logger.info(f"configured_repositories already has {count} entries, skipping seed.")
+                cursor.close()
+                AuditDatabase.release_connection(conn)
+                return
+
+            from src.config import CONFIGURED_REPOSITORIES
+            for repo in CONFIGURED_REPOSITORIES:
+                cursor.execute(
+                    """
+                    INSERT INTO configured_repositories (id, name, url, username, token, branch)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    ON CONFLICT (id) DO NOTHING
+                    """,
+                    (
+                        repo["id"],
+                        repo["name"],
+                        repo["url"],
+                        repo.get("username", ""),
+                        repo.get("token", ""),
+                        repo.get("branch", "main"),
+                    ),
+                )
+            conn.commit()
+            logger.info(f"Seeded {len(CONFIGURED_REPOSITORIES)} default repositories from config.py.")
+        except Exception as e:
+            logger.warning(f"Error seeding default repositories: {e}")
+            conn.rollback()
+        finally:
+            cursor.close()
+            AuditDatabase.release_connection(conn)
+
+    @staticmethod
+    def get_all_repositories(include_credentials=False):
+        """Lấy danh sách tất cả repositories đang active."""
+        conn = AuditDatabase.get_connection()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor.execute(
+            "SELECT id, name, url, username, token, branch, is_active, created_at, updated_at "
+            "FROM configured_repositories WHERE is_active = TRUE ORDER BY name"
+        )
+        rows = cursor.fetchall()
+        cursor.close()
+        AuditDatabase.release_connection(conn)
+
+        results = []
+        for row in rows:
+            d = dict(row)
+            for ts_field in ("created_at", "updated_at"):
+                if ts_field in d and isinstance(d[ts_field], datetime):
+                    d[ts_field] = d[ts_field].isoformat()
+            if not include_credentials:
+                d.pop("token", None)
+                d.pop("username", None)
+            results.append(d)
+        return results
+
+    @staticmethod
+    def get_repository(repo_id):
+        """Lấy thông tin 1 repository (bao gồm credentials) để dùng cho clone."""
+        conn = AuditDatabase.get_connection()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        cursor.execute(
+            "SELECT id, name, url, username, token, branch FROM configured_repositories WHERE id = %s AND is_active = TRUE",
+            (repo_id,),
+        )
+        row = cursor.fetchone()
+        cursor.close()
+        AuditDatabase.release_connection(conn)
+        return dict(row) if row else None
+
+    @staticmethod
+    def save_repository(repo_id, name, url, username="", token="", branch="main"):
+        """Thêm mới hoặc cập nhật repository."""
+        conn = AuditDatabase.get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO configured_repositories (id, name, url, username, token, branch, is_active)
+            VALUES (%s, %s, %s, %s, %s, %s, TRUE)
+            ON CONFLICT (id) DO UPDATE SET
+                name = EXCLUDED.name,
+                url = EXCLUDED.url,
+                username = EXCLUDED.username,
+                token = EXCLUDED.token,
+                branch = EXCLUDED.branch,
+                is_active = TRUE,
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (repo_id, name, url, username, token, branch),
+        )
+        conn.commit()
+        cursor.close()
+        AuditDatabase.release_connection(conn)
+
+    @staticmethod
+    def delete_repository(repo_id):
+        """Soft-delete repository (set is_active=FALSE)."""
+        conn = AuditDatabase.get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "UPDATE configured_repositories SET is_active = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = %s",
+            (repo_id,),
+        )
+        conn.commit()
+        cursor.close()
+        AuditDatabase.release_connection(conn)
 
     @staticmethod
     def get_effective_rules(target_id):

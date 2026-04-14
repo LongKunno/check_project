@@ -46,35 +46,61 @@ graph TD
 
 ## Frontend Architecture
 
-### Component Hierarchy
+### Component Hierarchy (Post-Refactor 2026-04-14)
 
 ```mermaid
 graph TD
-    APP[App.jsx<br/>State Management, Routing<br/>≈545 LOC] --> SB[Sidebar.jsx<br/>Navigation]
-    APP --> AV[AuditView.jsx<br/>Dashboard UI, Charts<br/>Lazy-loaded]
-    APP --> RC[RulesConfigurator.jsx<br/>Rule CRUD + Sandbox<br/>Lazy-loaded]
-    APP --> HV[HistoryView.jsx<br/>Audit History<br/>Lazy-loaded]
-    APP --> SV[SettingsView.jsx<br/>System Settings<br/>Lazy-loaded]
-    AV --> TL[TerminalLogs.jsx<br/>SSE Log Stream]
-    AV --> CH[chartHelpers.js<br/>Chart Data Utils]
+    APP["App.jsx<br/>Routing + Hooks Composition<br/>≈470 LOC"] --> SB[Sidebar.jsx<br/>Navigation]
+    APP --> AV["AuditView.jsx<br/>Dashboard Orchestrator<br/>≈435 LOC<br/>Lazy-loaded"]
+    APP --> RM["RuleManager.jsx<br/>Rule CRUD<br/>≈969 LOC<br/>Lazy-loaded"]
+    APP --> RB["RuleBuilder.jsx<br/>AI Rule Builder<br/>≈816 LOC<br/>Lazy-loaded"]
+    APP --> HV["HistoryView.jsx<br/>Audit History<br/>Lazy-loaded"]
+    APP --> SV["SettingsView.jsx<br/>Settings + Repo CRUD<br/>Lazy-loaded"]
+    
+    APP -.-> H1[useRepositories.js<br/>Repo state + API]
+    APP -.-> H2[useAuditState.js<br/>Audit state + SSE]
+
+    AV --> VL["ViolationLedger.jsx<br/>3-tier violation display<br/>≈600 LOC"]
+    AV --> CR[ChartsRow.jsx<br/>Doughnut + Bar charts]
+    AV --> RBT[RuleBreakdownTable.jsx<br/>Rule breakdown table]
+    AV --> TL[TeamLeaderboard.jsx<br/>Member scores table]
+    AV --> AS[AuditSidebar.jsx<br/>Info + Top files]
+    AV --> TLogs[TerminalLogs.jsx<br/>SSE log stream]
+
+    RM --> RMP["RuleManagerParts.jsx<br/>WeightInput, KpiCard,<br/>RuleCard, PillGroup, etc."]
+    RB --> RBP["RuleBuilderParts.jsx<br/>Stepper, Terminal,<br/>VisualRuleConfigurator"]
 ```
 
-| Component | Dòng code | Lazy? | Trách nhiệm |
-|-----------|-----------|-------|-------------|
-| `App.jsx` | ≈545 | No | State management, React Router Dom (`<Routes>`), side effects |
-| `AuditView.jsx` | ≈350 | Yes | Hero card, charts, violations, leaderboard |
-| `RulesConfigurator.jsx` | ≈800 | Yes | Rule manager + AI sandbox |
-| `HistoryView.jsx` | ≈150 | Yes | Lịch sử audit |
-| `SettingsView.jsx` | ≈70 | Yes | Cài đặt hệ thống |
+### Cấu trúc Thư mục
 
-### Bundle Size (Production)
+| Thư mục | Chứa | Mô tả |
+|---------|------|-------|
+| `dashboard/src/hooks/` | `useRepositories.js`, `useAuditState.js` | Custom hooks tách business logic |
+| `dashboard/src/components/views/` | `AuditView`, `SettingsView` | View-level components |
+| `dashboard/src/components/audit/` | `ViolationLedger`, `ChartsRow`, `RuleBreakdownTable`, `TeamLeaderboard`, `AuditSidebar` | Audit sub-components |
+| `dashboard/src/components/nlre/` | `RuleManager`, `RuleBuilder`, `RuleManagerParts`, `RuleBuilderParts` | Rule management |
+| `dashboard/src/components/ui/` | `TerminalLogs`, `EmptyState`, `HeroCard`, `Pagination` | Reusable UI primitives |
+
+### LOC Summary (Trước → Sau Refactor)
+
+| Component | Trước | Sau | Giảm |
+|-----------|-------|-----|------|
+| `App.jsx` | 912 | 470 | 48% |
+| `AuditView.jsx` | 1,771 | 435 | **75%** |
+| `RuleManager.jsx` | 1,444 | 969 | 33% |
+| `RuleBuilder.jsx` | 1,216 | 816 | 33% |
+| **Tổng "God Objects"** | **5,343** | **2,690** | **50%** |
+
+### Bundle Size (Production — 2026-04-14)
 
 | Chunk | Size | Gzip |
 |-------|------|------|
-| `index.js` (core) | 343 KB | 114 KB |
-| `AuditView.js` | 26 KB | 7 KB |
-| `RulesConfigurator.js` | 56 KB | 17 KB |
-| Chart libraries | 121 KB | 40 KB |
+| `index.js` (core) | 448 KB | 147 KB |
+| `AuditView.js` | 35 KB | 9 KB |
+| `RuleManager.js` | 33 KB | 9 KB |
+| `RuleBuilder.js` | 36 KB | 10 KB |
+| `proxy.js` (chart libs) | 130 KB | 43 KB |
 
 ---
-*Cập nhật: 2026-04-02 — ADR-011*
+*Cập nhật: 2026-04-14 — Phase 2 Frontend Decomposition*
+

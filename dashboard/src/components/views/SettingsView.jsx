@@ -14,8 +14,13 @@ import {
   Cpu,
   Info,
   FolderOpen,
+  Plus,
+  Edit3,
+  X,
+  GitBranch,
+  Check,
 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "../ui/Toast";
 
 const InfoCard = ({
@@ -60,6 +65,99 @@ const SettingsView = ({ selectedRepoId, cn }) => {
   const [systemInfo, setSystemInfo] = useState(null);
   const [rulesInfo, setRulesInfo] = useState(null);
   const toast = useToast();
+
+  // ── Repository Management State ─────────────────────────────────────────
+  const [repos, setRepos] = useState([]);
+  const [showRepoForm, setShowRepoForm] = useState(false);
+  const [editingRepo, setEditingRepo] = useState(null);
+  const [repoForm, setRepoForm] = useState({
+    id: "",
+    name: "",
+    url: "",
+    username: "",
+    token: "",
+    branch: "main",
+  });
+  const [repoSaving, setRepoSaving] = useState(false);
+
+  // Fetch repositories
+  const fetchRepos = async () => {
+    try {
+      const res = await fetch("/api/repositories");
+      if (res.ok) {
+        const d = await res.json();
+        if (d.status === "success") setRepos(d.data);
+      }
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    fetchRepos();
+  }, []);
+
+  const openAddForm = () => {
+    setEditingRepo(null);
+    setRepoForm({ id: "", name: "", url: "", username: "", token: "", branch: "main" });
+    setShowRepoForm(true);
+  };
+
+  const openEditForm = (repo) => {
+    setEditingRepo(repo.id);
+    setRepoForm({
+      id: repo.id,
+      name: repo.name,
+      url: repo.url,
+      username: repo.username || "",
+      token: "",  // token không trả về từ API (ẩn)
+      branch: repo.branch || "main",
+    });
+    setShowRepoForm(true);
+  };
+
+  const handleRepoSave = async () => {
+    if (!repoForm.id || !repoForm.name || !repoForm.url) {
+      toast.error("ID, Name, và URL là bắt buộc.", "Validation Error");
+      return;
+    }
+    setRepoSaving(true);
+    try {
+      const method = editingRepo ? "PUT" : "POST";
+      const url = editingRepo ? `/api/repositories/${editingRepo}` : "/api/repositories";
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(repoForm),
+      });
+      if (res.ok) {
+        toast.success(
+          `Repository "${repoForm.name}" ${editingRepo ? "updated" : "created"} successfully.`,
+          editingRepo ? "Updated" : "Created",
+        );
+        setShowRepoForm(false);
+        fetchRepos();
+      } else {
+        const err = await res.json();
+        toast.error(err.detail || "Server error", "Error");
+      }
+    } catch (e) {
+      toast.error("Network error", "Connection Error");
+    } finally {
+      setRepoSaving(false);
+    }
+  };
+
+  const handleRepoDelete = async (repoId, repoName) => {
+    if (!window.confirm(`Bạn có chắc muốn xóa repository "${repoName}"?\n(Dữ liệu audit history vẫn giữ nguyên)`)) return;
+    try {
+      const res = await fetch(`/api/repositories/${repoId}`, { method: "DELETE" });
+      if (res.ok) {
+        toast.success(`Repository "${repoName}" removed.`, "Deleted");
+        fetchRepos();
+      }
+    } catch (e) {
+      toast.error("Delete failed.", "Error");
+    }
+  };
 
   // Fetch system info
   useEffect(() => {
@@ -226,6 +324,197 @@ const SettingsView = ({ selectedRepoId, cn }) => {
               iconClass="bg-amber-500/10 border-amber-500/20 text-amber-400"
               accent="border-amber-500/25 shadow-[0_0_15px_-5px_rgba(245,158,11,0.15)]"
             />
+          </div>
+        </motion.div>
+
+        {/* ── Repository Management ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.18 }}
+          className="bg-[#0f1629]/50 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
+        >
+          <div className="flex items-center justify-between mb-5">
+            <SectionTitle
+              icon={<FolderOpen size={18} />}
+              title="Repository Management"
+              description={`${repos.length} repositories configured`}
+            />
+            <button
+              onClick={openAddForm}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-bold hover:bg-emerald-500/20 hover:border-emerald-500/40 transition-all"
+            >
+              <Plus size={14} /> Add Repository
+            </button>
+          </div>
+
+          {/* Form thêm/sửa */}
+          <AnimatePresence>
+            {showRepoForm && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden mb-5"
+              >
+                <div className="p-5 rounded-2xl border border-white/10 bg-white/[0.03] space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-white text-sm font-bold">
+                      {editingRepo ? "Edit Repository" : "Add New Repository"}
+                    </h4>
+                    <button
+                      onClick={() => setShowRepoForm(false)}
+                      className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition-all"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1.5">ID *</label>
+                      <input
+                        type="text"
+                        value={repoForm.id}
+                        onChange={(e) => setRepoForm({ ...repoForm, id: e.target.value })}
+                        disabled={!!editingRepo}
+                        placeholder="org/repo-name"
+                        className="w-full px-3 py-2.5 rounded-xl bg-black/30 border border-white/10 text-white text-sm font-mono placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 disabled:opacity-50 transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1.5">Name *</label>
+                      <input
+                        type="text"
+                        value={repoForm.name}
+                        onChange={(e) => setRepoForm({ ...repoForm, name: e.target.value })}
+                        placeholder="My Project"
+                        className="w-full px-3 py-2.5 rounded-xl bg-black/30 border border-white/10 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1.5">Git URL *</label>
+                      <input
+                        type="text"
+                        value={repoForm.url}
+                        onChange={(e) => setRepoForm({ ...repoForm, url: e.target.value })}
+                        placeholder="https://github.com/org/repo.git"
+                        className="w-full px-3 py-2.5 rounded-xl bg-black/30 border border-white/10 text-white text-sm font-mono placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1.5">Username</label>
+                      <input
+                        type="text"
+                        value={repoForm.username}
+                        onChange={(e) => setRepoForm({ ...repoForm, username: e.target.value })}
+                        placeholder="Optional"
+                        className="w-full px-3 py-2.5 rounded-xl bg-black/30 border border-white/10 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1.5">
+                        Token {editingRepo && <span className="text-slate-600 normal-case">(leave empty to keep current)</span>}
+                      </label>
+                      <input
+                        type="password"
+                        value={repoForm.token}
+                        onChange={(e) => setRepoForm({ ...repoForm, token: e.target.value })}
+                        placeholder="•••••••••"
+                        className="w-full px-3 py-2.5 rounded-xl bg-black/30 border border-white/10 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1.5">Branch</label>
+                      <input
+                        type="text"
+                        value={repoForm.branch}
+                        onChange={(e) => setRepoForm({ ...repoForm, branch: e.target.value })}
+                        placeholder="main"
+                        className="w-full px-3 py-2.5 rounded-xl bg-black/30 border border-white/10 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-2">
+                    <button
+                      onClick={handleRepoSave}
+                      disabled={repoSaving}
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-400 text-xs font-bold hover:bg-blue-500/25 hover:border-blue-500/50 disabled:opacity-50 transition-all"
+                    >
+                      {repoSaving ? <Zap className="animate-spin" size={14} /> : <Check size={14} />}
+                      {repoSaving ? "Saving..." : editingRepo ? "Update" : "Create"}
+                    </button>
+                    <button
+                      onClick={() => setShowRepoForm(false)}
+                      className="px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 text-xs font-bold hover:bg-white/10 transition-all"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Bảng danh sách repositories */}
+          <div className="overflow-hidden rounded-2xl border border-white/8">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-white/[0.03]">
+                  <th className="px-4 py-3 text-[10px] uppercase tracking-widest text-slate-500 font-bold">Name</th>
+                  <th className="px-4 py-3 text-[10px] uppercase tracking-widest text-slate-500 font-bold hidden md:table-cell">URL</th>
+                  <th className="px-4 py-3 text-[10px] uppercase tracking-widest text-slate-500 font-bold">Branch</th>
+                  <th className="px-4 py-3 text-[10px] uppercase tracking-widest text-slate-500 font-bold text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {repos.map((repo) => (
+                  <tr
+                    key={repo.id}
+                    className="border-t border-white/5 hover:bg-white/[0.03] transition-colors"
+                  >
+                    <td className="px-4 py-3">
+                      <div className="text-sm font-bold text-white">{repo.name}</div>
+                      <div className="text-[10px] text-slate-600 font-mono">{repo.id}</div>
+                    </td>
+                    <td className="px-4 py-3 hidden md:table-cell">
+                      <div className="text-xs text-slate-400 font-mono truncate max-w-[280px]">{repo.url}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-bold">
+                        <GitBranch size={10} /> {repo.branch || "main"}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center gap-1.5 justify-end">
+                        <button
+                          onClick={() => openEditForm(repo)}
+                          className="p-2 rounded-lg text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 transition-all"
+                          title="Edit"
+                        >
+                          <Edit3 size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleRepoDelete(repo.id, repo.name)}
+                          className="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                          title="Delete"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {repos.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-8 text-center text-slate-600 text-sm">
+                      No repositories configured. Click "Add Repository" to get started.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </motion.div>
 

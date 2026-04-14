@@ -62,6 +62,14 @@ export const Sidebar = ({
         "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-inner glow-cyan",
       iconClass: "text-cyan-500/80",
     },
+    {
+      path: "/repositories",
+      label: "Repositories",
+      icon: FolderOpen,
+      activeClass:
+        "bg-teal-500/10 text-teal-400 border border-teal-500/20 shadow-inner glow-teal",
+      iconClass: "text-teal-500/80",
+    },
   ];
 
   // --- REPOSITORY WORKSPACE: Phụ thuộc Current Repository ---

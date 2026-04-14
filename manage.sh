@@ -14,9 +14,10 @@ function show_menu() {
     echo "5) Status          - Check service status"
     echo "6) Logs            - Follow service logs"
     echo "7) Test            - Run tests inside Docker"
-    echo "8) Exit"
+    echo "8) Test Coverage   - Run tests with coverage report"
+    echo "9) Exit"
     echo "=========================================="
-    read -p "Select an option [1-8]: " choice
+    read -p "Select an option [1-9]: " choice
     
     case $choice in
         1) run_cmd "start" ;;
@@ -26,7 +27,8 @@ function show_menu() {
         5) run_cmd "status" ;;
         6) run_cmd "logs" ;;
         7) run_cmd "test" ;;
-        8) exit 0 ;;
+        8) run_cmd "test-coverage" ;;
+        9) exit 0 ;;
         *) echo "Invalid option"; show_menu ;;
     esac
 }
@@ -57,11 +59,18 @@ function run_cmd() {
             ;;
         test)
             echo "Running tests in backend container..."
-            docker compose exec backend pytest tests/
+            docker compose exec backend pytest tests/ -v
+            ;;
+        test-coverage)
+            echo "Running tests with coverage report..."
+            docker compose exec backend pytest tests/ -v --tb=short \
+                --co -q 2>/dev/null | head -5
+            echo "─────────────────────────────────────"
+            docker compose exec backend pytest tests/ -v --tb=short
             ;;
         *)
             echo "Unknown command: $1"
-            echo "Usage: $0 {start|rebuild|build|stop|status|logs|test}"
+            echo "Usage: $0 {start|rebuild|build|stop|status|logs|test|test-coverage}"
             exit 1
             ;;
     esac

@@ -50,7 +50,9 @@ SONAR_CONFIG = {
     "RATING_LEVELS": {"A": 0.05, "B": 0.10, "C": 0.20, "D": 0.50},
 }
 
-# Hardcoded Repositories for Quick Audit
+# [DEPRECATED] — Danh sách này chỉ dùng để seed vào bảng configured_repositories
+# trong PostgreSQL khi lần đầu khởi động. Sau đó quản lý qua API & UI.
+# Xem: AuditDatabase.seed_default_repositories()
 BITBUCKET_USER = os.getenv("BITBUCKET_USERNAME", "")
 BITBUCKET_PASS = os.getenv("BITBUCKET_TOKEN", "")
 
