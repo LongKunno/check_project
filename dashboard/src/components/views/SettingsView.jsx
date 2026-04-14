@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Settings,
   AlertTriangle,
@@ -19,6 +19,12 @@ import {
   X,
   GitBranch,
   Check,
+  ToggleLeft,
+  ToggleRight,
+  Save,
+  Wifi,
+  WifiOff,
+  FileSearch,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "../ui/Toast";
@@ -66,96 +72,72 @@ const SettingsView = ({ selectedRepoId, cn }) => {
   const [rulesInfo, setRulesInfo] = useState(null);
   const toast = useToast();
 
-  // ── Repository Management State ─────────────────────────────────────────
-  const [repos, setRepos] = useState([]);
-  const [showRepoForm, setShowRepoForm] = useState(false);
-  const [editingRepo, setEditingRepo] = useState(null);
-  const [repoForm, setRepoForm] = useState({
-    id: "",
-    name: "",
-    url: "",
-    username: "",
-    token: "",
-    branch: "main",
+  // ── Engine Configuration State ──────────────────────────────────────────
+  const [engineConfig, setEngineConfig] = useState({
+    ai_enabled: false,
+    test_mode_limit_files: 0,
   });
-  const [repoSaving, setRepoSaving] = useState(false);
+  const [engineSaving, setEngineSaving] = useState(false);
+  const [engineDirty, setEngineDirty] = useState(false);
+  const [aiTestResult, setAiTestResult] = useState(null);
+  const [aiTesting, setAiTesting] = useState(false);
 
-  // Fetch repositories
-  const fetchRepos = async () => {
+  const fetchEngineConfig = useCallback(async () => {
     try {
-      const res = await fetch("/api/repositories");
+      const res = await fetch("/api/settings/engine");
       if (res.ok) {
         const d = await res.json();
-        if (d.status === "success") setRepos(d.data);
+        if (d.status === "success") {
+          setEngineConfig(d.data);
+          setEngineDirty(false);
+        }
       }
     } catch (e) {}
-  };
-
-  useEffect(() => {
-    fetchRepos();
   }, []);
 
-  const openAddForm = () => {
-    setEditingRepo(null);
-    setRepoForm({ id: "", name: "", url: "", username: "", token: "", branch: "main" });
-    setShowRepoForm(true);
+  useEffect(() => { fetchEngineConfig(); }, [fetchEngineConfig]);
+
+  const handleEngineConfigChange = (key, value) => {
+    setEngineConfig((prev) => ({ ...prev, [key]: value }));
+    setEngineDirty(true);
   };
 
-  const openEditForm = (repo) => {
-    setEditingRepo(repo.id);
-    setRepoForm({
-      id: repo.id,
-      name: repo.name,
-      url: repo.url,
-      username: repo.username || "",
-      token: "",  // token không trả về từ API (ẩn)
-      branch: repo.branch || "main",
-    });
-    setShowRepoForm(true);
-  };
-
-  const handleRepoSave = async () => {
-    if (!repoForm.id || !repoForm.name || !repoForm.url) {
-      toast.error("ID, Name, và URL là bắt buộc.", "Validation Error");
-      return;
-    }
-    setRepoSaving(true);
+  const handleEngineSave = async () => {
+    setEngineSaving(true);
     try {
-      const method = editingRepo ? "PUT" : "POST";
-      const url = editingRepo ? `/api/repositories/${editingRepo}` : "/api/repositories";
-      const res = await fetch(url, {
-        method,
+      const res = await fetch("/api/settings/engine", {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(repoForm),
+        body: JSON.stringify(engineConfig),
       });
       if (res.ok) {
-        toast.success(
-          `Repository "${repoForm.name}" ${editingRepo ? "updated" : "created"} successfully.`,
-          editingRepo ? "Updated" : "Created",
-        );
-        setShowRepoForm(false);
-        fetchRepos();
+        const d = await res.json();
+        if (d.status === "success") {
+          setEngineConfig(d.data);
+          setEngineDirty(false);
+          toast.success("Engine configuration saved successfully.", "Settings Updated");
+        }
       } else {
-        const err = await res.json();
-        toast.error(err.detail || "Server error", "Error");
+        toast.error("Failed to save settings.", "Error");
       }
     } catch (e) {
-      toast.error("Network error", "Connection Error");
+      toast.error("Network error.", "Connection Error");
     } finally {
-      setRepoSaving(false);
+      setEngineSaving(false);
     }
   };
 
-  const handleRepoDelete = async (repoId, repoName) => {
-    if (!window.confirm(`Bạn có chắc muốn xóa repository "${repoName}"?\n(Dữ liệu audit history vẫn giữ nguyên)`)) return;
+  const handleTestAiConnection = async () => {
+    setAiTesting(true);
+    setAiTestResult(null);
     try {
-      const res = await fetch(`/api/repositories/${repoId}`, { method: "DELETE" });
-      if (res.ok) {
-        toast.success(`Repository "${repoName}" removed.`, "Deleted");
-        fetchRepos();
-      }
+      const res = await fetch("/api/health/ai");
+      const d = await res.json();
+      setAiTestResult(d);
     } catch (e) {
-      toast.error("Delete failed.", "Error");
+      setAiTestResult({ status: "unhealthy", reason: "Network error" });
+    } finally {
+      setAiTesting(false);
     }
   };
 
@@ -253,6 +235,120 @@ const SettingsView = ({ selectedRepoId, cn }) => {
       </motion.div>
 
       <div className="space-y-6">
+        {/* ── Engine Configuration ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="bg-[#0f1629]/50 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
+        >
+          <SectionTitle
+            icon={<Zap size={18} />}
+            title="Engine Configuration"
+            description="Configure AI and scanning behavior at runtime"
+          />
+
+          {/* AI Enabled Toggle */}
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.03] border border-white/8 mb-4">
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-xl border ${
+                engineConfig.ai_enabled
+                  ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-400"
+                  : "bg-slate-500/10 border-slate-500/20 text-slate-500"
+              }`}>
+                <ShieldCheck size={16} />
+              </div>
+              <div>
+                <div className="text-sm font-bold text-white">AI-Powered Analysis</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">
+                  {engineConfig.ai_enabled
+                    ? "Hybrid Validation + Deep Reasoning + Cross-Check (tốn token)"
+                    : "Static Analysis only — Regex + AST (nhanh, miễn phí)"}
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => handleEngineConfigChange("ai_enabled", !engineConfig.ai_enabled)}
+              className="relative shrink-0 group"
+              title={engineConfig.ai_enabled ? "Click to disable AI" : "Click to enable AI"}
+            >
+              {engineConfig.ai_enabled ? (
+                <ToggleRight size={36} className="text-emerald-400 transition-colors" />
+              ) : (
+                <ToggleLeft size={36} className="text-slate-600 group-hover:text-slate-400 transition-colors" />
+              )}
+            </button>
+          </div>
+
+          {/* Test Mode Limit Files */}
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.03] border border-white/8 mb-4">
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-xl border ${
+                engineConfig.test_mode_limit_files > 0
+                  ? "bg-amber-500/10 border-amber-500/25 text-amber-400"
+                  : "bg-slate-500/10 border-slate-500/20 text-slate-500"
+              }`}>
+                <FileSearch size={16} />
+              </div>
+              <div>
+                <div className="text-sm font-bold text-white">File Scan Limit</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">
+                  {engineConfig.test_mode_limit_files > 0
+                    ? `Test Mode — giới hạn ${engineConfig.test_mode_limit_files} files mỗi lần audit`
+                    : "Production Mode — quét toàn bộ files"}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min="0"
+                max="999"
+                value={engineConfig.test_mode_limit_files}
+                onChange={(e) => handleEngineConfigChange("test_mode_limit_files", Math.max(0, parseInt(e.target.value) || 0))}
+                className="w-20 px-3 py-2 rounded-xl bg-black/30 border border-white/10 text-white text-sm font-mono text-center focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+              <span className="text-[10px] text-slate-600 font-bold">files</span>
+            </div>
+          </div>
+
+          {/* Actions Row */}
+          <div className="flex items-center gap-3 pt-1">
+            <button
+              onClick={handleEngineSave}
+              disabled={engineSaving || !engineDirty}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                engineDirty
+                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-500/15"
+                  : "bg-white/5 border border-white/10 text-slate-500 cursor-not-allowed"
+              }`}
+            >
+              {engineSaving ? <Zap className="animate-spin" size={14} /> : <Save size={14} />}
+              {engineSaving ? "Saving..." : "Save Changes"}
+            </button>
+            <button
+              onClick={handleTestAiConnection}
+              disabled={aiTesting}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 text-sm font-bold hover:bg-white/10 hover:text-white disabled:opacity-50 transition-all"
+            >
+              {aiTesting ? <Zap className="animate-spin" size={14} /> : <Wifi size={14} />}
+              Test AI Connection
+            </button>
+            {aiTestResult && (
+              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold ${
+                aiTestResult.status === "healthy"
+                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
+                  : "bg-red-500/10 text-red-400 border border-red-500/20"
+              }`}>
+                {aiTestResult.status === "healthy" ? <Wifi size={12} /> : <WifiOff size={12} />}
+                {aiTestResult.status === "healthy"
+                  ? `Healthy — ${aiTestResult.model}`
+                  : `Error — ${aiTestResult.reason?.substring(0, 40)}`}
+              </div>
+            )}
+          </div>
+        </motion.div>
+
         {/* ── System Information ── */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
@@ -324,197 +420,6 @@ const SettingsView = ({ selectedRepoId, cn }) => {
               iconClass="bg-amber-500/10 border-amber-500/20 text-amber-400"
               accent="border-amber-500/25 shadow-[0_0_15px_-5px_rgba(245,158,11,0.15)]"
             />
-          </div>
-        </motion.div>
-
-        {/* ── Repository Management ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.18 }}
-          className="bg-[#0f1629]/50 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
-        >
-          <div className="flex items-center justify-between mb-5">
-            <SectionTitle
-              icon={<FolderOpen size={18} />}
-              title="Repository Management"
-              description={`${repos.length} repositories configured`}
-            />
-            <button
-              onClick={openAddForm}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-bold hover:bg-emerald-500/20 hover:border-emerald-500/40 transition-all"
-            >
-              <Plus size={14} /> Add Repository
-            </button>
-          </div>
-
-          {/* Form thêm/sửa */}
-          <AnimatePresence>
-            {showRepoForm && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden mb-5"
-              >
-                <div className="p-5 rounded-2xl border border-white/10 bg-white/[0.03] space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-white text-sm font-bold">
-                      {editingRepo ? "Edit Repository" : "Add New Repository"}
-                    </h4>
-                    <button
-                      onClick={() => setShowRepoForm(false)}
-                      className="p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition-all"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1.5">ID *</label>
-                      <input
-                        type="text"
-                        value={repoForm.id}
-                        onChange={(e) => setRepoForm({ ...repoForm, id: e.target.value })}
-                        disabled={!!editingRepo}
-                        placeholder="org/repo-name"
-                        className="w-full px-3 py-2.5 rounded-xl bg-black/30 border border-white/10 text-white text-sm font-mono placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 disabled:opacity-50 transition-all"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1.5">Name *</label>
-                      <input
-                        type="text"
-                        value={repoForm.name}
-                        onChange={(e) => setRepoForm({ ...repoForm, name: e.target.value })}
-                        placeholder="My Project"
-                        className="w-full px-3 py-2.5 rounded-xl bg-black/30 border border-white/10 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1.5">Git URL *</label>
-                      <input
-                        type="text"
-                        value={repoForm.url}
-                        onChange={(e) => setRepoForm({ ...repoForm, url: e.target.value })}
-                        placeholder="https://github.com/org/repo.git"
-                        className="w-full px-3 py-2.5 rounded-xl bg-black/30 border border-white/10 text-white text-sm font-mono placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1.5">Username</label>
-                      <input
-                        type="text"
-                        value={repoForm.username}
-                        onChange={(e) => setRepoForm({ ...repoForm, username: e.target.value })}
-                        placeholder="Optional"
-                        className="w-full px-3 py-2.5 rounded-xl bg-black/30 border border-white/10 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1.5">
-                        Token {editingRepo && <span className="text-slate-600 normal-case">(leave empty to keep current)</span>}
-                      </label>
-                      <input
-                        type="password"
-                        value={repoForm.token}
-                        onChange={(e) => setRepoForm({ ...repoForm, token: e.target.value })}
-                        placeholder="•••••••••"
-                        className="w-full px-3 py-2.5 rounded-xl bg-black/30 border border-white/10 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] uppercase tracking-widest text-slate-500 font-bold mb-1.5">Branch</label>
-                      <input
-                        type="text"
-                        value={repoForm.branch}
-                        onChange={(e) => setRepoForm({ ...repoForm, branch: e.target.value })}
-                        placeholder="main"
-                        className="w-full px-3 py-2.5 rounded-xl bg-black/30 border border-white/10 text-white text-sm placeholder:text-slate-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 pt-2">
-                    <button
-                      onClick={handleRepoSave}
-                      disabled={repoSaving}
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-400 text-xs font-bold hover:bg-blue-500/25 hover:border-blue-500/50 disabled:opacity-50 transition-all"
-                    >
-                      {repoSaving ? <Zap className="animate-spin" size={14} /> : <Check size={14} />}
-                      {repoSaving ? "Saving..." : editingRepo ? "Update" : "Create"}
-                    </button>
-                    <button
-                      onClick={() => setShowRepoForm(false)}
-                      className="px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 text-xs font-bold hover:bg-white/10 transition-all"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Bảng danh sách repositories */}
-          <div className="overflow-hidden rounded-2xl border border-white/8">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="bg-white/[0.03]">
-                  <th className="px-4 py-3 text-[10px] uppercase tracking-widest text-slate-500 font-bold">Name</th>
-                  <th className="px-4 py-3 text-[10px] uppercase tracking-widest text-slate-500 font-bold hidden md:table-cell">URL</th>
-                  <th className="px-4 py-3 text-[10px] uppercase tracking-widest text-slate-500 font-bold">Branch</th>
-                  <th className="px-4 py-3 text-[10px] uppercase tracking-widest text-slate-500 font-bold text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {repos.map((repo) => (
-                  <tr
-                    key={repo.id}
-                    className="border-t border-white/5 hover:bg-white/[0.03] transition-colors"
-                  >
-                    <td className="px-4 py-3">
-                      <div className="text-sm font-bold text-white">{repo.name}</div>
-                      <div className="text-[10px] text-slate-600 font-mono">{repo.id}</div>
-                    </td>
-                    <td className="px-4 py-3 hidden md:table-cell">
-                      <div className="text-xs text-slate-400 font-mono truncate max-w-[280px]">{repo.url}</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[10px] font-bold">
-                        <GitBranch size={10} /> {repo.branch || "main"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex items-center gap-1.5 justify-end">
-                        <button
-                          onClick={() => openEditForm(repo)}
-                          className="p-2 rounded-lg text-slate-500 hover:text-blue-400 hover:bg-blue-500/10 transition-all"
-                          title="Edit"
-                        >
-                          <Edit3 size={14} />
-                        </button>
-                        <button
-                          onClick={() => handleRepoDelete(repo.id, repo.name)}
-                          className="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all"
-                          title="Delete"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {repos.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-slate-600 text-sm">
-                      No repositories configured. Click "Add Repository" to get started.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
           </div>
         </motion.div>
 

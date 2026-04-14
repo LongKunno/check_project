@@ -75,6 +75,7 @@ nav:
     - Git Configuration: api_specs/git.md
     - Rules Compiler: api_specs/rules.md
     - Members & Leaderboard: api_specs/members.md
+    - Engine Settings: api_specs/engine_settings.md
 
   - Quy chuẩn Tech Stack:
       - Python Rules: tech_stack/python_rules.md

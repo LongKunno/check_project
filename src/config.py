@@ -42,6 +42,32 @@ except (ValueError, TypeError):
 # false = Tắt AI, chỉ dùng Static Analysis (Regex + AST) — nhanh, miễn phí, không cần API key
 AI_ENABLED = os.getenv("AI_ENABLED", "true").lower() in ("true", "1", "yes")
 
+
+def get_ai_enabled() -> bool:
+    """Đọc AI_ENABLED từ DB (ưu tiên) hoặc .env (fallback).
+    Cho phép thay đổi runtime từ Settings UI mà không cần restart."""
+    try:
+        from src.engine.database import AuditDatabase
+        val = AuditDatabase.get_config("ai_enabled")
+        if val is not None:
+            return val.lower() in ("true", "1", "yes")
+    except Exception:
+        pass
+    return AI_ENABLED
+
+
+def get_test_mode_limit() -> int:
+    """Đọc TEST_MODE_LIMIT_FILES từ DB (ưu tiên) hoặc .env (fallback).
+    0 = full scan (production), >0 = giới hạn N files (test)."""
+    try:
+        from src.engine.database import AuditDatabase
+        val = AuditDatabase.get_config("test_mode_limit_files")
+        if val is not None:
+            return int(val)
+    except Exception:
+        pass
+    return TEST_MODE_LIMIT_FILES
+
 # [DEPRECATED] RULES_METADATA & SEVERITY have been moved to: src/engine/rules.json
 
 # SonarQube Configuration

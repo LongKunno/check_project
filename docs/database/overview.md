@@ -14,7 +14,7 @@ Dữ liệu thực tế được ánh xạ qua Docker Volume: `pgdata:/var/lib/p
 
 ## Các cấu trúc bảng (Schema)
 
-Hệ thống hiện tại lưu trữ 3 bảng chính. Dưới đây là Sơ đồ quan hệ thực thể (ER Diagram):
+Hệ thống hiện tại lưu trữ 4 bảng chính. Dưới đây là Sơ đồ quan hệ thực thể (ER Diagram):
 
 ```mermaid
 erDiagram
@@ -45,6 +45,12 @@ erDiagram
         float final_score "Điểm tổng kết"
         json result_data "Toàn bộ báo cáo vi phạm"
         string timestamp "Thời gian quét"
+    }
+
+    SYSTEM_CONFIG {
+        string key PK "Config key (e.g. ai_enabled)"
+        string value "Giá trị dạng text"
+        timestamp updated_at "Thời gian cập nhật cuối"
     }
 ```
 
@@ -77,6 +83,22 @@ Lưu trữ các luật cấu hình được người dùng chỉ định qua tí
 - `disabled_core_rules` (TEXT) - JSON Array lưu danh sách ID Core Rule bị tắt.
 - `custom_weights` (TEXT) - JSON Dictionary lưu trữ trọng số (Weight Override) của từng luật cụ thể.
 
+### 4. Bảng `system_config` (MỚI — V5)
+Key-value store để lưu cấu hình engine runtime, thay đổi từ Settings UI mà không cần restart container.
+- `key` (VARCHAR(64) PRIMARY KEY) — Tên config (e.g. `ai_enabled`, `test_mode_limit_files`).
+- `value` (TEXT NOT NULL) — Giá trị dạng text (parse theo context: bool, int, string).
+- `updated_at` (TIMESTAMP) — Thời điểm cập nhật cuối.
+
+**Keys hiện tại:**
+
+| Key | Kiểu | Mặc định | Mô tả |
+|-----|------|----------|-------|
+| `ai_enabled` | bool string | `"false"` (.env) | Bật/tắt AI-Powered Analysis |
+| `test_mode_limit_files` | int string | `"0"` (.env) | 0 = full scan, >0 = giới hạn N files |
+
+> [!NOTE]
+> Ưu tiên đọc: DB → .env (fallback). Helper functions: `get_ai_enabled()`, `get_test_mode_limit()` trong `config.py`.
+
 ## API CRUD cho Repository Management
 
 | Method | Endpoint | Mô tả |
@@ -86,6 +108,13 @@ Lưu trữ các luật cấu hình được người dùng chỉ định qua tí
 | PUT | `/api/repositories/{id}` | Cập nhật repository |
 | DELETE | `/api/repositories/{id}` | Xóa repository |
 | GET | `/api/repositories/scores` | Lấy danh sách repos kèm điểm audit mới nhất |
+
+## API Engine Settings
+
+| Method | Endpoint | Mô tả |
+|--------|----------|-------|
+| GET | `/api/settings/engine` | Lấy cấu hình engine hiện tại (DB → .env fallback) |
+| PUT | `/api/settings/engine` | Cập nhật cấu hình engine (lưu DB, runtime reload) |
 
 ---
 *Duy trì bởi LongDD.*

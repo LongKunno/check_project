@@ -117,6 +117,55 @@ async def delete_repository(repo_id: str):
     return {"status": "success", "message": f"Repository '{repo_id}' đã bị vô hiệu hóa."}
 
 
+# ── ENGINE SETTINGS ───────────────────────────────────────────────────────────
+
+
+class EngineSettingsRequest(BaseModel):
+    ai_enabled: Optional[bool] = None
+    test_mode_limit_files: Optional[int] = None
+
+
+@router.get("/settings/engine")
+async def get_engine_settings():
+    """Lấy cấu hình engine hiện tại (đọc DB, fallback .env)."""
+    from src.config import AI_ENABLED, TEST_MODE_LIMIT_FILES
+
+    ai_enabled_val = AuditDatabase.get_config("ai_enabled")
+    test_limit_val = AuditDatabase.get_config("test_mode_limit_files")
+
+    return {
+        "status": "success",
+        "data": {
+            "ai_enabled": ai_enabled_val.lower() in ("true", "1", "yes") if ai_enabled_val is not None else AI_ENABLED,
+            "test_mode_limit_files": int(test_limit_val) if test_limit_val is not None else TEST_MODE_LIMIT_FILES,
+        },
+    }
+
+
+@router.put("/settings/engine")
+async def update_engine_settings(request: EngineSettingsRequest):
+    """Cập nhật cấu hình engine (lưu vào DB, áp dụng runtime)."""
+    if request.ai_enabled is not None:
+        AuditDatabase.set_config("ai_enabled", str(request.ai_enabled).lower())
+    if request.test_mode_limit_files is not None:
+        if request.test_mode_limit_files < 0:
+            raise HTTPException(status_code=400, detail="test_mode_limit_files phải >= 0")
+        AuditDatabase.set_config("test_mode_limit_files", str(request.test_mode_limit_files))
+
+    # Đọc lại config mới từ DB
+    from src.config import AI_ENABLED, TEST_MODE_LIMIT_FILES
+    ai_enabled_val = AuditDatabase.get_config("ai_enabled")
+    test_limit_val = AuditDatabase.get_config("test_mode_limit_files")
+
+    return {
+        "status": "success",
+        "data": {
+            "ai_enabled": ai_enabled_val.lower() in ("true", "1", "yes") if ai_enabled_val is not None else AI_ENABLED,
+            "test_mode_limit_files": int(test_limit_val) if test_limit_val is not None else TEST_MODE_LIMIT_FILES,
+        },
+    }
+
+
 # ── HEALTH CHECK ──────────────────────────────────────────────────────────────
 
 
@@ -136,3 +185,4 @@ async def health_ai():
         return {"status": "unhealthy", "reason": "Empty response"}
     except Exception as e:
         return {"status": "unhealthy", "reason": str(e)}
+

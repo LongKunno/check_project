@@ -91,9 +91,9 @@ class CodeAuditor:
         self._step_discovery()
         automated_violations = self._step_scanning()
 
-        from src.config import AI_ENABLED
+        from src.config import get_ai_enabled
 
-        if AI_ENABLED:
+        if get_ai_enabled():
             self._step_ai_processing(automated_violations)
         else:
             logger.info("[3/5] AI bị tắt (AI_ENABLED=false) — bỏ qua toàn bộ bước AI.")
@@ -113,16 +113,17 @@ class CodeAuditor:
         self.discovery_data = discovery.run_discovery()
 
         try:
-            from src.config import TEST_MODE_LIMIT_FILES
+            from src.config import get_test_mode_limit
 
-            if TEST_MODE_LIMIT_FILES and TEST_MODE_LIMIT_FILES > 0:
+            limit = get_test_mode_limit()
+            if limit and limit > 0:
                 original_count = len(self.discovery_data["files"])
-                if original_count > TEST_MODE_LIMIT_FILES:
+                if original_count > limit:
                     self.discovery_data["files"] = self.discovery_data["files"][
-                        :TEST_MODE_LIMIT_FILES
+                        :limit
                     ]
                     logger.warning(
-                        f"[TEST MODE] Giới hạn: {TEST_MODE_LIMIT_FILES}/{original_count} files"
+                        f"[TEST MODE] Giới hạn: {limit}/{original_count} files"
                     )
         except ImportError:
             pass

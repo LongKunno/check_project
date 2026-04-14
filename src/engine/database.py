@@ -143,6 +143,14 @@ class AuditDatabase:
                     "ALTER TABLE project_rules ADD COLUMN custom_weights TEXT DEFAULT '{}'"
                 )
 
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS system_config (
+                    key        VARCHAR(64) PRIMARY KEY,
+                    value      TEXT NOT NULL,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
             cursor.close()
             AuditDatabase.release_connection(conn)
 
@@ -150,6 +158,39 @@ class AuditDatabase:
             AuditDatabase.seed_default_repositories()
         except Exception as e:
             logger.error(f"Database Initialization Error: {e}")
+
+    # ── System Config (Key-Value Store) ───────────────────────────────────────
+
+    @staticmethod
+    def get_config(key, default=None):
+        """Đọc 1 giá trị config từ bảng system_config."""
+        conn = AuditDatabase.get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT value FROM system_config WHERE key = %s", (key,))
+            row = cursor.fetchone()
+            cursor.close()
+            return row[0] if row else default
+        except Exception:
+            return default
+        finally:
+            AuditDatabase.release_connection(conn)
+
+    @staticmethod
+    def set_config(key, value):
+        """Upsert 1 giá trị config vào bảng system_config."""
+        conn = AuditDatabase.get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO system_config (key, value, updated_at)
+                VALUES (%s, %s, CURRENT_TIMESTAMP)
+                ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP
+            """, (key, str(value)))
+            conn.commit()
+            cursor.close()
+        finally:
+            AuditDatabase.release_connection(conn)
 
     @staticmethod
     def save_audit(
