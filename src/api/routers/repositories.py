@@ -123,21 +123,24 @@ async def delete_repository(repo_id: str):
 class EngineSettingsRequest(BaseModel):
     ai_enabled: Optional[bool] = None
     test_mode_limit_files: Optional[int] = None
+    auth_required: Optional[bool] = None
 
 
 @router.get("/settings/engine")
 async def get_engine_settings():
     """Lấy cấu hình engine hiện tại (đọc DB, fallback .env)."""
-    from src.config import AI_ENABLED, TEST_MODE_LIMIT_FILES
+    from src.config import AI_ENABLED, TEST_MODE_LIMIT_FILES, AUTH_REQUIRED
 
     ai_enabled_val = AuditDatabase.get_config("ai_enabled")
     test_limit_val = AuditDatabase.get_config("test_mode_limit_files")
+    auth_required_val = AuditDatabase.get_config("auth_required")
 
     return {
         "status": "success",
         "data": {
             "ai_enabled": ai_enabled_val.lower() in ("true", "1", "yes") if ai_enabled_val is not None else AI_ENABLED,
             "test_mode_limit_files": int(test_limit_val) if test_limit_val is not None else TEST_MODE_LIMIT_FILES,
+            "auth_required": auth_required_val.lower() in ("true", "1", "yes") if auth_required_val is not None else AUTH_REQUIRED,
         },
     }
 
@@ -151,17 +154,21 @@ async def update_engine_settings(request: EngineSettingsRequest):
         if request.test_mode_limit_files < 0:
             raise HTTPException(status_code=400, detail="test_mode_limit_files phải >= 0")
         AuditDatabase.set_config("test_mode_limit_files", str(request.test_mode_limit_files))
+    if request.auth_required is not None:
+        AuditDatabase.set_config("auth_required", str(request.auth_required).lower())
 
     # Đọc lại config mới từ DB
-    from src.config import AI_ENABLED, TEST_MODE_LIMIT_FILES
+    from src.config import AI_ENABLED, TEST_MODE_LIMIT_FILES, AUTH_REQUIRED
     ai_enabled_val = AuditDatabase.get_config("ai_enabled")
     test_limit_val = AuditDatabase.get_config("test_mode_limit_files")
+    auth_required_val = AuditDatabase.get_config("auth_required")
 
     return {
         "status": "success",
         "data": {
             "ai_enabled": ai_enabled_val.lower() in ("true", "1", "yes") if ai_enabled_val is not None else AI_ENABLED,
             "test_mode_limit_files": int(test_limit_val) if test_limit_val is not None else TEST_MODE_LIMIT_FILES,
+            "auth_required": auth_required_val.lower() in ("true", "1", "yes") if auth_required_val is not None else AUTH_REQUIRED,
         },
     }
 

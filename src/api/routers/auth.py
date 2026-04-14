@@ -143,3 +143,14 @@ async def get_current_user(authorization: str = Header(default="")):
         name=payload.get("name", ""),
         picture=payload.get("picture", ""),
     )
+
+
+@router.get("/config")
+async def get_auth_config():
+    """
+    Public endpoint (không cần token): trả về trạng thái auth_required.
+    Frontend dùng để quyết định hiển thị trang login hay bypass xác thực.
+    """
+    from src.config import get_auth_required
+
+    return {"auth_required": get_auth_required()}

@@ -9,11 +9,32 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY));
   const [loading, setLoading] = useState(true);
+  const [authRequired, setAuthRequired] = useState(true); // mặc định yêu cầu đăng nhập
   const navigate = useNavigate();
 
-  // On mount: verify existing token
+  // On mount: check auth_required config, then verify token if needed
   useEffect(() => {
-    const verifyToken = async () => {
+    const init = async () => {
+      try {
+        // Step 1: Kiểm tra server có yêu cầu đăng nhập không
+        const configRes = await fetch("/api/auth/config");
+        if (configRes.ok) {
+          const configData = await configRes.json();
+          const isAuthRequired = configData.auth_required;
+          setAuthRequired(isAuthRequired);
+
+          // Nếu không yêu cầu đăng nhập → bypass, tạo anonymous user
+          if (!isAuthRequired) {
+            setUser({ email: "anonymous@local", name: "Anonymous", picture: "" });
+            setLoading(false);
+            return;
+          }
+        }
+      } catch {
+        // Nếu không gọi được API config → giữ mặc định auth_required = true
+      }
+
+      // Step 2: Verify token nếu auth_required = true
       const savedToken = localStorage.getItem(TOKEN_KEY);
       if (!savedToken) {
         setLoading(false);
@@ -43,7 +64,7 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
-    verifyToken();
+    init();
   }, []);
 
   const login = async (googleCredential) => {
@@ -66,14 +87,32 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    // Nếu auth bị tắt → không redirect login, chỉ tạo lại anonymous user
+    if (!authRequired) {
+      return;
+    }
     localStorage.removeItem(TOKEN_KEY);
     setToken(null);
     setUser(null);
     navigate("/login");
   };
 
+  // Anonymous user check: user có email anonymous@local
+  const isAnonymous = user?.email === "anonymous@local";
+
+  /**
+   * Cập nhật authRequired runtime (khi user thay đổi từ Settings UI).
+   * Nếu tắt auth → tự động tạo anonymous user để không bị redirect.
+   */
+  const updateAuthRequired = (newValue) => {
+    setAuthRequired(newValue);
+    if (!newValue && !user) {
+      setUser({ email: "anonymous@local", name: "Anonymous", picture: "" });
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, authRequired, isAnonymous, login, logout, updateAuthRequired }}>
       {children}
     </AuthContext.Provider>
   );

@@ -33,7 +33,7 @@ export const Sidebar = ({
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = React.useState(false);
-  const { user, logout } = useAuth();
+  const { user, logout, isAnonymous } = useAuth();
 
   const isPathActive = (path) =>
     location.pathname.startsWith(path) ||
@@ -358,7 +358,7 @@ export const Sidebar = ({
                 </p>
               </div>
             )}
-            {!isSidebarCollapsed && (
+            {!isSidebarCollapsed && !isAnonymous && (
               <button
                 onClick={logout}
                 className="p-1.5 rounded-lg hover:bg-rose-500/15 text-slate-500 hover:text-rose-400 transition-colors shrink-0"

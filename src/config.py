@@ -42,6 +42,11 @@ except (ValueError, TypeError):
 # false = Tắt AI, chỉ dùng Static Analysis (Regex + AST) — nhanh, miễn phí, không cần API key
 AI_ENABLED = os.getenv("AI_ENABLED", "true").lower() in ("true", "1", "yes")
 
+# AUTH TOGGLE: Bật/tắt yêu cầu đăng nhập Google OAuth
+# true  = Bắt buộc đăng nhập để truy cập Dashboard
+# false = Bỏ qua xác thực, mọi người đều truy cập được (dùng cho local dev / demo)
+AUTH_REQUIRED = os.getenv("AUTH_REQUIRED", "true").lower() in ("true", "1", "yes")
+
 
 def get_ai_enabled() -> bool:
     """Đọc AI_ENABLED từ DB (ưu tiên) hoặc .env (fallback).
@@ -67,6 +72,19 @@ def get_test_mode_limit() -> int:
     except Exception:
         pass
     return TEST_MODE_LIMIT_FILES
+
+
+def get_auth_required() -> bool:
+    """Đọc AUTH_REQUIRED từ DB (ưu tiên) hoặc .env (fallback).
+    True = bắt buộc đăng nhập, False = bỏ qua xác thực."""
+    try:
+        from src.engine.database import AuditDatabase
+        val = AuditDatabase.get_config("auth_required")
+        if val is not None:
+            return val.lower() in ("true", "1", "yes")
+    except Exception:
+        pass
+    return AUTH_REQUIRED
 
 # [DEPRECATED] RULES_METADATA & SEVERITY have been moved to: src/engine/rules.json
 

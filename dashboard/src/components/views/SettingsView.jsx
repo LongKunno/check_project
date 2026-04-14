@@ -25,9 +25,12 @@ import {
   Wifi,
   WifiOff,
   FileSearch,
+  Lock,
+  LockOpen,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "../ui/Toast";
+import { useAuth } from "../../contexts/AuthContext";
 
 const InfoCard = ({
   icon,
@@ -71,11 +74,13 @@ const SettingsView = ({ selectedRepoId, cn }) => {
   const [systemInfo, setSystemInfo] = useState(null);
   const [rulesInfo, setRulesInfo] = useState(null);
   const toast = useToast();
+  const { updateAuthRequired } = useAuth();
 
   // ── Engine Configuration State ──────────────────────────────────────────
   const [engineConfig, setEngineConfig] = useState({
     ai_enabled: false,
     test_mode_limit_files: 0,
+    auth_required: true,
   });
   const [engineSaving, setEngineSaving] = useState(false);
   const [engineDirty, setEngineDirty] = useState(false);
@@ -116,6 +121,10 @@ const SettingsView = ({ selectedRepoId, cn }) => {
           setEngineConfig(d.data);
           setEngineDirty(false);
           toast.success("Engine configuration saved successfully.", "Settings Updated");
+          // Cập nhật AuthContext nếu auth_required đã thay đổi
+          if (d.data.auth_required !== undefined) {
+            updateAuthRequired(d.data.auth_required);
+          }
         }
       } else {
         toast.error("Failed to save settings.", "Error");
@@ -279,6 +288,46 @@ const SettingsView = ({ selectedRepoId, cn }) => {
               )}
             </button>
           </div>
+
+          {/* Authentication Required Toggle */}
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.03] border border-white/8 mb-4">
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-xl border ${
+                engineConfig.auth_required
+                  ? "bg-blue-500/10 border-blue-500/25 text-blue-400"
+                  : "bg-amber-500/10 border-amber-500/25 text-amber-400"
+              }`}>
+                {engineConfig.auth_required ? <Lock size={16} /> : <LockOpen size={16} />}
+              </div>
+              <div>
+                <div className="text-sm font-bold text-white">Authentication Required</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">
+                  {engineConfig.auth_required
+                    ? "Bắt buộc đăng nhập Google OAuth để truy cập Dashboard"
+                    : "Bỏ qua xác thực — mọi người đều truy cập được (local dev / demo)"}
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => handleEngineConfigChange("auth_required", !engineConfig.auth_required)}
+              className="relative shrink-0 group"
+              title={engineConfig.auth_required ? "Click to disable authentication" : "Click to enable authentication"}
+            >
+              {engineConfig.auth_required ? (
+                <ToggleRight size={36} className="text-blue-400 transition-colors" />
+              ) : (
+                <ToggleLeft size={36} className="text-slate-600 group-hover:text-slate-400 transition-colors" />
+              )}
+            </button>
+          </div>
+          {!engineConfig.auth_required && (
+            <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/5 border border-amber-500/15 mb-4">
+              <AlertTriangle size={14} className="text-amber-400 shrink-0 mt-0.5" />
+              <p className="text-[11px] text-amber-400/80 leading-relaxed">
+                <strong>Cảnh báo:</strong> Khi tắt xác thực, bất kỳ ai có quyền truy cập mạng đều có thể vào Dashboard mà không cần đăng nhập. Chỉ nên tắt trong môi trường phát triển local hoặc demo.
+              </p>
+            </div>
+          )}
 
           {/* Test Mode Limit Files */}
           <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.03] border border-white/8 mb-4">

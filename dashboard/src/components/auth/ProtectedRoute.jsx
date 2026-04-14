@@ -3,7 +3,7 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 
 const ProtectedRoute = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, authRequired } = useAuth();
 
   if (loading) {
     return (
@@ -16,6 +16,11 @@ const ProtectedRoute = ({ children }) => {
         </div>
       </div>
     );
+  }
+
+  // Nếu auth bị tắt → cho qua (user đã được set thành anonymous bởi AuthContext)
+  if (!authRequired) {
+    return children;
   }
 
   if (!user) {
