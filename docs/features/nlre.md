@@ -120,13 +120,44 @@ graph TD
 ```
 
 ### 2. Giao diện 4 Tabs & Override Manager
-- RuleManager UI áp dụng 4 thanh tab độc lập:
+- RuleManager UI áp dụng 4 thanh tab độc lập, mỗi tab đều có **icon ℹ️ tooltip** mô tả mục đích khi hover:
   - **Tab 1 - Global Rules:** Chỉnh sửa luật trực tiếp trên Global (Ảnh hưởng đa dự án).
   - **Tab 2 - Project Overrides:** Chỉnh sửa trên dự án hiện tại. Giao diện sẽ hiển thị Badge "Override Active" cảnh báo luật này đang đè lên Global.
   - **Tab 3 - Custom AI Rules:** Quản lý JSON Custom.
-  - **Tab 4 - Override Manager:** Thống kê siêu cấp (Diff View) mô tả sự khác biệt giữa Dự án và Hệ Thống, kèm nút `Reset to Global` để xóa bỏ nhanh các sai lệch.
+  - **Tab 4 - Override Manager:** Thống kê siêu cấp (Diff View) mô tả sự khác biệt giữa Dự án và Hệ Thống, kèm nút `Reset to Global` để xóa bỏ nhanh các sai lệch. Không có info box chiếm diện tích — thông tin giải thích chỉ hiển thị qua tooltip icon ℹ️ trên tab.
 
 ### 3. Database Schema `project_rules`
 - `disabled_core_rules` (JSON Array): Các rules bị tắt bởi Project.
-- `enabled_core_rules` (JSON Array): Các rules được bạt ép buộc bởi Project nhằm thoát khỏi sự cấm cản từ Global.
+- `enabled_core_rules` (JSON Array): Các rules được bật ép buộc bởi Project nhằm thoát khỏi sự cấm cản từ Global.
 - `custom_weights` (JSON Object): Các trọng số bị ghi đè riêng của Project.
+
+### 4. Logic Tính KPI Active Count (Bugfix 2026-04-14)
+
+**Công thức chính xác** cho KPI cards trên dashboard (`RuleManager.jsx` — `dbStats` useMemo):
+
+- **Active Global Rules** = `totalRules - globalDisabled.filter(r => existsInDefaultRules(r)).length`
+- **Active Project Rules** = `totalRules - effectiveDisabledCount`, trong đó:
+  - `mergedDisabled = (global.disabled ∪ project.disabled) \ project.enabled` (phép set operation)
+  - `effectiveDisabledCount` chỉ đếm các rule **tồn tại** trong `defaultRules` (bỏ qua rule đã bị xóa khỏi `rules.json`)
+
+**Backend `toggle_core_rule()`** (`src/engine/database.py`):
+
+- Khi bật rule (`is_disabled=False`) ở scope **GLOBAL**: chỉ xóa khỏi `disabled_core_rules`, **KHÔNG** thêm vào `enabled_core_rules` (vì global không có khái niệm override).
+- Khi bật rule ở scope **Project**: xóa khỏi `disabled_core_rules` VÀ thêm vào `enabled_core_rules` (để override global disable nếu có).
+
+### 5. Edge Cases & Gotchas
+
+| Case | Mô tả | Cách xử lý |
+|---|---|---|
+| Rule bị xóa khỏi `rules.json` nhưng vẫn nằm trong `disabled_core_rules` DB | Có thể gây sai số KPI nếu đếm thô | Frontend filter bằng `allRuleIds.has(r)` trước khi đếm |
+| `enabled_core_rules` chứa rule không nằm trong `disabled` set | Có thể xảy ra do data cũ (trước bugfix) | `Set.delete()` là no-op an toàn; KPI dùng set operation nên không bị ảnh hưởng |
+| Toggle rule ở Global tab → `enabled_core_rules` của GLOBAL bị phình | Đã fix backend: không thêm vào `enabled_core_rules` khi `target_id == 'GLOBAL'` | Backend guard tại `toggle_core_rule()` |
+| Override Manager hiển thị stale ENABLED entries | `enabled_core_rules` chứa rule không bị global disable → override vô nghĩa | Frontend chỉ hiện ENABLED override khi rule **thực sự** nằm trong `globalOverrides.disabled_core_rules` |
+
+### 6. Performance Optimization — `tabEffectiveDisabled` Set (2026-04-14)
+
+`tabEffectiveDisabled` sử dụng kiểu `Set` thay vì `Array` để tra cứu O(1) thay vì O(n):
+
+- **3 callsites** dùng `.has()` thay vì `.includes()`: filter rules, accordion active count, RuleCard disabled prop
+- Override Manager badge count chỉ đếm `enabled_core_rules` entries **thực sự override** global disable
+- Empty state "Đồng bộ với Global" chỉ hiện khi không có override thực sự (bỏ qua stale entries)

@@ -399,8 +399,12 @@ class AuditDatabase:
             else:
                 if rule_id in disabled_rules:
                     disabled_rules.remove(rule_id)
-                if rule_id not in enabled_rules:
-                    enabled_rules.append(rule_id)
+                # Only add to enabled_core_rules for project scope
+                # (meaning: "override a global-level disable").
+                # At GLOBAL scope, enabled_core_rules has no semantic meaning.
+                if target_id != "GLOBAL":
+                    if rule_id not in enabled_rules:
+                        enabled_rules.append(rule_id)
 
             disabled_str = json.dumps(disabled_rules)
             enabled_str = json.dumps(enabled_rules)

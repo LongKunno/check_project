@@ -53,6 +53,7 @@ const RuleManager = ({ targetId, projectName }) => {
   const [severityFilter, setSeverityFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [expandedCategories, setExpandedCategories] = useState({});
+  const [showTabInfo, setShowTabInfo] = useState(null);
   const weightDebounceRef = useRef(null);
   const pendingWeightsRef = useRef({ global: null, project: null });
 
@@ -217,16 +218,16 @@ const RuleManager = ({ targetId, projectName }) => {
 
   // Calculate effective lists based on active tab
   const tabEffectiveDisabled = useMemo(() => {
-    if (activeTab === "global") return globalOverrides.disabled_core_rules || [];
+    if (activeTab === "global") return new Set(globalOverrides.disabled_core_rules || []);
     else if (activeTab === "project") {
         const g_dis = new Set(globalOverrides.disabled_core_rules || []);
         const p_dis = new Set(projectOverrides.disabled_core_rules || []);
         const p_en = new Set(projectOverrides.enabled_core_rules || []);
         const merged = new Set([...g_dis, ...p_dis]);
         for(let rm of p_en) merged.delete(rm);
-        return Array.from(merged);
+        return merged;
     }
-    return [];
+    return new Set();
   }, [activeTab, globalOverrides, projectOverrides]);
 
   const tabEffectiveWeights = useMemo(() => {
@@ -246,7 +247,7 @@ const RuleManager = ({ targetId, projectName }) => {
         return false;
       if (severityFilter !== "ALL" && meta.severity !== severityFilter)
         return false;
-      const isDisabled = tabEffectiveDisabled.includes(key);
+      const isDisabled = tabEffectiveDisabled.has(key);
       if (statusFilter === "ON" && isDisabled) return false;
       if (statusFilter === "OFF" && !isDisabled) return false;
       if (searchTerm) {
@@ -280,11 +281,28 @@ const RuleManager = ({ targetId, projectName }) => {
   }, [filteredCoreRules]);
 
   const dbStats = useMemo(() => {
-    const activeGlobal = Object.keys(defaultRules).length - (globalOverrides?.disabled_core_rules?.length || 0);
-    const activeProject = Object.keys(defaultRules).length - (
-        new Set([...(globalOverrides?.disabled_core_rules||[]), ...(projectOverrides?.disabled_core_rules||[])]).size -
-        (projectOverrides?.enabled_core_rules||[]).length
-    );
+    const allRuleIds = new Set(Object.keys(defaultRules));
+
+    // activeGlobal: total - (globally disabled rules that actually exist in default rules)
+    const gDisabled = (globalOverrides?.disabled_core_rules || []).filter(r => allRuleIds.has(r));
+    const activeGlobal = allRuleIds.size - gDisabled.length;
+
+    // activeProject: merge global+project disabled, then subtract project enabled (set operation)
+    // This matches backend get_effective_rules() logic: (g_dis ∪ p_dis) - p_en
+    const mergedDisabled = new Set([
+      ...(globalOverrides?.disabled_core_rules || []),
+      ...(projectOverrides?.disabled_core_rules || []),
+    ]);
+    // Only remove rules that are actually in the merged disabled set (intersection)
+    for (const r of (projectOverrides?.enabled_core_rules || [])) {
+      mergedDisabled.delete(r);
+    }
+    // Only count disabled rules that actually exist in default rules
+    let effectiveDisabledCount = 0;
+    for (const r of mergedDisabled) {
+      if (allRuleIds.has(r)) effectiveDisabledCount++;
+    }
+    const activeProject = allRuleIds.size - effectiveDisabledCount;
     let critical = 0;
     Object.values(defaultRules).forEach((v) => {
       if (v.severity === "Blocker" || v.severity === "Critical") critical++;
@@ -304,7 +322,7 @@ const RuleManager = ({ targetId, projectName }) => {
     
     // Instead of looping individual toggles, optimally just toggle sequentially. For now we loop.
     for (const r of categoryRules) {
-      const isCurrentlyDisabled = tabEffectiveDisabled.includes(r);
+      const isCurrentlyDisabled = tabEffectiveDisabled.has(r);
       if (enable && isCurrentlyDisabled) {
         await handleToggleRule(r, false);
       } else if (!enable && !isCurrentlyDisabled) {
@@ -438,6 +456,7 @@ const RuleManager = ({ targetId, projectName }) => {
                 icon: Globe,
                 count: Object.keys(defaultRules).length,
                 activeGrad: "from-blue-600 to-indigo-600",
+                desc: "Chỉnh sửa luật áp dụng chung cho toàn bộ hệ thống. Thay đổi ở đây ảnh hưởng tới tất cả dự án.",
               },
               {
                 id: "project",
@@ -445,6 +464,7 @@ const RuleManager = ({ targetId, projectName }) => {
                 icon: ShieldCheck,
                 count: Object.keys(defaultRules).length,
                 activeGrad: "from-emerald-600 to-teal-600",
+                desc: "Ghi đè luật riêng cho dự án hiện tại. Kế thừa Global nhưng cho phép Bật/Tắt hoặc thay đổi trọng số độc lập.",
               },
               {
                 id: "custom",
@@ -452,13 +472,15 @@ const RuleManager = ({ targetId, projectName }) => {
                 icon: Wand2,
                 count: customRuleCount,
                 activeGrad: "from-violet-600 to-purple-600",
+                desc: "Quản lý các luật tùy chỉnh do AI sinh ra (Regex & AST). Dùng Rule Builder để tạo luật mới.",
               },
               {
                 id: "diff",
                 label: "Override Manager",
                 icon: GitCompare,
-                count: Object.keys(projectOverrides?.custom_weights || {}).length + (projectOverrides?.disabled_core_rules || []).length + (projectOverrides?.enabled_core_rules || []).length,
+                count: Object.keys(projectOverrides?.custom_weights || {}).length + (projectOverrides?.disabled_core_rules || []).length + (projectOverrides?.enabled_core_rules || []).filter(r => (globalOverrides?.disabled_core_rules || []).includes(r)).length,
                 activeGrad: "from-orange-600 to-amber-600",
+                desc: "Hiển thị tất cả tùy chỉnh Rule (trạng thái, trọng số) của dự án này so với thiết lập Global mặc định.",
               },
             ].map((tab) => (
               <button
@@ -482,6 +504,12 @@ const RuleManager = ({ targetId, projectName }) => {
                   )}
                 >
                   {tab.count}
+                </span>
+                <span
+                  onClick={(e) => { e.stopPropagation(); setShowTabInfo(showTabInfo === tab.id ? null : tab.id); }}
+                  className={cn("shrink-0 cursor-help transition-colors p-0.5 rounded", activeTab === tab.id ? "text-white/40 hover:text-white/80 hover:bg-white/10" : "text-slate-600 hover:text-slate-400 hover:bg-white/5")}
+                >
+                  <Info size={12} />
                 </span>
               </button>
             ))}
@@ -578,6 +606,38 @@ const RuleManager = ({ targetId, projectName }) => {
                 </div>
               </motion.div>
             )}
+          </AnimatePresence>
+
+          {/* Tab Info Bar */}
+          <AnimatePresence>
+            {showTabInfo && (() => {
+              const tabs = {
+                global: { icon: Globe, label: "Global Rules", desc: "Chỉnh sửa luật áp dụng chung cho toàn bộ hệ thống. Thay đổi ở đây ảnh hưởng tới tất cả dự án.", color: "blue" },
+                project: { icon: ShieldCheck, label: "Project Overrides", desc: "Ghi đè luật riêng cho dự án hiện tại. Kế thừa Global nhưng cho phép Bật/Tắt hoặc thay đổi trọng số độc lập.", color: "emerald" },
+                custom: { icon: Wand2, label: "Custom AI Rules", desc: "Quản lý các luật tùy chỉnh do AI sinh ra (Regex & AST). Dùng Rule Builder để tạo luật mới.", color: "violet" },
+                diff: { icon: GitCompare, label: "Override Manager", desc: "Hiển thị tất cả tùy chỉnh Rule (trạng thái, trọng số) của dự án này so với thiết lập Global mặc định.", color: "orange" },
+              };
+              const info = tabs[showTabInfo];
+              if (!info) return null;
+              const TIcon = info.icon;
+              return (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden border-b border-white/[0.05]"
+                >
+                  <div className="px-4 py-2.5 flex items-center gap-2.5 bg-[rgba(10,15,28,0.3)]">
+                    <TIcon size={13} className={`text-${info.color}-400`} />
+                    <span className="text-xs text-slate-300 leading-relaxed">{info.desc}</span>
+                    <button onClick={() => setShowTabInfo(null)} className="ml-auto text-slate-500 hover:text-white p-0.5 rounded hover:bg-white/10 transition-colors shrink-0">
+                      <X size={12} />
+                    </button>
+                  </div>
+                </motion.div>
+              );
+            })()}
           </AnimatePresence>
 
           {/* Content */}
@@ -780,7 +840,7 @@ const RuleManager = ({ targetId, projectName }) => {
                 const pm = getPillarMeta(category);
                 const PIcon = pm.icon;
                 const activeCount = rules.filter(
-                  ([k]) => !tabEffectiveDisabled.includes(k),
+                  ([k]) => !tabEffectiveDisabled.has(k),
                 ).length;
 
                 return (
@@ -890,13 +950,13 @@ const RuleManager = ({ targetId, projectName }) => {
                                 key={ruleKey}
                                 ruleKey={ruleKey}
                                 meta={meta}
-                                isDisabled={tabEffectiveDisabled.includes(ruleKey)}
+                                isDisabled={tabEffectiveDisabled.has(ruleKey)}
                                 isCustomWeight={
                                   tabEffectiveWeights[ruleKey] !== undefined
                                 }
                                 customWeight={tabEffectiveWeights[ruleKey]}
-                                onToggle={(isCurrentlyEnabled) =>
-                                  handleToggleRule(ruleKey, isCurrentlyEnabled, false)
+                                onToggle={(shouldDisable) =>
+                                  handleToggleRule(ruleKey, shouldDisable, false)
                                 }
                                 onWeightChange={(val) =>
                                   handleWeightChange(ruleKey, val)
@@ -916,14 +976,8 @@ const RuleManager = ({ targetId, projectName }) => {
             {/* Diff/Override Manager Tab */}
             {activeTab === "diff" && (
               <div className="flex flex-col gap-4">
-                <div className="bg-orange-500/10 border border-orange-500/20 text-orange-200 p-4 rounded-xl text-sm leading-relaxed">
-                  <div className="font-bold mb-1 flex items-center gap-2">
-                    <GitCompare size={16} /> Override Manager
-                  </div>
-                  Màn hình này hiển thị tất cả các tùy chỉnh Rule (mật độ, trọng số, trạng thái) của dự án này so với thiết lập Global (Mặc định cho toàn hệ thống).
-                </div>
                 
-                {(!projectOverrides?.disabled_core_rules?.length && !projectOverrides?.enabled_core_rules?.length && !Object.keys(projectOverrides?.custom_weights || {}).length) ? (
+                {(() => { const globalDisabledSet = new Set(globalOverrides?.disabled_core_rules || []); const hasRealOverrides = (projectOverrides?.disabled_core_rules?.length > 0) || (projectOverrides?.enabled_core_rules || []).some(r => globalDisabledSet.has(r)) || Object.keys(projectOverrides?.custom_weights || {}).length > 0; return !hasRealOverrides; })() ? (
                   <div className="py-20 flex flex-col items-center justify-center opacity-60">
                     <CheckCircle2 size={40} className="text-emerald-500 mb-3" />
                     <p className="text-emerald-400 font-bold">Dự án hoàn toàn đồng bộ với Global.</p>
@@ -937,9 +991,13 @@ const RuleManager = ({ targetId, projectName }) => {
                          if (!uniqueOverrides[r]) uniqueOverrides[r] = {};
                          uniqueOverrides[r].status = "DISABLED";
                       });
+                      const globalDisabledSet = new Set(globalOverrides?.disabled_core_rules || []);
                       (projectOverrides?.enabled_core_rules || []).forEach(r => {
-                         if (!uniqueOverrides[r]) uniqueOverrides[r] = {};
-                         uniqueOverrides[r].status = "ENABLED";
+                         // Only show enabled override if it actually overrides a global disable
+                         if (globalDisabledSet.has(r)) {
+                           if (!uniqueOverrides[r]) uniqueOverrides[r] = {};
+                           uniqueOverrides[r].status = "ENABLED";
+                         }
                       });
                       Object.entries(projectOverrides?.custom_weights || {}).forEach(([r, w]) => {
                          if (!uniqueOverrides[r]) uniqueOverrides[r] = {};
