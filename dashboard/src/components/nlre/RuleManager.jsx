@@ -945,6 +945,10 @@ const RuleManager = ({ targetId, projectName }) => {
                                 projectOverrides?.enabled_core_rules?.includes(ruleKey) ||
                                 projectOverrides?.custom_weights?.[ruleKey] !== undefined
                               );
+                              const isGlobalCustomized = activeTab === "global" && (
+                                globalOverrides?.disabled_core_rules?.includes(ruleKey) ||
+                                globalOverrides?.custom_weights?.[ruleKey] !== undefined
+                              );
                               return (
                               <RuleCard
                                 key={ruleKey}
@@ -963,6 +967,8 @@ const RuleManager = ({ targetId, projectName }) => {
                                 }
                                 isOverridden={isOverridden}
                                 onResetOverride={() => handleToggleRule(ruleKey, false, true)}
+                                isGlobalCustomized={isGlobalCustomized}
+                                onResetToDefault={() => handleToggleRule(ruleKey, false, true)}
                               />
                             )})}
                           </div>

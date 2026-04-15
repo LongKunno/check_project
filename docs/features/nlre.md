@@ -78,10 +78,18 @@ Nâng cấp toàn diện giao diện 2 trang `/rules` và `/sandbox` lên tiêu 
 | **Step 3 Split pane** | 2 panel đơn giản | Gutter visual dots + violation cards có `border-l` rose + badge Line number |
 | **Save button** | Button bình thường | Gradient `emerald→teal` với glow khi ready, pulse animation |
 
+### Bugfix: Step 3 Sandbox Crash (2026-04-14)
+
+| Triệu chứng | Nguyên nhân | Fix |
+|---|---|---|
+| Click "Tiến Vào Sandbox" → React crash trắng màn hình | `Box` icon (lucide-react) được sử dụng ở Step 3 panel "Kết Quả Phân Tích" (dòng 686) nhưng **không được import** trong `RuleBuilder.jsx` | Thêm `Box` vào danh sách import từ `lucide-react` |
+
+**File:** `dashboard/src/components/nlre/RuleBuilder.jsx` — dòng 3-19 (import block)
+
 ### Files thay đổi
 
 - `dashboard/src/components/nlre/RuleManager.jsx` — Viết lại toàn bộ
-- `dashboard/src/components/nlre/RuleBuilder.jsx` — Viết lại toàn bộ
+- `dashboard/src/components/nlre/RuleBuilder.jsx` — Viết lại toàn bộ (+ bugfix import `Box`)
 - `dashboard/src/index.css` — Bổ sung: `json-highlight`, `terminal-cursor`, `font-display`, `animate-spin-slow`, utility classes
 
 ### New CSS classes
@@ -121,8 +129,8 @@ graph TD
 
 ### 2. Giao diện 4 Tabs & Override Manager
 - RuleManager UI áp dụng 4 thanh tab độc lập, mỗi tab đều có **icon ℹ️ tooltip** mô tả mục đích khi hover:
-  - **Tab 1 - Global Rules:** Chỉnh sửa luật trực tiếp trên Global (Ảnh hưởng đa dự án).
-  - **Tab 2 - Project Overrides:** Chỉnh sửa trên dự án hiện tại. Giao diện sẽ hiển thị Badge "Override Active" cảnh báo luật này đang đè lên Global.
+  - **Tab 1 - Global Rules:** Chỉnh sửa luật trực tiếp trên Global (Ảnh hưởng đa dự án). Mỗi rule đã bị thay đổi (disable hoặc custom weight) sẽ hiển thị badge **✎ Modified** màu cyan và nút **↺ Default** để reset từng rule riêng lẻ về trạng thái mặc định gốc.
+  - **Tab 2 - Project Overrides:** Chỉnh sửa trên dự án hiện tại. Giao diện sẽ hiển thị Badge \"Override Active\" cảnh báo luật này đang đè lên Global.
   - **Tab 3 - Custom AI Rules:** Quản lý JSON Custom.
   - **Tab 4 - Override Manager:** Thống kê siêu cấp (Diff View) mô tả sự khác biệt giữa Dự án và Hệ Thống, kèm nút `Reset to Global` để xóa bỏ nhanh các sai lệch. Không có info box chiếm diện tích — thông tin giải thích chỉ hiển thị qua tooltip icon ℹ️ trên tab.
 

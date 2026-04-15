@@ -15,6 +15,7 @@ import {
   Zap,
   Database,
   Info,
+  Box,
 } from "lucide-react";
 import {
   cn,

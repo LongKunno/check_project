@@ -13,6 +13,7 @@ import {
   Eye,
   EyeOff,
   GitCompare,
+  RotateCcw,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -161,6 +162,7 @@ export const ToggleSwitch = ({ checked, onChange }) => (
 export const RuleCard = ({
   ruleKey, meta, isDisabled, isCustomWeight, customWeight,
   onToggle, onWeightChange, isOverridden = false, onResetOverride = undefined,
+  isGlobalCustomized = false, onResetToDefault = undefined,
 }) => {
   const [expanded, setExpanded] = useState(false);
   const sevMeta = getSeverityMeta(meta.severity);
@@ -191,7 +193,7 @@ export const RuleCard = ({
           <div className="flex flex-wrap items-center gap-2">
             <code className={cn("font-mono text-[12px] font-black px-2.5 py-1 rounded-md border", sevMeta.bg, sevMeta.color, sevMeta.border)}>{ruleKey}</code>
             <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider border", sevMeta.bg, sevMeta.color, sevMeta.border)}>{meta.severity}</span>
-            {isCustomWeight && !isOverridden && (
+            {isCustomWeight && !isOverridden && !isGlobalCustomized && (
               <span className="text-[9px] bg-violet-500/15 text-violet-300 px-2 py-0.5 rounded-full border border-violet-500/25 font-black uppercase tracking-wide">✦ Custom Weight</span>
             )}
             {isOverridden && (
@@ -199,10 +201,20 @@ export const RuleCard = ({
                 <GitCompare size={10} /> Override Active
               </span>
             )}
+            {isGlobalCustomized && (
+              <span className="text-[9px] bg-cyan-500/15 text-cyan-400 px-2 py-0.5 rounded-full border border-cyan-500/25 font-black uppercase tracking-wide flex items-center gap-1" title="Rule này đã bị thay đổi so với mặc định gốc">
+                ✎ Modified
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-3">
             {isOverridden && onResetOverride && (
               <button onClick={onResetOverride} className="text-[10px] text-slate-500 hover:text-white capitalize transition-colors font-bold bg-white/5 hover:bg-white/10 px-2 py-1 rounded">Reset</button>
+            )}
+            {isGlobalCustomized && onResetToDefault && (
+              <button onClick={onResetToDefault} className="text-[10px] text-cyan-400 hover:text-white transition-colors font-bold bg-cyan-500/10 hover:bg-cyan-500/20 px-2 py-1 rounded border border-cyan-500/20 hover:border-cyan-500/40 flex items-center gap-1" title="Khôi phục rule về trạng thái mặc định gốc">
+                <RotateCcw size={10} /> Default
+              </button>
             )}
             <ToggleSwitch checked={!isDisabled} onChange={() => onToggle(!isDisabled)} />
           </div>

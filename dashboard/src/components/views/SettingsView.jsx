@@ -71,6 +71,8 @@ const SectionTitle = ({ icon, title, description }) => (
 const SettingsView = ({ selectedRepoId, cn }) => {
   const [confirmReset, setConfirmReset] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const [confirmResetGlobal, setConfirmResetGlobal] = useState(false);
+  const [isResettingGlobal, setIsResettingGlobal] = useState(false);
   const [systemInfo, setSystemInfo] = useState(null);
   const [rulesInfo, setRulesInfo] = useState(null);
   const toast = useToast();
@@ -210,6 +212,34 @@ const SettingsView = ({ selectedRepoId, cn }) => {
       toast.error("Network connection error.", "Connection Error");
     } finally {
       setIsResetting(false);
+    }
+  };
+
+  const handleResetGlobal = async () => {
+    if (!confirmResetGlobal) {
+      setConfirmResetGlobal(true);
+      setTimeout(() => setConfirmResetGlobal(false), 4000);
+      return;
+    }
+    setConfirmResetGlobal(false);
+    setIsResettingGlobal(true);
+    try {
+      const res = await fetch(
+        `/api/rules?target=GLOBAL`,
+        { method: "DELETE" },
+      );
+      if (res.ok) {
+        toast.success(
+          "Global rules have been restored to factory defaults.",
+          "Global Reset Complete",
+        );
+      } else {
+        toast.error("Server error while resetting global rules.", "Reset Failed");
+      }
+    } catch (e) {
+      toast.error("Network connection error.", "Connection Error");
+    } finally {
+      setIsResettingGlobal(false);
     }
   };
 
@@ -527,47 +557,97 @@ const SettingsView = ({ selectedRepoId, cn }) => {
             <h3 className="text-red-400 font-extrabold text-sm uppercase tracking-wider mb-3 flex items-center gap-2">
               <ShieldAlert size={16} /> Danger Zone
             </h3>
-            <p className="text-slate-400 text-sm mb-6 leading-relaxed">
-              Reset all audit rules for project{" "}
-              <strong className="text-white px-2 py-0.5 bg-black/35 rounded font-mono">
-                {selectedRepoId || "none selected"}
-              </strong>{" "}
-              to their original default state. All AI-generated custom rules and
-              weight overrides will be permanently deleted,{" "}
-              <span className="text-red-400 font-semibold">
-                this cannot be undone
-              </span>
-              .
-            </p>
-            <button
-              onClick={handleReset}
-              disabled={!selectedRepoId || isResetting}
-              className={cn(
-                "px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2",
-                !selectedRepoId || isResetting
-                  ? "opacity-50 cursor-not-allowed bg-slate-800 text-slate-500"
-                  : confirmReset
-                    ? "bg-red-600 hover:bg-red-500 text-white shadow-[0_0_24px_rgba(220,38,38,0.4)] animate-pulse"
-                    : "bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 hover:border-red-500/50",
-              )}
-            >
-              {isResetting ? (
-                <Zap className="animate-spin" size={18} />
-              ) : (
-                <Trash2 size={18} />
-              )}
-              {isResetting
-                ? "DELETING DATA..."
-                : confirmReset
-                  ? "⚠ CONFIRM RESET?"
-                  : "RESET TO DEFAULTS"}
-            </button>
-            {confirmReset && (
-              <p className="mt-3 text-xs text-red-400/70 font-medium">
-                Click again to confirm. This action will cancel automatically in
-                3 seconds.
+
+            {/* ── Global Rules Reset ── */}
+            <div className="mb-6 pb-6 border-b border-red-500/10">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-[10px] font-black uppercase tracking-widest bg-blue-500/15 text-blue-400 px-2.5 py-1 rounded-lg border border-blue-500/25">GLOBAL</span>
+                <span className="text-sm font-bold text-white">Reset Global Rules</span>
+              </div>
+              <p className="text-slate-400 text-sm mb-4 leading-relaxed">
+                Khôi phục toàn bộ{" "}
+                <strong className="text-blue-400">Global Rules</strong>{" "}
+                về trạng thái gốc. Mọi tùy chỉnh bật/tắt rule và trọng số ở cấp Global sẽ bị xóa vĩnh viễn,{" "}
+                <span className="text-red-400 font-semibold">ảnh hưởng tới tất cả dự án</span>.
               </p>
-            )}
+              <button
+                onClick={handleResetGlobal}
+                disabled={isResettingGlobal}
+                className={cn(
+                  "px-5 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 text-sm",
+                  isResettingGlobal
+                    ? "opacity-50 cursor-not-allowed bg-slate-800 text-slate-500"
+                    : confirmResetGlobal
+                      ? "bg-red-600 hover:bg-red-500 text-white shadow-[0_0_24px_rgba(220,38,38,0.4)] animate-pulse"
+                      : "bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 hover:border-red-500/50",
+                )}
+              >
+                {isResettingGlobal ? (
+                  <Zap className="animate-spin" size={16} />
+                ) : (
+                  <Trash2 size={16} />
+                )}
+                {isResettingGlobal
+                  ? "RESETTING..."
+                  : confirmResetGlobal
+                    ? "⚠ CONFIRM GLOBAL RESET?"
+                    : "RESET GLOBAL TO DEFAULTS"}
+              </button>
+              {confirmResetGlobal && (
+                <p className="mt-2 text-xs text-red-400/70 font-medium">
+                  Click again to confirm. This action will cancel automatically in 4 seconds.
+                </p>
+              )}
+            </div>
+
+            {/* ── Project Rules Reset ── */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-[10px] font-black uppercase tracking-widest bg-emerald-500/15 text-emerald-400 px-2.5 py-1 rounded-lg border border-emerald-500/25">PROJECT</span>
+                <span className="text-sm font-bold text-white">Reset Project Rules</span>
+              </div>
+              <p className="text-slate-400 text-sm mb-4 leading-relaxed">
+                Reset all audit rules for project{" "}
+                <strong className="text-white px-2 py-0.5 bg-black/35 rounded font-mono">
+                  {selectedRepoId || "none selected"}
+                </strong>{" "}
+                to their original default state. All AI-generated custom rules and
+                weight overrides will be permanently deleted,{" "}
+                <span className="text-red-400 font-semibold">
+                  this cannot be undone
+                </span>
+                .
+              </p>
+              <button
+                onClick={handleReset}
+                disabled={!selectedRepoId || isResetting}
+                className={cn(
+                  "px-5 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 text-sm",
+                  !selectedRepoId || isResetting
+                    ? "opacity-50 cursor-not-allowed bg-slate-800 text-slate-500"
+                    : confirmReset
+                      ? "bg-red-600 hover:bg-red-500 text-white shadow-[0_0_24px_rgba(220,38,38,0.4)] animate-pulse"
+                      : "bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 hover:border-red-500/50",
+                )}
+              >
+                {isResetting ? (
+                  <Zap className="animate-spin" size={16} />
+                ) : (
+                  <Trash2 size={16} />
+                )}
+                {isResetting
+                  ? "DELETING DATA..."
+                  : confirmReset
+                    ? "⚠ CONFIRM RESET?"
+                    : "RESET PROJECT TO DEFAULTS"}
+              </button>
+              {confirmReset && (
+                <p className="mt-2 text-xs text-red-400/70 font-medium">
+                  Click again to confirm. This action will cancel automatically in
+                  3 seconds.
+                </p>
+              )}
+            </div>
           </div>
         </motion.div>
       </div>
