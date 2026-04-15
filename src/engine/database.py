@@ -525,6 +525,58 @@ class AuditDatabase:
         cursor.close()
         AuditDatabase.release_connection(conn)
 
+    @staticmethod
+    def partial_reset_project_rules(target_id, level):
+        """Reset specific parts of project rules based on level.
+        
+        Levels:
+        - toggles: Reset disabled_core_rules + enabled_core_rules only
+        - weights: Reset custom_weights only  
+        - custom: Reset compiled_json + natural_text only
+        - all: Delete entire row (same as delete_project_rules)
+        """
+        if level == "all":
+            AuditDatabase.delete_project_rules(target_id)
+            return
+        
+        conn = AuditDatabase.get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute(
+            "SELECT id FROM project_rules WHERE target_id = %s", (target_id,)
+        )
+        row = cursor.fetchone()
+        if not row:
+            cursor.close()
+            AuditDatabase.release_connection(conn)
+            return  # Nothing to reset
+        
+        if level == "toggles":
+            cursor.execute(
+                """UPDATE project_rules 
+                SET disabled_core_rules = '[]', enabled_core_rules = '[]', updated_at = CURRENT_TIMESTAMP
+                WHERE target_id = %s""",
+                (target_id,),
+            )
+        elif level == "weights":
+            cursor.execute(
+                """UPDATE project_rules 
+                SET custom_weights = '{}', updated_at = CURRENT_TIMESTAMP
+                WHERE target_id = %s""",
+                (target_id,),
+            )
+        elif level == "custom":
+            cursor.execute(
+                """UPDATE project_rules 
+                SET compiled_json = NULL, natural_text = '', updated_at = CURRENT_TIMESTAMP
+                WHERE target_id = %s""",
+                (target_id,),
+            )
+        
+        conn.commit()
+        cursor.close()
+        AuditDatabase.release_connection(conn)
+
 
     # ── Repository Management ─────────────────────────────────────────────────
 

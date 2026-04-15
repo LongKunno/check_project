@@ -208,6 +208,45 @@ async def delete_rules(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+class ResetRulesRequest(BaseModel):
+    target: str
+    level: str  # toggles | weights | custom | all
+
+
+@router.post("/rules/reset")
+async def reset_rules(request: ResetRulesRequest):
+    """Reset rules theo cấp độ chọn lọc.
+    
+    Levels:
+    - toggles: Reset disabled_core_rules + enabled_core_rules
+    - weights: Reset custom_weights về mặc định
+    - custom: Xóa compiled_json + natural_text (AI custom rules)
+    - all: Xóa toàn bộ row (nuclear option)
+    """
+    valid_levels = {"toggles", "weights", "custom", "all"}
+    if request.level not in valid_levels:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid level '{request.level}'. Must be one of: {', '.join(valid_levels)}"
+        )
+    try:
+        AuditDatabase.partial_reset_project_rules(request.target, request.level)
+        level_messages = {
+            "toggles": "Rule toggles (bật/tắt) đã được reset.",
+            "weights": "Custom weights đã được reset về mặc định.",
+            "custom": "Custom AI Rules đã được xóa.",
+            "all": "Toàn bộ cấu hình đã được xóa.",
+        }
+        return {
+            "status": "success",
+            "message": level_messages.get(request.level, "Reset thành công."),
+            "level": request.level,
+            "target": request.target,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 class ToggleRuleRequest(BaseModel):
     target: str
     rule_id: str

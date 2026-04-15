@@ -69,10 +69,7 @@ const SectionTitle = ({ icon, title, description }) => (
 );
 
 const SettingsView = ({ selectedRepoId, cn }) => {
-  const [confirmReset, setConfirmReset] = useState(false);
-  const [isResetting, setIsResetting] = useState(false);
-  const [confirmResetGlobal, setConfirmResetGlobal] = useState(false);
-  const [isResettingGlobal, setIsResettingGlobal] = useState(false);
+  const [resetState, setResetState] = useState({ confirming: null, loading: null });
   const [systemInfo, setSystemInfo] = useState(null);
   const [rulesInfo, setRulesInfo] = useState(null);
   const toast = useToast();
@@ -173,73 +170,44 @@ const SettingsView = ({ selectedRepoId, cn }) => {
         const coreCount = d.default_rules
           ? Object.keys(d.default_rules).length
           : 0;
-        const customRegex = d.compiled_json?.regex_rules?.length || 0;
-        const customAst =
-          d.compiled_json?.ast_rules?.dangerous_functions?.length || 0;
-        const disabledCount = d.disabled_rules?.length || 0;
+        const pr = d.project_rules || {};
+        const customRegex = pr.compiled_json?.regex_rules?.length || 0;
+        const customAst = pr.compiled_json?.ast_rules?.dangerous_functions?.length || 0;
+        const customAi = pr.compiled_json?.ai_rules?.length || 0;
+        const disabledCount = pr.disabled_core_rules?.length || 0;
         setRulesInfo({
           coreCount,
-          customCount: customRegex + customAst,
+          customCount: customRegex + customAst + customAi,
           disabledCount,
         });
       })
       .catch(() => {});
   }, [selectedRepoId]);
 
-  const handleReset = async () => {
-    if (!selectedRepoId) return;
-    if (!confirmReset) {
-      setConfirmReset(true);
-      setTimeout(() => setConfirmReset(false), 3000);
+  // ── Multi-Level Reset Handler ──────────────────────────────────────────
+  const handleLevelReset = async (target, level, key) => {
+    if (resetState.confirming !== key) {
+      setResetState({ confirming: key, loading: null });
+      setTimeout(() => setResetState(s => s.confirming === key ? { confirming: null, loading: null } : s), 4000);
       return;
     }
-    setConfirmReset(false);
-    setIsResetting(true);
+    setResetState({ confirming: null, loading: key });
     try {
-      const res = await fetch(
-        `/api/rules?target=${encodeURIComponent(selectedRepoId)}`,
-        { method: "DELETE" },
-      );
+      const res = await fetch("/api/rules/reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target, level }),
+      });
       if (res.ok) {
-        toast.success(
-          "All custom rules have been deleted and weights reset to default.",
-          "Rules Reset",
-        );
+        const d = await res.json();
+        toast.success(d.message, "Reset Complete");
       } else {
-        toast.error("Server error while resetting rules.", "Reset Failed");
+        toast.error("Server error while resetting.", "Reset Failed");
       }
     } catch (e) {
       toast.error("Network connection error.", "Connection Error");
     } finally {
-      setIsResetting(false);
-    }
-  };
-
-  const handleResetGlobal = async () => {
-    if (!confirmResetGlobal) {
-      setConfirmResetGlobal(true);
-      setTimeout(() => setConfirmResetGlobal(false), 4000);
-      return;
-    }
-    setConfirmResetGlobal(false);
-    setIsResettingGlobal(true);
-    try {
-      const res = await fetch(
-        `/api/rules?target=GLOBAL`,
-        { method: "DELETE" },
-      );
-      if (res.ok) {
-        toast.success(
-          "Global rules have been restored to factory defaults.",
-          "Global Reset Complete",
-        );
-      } else {
-        toast.error("Server error while resetting global rules.", "Reset Failed");
-      }
-    } catch (e) {
-      toast.error("Network connection error.", "Connection Error");
-    } finally {
-      setIsResettingGlobal(false);
+      setResetState({ confirming: null, loading: null });
     }
   };
 
@@ -554,97 +522,111 @@ const SettingsView = ({ selectedRepoId, cn }) => {
           className="bg-[#0f1629]/50 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
         >
           <div className="border border-red-500/20 rounded-2xl p-6 bg-red-900/10">
-            <h3 className="text-red-400 font-extrabold text-sm uppercase tracking-wider mb-3 flex items-center gap-2">
-              <ShieldAlert size={16} /> Danger Zone
+            <h3 className="text-red-400 font-extrabold text-sm uppercase tracking-wider mb-5 flex items-center gap-2">
+              <ShieldAlert size={16} /> Danger Zone — Multi-Level Reset
             </h3>
 
-            {/* ── Global Rules Reset ── */}
+            {/* ── GLOBAL Section ── */}
             <div className="mb-6 pb-6 border-b border-red-500/10">
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-4">
                 <span className="text-[10px] font-black uppercase tracking-widest bg-blue-500/15 text-blue-400 px-2.5 py-1 rounded-lg border border-blue-500/25">GLOBAL</span>
-                <span className="text-sm font-bold text-white">Reset Global Rules</span>
+                <span className="text-sm font-bold text-white">Ảnh hưởng tất cả dự án</span>
               </div>
-              <p className="text-slate-400 text-sm mb-4 leading-relaxed">
-                Khôi phục toàn bộ{" "}
-                <strong className="text-blue-400">Global Rules</strong>{" "}
-                về trạng thái gốc. Mọi tùy chỉnh bật/tắt rule và trọng số ở cấp Global sẽ bị xóa vĩnh viễn,{" "}
-                <span className="text-red-400 font-semibold">ảnh hưởng tới tất cả dự án</span>.
-              </p>
-              <button
-                onClick={handleResetGlobal}
-                disabled={isResettingGlobal}
-                className={cn(
-                  "px-5 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 text-sm",
-                  isResettingGlobal
-                    ? "opacity-50 cursor-not-allowed bg-slate-800 text-slate-500"
-                    : confirmResetGlobal
-                      ? "bg-red-600 hover:bg-red-500 text-white shadow-[0_0_24px_rgba(220,38,38,0.4)] animate-pulse"
-                      : "bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 hover:border-red-500/50",
-                )}
-              >
-                {isResettingGlobal ? (
-                  <Zap className="animate-spin" size={16} />
-                ) : (
-                  <Trash2 size={16} />
-                )}
-                {isResettingGlobal
-                  ? "RESETTING..."
-                  : confirmResetGlobal
-                    ? "⚠ CONFIRM GLOBAL RESET?"
-                    : "RESET GLOBAL TO DEFAULTS"}
-              </button>
-              {confirmResetGlobal && (
-                <p className="mt-2 text-xs text-red-400/70 font-medium">
-                  Click again to confirm. This action will cancel automatically in 4 seconds.
+              <div className="space-y-2.5">
+                {[
+                  { key: "g-toggles", level: "toggles", label: "Reset Toggles", desc: "Bật lại tất cả rules đã bị tắt ở Global", badgeColor: "bg-amber-500/15 text-amber-400 border-amber-500/25", btnIdle: "bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/25 hover:border-amber-500/40", icon: "🟡" },
+                  { key: "g-weights", level: "weights", label: "Reset Weights", desc: "Đưa trọng số tất cả rules về giá trị gốc", badgeColor: "bg-orange-500/15 text-orange-400 border-orange-500/25", btnIdle: "bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/25 hover:border-orange-500/40", icon: "🟠" },
+                  { key: "g-all", level: "all", label: "Reset All Global", desc: "Khôi phục toàn bộ Global config (toggles + weights)", badgeColor: "bg-red-500/15 text-red-400 border-red-500/25", btnIdle: "bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/25 hover:border-red-500/40", icon: "🔴" },
+                ].map(item => {
+                  const isConfirming = resetState.confirming === item.key;
+                  const isLoading = resetState.loading === item.key;
+                  return (
+                    <div key={item.key} className="flex items-center justify-between p-3.5 rounded-xl bg-black/20 border border-white/5 hover:border-white/10 transition-all">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="text-base shrink-0">{item.icon}</span>
+                        <div className="min-w-0">
+                          <div className="text-sm font-bold text-white">{item.label}</div>
+                          <div className="text-[11px] text-slate-500 truncate">{item.desc}</div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleLevelReset("GLOBAL", item.level, item.key)}
+                        disabled={isLoading}
+                        className={cn(
+                          "px-4 py-2 rounded-lg font-bold text-xs transition-all flex items-center gap-1.5 shrink-0 ml-3",
+                          isLoading
+                            ? "opacity-50 cursor-not-allowed bg-slate-800 text-slate-500"
+                            : isConfirming
+                              ? "bg-red-600 hover:bg-red-500 text-white shadow-[0_0_20px_rgba(220,38,38,0.35)] animate-pulse"
+                              : item.btnIdle,
+                        )}
+                      >
+                        {isLoading ? <Zap className="animate-spin" size={13} /> : <Trash2 size={13} />}
+                        {isLoading ? "..." : isConfirming ? "Xác nhận?" : "Reset"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+              {resetState.confirming?.startsWith("g-") && (
+                <p className="mt-2 text-[11px] text-red-400/70 font-medium">
+                  Click lần nữa để xác nhận. Tự hủy sau 4 giây.
                 </p>
               )}
             </div>
 
-            {/* ── Project Rules Reset ── */}
+            {/* ── PROJECT Section ── */}
             <div>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-1">
                 <span className="text-[10px] font-black uppercase tracking-widest bg-emerald-500/15 text-emerald-400 px-2.5 py-1 rounded-lg border border-emerald-500/25">PROJECT</span>
-                <span className="text-sm font-bold text-white">Reset Project Rules</span>
+                <span className="text-sm font-bold text-white">Chỉ ảnh hưởng dự án hiện tại</span>
               </div>
-              <p className="text-slate-400 text-sm mb-4 leading-relaxed">
-                Reset all audit rules for project{" "}
-                <strong className="text-white px-2 py-0.5 bg-black/35 rounded font-mono">
-                  {selectedRepoId || "none selected"}
-                </strong>{" "}
-                to their original default state. All AI-generated custom rules and
-                weight overrides will be permanently deleted,{" "}
-                <span className="text-red-400 font-semibold">
-                  this cannot be undone
-                </span>
-                .
+              <p className="text-[11px] text-slate-500 mb-4 ml-1">
+                Target:{" "}
+                <strong className="text-white font-mono bg-black/30 px-1.5 py-0.5 rounded">
+                  {selectedRepoId || "chưa chọn"}
+                </strong>
               </p>
-              <button
-                onClick={handleReset}
-                disabled={!selectedRepoId || isResetting}
-                className={cn(
-                  "px-5 py-2.5 rounded-xl font-bold transition-all flex items-center gap-2 text-sm",
-                  !selectedRepoId || isResetting
-                    ? "opacity-50 cursor-not-allowed bg-slate-800 text-slate-500"
-                    : confirmReset
-                      ? "bg-red-600 hover:bg-red-500 text-white shadow-[0_0_24px_rgba(220,38,38,0.4)] animate-pulse"
-                      : "bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 hover:border-red-500/50",
-                )}
-              >
-                {isResetting ? (
-                  <Zap className="animate-spin" size={16} />
-                ) : (
-                  <Trash2 size={16} />
-                )}
-                {isResetting
-                  ? "DELETING DATA..."
-                  : confirmReset
-                    ? "⚠ CONFIRM RESET?"
-                    : "RESET PROJECT TO DEFAULTS"}
-              </button>
-              {confirmReset && (
-                <p className="mt-2 text-xs text-red-400/70 font-medium">
-                  Click again to confirm. This action will cancel automatically in
-                  3 seconds.
+              <div className="space-y-2.5">
+                {[
+                  { key: "p-toggles", level: "toggles", label: "Reset Overrides", desc: "Đồng bộ bật/tắt rule với Global (giữ weights + custom rules)", btnIdle: "bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/25 hover:border-amber-500/40", icon: "🟡" },
+                  { key: "p-weights", level: "weights", label: "Reset Weights", desc: "Đưa trọng số về mặc định (giữ toggles + custom rules)", btnIdle: "bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/25 hover:border-orange-500/40", icon: "🟠" },
+                  { key: "p-custom", level: "custom", label: "Reset Custom Rules", desc: "Xóa toàn bộ AI rules đã tạo bằng Rule Builder", btnIdle: "bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 border border-violet-500/25 hover:border-violet-500/40", icon: "🟣" },
+                  { key: "p-all", level: "all", label: "Reset All Project", desc: "Xóa toàn bộ cấu hình dự án — nuclear option", btnIdle: "bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/25 hover:border-red-500/40", icon: "🔴" },
+                ].map(item => {
+                  const isConfirming = resetState.confirming === item.key;
+                  const isLoading = resetState.loading === item.key;
+                  return (
+                    <div key={item.key} className="flex items-center justify-between p-3.5 rounded-xl bg-black/20 border border-white/5 hover:border-white/10 transition-all">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="text-base shrink-0">{item.icon}</span>
+                        <div className="min-w-0">
+                          <div className="text-sm font-bold text-white">{item.label}</div>
+                          <div className="text-[11px] text-slate-500 truncate">{item.desc}</div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleLevelReset(selectedRepoId, item.level, item.key)}
+                        disabled={!selectedRepoId || isLoading}
+                        className={cn(
+                          "px-4 py-2 rounded-lg font-bold text-xs transition-all flex items-center gap-1.5 shrink-0 ml-3",
+                          !selectedRepoId || isLoading
+                            ? "opacity-50 cursor-not-allowed bg-slate-800 text-slate-500"
+                            : isConfirming
+                              ? "bg-red-600 hover:bg-red-500 text-white shadow-[0_0_20px_rgba(220,38,38,0.35)] animate-pulse"
+                              : item.btnIdle,
+                        )}
+                      >
+                        {isLoading ? <Zap className="animate-spin" size={13} /> : <Trash2 size={13} />}
+                        {isLoading ? "..." : isConfirming ? "Xác nhận?" : "Reset"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+              {resetState.confirming?.startsWith("p-") && (
+                <p className="mt-2 text-[11px] text-red-400/70 font-medium">
+                  Click lần nữa để xác nhận. Tự hủy sau 4 giây.
                 </p>
               )}
             </div>
@@ -656,3 +638,4 @@ const SettingsView = ({ selectedRepoId, cn }) => {
 };
 
 export default SettingsView;
+
