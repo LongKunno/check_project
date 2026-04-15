@@ -285,6 +285,51 @@ function ScoreBar({ score }) {
   );
 }
 
+// ─── Pillar Mini Bars ─────────────────────────────────────────────────────────
+
+const PILLAR_CONFIG = [
+  { key: "Performance",    label: "P", gradient: "from-cyan-400 to-teal-400",    glow: "shadow-cyan-500/30",   textColor: "text-cyan-400",   bgColor: "bg-cyan-500/10" },
+  { key: "Maintainability", label: "M", gradient: "from-violet-400 to-purple-400", glow: "shadow-violet-500/30", textColor: "text-violet-400", bgColor: "bg-violet-500/10" },
+  { key: "Reliability",    label: "R", gradient: "from-blue-400 to-indigo-400",  glow: "shadow-blue-500/30",   textColor: "text-blue-400",   bgColor: "bg-blue-500/10" },
+  { key: "Security",       label: "S", gradient: "from-rose-400 to-pink-400",    glow: "shadow-rose-500/30",   textColor: "text-rose-400",   bgColor: "bg-rose-500/10" },
+];
+
+function PillarBars({ pillarScores }) {
+  if (!pillarScores || typeof pillarScores !== "object") {
+    return <span className="text-slate-600 text-xs">—</span>;
+  }
+
+  return (
+    <div className="flex flex-col gap-1 min-w-[130px]">
+      {PILLAR_CONFIG.map((p, i) => {
+        const score = pillarScores[p.key];
+        if (score === undefined || score === null) return null;
+        const pct = Math.min(Math.max((score / 10) * 100, 0), 100);
+        return (
+          <div key={p.key} className="flex items-center gap-1.5">
+            <span
+              className={`w-4 h-4 rounded text-[9px] font-black flex items-center justify-center shrink-0 ${p.bgColor} ${p.textColor}`}
+            >
+              {p.label}
+            </span>
+            <span className={`text-[11px] font-bold w-7 text-right ${p.textColor}`}>
+              {parseFloat(score).toFixed(1)}
+            </span>
+            <div className="flex-1 bg-slate-800/80 rounded-full h-1.5 overflow-hidden min-w-[50px]">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${pct}%` }}
+                transition={{ duration: 0.7, delay: i * 0.08, ease: [0.4, 0, 0.2, 1] }}
+                className={`h-full rounded-full bg-gradient-to-r ${p.gradient} shadow-sm ${p.glow}`}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── Sort Th ──────────────────────────────────────────────────────────────────
 
 function SortTh({ label, field, sortBy, sortDir, onClick, align = "left" }) {
@@ -394,6 +439,11 @@ function ProjectRow({ project, rank, scanState, onSelect }) {
             Not scanned
           </span>
         )}
+      </td>
+
+      {/* Pillars */}
+      <td className="px-4 py-3">
+        <PillarBars pillarScores={project.pillar_scores} />
       </td>
 
       {/* Rating */}
@@ -749,6 +799,11 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
                     sortDir={sortDir}
                     onClick={handleSort}
                   />
+                  <th className="px-4 py-3 text-left">
+                    <span className="text-[10px] uppercase tracking-widest font-bold text-slate-500">
+                      Pillars
+                    </span>
+                  </th>
                   <th className="px-4 py-3 text-left">
                     <span className="text-[10px] uppercase tracking-widest font-bold text-slate-500">
                       Rating

@@ -23,7 +23,13 @@ Tài liệu này đặc tả các endpoint liên quan đến dữ liệu Reposit
       "latest_score": 92.5,
       "latest_rating": "A+",
       "latest_timestamp": "2026-04-03T10:00:00",
-      "violations_count": 3
+      "violations_count": 3,
+      "pillar_scores": {
+        "Performance": 9.2,
+        "Maintainability": 8.5,
+        "Reliability": 9.8,
+        "Security": 7.1
+      }
     }
   ]
 }
@@ -34,6 +40,7 @@ Tài liệu này đặc tả các endpoint liên quan đến dữ liệu Reposit
 - `latest_rating`: Bậc đánh giá hạng mục (A, B, C, N/A).
 - `latest_timestamp`: Thời gian gần nhất.
 - `violations_count`: Tổng số lỗ hổng phát hiện được.
+- `pillar_scores`: Object chứa điểm 4 trụ cột chất lượng (thang 10), bao gồm `Performance`, `Maintainability`, `Reliability`, `Security`. Giá trị `null` nếu dự án chưa được kiểm toán.
 
 ## 2. Thông tin Repositories tổng quát
 **Endpoint:** `GET /api/repositories`

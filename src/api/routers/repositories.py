@@ -50,6 +50,7 @@ async def get_projects_scores():
                     "latest_rating": latest["rating"] if latest else None,
                     "latest_timestamp": latest["timestamp"] if latest else None,
                     "violations_count": latest["violations_count"] if latest else None,
+                    "pillar_scores": latest["pillar_scores"] if latest else None,
                 }
             )
         except Exception as e:
@@ -62,6 +63,7 @@ async def get_projects_scores():
                     "latest_rating": None,
                     "latest_timestamp": None,
                     "violations_count": None,
+                    "pillar_scores": None,
                 }
             )
 
