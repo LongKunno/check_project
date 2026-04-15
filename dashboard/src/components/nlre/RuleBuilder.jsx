@@ -33,6 +33,7 @@ import {
 const RuleBuilder = ({ targetId, projectName }) => {
   const [naturalText, setNaturalText] = useState("");
   const [compiledJson, setCompiledJson] = useState(null);
+  const [existingCompiledJson, setExistingCompiledJson] = useState(null);
   const [customWeights, setCustomWeights] = useState({});
   const [wizardStep, setWizardStep] = useState(1);
   const [isCompiling, setIsCompiling] = useState(false);
@@ -60,9 +61,11 @@ const RuleBuilder = ({ targetId, projectName }) => {
       );
       const result = await res.json();
       if (result.status === "success" && result.data) {
-        setCustomWeights(result.data.custom_weights || {});
-        if (!compiledJson) setCompiledJson(result.data.compiled_json || null);
-        if (!naturalText) setNaturalText(result.data.natural_text || "");
+        const pr = result.data.project_rules || {};
+        setCustomWeights(pr.custom_weights || {});
+        setExistingCompiledJson(pr.compiled_json || null);
+        if (!compiledJson) setCompiledJson(pr.compiled_json || null);
+        if (!naturalText) setNaturalText(pr.natural_text || "");
       }
     } catch (e) {
       console.error("Fetch rules error", e);
@@ -199,18 +202,49 @@ const RuleBuilder = ({ targetId, projectName }) => {
     if (!targetId) return;
     setIsSaving(true);
     try {
+      // Merge: nối rules mới vào rules cũ đã có trong DB
+      let mergedJson = compiledJson;
+      if (existingCompiledJson && compiledJson && existingCompiledJson !== compiledJson) {
+        mergedJson = { ...compiledJson };
+        // Merge regex_rules: nối thêm 
+        const existingRegex = existingCompiledJson.regex_rules || [];
+        const newRegex = compiledJson.regex_rules || [];
+        // Tránh trùng lặp theo id+pattern
+        const existingRegexKeys = new Set(newRegex.map(r => `${r.id}::${r.pattern}`));
+        const uniqueOldRegex = existingRegex.filter(r => !existingRegexKeys.has(`${r.id}::${r.pattern}`));
+        mergedJson.regex_rules = [...uniqueOldRegex, ...newRegex];
+        // Merge ast_rules.dangerous_functions
+        const existingFuncs = existingCompiledJson.ast_rules?.dangerous_functions || [];
+        const newFuncs = compiledJson.ast_rules?.dangerous_functions || [];
+        const existingFuncNames = new Set(newFuncs.map(f => f.name));
+        const uniqueOldFuncs = existingFuncs.filter(f => !existingFuncNames.has(f.name));
+        mergedJson.ast_rules = {
+          ...(existingCompiledJson.ast_rules || {}),
+          ...(compiledJson.ast_rules || {}),
+          dangerous_functions: [...uniqueOldFuncs, ...newFuncs],
+        };
+        // Merge ai_rules
+        const existingAi = existingCompiledJson.ai_rules || [];
+        const newAi = compiledJson.ai_rules || [];
+        const existingAiIds = new Set(newAi.map(r => r.id));
+        const uniqueOldAi = existingAi.filter(r => !existingAiIds.has(r.id));
+        mergedJson.ai_rules = [...uniqueOldAi, ...newAi];
+      }
+      // Xóa test_case khỏi JSON trước khi lưu (không cần lưu vào DB)
+      const { test_case, ...jsonToSave } = mergedJson || {};
       const res = await fetch("/api/rules/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           target: targetId,
           natural_text: naturalText,
-          compiled_json: compiledJson,
+          compiled_json: jsonToSave,
           custom_weights: customWeights,
         }),
       });
       if (res.ok) {
         setSaved(true);
+        setExistingCompiledJson(jsonToSave);
         showToast("Rule đã lưu thành công!");
         setTimeout(() => setSaved(false), 3000);
       } else {

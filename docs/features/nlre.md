@@ -169,3 +169,30 @@ graph TD
 - **3 callsites** dùng `.has()` thay vì `.includes()`: filter rules, accordion active count, RuleCard disabled prop
 - Override Manager badge count chỉ đếm `enabled_core_rules` entries **thực sự override** global disable
 - Empty state "Đồng bộ với Global" chỉ hiện khi không có override thực sự (bỏ qua stale entries)
+
+### 7. Bugfix: RuleBuilder fetchRules sai API path (2026-04-15)
+
+| Triệu chứng | Nguyên nhân | Fix |
+|---|---|---|
+| Lưu Rule ở bước 3 thành công nhưng custom weights bị xóa sạch | `RuleBuilder.fetchRules()` đọc `result.data.custom_weights` thay vì `result.data.project_rules.custom_weights`. Kết quả: `customWeights` luôn = `{}`, khi save → `save_custom_weights({})` → xóa sạch weights cũ. | Sửa path: `const pr = result.data.project_rules` rồi đọc `pr.custom_weights`, `pr.compiled_json`, `pr.natural_text` |
+
+**File:** `dashboard/src/components/nlre/RuleBuilder.jsx` — dòng 62-66 (fetchRules)
+
+### 8. Per-Rule Reset cho Global Tab (2026-04-15)
+
+- **RuleCard** nhận thêm props: `isGlobalCustomized` và `onResetToDefault`.
+- Tab **Global**: rule có trong `disabled_core_rules` hoặc `custom_weights` → badge **✎ Modified** (cyan) + nút **↺ Default**.
+- Nút **Default** gọi `handleToggleRule(ruleKey, false, true)` → backend xóa rule khỏi cả 3 list của `GLOBAL`.
+- Badge **✦ Custom Weight** ẩn khi `isGlobalCustomized=true` để tránh trùng lặp.
+
+### 9. Bugfix: RuleBuilder Save Ghi Đè compiled_json Cũ (2026-04-15)
+
+| Triệu chứng | Nguyên nhân | Fix |
+|---|---|---|
+| Lưu rule mới ở Rule Builder → rules cũ biến mất | `handleCompile()` reset `compiledJson=null`. AI trả về chỉ rule mới. `handleSave()` ghi đè toàn bộ DB. | Thêm `existingCompiledJson` state. `handleSave()` merge regex/ast/ai rules — deduplicate bằng Set. |
+
+### 10. Bugfix: Tab Custom Không Hiển Thị ai_rules (2026-04-15)
+
+| Triệu chứng | Nguyên nhân | Fix |
+|---|---|---|
+| AI-only rule lưu OK nhưng tab Custom hiện "Chưa có" | Tab chỉ render `regex_rules` + `ast_rules`, bỏ sót `ai_rules` | Thêm render ai_rules cards (cyan) + empty state check + delete/weight handler cho type `"ai"` |

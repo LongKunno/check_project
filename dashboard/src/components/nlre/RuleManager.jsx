@@ -157,6 +157,8 @@ const RuleManager = ({ targetId, projectName }) => {
         updatedJson.regex_rules[customRuleIdx].weight = val;
       else if (customRuleType === "ast" && updatedJson.ast_rules?.dangerous_functions)
         updatedJson.ast_rules.dangerous_functions[customRuleIdx].weight = val;
+      else if (customRuleType === "ai" && Array.isArray(updatedJson.ai_rules))
+        updatedJson.ai_rules[customRuleIdx].weight = val;
       setCompiledJson(updatedJson);
       syncStateWithServer(updatedJson, projectOverrides.custom_weights || {});
       return;
@@ -187,6 +189,7 @@ const RuleManager = ({ targetId, projectName }) => {
     const newJson = JSON.parse(JSON.stringify(compiledJson));
     if (type === "regex") newJson.regex_rules.splice(index, 1);
     else if (type === "ast") newJson.ast_rules.dangerous_functions.splice(index, 1);
+    else if (type === "ai") newJson.ai_rules.splice(index, 1);
     setCompiledJson(newJson);
     try {
       const res = await fetch("/api/rules/save", {
@@ -310,6 +313,7 @@ const RuleManager = ({ targetId, projectName }) => {
     const customCount = [
       ...(compiledJson?.regex_rules || []),
       ...(compiledJson?.ast_rules?.dangerous_functions || []),
+      ...(compiledJson?.ai_rules || []),
     ].length;
     return { activeGlobal, activeProject, critical, customCount };
   }, [defaultRules, globalOverrides, projectOverrides, compiledJson]);
@@ -333,7 +337,8 @@ const RuleManager = ({ targetId, projectName }) => {
 
   const customRuleCount =
     (compiledJson?.regex_rules?.length || 0) +
-    (compiledJson?.ast_rules?.dangerous_functions?.length || 0);
+    (compiledJson?.ast_rules?.dangerous_functions?.length || 0) +
+    (compiledJson?.ai_rules?.length || 0);
 
   const severityPillOptions = [
     { value: "ALL", label: "All", activeColor: "rgba(255,255,255,0.12)" },
@@ -647,7 +652,8 @@ const RuleManager = ({ targetId, projectName }) => {
               <div>
                 {!compiledJson ||
                 (!compiledJson.ast_rules?.dangerous_functions?.length &&
-                  !compiledJson.regex_rules?.length) ? (
+                  !compiledJson.regex_rules?.length &&
+                  !compiledJson.ai_rules?.length) ? (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -808,6 +814,86 @@ const RuleManager = ({ targetId, projectName }) => {
                         </motion.div>
                       ),
                     )}
+
+                    {compiledJson?.ai_rules?.map((ar, idx) => (
+                      <motion.div
+                        key={`ai-${idx}`}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{
+                          delay:
+                            (compiledJson?.regex_rules?.length || 0) * 0.05 +
+                            (compiledJson?.ast_rules?.dangerous_functions?.length || 0) * 0.05 +
+                            idx * 0.05,
+                        }}
+                        className="bg-[rgba(16,18,38,0.6)] border border-cyan-500/15 rounded-xl overflow-hidden group hover:border-cyan-500/35 transition-all"
+                      >
+                        <div className="h-[2px] bg-gradient-to-r from-cyan-500/60 to-transparent" />
+                        <div className="p-4 flex flex-col gap-3">
+                          <div className="flex justify-between items-start">
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[9px] font-black bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded-md border border-cyan-500/30 uppercase tracking-wider">
+                                  AI
+                                </span>
+                                <span className="font-mono font-black text-cyan-300 text-sm">
+                                  {ar.id}
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-400 leading-relaxed">
+                                {ar.reason}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() =>
+                                handleDeleteCustomRule("ai", idx)
+                              }
+                              className="text-slate-600 hover:text-red-400 p-1.5 hover:bg-red-500/10 rounded-lg transition-all shrink-0"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                          <div className="bg-white/[0.04] p-3 rounded-lg border border-white/5">
+                            <span className="text-[9px] font-bold text-cyan-600 uppercase tracking-widest block mb-1.5">AI Prompt</span>
+                            <p className="text-[11px] text-cyan-400 leading-relaxed italic">
+                              {ar.prompt}
+                            </p>
+                          </div>
+                          <div className="flex items-center justify-between pt-1 border-t border-white/5">
+                            <span
+                              className={cn(
+                                "text-[9px] px-2 py-0.5 rounded-full uppercase font-black tracking-wide border",
+                                getPillarMeta(ar.pillar).bg,
+                                getPillarMeta(ar.pillar).color,
+                                getPillarMeta(ar.pillar).border,
+                              )}
+                            >
+                              {ar.pillar || "Maintainability"}
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[9px] text-slate-600 font-black uppercase tracking-widest">
+                                WEIGHT
+                              </span>
+                              <WeightInput
+                                value={
+                                  ar.weight !== undefined ? ar.weight : -2.0
+                                }
+                                onChange={(val) =>
+                                  handleWeightChange(
+                                    ar.id,
+                                    val,
+                                    true,
+                                    "ai",
+                                    idx,
+                                  )
+                                }
+                                isOverride
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))}
                   </div>
                 )}
               </div>
