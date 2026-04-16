@@ -367,7 +367,7 @@ const RuleBuilder = ({ targetId, projectName }) => {
                         "transition-all duration-300 shadow-inner",
                         naturalText
                           ? "border-violet-500/40 bg-white focus:border-violet-500/70"
-                          : "border-white/8 hover:border-violet-500/25 focus:border-violet-500/50",
+                          : "border-slate-700 hover:border-violet-500/25 focus:border-violet-500/50",
                       )}
                     />
 
@@ -662,7 +662,7 @@ const RuleBuilder = ({ targetId, projectName }) => {
 
                 {/* Split pane */}
                 <div className="flex-1 flex gap-4 min-h-0">
-                  <div className="w-[45%] flex flex-col bg-[#0c1222] border border-white/8 rounded-2xl overflow-hidden focus-within:border-violet-500/40 transition-colors">
+                  <div className="w-[45%] flex flex-col bg-[#0c1222] border border-slate-700 rounded-2xl overflow-hidden focus-within:border-violet-500/40 transition-colors">
                     <div className="flex items-center justify-between bg-slate-50 border-b border-slate-200 py-2.5 px-4 shrink-0">
                       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
                         <Database size={12} className="text-violet-400" /> Trình Quản Lý & Tinh Chỉnh
@@ -694,7 +694,7 @@ const RuleBuilder = ({ targetId, projectName }) => {
                   {/* Right panels */}
                   <div className="flex-1 flex flex-col gap-3 min-h-0">
                     {/* Code input */}
-                    <div className="flex-1 flex flex-col bg-[#0c1222] border border-white/8 rounded-2xl overflow-hidden focus-within:border-blue-500/40 transition-colors min-h-0">
+                    <div className="flex-1 flex flex-col bg-[#0c1222] border border-slate-700 rounded-2xl overflow-hidden focus-within:border-blue-500/40 transition-colors min-h-0">
                       <div className="flex items-center bg-slate-50 border-b border-slate-200 py-2.5 px-4 shrink-0">
                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
                           <Terminal size={12} className="text-blue-400" /> Mã
@@ -715,7 +715,7 @@ const RuleBuilder = ({ targetId, projectName }) => {
                     </div>
 
                     {/* Results */}
-                    <div className="flex-1 flex flex-col bg-[#0c1222] border border-white/8 rounded-2xl overflow-hidden min-h-0">
+                    <div className="flex-1 flex flex-col bg-[#0c1222] border border-slate-700 rounded-2xl overflow-hidden min-h-0">
                       <div className="flex items-center justify-between bg-slate-50 border-b border-slate-200 py-2.5 px-4 shrink-0">
                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
                           <Box size={12} /> Kết Quả Phân Tích

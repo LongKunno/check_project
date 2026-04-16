@@ -24,48 +24,11 @@ import {
 import EmptyState from "../ui/EmptyState";
 import Pagination from "../ui/Pagination";
 import TopProgressBar from "../ui/TopProgressBar";
+import { getRatingColor, getScoreColor, getScoreDotClass, getScoreGradient } from "../../utils/scoreHelpers";
+import { RankBadge } from "../ui/RankBadge";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Local Helpers ────────────────────────────────────────────────────────────
 
-const getRatingColor = (rating) => {
-  if (!rating) return "bg-slate-100 text-slate-500 border-slate-600";
-  const r = rating.toLowerCase();
-  if (r.includes("excellent") || r.includes("xuất sắc"))
-    return "bg-emerald-500/10 text-emerald-600 border-emerald-500/30";
-  if (r.includes("good") || r.includes("tốt"))
-    return "bg-blue-500/10 text-blue-600 border-blue-500/30";
-  if (r.includes("fair") || r.includes("khá"))
-    return "bg-amber-500/10 text-amber-600 border-amber-500/30";
-  if (r.includes("average") || r.includes("trung"))
-    return "bg-orange-500/10 text-orange-600 border-orange-500/30";
-  return "bg-rose-500/10 text-rose-600 border-rose-500/30";
-};
-
-const getScoreColor = (score) => {
-  if (score == null) return "text-slate-500";
-  if (score >= 90) return "text-emerald-600";
-  if (score >= 80) return "text-blue-600";
-  if (score >= 65) return "text-amber-600";
-  if (score >= 45) return "text-orange-600";
-  return "text-rose-600";
-};
-
-const getScoreDotClass = (score) => {
-  if (score == null) return "";
-  if (score >= 90) return "score-dot score-dot-emerald";
-  if (score >= 80) return "score-dot score-dot-blue";
-  if (score >= 65) return "score-dot score-dot-amber";
-  if (score >= 45) return "score-dot score-dot-orange";
-  return "score-dot score-dot-rose";
-};
-
-const getScoreGradient = (score) => {
-  if (score == null) return "from-slate-600 to-slate-800";
-  if (score >= 90) return "from-emerald-400 to-teal-500";
-  if (score >= 80) return "from-blue-400 to-indigo-500";
-  if (score >= 65) return "from-amber-400 to-orange-500";
-  return "from-rose-400 to-red-600";
-};
 
 const formatLoc = (n) => {
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
@@ -118,29 +81,6 @@ const PILLAR_COLORS = {
   Performance: "text-amber-600",
 };
 
-// ─── Rank Badge (replaces emoji medals) ──────────────────────────────────────
-
-function RankBadge({ rank }) {
-  if (rank === 1)
-    return (
-      <div className="rank-badge rank-badge-gold">
-        <Star size={12} />
-      </div>
-    );
-  if (rank === 2)
-    return (
-      <div className="rank-badge rank-badge-silver">
-        <Star size={12} />
-      </div>
-    );
-  if (rank === 3)
-    return (
-      <div className="rank-badge rank-badge-bronze">
-        <Star size={12} />
-      </div>
-    );
-  return <div className="rank-badge rank-badge-default">{rank}</div>;
-}
 
 // ─── Score Bar ────────────────────────────────────────────────────────────────
 
@@ -449,12 +389,13 @@ function MemberRow({ member, rank, onClick }) {
 
 // ─── Sort Header ──────────────────────────────────────────────────────────────
 
-function SortTh({ label, field, sortBy, sortDir, onClick, align = "left" }) {
+function SortTh({ label, field, sortBy, sortDir, onClick, align = "left", title }) {
   const active = sortBy === field;
   return (
     <th
       className={`px-4 py-3 text-${align} cursor-pointer select-none group`}
       onClick={() => onClick(field)}
+      title={title}
     >
       <div
         className={`flex items-center gap-1 ${align === "right" ? "justify-end" : align === "center" ? "justify-center" : ""}`}
@@ -688,7 +629,7 @@ export const MemberScoresView = ({ cn }) => {
         >
           <div className="overflow-x-auto">
             <table
-              className="w-full premium-table"
+              className="w-full premium-table zebra-table"
               style={{ "--table-accent": "rgba(6, 182, 212, 0.5)" }}
             >
               <thead>
@@ -740,6 +681,7 @@ export const MemberScoresView = ({ cn }) => {
                     sortDir={sortDir}
                     onClick={handleSort}
                     align="right"
+                    title="Ước tính thời gian cần để sửa hết các vi phạm (Technical Debt)"
                   />
                   <th className="px-4 py-3 w-8" />
                 </tr>

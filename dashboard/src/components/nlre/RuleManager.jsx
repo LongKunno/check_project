@@ -324,7 +324,6 @@ const RuleManager = ({ targetId, projectName }) => {
       .map(([k]) => k);
     if (categoryRules.length === 0) return;
 
-    // Instead of looping individual toggles, optimally just toggle sequentially. For now we loop.
     for (const r of categoryRules) {
       const isCurrentlyDisabled = tabEffectiveDisabled.has(r);
       if (enable && isCurrentlyDisabled) {
@@ -332,6 +331,26 @@ const RuleManager = ({ targetId, projectName }) => {
       } else if (!enable && !isCurrentlyDisabled) {
         await handleToggleRule(r, true);
       }
+    }
+  };
+
+  const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+
+  const handleBulkToggleFiltered = async (enable) => {
+    if (filteredCoreRules.length === 0) return;
+    setIsBulkProcessing(true);
+    try {
+      for (const [ruleId] of filteredCoreRules) {
+        const isCurrentlyDisabled = tabEffectiveDisabled.has(ruleId);
+        if (enable && isCurrentlyDisabled) {
+          await handleToggleRule(ruleId, false);
+        } else if (!enable && !isCurrentlyDisabled) {
+          await handleToggleRule(ruleId, true);
+        }
+      }
+      showToast(`Bulk ${enable ? "enabled" : "disabled"} ${filteredCoreRules.length} rules`);
+    } finally {
+      setIsBulkProcessing(false);
     }
   };
 
@@ -606,6 +625,31 @@ const RuleManager = ({ targetId, projectName }) => {
                           </button>
                         );
                       })}
+                    </div>
+                  </div>
+
+                  {/* Bulk actions */}
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 px-1">
+                      Bulk Actions
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => handleBulkToggleFiltered(true)}
+                        disabled={isBulkProcessing || filteredCoreRules.length === 0}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                      >
+                        <ToggleRight size={13} />
+                        Enable All ({filteredCoreRules.length})
+                      </button>
+                      <button
+                        onClick={() => handleBulkToggleFiltered(false)}
+                        disabled={isBulkProcessing || filteredCoreRules.length === 0}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+                      >
+                        <ToggleLeft size={13} />
+                        Disable All ({filteredCoreRules.length})
+                      </button>
                     </div>
                   </div>
                 </div>

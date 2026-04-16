@@ -180,7 +180,7 @@ function App() {
           cn={cn}
         />
         {/* MAIN CONTENT AREA */}
-        <div className="flex-1 overflow-y-auto relative no-scrollbar bg-transparent">
+        <div className="flex-1 overflow-y-auto relative no-scrollbar bg-gradient-to-br from-slate-100 via-sky-50/40 to-violet-50/30">
           {/* Dynamic Mouse Spotlight overlay (Optimized with Ref) */}
           <div
             ref={glowRef}

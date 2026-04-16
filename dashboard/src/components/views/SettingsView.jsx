@@ -40,7 +40,7 @@ const InfoCard = ({
   accent = "",
 }) => (
   <div
-    className={`flex items-center gap-3 p-4 rounded-2xl bg-slate-50 border transition-all hover:bg-slate-50 ${accent || "border-white/8"}`}
+    className={`flex items-center gap-3 p-4 rounded-2xl bg-slate-50 border transition-all hover:bg-slate-50 ${accent || "border-slate-100"}`}
   >
     <div className={`p-2 rounded-xl border ${iconClass}`}>{icon}</div>
     <div>
@@ -252,11 +252,11 @@ const SettingsView = ({ selectedRepoId, cn }) => {
           <SectionTitle
             icon={<Zap size={18} />}
             title="Engine Configuration"
-            description="Configure AI and scanning behavior at runtime"
+            description="Cấu hình AI và hành vi quét tại runtime"
           />
 
           {/* AI Enabled Toggle */}
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-white/8 mb-4">
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 mb-4">
             <div className="flex items-center gap-3">
               <div className={`p-2 rounded-xl border ${engineConfig.ai_enabled
                 ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-600"
@@ -268,8 +268,8 @@ const SettingsView = ({ selectedRepoId, cn }) => {
                 <div className="text-sm font-bold text-slate-800">AI-Powered Analysis</div>
                 <div className="text-[11px] text-slate-500 mt-0.5">
                   {engineConfig.ai_enabled
-                    ? "Hybrid Validation + Deep Reasoning + Cross-Check (tốn token)"
-                    : "Static Analysis only — Regex + AST (nhanh, miễn phí)"}
+                    ? "Kết hợp AI — Hybrid Validation + Deep Reasoning + Cross-Check (tốn token)"
+                    : "Chỉ phân tích tĩnh — Regex + AST (nhanh, miễn phí)"}
                 </div>
               </div>
             </div>
@@ -287,7 +287,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
           </div>
 
           {/* Authentication Required Toggle */}
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-white/8 mb-4">
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 mb-4">
             <div className="flex items-center gap-3">
               <div className={`p-2 rounded-xl border ${engineConfig.auth_required
                 ? "bg-blue-500/10 border-blue-500/25 text-blue-600"
@@ -299,8 +299,8 @@ const SettingsView = ({ selectedRepoId, cn }) => {
                 <div className="text-sm font-bold text-slate-800">Authentication Required</div>
                 <div className="text-[11px] text-slate-500 mt-0.5">
                   {engineConfig.auth_required
-                    ? "Bắt buộc đăng nhập Google OAuth để truy cập Dashboard"
-                    : "Bỏ qua xác thực — mọi người đều truy cập được (local dev / demo)"}
+                    ? "Yêu cầu đăng nhập Google OAuth để truy cập Dashboard"
+                    : "Tắt xác thực — ai cũng truy cập được (chỉ dùng cho local / demo)"}
                 </div>
               </div>
             </div>
@@ -320,13 +320,13 @@ const SettingsView = ({ selectedRepoId, cn }) => {
             <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/5 border border-amber-500/15 mb-4">
               <AlertTriangle size={14} className="text-amber-600 shrink-0 mt-0.5" />
               <p className="text-[11px] text-amber-600/80 leading-relaxed">
-                <strong>Cảnh báo:</strong> Khi tắt xác thực, bất kỳ ai có quyền truy cập mạng đều có thể vào Dashboard mà không cần đăng nhập. Chỉ nên tắt trong môi trường phát triển local hoặc demo.
+                <strong>Warning:</strong> Khi tắt xác thực, bất kỳ ai có quyền truy cập mạng đều có thể vào Dashboard mà không cần đăng nhập. Chỉ nên dùng trong môi trường local hoặc demo.
               </p>
             </div>
           )}
 
           {/* Test Mode Limit Files */}
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-white/8 mb-4">
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 mb-4">
             <div className="flex items-center gap-3">
               <div className={`p-2 rounded-xl border ${engineConfig.test_mode_limit_files > 0
                 ? "bg-amber-500/10 border-amber-500/25 text-amber-600"
@@ -338,8 +338,8 @@ const SettingsView = ({ selectedRepoId, cn }) => {
                 <div className="text-sm font-bold text-slate-800">File Scan Limit</div>
                 <div className="text-[11px] text-slate-500 mt-0.5">
                   {engineConfig.test_mode_limit_files > 0
-                    ? `Test Mode — giới hạn ${engineConfig.test_mode_limit_files} files mỗi lần audit`
-                    : "Production Mode — quét toàn bộ files"}
+                    ? `Test Mode — Giới hạn ${engineConfig.test_mode_limit_files} files mỗi lần audit`
+                    : "Production Mode — Quét toàn bộ files (không giới hạn)"}
                 </div>
               </div>
             </div>
@@ -348,9 +348,10 @@ const SettingsView = ({ selectedRepoId, cn }) => {
                 type="number"
                 min="0"
                 max="999"
-                value={engineConfig.test_mode_limit_files}
+                value={engineConfig.test_mode_limit_files || ""}
+                placeholder="∞"
                 onChange={(e) => handleEngineConfigChange("test_mode_limit_files", Math.max(0, parseInt(e.target.value) || 0))}
-                className="w-20 px-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-800 text-sm font-mono text-center focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-20 px-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-800 text-sm font-mono text-center focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none placeholder:text-slate-400"
               />
               <span className="text-[10px] text-slate-600 font-bold">files</span>
             </div>
@@ -401,7 +402,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
           <SectionTitle
             icon={<Server size={18} />}
             title="System Information"
-            description="Current engine status and environment"
+            description="Trạng thái engine và môi trường hiện tại"
           />
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <InfoCard
@@ -437,8 +438,8 @@ const SettingsView = ({ selectedRepoId, cn }) => {
         >
           <SectionTitle
             icon={<ShieldCheck size={18} />}
-            title="Engine Configuration"
-            description={`Rules configured for: ${selectedRepoId || "none"}`}
+            title="Rule Overview"
+            description={`Cấu hình rules cho: ${selectedRepoId || "chưa chọn"}`}
           />
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             <InfoCard
@@ -475,7 +476,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
           <SectionTitle
             icon={<Info size={18} />}
             title="Quick Links"
-            description="Useful resources and endpoints"
+            description="Tài liệu và tài nguyên hữu ích"
           />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {[
@@ -525,7 +526,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
             <div className="mb-6 pb-6 border-b border-red-500/10">
               <div className="flex items-center gap-2 mb-4">
                 <span className="text-[10px] font-black uppercase tracking-widest bg-blue-500/15 text-blue-600 px-2.5 py-1 rounded-lg border border-blue-500/25">GLOBAL</span>
-                <span className="text-sm font-bold text-slate-800">Ảnh hưởng tất cả dự án</span>
+                <span className="text-sm font-bold text-slate-800">Áp dụng cho tất cả dự án</span>
               </div>
               <div className="space-y-2.5">
                 {[
@@ -557,7 +558,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
                         )}
                       >
                         {isLoading ? <Zap className="animate-spin" size={13} /> : <Trash2 size={13} />}
-                        {isLoading ? "..." : isConfirming ? "Xác nhận?" : "Reset"}
+                        {isLoading ? "..." : isConfirming ? "Confirm?" : "Reset"}
                       </button>
                     </div>
                   );
@@ -565,7 +566,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
               </div>
               {resetState.confirming?.startsWith("g-") && (
                 <p className="mt-2 text-[11px] text-red-600/70 font-medium">
-                  Click lần nữa để xác nhận. Tự hủy sau 4 giây.
+                  Nhấn lần nữa để xác nhận. Tự hủy sau 4 giây.
                 </p>
               )}
             </div>
@@ -574,12 +575,12 @@ const SettingsView = ({ selectedRepoId, cn }) => {
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-[10px] font-black uppercase tracking-widest bg-emerald-500/15 text-emerald-600 px-2.5 py-1 rounded-lg border border-emerald-500/25">PROJECT</span>
-                <span className="text-sm font-bold text-slate-800">Chỉ ảnh hưởng dự án hiện tại</span>
+                <span className="text-sm font-bold text-slate-800">Chỉ áp dụng cho dự án đang chọn</span>
               </div>
               <p className="text-[11px] text-slate-500 mb-4 ml-1">
                 Target:{" "}
                 <strong className="text-violet-600 font-mono bg-violet-50 px-1.5 py-0.5 rounded border border-violet-100">
-                  {selectedRepoId || "chưa chọn"}
+                  {selectedRepoId || "None"}
                 </strong>
               </p>
               <div className="space-y-2.5">
@@ -613,7 +614,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
                         )}
                       >
                         {isLoading ? <Zap className="animate-spin" size={13} /> : <Trash2 size={13} />}
-                        {isLoading ? "..." : isConfirming ? "Xác nhận?" : "Reset"}
+                        {isLoading ? "..." : isConfirming ? "Confirm?" : "Reset"}
                       </button>
                     </div>
                   );
@@ -621,7 +622,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
               </div>
               {resetState.confirming?.startsWith("p-") && (
                 <p className="mt-2 text-[11px] text-red-600/70 font-medium">
-                  Click lần nữa để xác nhận. Tự hủy sau 4 giây.
+                  Nhấn lần nữa để xác nhận. Tự hủy sau 4 giây.
                 </p>
               )}
             </div>

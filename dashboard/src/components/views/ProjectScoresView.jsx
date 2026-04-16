@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Activity,
@@ -19,54 +19,20 @@ import {
   Star,
   TrendingUp,
   AlertCircle,
+  Search,
+  X,
 } from "lucide-react";
 import TerminalLogs from "../ui/TerminalLogs";
 import { TableSkeleton, CardSkeleton } from "../ui/SkeletonLoader";
 import EmptyState from "../ui/EmptyState";
 import Pagination from "../ui/Pagination";
 import TopProgressBar from "../ui/TopProgressBar";
+import { getRatingColor, getScoreColor, getScoreDotClass, getScoreGradient } from "../../utils/scoreHelpers";
+import { RankBadge } from "../ui/RankBadge";
+
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const getRatingColor = (rating) => {
-  if (!rating) return "bg-slate-100 text-slate-500 border-slate-200";
-  const r = rating.toLowerCase();
-  if (r.includes("excellent") || r.includes("xuất sắc"))
-    return "bg-emerald-50 text-emerald-600 border-emerald-200";
-  if (r.includes("good") || r.includes("tốt"))
-    return "bg-blue-50 text-blue-600 border-blue-200";
-  if (r.includes("fair") || r.includes("khá"))
-    return "bg-amber-50 text-amber-600 border-amber-200";
-  if (r.includes("average") || r.includes("trung"))
-    return "bg-orange-50 text-orange-600 border-orange-200";
-  return "bg-rose-50 text-rose-600 border-rose-200";
-};
-
-const getScoreColor = (score) => {
-  if (score == null) return "text-slate-500";
-  if (score >= 90) return "text-emerald-600";
-  if (score >= 80) return "text-blue-600";
-  if (score >= 65) return "text-amber-600";
-  if (score >= 45) return "text-orange-600";
-  return "text-rose-600";
-};
-
-const getScoreDotClass = (score) => {
-  if (score == null) return "";
-  if (score >= 90) return "score-dot score-dot-emerald";
-  if (score >= 80) return "score-dot score-dot-blue";
-  if (score >= 65) return "score-dot score-dot-amber";
-  if (score >= 45) return "score-dot score-dot-orange";
-  return "score-dot score-dot-rose";
-};
-
-const getScoreGradient = (score) => {
-  if (score == null) return "from-slate-600 to-slate-800";
-  if (score >= 90) return "from-emerald-400 to-teal-500";
-  if (score >= 80) return "from-blue-400 to-indigo-500";
-  if (score >= 65) return "from-amber-400 to-orange-500";
-  return "from-rose-400 to-red-600";
-};
 
 const formatDate = (ts) => {
   if (!ts) return "—";
@@ -165,25 +131,26 @@ function useScanAllQueue(projects, onFinishAll) {
     };
   }, [startPolling]);
 
-  const startScanAll = useCallback(async () => {
-    if (isScanning || projects.length === 0) return;
+  const startScanSelected = useCallback(async (selectedIds) => {
+    if (isScanning || !selectedIds || selectedIds.size === 0) return;
+    const ids = [...selectedIds];
     const init = {};
-    projects.forEach((p) => {
-      init[p.id] = { status: SCAN_STATUS.IDLE, message: "" };
+    ids.forEach((id) => {
+      init[id] = { status: SCAN_STATUS.IDLE, message: "" };
     });
     setScanStates(init);
     try {
       const res = await fetch("/api/audit/batch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ project_ids: projects.map((p) => p.id) }),
+        body: JSON.stringify({ project_ids: ids }),
       });
       const data = await res.json();
       if (data.job_id) startPolling(data.job_id);
     } catch (e) {
       console.error("Lỗi khi khởi chạy batch:", e);
     }
-  }, [projects, isScanning, startPolling]);
+  }, [isScanning, startPolling]);
 
   const stopScan = useCallback(() => {
     fetch("/api/audit/cancel", { method: "POST" }).catch(() => { });
@@ -192,31 +159,155 @@ function useScanAllQueue(projects, onFinishAll) {
     setActiveJobId(null);
   }, []);
 
-  return { scanStates, isScanning, activeJobId, startScanAll, stopScan };
+  return { scanStates, isScanning, activeJobId, startScanSelected, stopScan };
 }
 
-// ─── Medal ────────────────────────────────────────────────────────────────────
+// ─── Scan Selection Modal ─────────────────────────────────────────────────────
 
-function RankBadge({ rank }) {
-  if (rank === 1)
-    return (
-      <div className="rank-badge rank-badge-gold">
-        <Star size={12} />
-      </div>
+function ScanSelectionModal({ projects, onClose, onConfirm }) {
+  const [selected, setSelected] = useState(() => new Set(projects.map((p) => p.id)));
+  const [search, setSearch] = useState("");
+
+  const filtered = useMemo(() => {
+    if (!search) return projects;
+    const sl = search.toLowerCase();
+    return projects.filter(
+      (p) => p.name?.toLowerCase().includes(sl) || p.id?.toLowerCase().includes(sl),
     );
-  if (rank === 2)
-    return (
-      <div className="rank-badge rank-badge-silver">
-        <Star size={12} />
-      </div>
-    );
-  if (rank === 3)
-    return (
-      <div className="rank-badge rank-badge-bronze">
-        <Star size={12} />
-      </div>
-    );
-  return <div className="rank-badge rank-badge-default">{rank}</div>;
+  }, [projects, search]);
+
+  const allFilteredSelected = filtered.length > 0 && filtered.every((p) => selected.has(p.id));
+
+  const toggleAll = () => {
+    const newSet = new Set(selected);
+    if (allFilteredSelected) {
+      filtered.forEach((p) => newSet.delete(p.id));
+    } else {
+      filtered.forEach((p) => newSet.add(p.id));
+    }
+    setSelected(newSet);
+  };
+
+  const toggle = (id) => {
+    const newSet = new Set(selected);
+    if (newSet.has(id)) newSet.delete(id);
+    else newSet.add(id);
+    setSelected(newSet);
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[300] flex items-center justify-center bg-black/40 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+        className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg mx-4 flex flex-col max-h-[80vh] overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-5 border-b border-slate-200 shrink-0">
+          <div>
+            <h3 className="text-lg font-black text-slate-800" style={{ fontFamily: "Outfit" }}>
+              Select Projects to Scan
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">Chọn các dự án cần phân tích chất lượng</p>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Search + Select All */}
+        <div className="p-4 border-b border-slate-100 shrink-0 space-y-3">
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Tìm kiếm project..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-sm text-slate-700 focus:border-violet-400 outline-none placeholder-slate-400 transition-colors"
+            />
+          </div>
+          <label className="flex items-center gap-3 cursor-pointer group">
+            <input
+              type="checkbox"
+              checked={allFilteredSelected}
+              onChange={toggleAll}
+              className="w-4 h-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500 cursor-pointer"
+            />
+            <span className="text-sm font-bold text-slate-600 group-hover:text-slate-800 transition-colors">
+              {allFilteredSelected ? "Bỏ chọn tất cả" : "Chọn tất cả"}
+              <span className="text-slate-400 font-normal ml-1">({filtered.length})</span>
+            </span>
+          </label>
+        </div>
+
+        {/* Project List */}
+        <div className="flex-1 overflow-y-auto p-2">
+          {filtered.map((project) => (
+            <label
+              key={project.id}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer hover:bg-slate-50 transition-colors group"
+            >
+              <input
+                type="checkbox"
+                checked={selected.has(project.id)}
+                onChange={() => toggle(project.id)}
+                className="w-4 h-4 rounded border-slate-300 text-violet-600 focus:ring-violet-500 cursor-pointer shrink-0"
+              />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-slate-700 truncate">{project.name}</p>
+                <p className="text-[11px] text-slate-400 truncate">{project.id}</p>
+              </div>
+              {project.latest_score != null ? (
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className={`text-sm font-black ${getScoreColor(project.latest_score)}`}>
+                    {project.latest_score.toFixed(1)}
+                  </span>
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${getRatingColor(project.rating)}`}
+                  >
+                    {project.rating || "—"}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-[10px] text-slate-400 italic">Chưa scan</span>
+              )}
+            </label>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between p-4 border-t border-slate-200 bg-slate-50 shrink-0">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all"
+          >
+            Hủy
+          </button>
+          <button
+            onClick={() => { onConfirm(selected); onClose(); }}
+            disabled={selected.size === 0}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 text-white text-sm font-bold shadow-md hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+          >
+            <Zap size={15} />
+            Run Scan ({selected.size})
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
 }
 
 // ─── Scan Status Pill ─────────────────────────────────────────────────────────
@@ -227,17 +318,17 @@ function ScanPill({ state }) {
     [SCAN_STATUS.RUNNING]: {
       icon: <Loader2 size={10} className="animate-spin" />,
       text: "Scanning",
-      cls: "bg-indigo-500/15 text-indigo-300 border-indigo-500/30",
+      cls: "bg-indigo-50 text-indigo-600 border-indigo-200",
     },
     [SCAN_STATUS.DONE]: {
       icon: <CheckCircle2 size={10} />,
       text: "Done",
-      cls: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+      cls: "bg-emerald-50 text-emerald-600 border-emerald-200",
     },
     [SCAN_STATUS.ERROR]: {
       icon: <XCircle size={10} />,
       text: "Error",
-      cls: "bg-rose-500/15 text-rose-400 border-rose-500/30",
+      cls: "bg-rose-50 text-rose-600 border-rose-200",
     },
   }[state.status];
   if (!cfg) return null;
@@ -541,8 +632,10 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
     fetchScores();
   }, [fetchScores]);
 
-  const { scanStates, isScanning, activeJobId, startScanAll, stopScan } =
+  const { scanStates, isScanning, activeJobId, startScanSelected, stopScan } =
     useScanAllQueue(projects, fetchScores);
+
+  const [showScanModal, setShowScanModal] = useState(false);
 
   const handleSort = (field) => {
     if (sortBy === field) setSortDir((d) => (d === "desc" ? "asc" : "desc"));
@@ -583,277 +676,290 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
       : null;
 
   return (
-    <div className="w-full flex-1 p-6 lg:p-8 max-w-7xl mx-auto relative z-10">
-      {/* Background blobs */}
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-pink-500/8 blur-[130px] rounded-full pointer-events-none -z-10" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-500/8 blur-[100px] rounded-full pointer-events-none -z-10" />
+    <>
+      <div className="w-full flex-1 p-6 lg:p-8 max-w-7xl mx-auto relative z-10">
+        {/* Background blobs */}
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-pink-500/8 blur-[130px] rounded-full pointer-events-none -z-10" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-500/8 blur-[100px] rounded-full pointer-events-none -z-10" />
 
-      {/* ── Header ── */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-5 page-header-compact"
-      >
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-50 text-violet-700 text-xs font-semibold border border-violet-200 shadow-sm">
-                <BarChart3 size={14} className="text-violet-600" /> Project Leaderboard
-              </div>
-              <span className="text-slate-600 text-xs font-medium hidden sm:block">
-                Code quality ranking for all repositories
-              </span>
-            </div>
-            <h2
-              className="text-3xl lg:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-violet-800 via-fuchsia-700 to-pink-600"
-              style={{ fontFamily: "Outfit, sans-serif" }}
-            >
-              PROJECT LEADERBOARD
-            </h2>
-          </div>
-
-          <div className="flex items-center gap-3 shrink-0">
-            <button
-              onClick={fetchScores}
-              disabled={isLoading || isScanning}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 text-sm font-semibold transition-all disabled:opacity-40"
-            >
-              <RefreshCw
-                size={15}
-                className={isLoading ? "animate-spin" : ""}
-              />
-              Refresh
-            </button>
-            {isScanning ? (
-              <button
-                onClick={stopScan}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-sm font-bold hover:bg-rose-500/20 transition-all"
-              >
-                <XCircle size={15} /> Stop
-              </button>
-            ) : (
-              <button
-                onClick={startScanAll}
-                disabled={isLoading || projects.length === 0}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-pink-500/10 border border-pink-500/30 text-pink-600 text-sm font-bold hover:bg-pink-500/20 transition-all disabled:opacity-40 group"
-              >
-                <Zap
-                  size={15}
-                  className="group-hover:scale-110 transition-transform"
-                />
-                Scan All
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* KPI strip */}
-        {!isLoading && projects.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4"
-          >
-            {[
-              {
-                label: "Total projects",
-                value: projects.length,
-                icon: <FolderOpen size={16} className="text-pink-600" />,
-                accent:
-                  "border-pink-500/25 shadow-[0_0_15px_-5px_rgba(236,72,153,0.15)]",
-                accentLine: "kpi-accent-pink",
-              },
-              {
-                label: "Avg score",
-                value: avgScore ? `${avgScore}/100` : "—",
-                icon: <Star size={16} className="text-amber-400" />,
-                accent:
-                  "border-amber-500/25 shadow-[0_0_15px_-5px_rgba(245,158,11,0.15)]",
-                accentLine: "kpi-accent-amber",
-              },
-              {
-                label: "Top project",
-                value: topProject?.name?.split("_").join(" ") || "—",
-                icon: <Trophy size={16} className="text-emerald-400" />,
-                accent:
-                  "border-emerald-500/25 shadow-[0_0_15px_-5px_rgba(16,185,129,0.15)]",
-                accentLine: "kpi-accent-emerald",
-              },
-              {
-                label: "Total violations",
-                value: totalViolations.toLocaleString(),
-                icon: <AlertTriangle size={16} className="text-orange-400" />,
-                accent:
-                  "border-orange-500/25 shadow-[0_0_15px_-5px_rgba(249,115,22,0.15)]",
-                accentLine: "kpi-accent-orange",
-              },
-            ].map((s) => (
-              <div
-                key={s.label}
-                className={`kpi-accent-card flex items-center gap-3 px-5 py-5 rounded-2xl bg-white border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all ${s.accent} ${s.accentLine}`}
-              >
-                <div className="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center shrink-0">
-                  {s.icon}
+        {/* ── Header ── */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-5 page-header-compact"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-50 text-violet-700 text-xs font-semibold border border-violet-200 shadow-sm">
+                  <BarChart3 size={14} className="text-violet-600" /> Project Leaderboard
                 </div>
-                <div>
-                  <div className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">
-                    {s.label}
-                  </div>
-                  <div className="text-lg font-black text-slate-800 truncate max-w-[140px]">
-                    {s.value}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </motion.div>
-        )}
-
-        {/* Scan progress */}
-        <AnimatePresence>
-          {isScanning && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mt-4 px-4 py-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 overflow-hidden"
-            >
-              <div className="flex items-center gap-3 text-sm text-indigo-300 font-medium mb-3">
-                <Loader2 size={14} className="animate-spin shrink-0" />
-                <span>
-                  Batch scan in progress — state persists even after page
-                  reload...
+                <span className="text-slate-600 text-xs font-medium hidden sm:block">
+                  Code quality ranking for all repositories
                 </span>
               </div>
-              {activeJobId && (
-                <div className="opacity-90 hover:opacity-100 transition-opacity">
-                  <TerminalLogs isAuditing={true} jobId={activeJobId} />
-                </div>
+              <h2
+                className="text-3xl lg:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-violet-800 via-fuchsia-700 to-pink-600"
+                style={{ fontFamily: "Outfit, sans-serif" }}
+              >
+                PROJECT LEADERBOARD
+              </h2>
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0">
+              <button
+                onClick={fetchScores}
+                disabled={isLoading || isScanning}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 text-sm font-semibold transition-all disabled:opacity-40"
+              >
+                <RefreshCw
+                  size={15}
+                  className={isLoading ? "animate-spin" : ""}
+                />
+                Refresh
+              </button>
+              {isScanning ? (
+                <button
+                  onClick={stopScan}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-sm font-bold hover:bg-rose-500/20 transition-all"
+                >
+                  <XCircle size={15} /> Stop
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowScanModal(true)}
+                  disabled={isLoading || projects.length === 0}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-pink-500/10 border border-pink-500/30 text-pink-600 text-sm font-bold hover:bg-pink-500/20 transition-all disabled:opacity-40 group"
+                >
+                  <Zap
+                    size={15}
+                    className="group-hover:scale-110 transition-transform"
+                  />
+                  Scan Projects
+                </button>
               )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
-
-      {/* ── States ── */}
-      <TopProgressBar isFetching={isLoading && projects.length > 0} />
-
-      {isLoading && projects.length === 0 ? (
-        <div className="w-full h-[50vh] flex flex-col items-center justify-center opacity-70">
-          <TopProgressBar isFetching={true} />
-        </div>
-      ) : error && projects.length === 0 ? (
-        <EmptyState
-          variant="error"
-          title="Data fetch error"
-          description={error}
-          accentColor="rose"
-          action={
-            <button
-              onClick={fetchScores}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-pink-500/10 border border-pink-500/30 text-pink-600 text-sm font-bold hover:bg-pink-500/20 transition-all"
-            >
-              <RefreshCw size={14} /> Retry
-            </button>
-          }
-        />
-      ) : projects.length === 0 ? (
-        <EmptyState
-          variant="noData"
-          title="No projects yet"
-          description="Configure repositories in system settings to see them on the leaderboard."
-          accentColor="pink"
-        />
-      ) : (
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className={`bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-md transition-all duration-300 ${isLoading ? "opacity-60 pointer-events-none" : ""}`}
-        >
-          <div className="overflow-x-auto">
-            <table
-              className="w-full premium-table"
-              style={{ "--table-accent": "rgba(236, 72, 153, 0.5)" }}
-            >
-              <thead>
-                <tr className="border-b border-slate-200 bg-slate-50">
-                  <th className="px-4 py-3 text-center">
-                    <span className="text-[10px] uppercase tracking-widest font-bold text-slate-500">
-                      #
-                    </span>
-                  </th>
-                  <SortTh
-                    label="Project"
-                    field="name"
-                    sortBy={sortBy}
-                    sortDir={sortDir}
-                    onClick={handleSort}
-                  />
-                  <SortTh
-                    label="Score"
-                    field="latest_score"
-                    sortBy={sortBy}
-                    sortDir={sortDir}
-                    onClick={handleSort}
-                  />
-                  <th className="px-4 py-3 text-left">
-                    <span className="text-[10px] uppercase tracking-widest font-bold text-slate-500">
-                      Pillars
-                    </span>
-                  </th>
-                  <th className="px-4 py-3 text-left">
-                    <span className="text-[10px] uppercase tracking-widest font-bold text-slate-500">
-                      Rating
-                    </span>
-                  </th>
-                  <SortTh
-                    label="Violations"
-                    field="violations_count"
-                    sortBy={sortBy}
-                    sortDir={sortDir}
-                    onClick={handleSort}
-                    align="right"
-                  />
-                  <SortTh
-                    label="Last Audit"
-                    field="latest_timestamp"
-                    sortBy={sortBy}
-                    sortDir={sortDir}
-                    onClick={handleSort}
-                    align="right"
-                  />
-                  <th className="px-4 py-3 w-8" />
-                </tr>
-              </thead>
-              <tbody>
-                {sorted
-                  .slice((projPage - 1) * projPageSize, projPage * projPageSize)
-                  .map((project, idx) => (
-                    <ProjectRow
-                      key={project.id}
-                      project={project}
-                      rank={(projPage - 1) * projPageSize + idx + 1}
-                      scanState={scanStates[project.id]}
-                      onSelect={onSelectProject}
-                    />
-                  ))}
-              </tbody>
-            </table>
+            </div>
           </div>
 
-          <Pagination
-            currentPage={projPage}
-            totalItems={sorted.length}
-            pageSize={projPageSize}
-            onPageChange={setProjPage}
-            onPageSizeChange={setProjPageSize}
-            showPageSizeSelector={true}
-            label="projects"
-          />
+          {/* KPI strip */}
+          {!isLoading && projects.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4"
+            >
+              {[
+                {
+                  label: "Total projects",
+                  value: projects.length,
+                  icon: <FolderOpen size={16} className="text-pink-600" />,
+                  accent:
+                    "border-pink-500/25 shadow-[0_0_15px_-5px_rgba(236,72,153,0.15)]",
+                  accentLine: "kpi-accent-pink",
+                },
+                {
+                  label: "Avg score",
+                  value: avgScore ? `${avgScore}/100` : "—",
+                  icon: <Star size={16} className="text-amber-400" />,
+                  accent:
+                    "border-amber-500/25 shadow-[0_0_15px_-5px_rgba(245,158,11,0.15)]",
+                  accentLine: "kpi-accent-amber",
+                },
+                {
+                  label: "Top project",
+                  value: topProject?.name?.split("_").join(" ") || "—",
+                  icon: <Trophy size={16} className="text-emerald-400" />,
+                  accent:
+                    "border-emerald-500/25 shadow-[0_0_15px_-5px_rgba(16,185,129,0.15)]",
+                  accentLine: "kpi-accent-emerald",
+                },
+                {
+                  label: "Total violations",
+                  value: totalViolations.toLocaleString(),
+                  icon: <AlertTriangle size={16} className="text-orange-400" />,
+                  accent:
+                    "border-orange-500/25 shadow-[0_0_15px_-5px_rgba(249,115,22,0.15)]",
+                  accentLine: "kpi-accent-orange",
+                },
+              ].map((s) => (
+                <div
+                  key={s.label}
+                  className={`kpi-accent-card flex items-center gap-3 px-5 py-5 rounded-2xl bg-white border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all ${s.accent} ${s.accentLine}`}
+                >
+                  <div className="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center shrink-0">
+                    {s.icon}
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">
+                      {s.label}
+                    </div>
+                    <div className="text-lg font-black text-slate-800 truncate max-w-[140px]">
+                      {s.value}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </motion.div>
+          )}
+
+          {/* Scan progress */}
+          <AnimatePresence>
+            {isScanning && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mt-4 px-4 py-3 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 overflow-hidden"
+              >
+                <div className="flex items-center gap-3 text-sm text-indigo-600 font-medium mb-3">
+                  <Loader2 size={14} className="animate-spin shrink-0" />
+                  <span>
+                    Batch scan in progress — state persists even after page
+                    reload...
+                  </span>
+                </div>
+                {activeJobId && (
+                  <div className="opacity-90 hover:opacity-100 transition-opacity">
+                    <TerminalLogs isAuditing={true} jobId={activeJobId} />
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
-      )}
-    </div>
+
+        {/* ── States ── */}
+        <TopProgressBar isFetching={isLoading && projects.length > 0} />
+
+        {isLoading && projects.length === 0 ? (
+          <div className="w-full h-[50vh] flex flex-col items-center justify-center opacity-70">
+            <TopProgressBar isFetching={true} />
+          </div>
+        ) : error && projects.length === 0 ? (
+          <EmptyState
+            variant="error"
+            title="Data fetch error"
+            description={error}
+            accentColor="rose"
+            action={
+              <button
+                onClick={fetchScores}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-pink-500/10 border border-pink-500/30 text-pink-600 text-sm font-bold hover:bg-pink-500/20 transition-all"
+              >
+                <RefreshCw size={14} /> Retry
+              </button>
+            }
+          />
+        ) : projects.length === 0 ? (
+          <EmptyState
+            variant="noData"
+            title="No projects yet"
+            description="Configure repositories in system settings to see them on the leaderboard."
+            accentColor="pink"
+          />
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className={`bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-md transition-all duration-300 ${isLoading ? "opacity-60 pointer-events-none" : ""}`}
+          >
+            <div className="overflow-x-auto">
+              <table
+                className="w-full premium-table zebra-table"
+                style={{ "--table-accent": "rgba(236, 72, 153, 0.5)" }}
+              >
+                <thead>
+                  <tr className="border-b border-slate-200 bg-slate-50">
+                    <th className="px-4 py-3 text-center">
+                      <span className="text-[10px] uppercase tracking-widest font-bold text-slate-500">
+                        #
+                      </span>
+                    </th>
+                    <SortTh
+                      label="Project"
+                      field="name"
+                      sortBy={sortBy}
+                      sortDir={sortDir}
+                      onClick={handleSort}
+                    />
+                    <SortTh
+                      label="Score"
+                      field="latest_score"
+                      sortBy={sortBy}
+                      sortDir={sortDir}
+                      onClick={handleSort}
+                    />
+                    <th className="px-4 py-3 text-left">
+                      <span className="text-[10px] uppercase tracking-widest font-bold text-slate-500">
+                        Pillars
+                      </span>
+                    </th>
+                    <th className="px-4 py-3 text-left">
+                      <span className="text-[10px] uppercase tracking-widest font-bold text-slate-500">
+                        Rating
+                      </span>
+                    </th>
+                    <SortTh
+                      label="Violations"
+                      field="violations_count"
+                      sortBy={sortBy}
+                      sortDir={sortDir}
+                      onClick={handleSort}
+                      align="right"
+                    />
+                    <SortTh
+                      label="Last Audit"
+                      field="latest_timestamp"
+                      sortBy={sortBy}
+                      sortDir={sortDir}
+                      onClick={handleSort}
+                      align="right"
+                    />
+                    <th className="px-4 py-3 w-8" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {sorted
+                    .slice((projPage - 1) * projPageSize, projPage * projPageSize)
+                    .map((project, idx) => (
+                      <ProjectRow
+                        key={project.id}
+                        project={project}
+                        rank={(projPage - 1) * projPageSize + idx + 1}
+                        scanState={scanStates[project.id]}
+                        onSelect={onSelectProject}
+                      />
+                    ))}
+                </tbody>
+              </table>
+            </div>
+
+            <Pagination
+              currentPage={projPage}
+              totalItems={sorted.length}
+              pageSize={projPageSize}
+              onPageChange={setProjPage}
+              onPageSizeChange={setProjPageSize}
+              showPageSizeSelector={true}
+              label="projects"
+            />
+          </motion.div>
+        )}
+      </div>
+
+      {/* Scan Selection Modal */}
+      <AnimatePresence>
+        {showScanModal && (
+          <ScanSelectionModal
+            projects={projects}
+            onClose={() => setShowScanModal(false)}
+            onConfirm={(selectedIds) => startScanSelected(selectedIds)}
+          />
+        )}
+      </AnimatePresence>
+    </>
   );
 };
 
