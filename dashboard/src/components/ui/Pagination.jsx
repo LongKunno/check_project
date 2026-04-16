@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 
 /**
- * Reusable pagination component with premium dark theme styling.
+ * Reusable pagination component with light theme styling.
  *
  * Props:
  *  - currentPage (number)    : 1-indexed current page
@@ -55,21 +55,21 @@ const Pagination = ({
 
   const btnBase =
     "flex items-center justify-center w-8 h-8 rounded-lg text-xs font-bold transition-all duration-200 select-none";
-  const btnInactive = `${btnBase} text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] border border-transparent`;
-  const btnActive = `${btnBase} text-white bg-blue-500/20 border border-blue-500/30 shadow-[0_0_12px_-4px_rgba(59,130,246,0.35)]`;
-  const btnDisabled = `${btnBase} text-slate-700 cursor-not-allowed`;
+  const btnInactive = `${btnBase} text-slate-500 hover:text-slate-700 hover:bg-slate-100 border border-transparent`;
+  const btnActive = `${btnBase} text-blue-600 bg-blue-50 border border-blue-200`;
+  const btnDisabled = `${btnBase} text-slate-300 cursor-not-allowed`;
   const btnNav = (disabled) => (disabled ? btnDisabled : btnInactive);
 
   return (
-    <div className="px-5 py-3 border-t border-white/[0.06] flex flex-col sm:flex-row items-center justify-between gap-3 bg-white/[0.02]">
+    <div className="px-5 py-3 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50">
       {/* Left — Summary */}
       <div className="flex items-center gap-3">
         <span className="text-[11px] text-slate-500 font-medium">
           Showing{" "}
-          <span className="text-slate-400 font-semibold">
+          <span className="text-slate-600 font-semibold">
             {startItem}–{endItem}
           </span>{" "}
-          of <span className="text-slate-400 font-semibold">{totalItems}</span>{" "}
+          of <span className="text-slate-600 font-semibold">{totalItems}</span>{" "}
           {label}
         </span>
 
@@ -80,11 +80,11 @@ const Pagination = ({
               onPageSizeChange(Number(e.target.value));
               onPageChange(1);
             }}
-            className="text-[11px] bg-white/[0.04] border border-white/10 rounded-lg px-2 py-1.5 text-slate-400 font-medium outline-none focus:border-blue-500/40 cursor-pointer appearance-none"
+            className="text-[11px] bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-slate-600 font-medium outline-none focus:border-blue-400 cursor-pointer appearance-none"
             style={{ backgroundImage: "none" }}
           >
             {pageSizeOptions.map((s) => (
-              <option key={s} value={s} className="bg-slate-900 text-slate-300">
+              <option key={s} value={s} className="bg-white text-slate-700">
                 {s} / page
               </option>
             ))}

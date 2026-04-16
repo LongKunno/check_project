@@ -23,28 +23,28 @@ function colorizeLog(text) {
     // File paths (src/..., path/to/file.py)
     {
       re: /((?:[\w.\-]+\/)+[\w.\-]+\.\w+)/g,
-      cls: "text-cyan-400 font-semibold",
+      cls: "text-cyan-700 font-semibold",
     },
     // False Positive removal
-    { re: /(False Positive|FP|✨|🛡️)/g, cls: "text-emerald-400 font-bold" },
+    { re: /(False Positive|FP|✨|🛡️)/g, cls: "text-emerald-700 font-bold" },
     // Error / warning keywords
-    { re: /(\bError\b|\bFailed\b|❌|⚠️|🚨)/g, cls: "text-rose-400 font-bold" },
+    { re: /(\bError\b|\bFailed\b|❌|⚠️|🚨)/g, cls: "text-rose-600 font-bold" },
     // Success keywords
     {
       re: /(\bCompleted\b|✅|done|COMPLETED)/g,
-      cls: "text-emerald-300 font-bold",
+      cls: "text-emerald-600 font-bold",
     },
     // Numbers like violations, scores
     {
       re: /\b(\d+)\s*(vi phạm|violations?|files?|batches?|LOC)\b/gi,
-      cls: "text-amber-300 font-semibold",
+      cls: "text-amber-700 font-semibold",
     },
     // Step labels [X/5]
-    { re: /(\[\d+[\.\-]?\d*\/\d+\])/g, cls: "text-violet-300 font-extrabold" },
+    { re: /(\[\d+[\.\-]?\d*\/\d+\])/g, cls: "text-violet-600 font-extrabold" },
     // Brackets like CUSTOM, AI_REASONING
     {
       re: /\[(Custom|Core|AI|AI_REASONING|AI_ONLY)\]/g,
-      cls: "text-sky-300 font-semibold",
+      cls: "text-sky-600 font-semibold",
     },
   ];
 
@@ -63,7 +63,7 @@ function colorizeLog(text) {
       );
     }
     // Find which pattern matched
-    let matchedCls = "text-slate-200";
+    let matchedCls = "text-slate-700";
     for (const p of patterns) {
       if (new RegExp(p.re.source, "i").test(match[0])) {
         matchedCls = p.cls;
@@ -95,11 +95,10 @@ function StepGroup({ stepLabel, lines, isActive, defaultOpen }) {
 
   return (
     <div
-      className={`mb-3 rounded-xl border transition-colors duration-300 ${
-        isActive
-          ? "border-violet-500/40 bg-violet-500/5"
-          : "border-white/5 bg-white/[0.03]"
-      }`}
+      className={`mb-3 rounded-xl border transition-colors duration-300 ${isActive
+        ? "border-violet-300 bg-violet-50"
+        : "border-slate-200 bg-slate-50"
+        }`}
     >
       {/* Accordion Header */}
       <button
@@ -107,21 +106,20 @@ function StepGroup({ stepLabel, lines, isActive, defaultOpen }) {
         className="w-full flex items-center gap-3 px-4 py-2.5 text-left group"
       >
         <div
-          className={`shrink-0 transition-colors ${isActive ? "text-violet-400" : "text-slate-500"}`}
+          className={`shrink-0 transition-colors ${isActive ? "text-violet-600" : "text-slate-400"}`}
         >
           {open ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
         </div>
         <span
-          className={`font-extrabold text-sm tracking-wide uppercase ${
-            isActive ? "text-violet-300" : "text-slate-400"
-          }`}
+          className={`font-extrabold text-sm tracking-wide uppercase ${isActive ? "text-violet-600" : "text-slate-500"
+            }`}
         >
           {stepLabel}
         </span>
         {isActive && (
           <Loader2
             size={13}
-            className="text-violet-400 animate-spin ml-auto shrink-0"
+            className="text-violet-600 animate-spin ml-auto shrink-0"
           />
         )}
         {!isActive && (
@@ -133,11 +131,11 @@ function StepGroup({ stepLabel, lines, isActive, defaultOpen }) {
 
       {/* Accordion Body */}
       {open && (
-        <div className="px-4 pb-3 border-t border-white/5 pt-2">
+        <div className="px-4 pb-3 border-t border-slate-200 pt-2">
           {lines.map((line, idx) => (
             <div
               key={idx}
-              className="mb-1 text-sm leading-relaxed border-l border-emerald-500/20 pl-3 font-mono"
+              className="mb-1 text-sm leading-relaxed border-l border-emerald-300 pl-3 font-mono"
             >
               {colorizeLog(line)}
             </div>
@@ -202,7 +200,7 @@ const TerminalLogs = React.memo(({ isAuditing, jobId }) => {
         }
         processLine(e.data);
       };
-      eventSource.onerror = () => {};
+      eventSource.onerror = () => { };
     }
     return () => {
       if (eventSource) eventSource.close();
@@ -221,22 +219,22 @@ const TerminalLogs = React.memo(({ isAuditing, jobId }) => {
   return (
     <div
       style={{ marginBottom: "2rem" }}
-      className="rounded-2xl border border-white/10 overflow-hidden shadow-2xl"
+      className="rounded-2xl border border-slate-200 overflow-hidden shadow-md"
     >
       {/* ── Terminal Header ── */}
-      <div className="flex items-center gap-3 px-5 py-3 bg-black/60 border-b border-white/10 backdrop-blur-xl">
+      <div className="flex items-center gap-3 px-5 py-3 bg-slate-100 border-b border-slate-200">
         <div className="flex gap-1.5">
           <div className="w-3 h-3 rounded-full bg-rose-500/70" />
           <div className="w-3 h-3 rounded-full bg-amber-500/70" />
           <div className="w-3 h-3 rounded-full bg-emerald-500/70" />
         </div>
-        <Zap size={14} className="text-violet-400" />
-        <span className="text-slate-400 font-bold text-xs uppercase tracking-widest">
+        <Zap size={14} className="text-violet-600" />
+        <span className="text-slate-600 font-bold text-xs uppercase tracking-widest">
           CORE AUDITOR LOGS
         </span>
         <div className="ml-auto flex items-center gap-2">
-          <Loader2 size={13} className="text-violet-400 animate-spin" />
-          <span className="text-violet-400 text-xs font-bold animate-pulse">
+          <Loader2 size={13} className="text-violet-600 animate-spin" />
+          <span className="text-violet-600 text-xs font-bold animate-pulse">
             RUNNING
           </span>
         </div>
@@ -244,17 +242,17 @@ const TerminalLogs = React.memo(({ isAuditing, jobId }) => {
 
       {/* ── Status Bar — Progress Ticker ── */}
       {currentFile && (
-        <div className="flex items-center gap-3 px-5 py-2 bg-cyan-500/5 border-b border-cyan-500/20">
+        <div className="flex items-center gap-3 px-5 py-2 bg-cyan-50 border-b border-cyan-200">
           <FileCode2
             size={14}
-            className="text-cyan-400 shrink-0 animate-pulse"
+            className="text-cyan-600 shrink-0 animate-pulse"
           />
-          <span className="text-cyan-300 text-xs font-mono font-semibold overflow-hidden text-ellipsis whitespace-nowrap">
+          <span className="text-cyan-700 text-xs font-mono font-semibold overflow-hidden text-ellipsis whitespace-nowrap">
             {currentFile}
           </span>
           <div className="ml-auto flex items-center gap-1.5">
             <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
-            <span className="text-cyan-500 text-[10px] font-bold uppercase tracking-widest">
+            <span className="text-cyan-600 text-[10px] font-bold uppercase tracking-widest">
               Processing
             </span>
           </div>
@@ -268,14 +266,14 @@ const TerminalLogs = React.memo(({ isAuditing, jobId }) => {
         style={{
           height: "60vh",
           minHeight: "420px",
-          background: "rgba(2, 6, 23, 0.92)",
+          background: "#fafbfc",
           fontFamily: "JetBrains Mono, Menlo, monospace",
           fontSize: "0.78rem",
         }}
       >
         {groups.length === 0 && (
-          <div className="flex items-center gap-3 text-slate-500 p-6 text-sm">
-            <Cpu size={18} className="animate-pulse text-violet-400" />
+          <div className="flex items-center gap-3 text-slate-400 p-6 text-sm">
+            <Cpu size={18} className="animate-pulse text-violet-600" />
             <span>Starting audit engine...</span>
           </div>
         )}

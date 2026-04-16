@@ -117,7 +117,7 @@ const RuleManager = ({ targetId, projectName }) => {
           custom_weights: updatedWeights,
         }),
       });
-    } catch (e) {}
+    } catch (e) { }
   };
 
   const syncWeightWithServer = async (scope, newWeights) => {
@@ -166,16 +166,16 @@ const RuleManager = ({ targetId, projectName }) => {
 
     const scope = activeTab === "global" ? "GLOBAL" : "PROJECT";
     const refKey = scope === "GLOBAL" ? "global" : "project";
-    
+
     const currentWeights = scope === "GLOBAL" ? globalOverrides.custom_weights : projectOverrides.custom_weights;
     const baseWeights = pendingWeightsRef.current[refKey] || currentWeights || {};
     const updatedWeights = { ...baseWeights, [ruleId]: val };
-    
+
     pendingWeightsRef.current[refKey] = updatedWeights;
 
     // Optimistic update trước, debounce save sau 600ms
-    if (scope === "GLOBAL") setGlobalOverrides(p => ({...p, custom_weights: updatedWeights}));
-    else setProjectOverrides(p => ({...p, custom_weights: updatedWeights}));
+    if (scope === "GLOBAL") setGlobalOverrides(p => ({ ...p, custom_weights: updatedWeights }));
+    else setProjectOverrides(p => ({ ...p, custom_weights: updatedWeights }));
 
     if (weightDebounceRef.current) clearTimeout(weightDebounceRef.current);
     weightDebounceRef.current = setTimeout(() => {
@@ -223,12 +223,12 @@ const RuleManager = ({ targetId, projectName }) => {
   const tabEffectiveDisabled = useMemo(() => {
     if (activeTab === "global") return new Set(globalOverrides.disabled_core_rules || []);
     else if (activeTab === "project") {
-        const g_dis = new Set(globalOverrides.disabled_core_rules || []);
-        const p_dis = new Set(projectOverrides.disabled_core_rules || []);
-        const p_en = new Set(projectOverrides.enabled_core_rules || []);
-        const merged = new Set([...g_dis, ...p_dis]);
-        for(let rm of p_en) merged.delete(rm);
-        return merged;
+      const g_dis = new Set(globalOverrides.disabled_core_rules || []);
+      const p_dis = new Set(projectOverrides.disabled_core_rules || []);
+      const p_en = new Set(projectOverrides.enabled_core_rules || []);
+      const merged = new Set([...g_dis, ...p_dis]);
+      for (let rm of p_en) merged.delete(rm);
+      return merged;
     }
     return new Set();
   }, [activeTab, globalOverrides, projectOverrides]);
@@ -236,7 +236,7 @@ const RuleManager = ({ targetId, projectName }) => {
   const tabEffectiveWeights = useMemo(() => {
     if (activeTab === "global") return globalOverrides.custom_weights || {};
     else if (activeTab === "project") {
-        return { ...(globalOverrides.custom_weights || {}), ...(projectOverrides.custom_weights || {}) };
+      return { ...(globalOverrides.custom_weights || {}), ...(projectOverrides.custom_weights || {}) };
     }
     return {};
   }, [activeTab, globalOverrides, projectOverrides]);
@@ -323,7 +323,7 @@ const RuleManager = ({ targetId, projectName }) => {
       .filter(([_, m]) => (m.category || "Uncategorized") === category)
       .map(([k]) => k);
     if (categoryRules.length === 0) return;
-    
+
     // Instead of looping individual toggles, optimally just toggle sequentially. For now we loop.
     for (const r of categoryRules) {
       const isCurrentlyDisabled = tabEffectiveDisabled.has(r);
@@ -390,10 +390,10 @@ const RuleManager = ({ targetId, projectName }) => {
             animate={{ opacity: 1, y: 0, x: "-50%" }}
             exit={{ opacity: 0, y: 60, x: "-50%" }}
             className={cn(
-              "fixed bottom-10 left-1/2 px-5 py-3 rounded-2xl shadow-2xl z-[200] border backdrop-blur-xl flex items-center gap-3",
+              "fixed bottom-10 left-1/2 px-5 py-3 rounded-2xl shadow-md z-[200] border flex items-center gap-3",
               toast.type === "error"
-                ? "bg-red-500/10 border-red-500/30 text-red-400"
-                : "bg-emerald-500/10 border-emerald-500/30 text-emerald-400",
+                ? "bg-red-50 border-red-200 text-red-600"
+                : "bg-emerald-50 border-emerald-200 text-emerald-600",
             )}
           >
             {toast.type === "error" ? (
@@ -412,7 +412,7 @@ const RuleManager = ({ targetId, projectName }) => {
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           <span className="text-xs text-slate-500 font-semibold">
             Configuring:{" "}
-            <span className="text-emerald-400 font-black">
+            <span className="text-emerald-600 font-black">
               {projectName || targetId || "—"}
             </span>
           </span>
@@ -451,9 +451,9 @@ const RuleManager = ({ targetId, projectName }) => {
         </div>
 
         {/* ── Main Panel ── */}
-        <div className="bg-[rgba(16,22,38,0.55)] backdrop-blur-xl border border-white/[0.08] rounded-2xl flex flex-col flex-1 shadow-2xl overflow-hidden min-h-[500px]">
+        <div className="bg-white border border-slate-200 rounded-2xl flex flex-col flex-1 shadow-md overflow-hidden min-h-[500px]">
           {/* Tabs */}
-          <div className="flex items-center gap-1 p-2 border-b border-white/[0.06] shrink-0 bg-[rgba(10,15,28,0.4)] overflow-x-auto scroller-hide">
+          <div className="flex items-center gap-1 p-2 border-b border-slate-200 shrink-0 bg-slate-50 overflow-x-auto scroller-hide">
             {[
               {
                 id: "global",
@@ -495,7 +495,7 @@ const RuleManager = ({ targetId, projectName }) => {
                   "flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200",
                   activeTab === tab.id
                     ? `bg-gradient-to-r ${tab.activeGrad} text-white shadow-md`
-                    : "text-slate-500 hover:text-slate-300 hover:bg-white/5",
+                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-100",
                 )}
               >
                 <tab.icon size={15} />
@@ -505,14 +505,14 @@ const RuleManager = ({ targetId, projectName }) => {
                     "text-[10px] font-black px-2 py-0.5 rounded-full",
                     activeTab === tab.id
                       ? "bg-white/20 text-white"
-                      : "bg-white/5 text-slate-500",
+                      : "bg-slate-100 text-slate-500",
                   )}
                 >
                   {tab.count}
                 </span>
                 <span
                   onClick={(e) => { e.stopPropagation(); setShowTabInfo(showTabInfo === tab.id ? null : tab.id); }}
-                  className={cn("shrink-0 cursor-help transition-colors p-0.5 rounded", activeTab === tab.id ? "text-white/40 hover:text-white/80 hover:bg-white/10" : "text-slate-600 hover:text-slate-400 hover:bg-white/5")}
+                  className={cn("shrink-0 cursor-help transition-colors p-0.5 rounded", activeTab === tab.id ? "text-white/40 hover:text-white/80 hover:bg-white/10" : "text-slate-400 hover:text-slate-600 hover:bg-slate-100")}
                 >
                   <Info size={12} />
                 </span>
@@ -527,9 +527,9 @@ const RuleManager = ({ targetId, projectName }) => {
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: "auto", opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                className="overflow-hidden border-b border-white/[0.05] shrink-0"
+                className="overflow-hidden border-b border-slate-200 shrink-0"
               >
-                <div className="p-4 flex flex-col lg:flex-row items-start lg:items-end gap-3 flex-wrap bg-[rgba(10,15,28,0.3)]">
+                <div className="p-4 flex flex-col lg:flex-row items-start lg:items-end gap-3 flex-wrap bg-slate-50">
                   {/* Search */}
                   <div className="relative flex-1 min-w-[200px]">
                     <Search
@@ -541,12 +541,12 @@ const RuleManager = ({ targetId, projectName }) => {
                       placeholder="Search rule ID, description..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full bg-[rgba(10,15,28,0.5)] border border-white/[0.08] rounded-xl py-2 pl-9 pr-3 text-sm text-slate-200 focus:border-emerald-500/50 outline-none placeholder-slate-500 transition-colors"
+                      className="w-full bg-white border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-sm text-slate-700 focus:border-emerald-500 outline-none placeholder-slate-400 transition-colors"
                     />
                     {searchTerm && (
                       <button
                         onClick={() => setSearchTerm("")}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                       >
                         <X size={12} />
                       </button>
@@ -572,14 +572,14 @@ const RuleManager = ({ targetId, projectName }) => {
                     <span className="text-[9px] font-bold uppercase tracking-widest text-slate-500 px-1">
                       Pillar
                     </span>
-                    <div className="flex items-center gap-1 bg-[rgba(16,22,38,0.5)] rounded-xl p-1 border border-white/[0.06] flex-wrap">
+                    <div className="flex items-center gap-1 bg-slate-100 rounded-xl p-1 border border-slate-200 flex-wrap">
                       <button
                         onClick={() => setFilterPillar("ALL")}
                         className={cn(
                           "px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all",
                           filterPillar === "ALL"
-                            ? "bg-white/12 text-white"
-                            : "text-slate-500 hover:text-slate-300",
+                            ? "bg-white/12 text-slate-800"
+                            : "text-slate-500 hover:text-slate-700",
                         )}
                       >
                         All
@@ -594,8 +594,8 @@ const RuleManager = ({ targetId, projectName }) => {
                             className={cn(
                               "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all",
                               filterPillar === cat
-                                ? cn("text-white", pm.bg)
-                                : "text-slate-500 hover:text-slate-300",
+                                ? cn("text-slate-800", pm.bg)
+                                : "text-slate-500 hover:text-slate-700",
                             )}
                           >
                             <PIcon
@@ -631,12 +631,12 @@ const RuleManager = ({ targetId, projectName }) => {
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="overflow-hidden border-b border-white/[0.05]"
+                  className="overflow-hidden border-b border-slate-200"
                 >
-                  <div className="px-4 py-2.5 flex items-center gap-2.5 bg-[rgba(10,15,28,0.3)]">
+                  <div className="px-4 py-2.5 flex items-center gap-2.5 bg-slate-50">
                     <TIcon size={13} className={`text-${info.color}-400`} />
-                    <span className="text-xs text-slate-300 leading-relaxed">{info.desc}</span>
-                    <button onClick={() => setShowTabInfo(null)} className="ml-auto text-slate-500 hover:text-white p-0.5 rounded hover:bg-white/10 transition-colors shrink-0">
+                    <span className="text-xs text-slate-600 leading-relaxed">{info.desc}</span>
+                    <button onClick={() => setShowTabInfo(null)} className="ml-auto text-slate-400 hover:text-slate-600 p-0.5 rounded hover:bg-slate-100 transition-colors shrink-0">
                       <X size={12} />
                     </button>
                   </div>
@@ -651,9 +651,9 @@ const RuleManager = ({ targetId, projectName }) => {
             {activeTab === "custom" && (
               <div>
                 {!compiledJson ||
-                (!compiledJson.ast_rules?.dangerous_functions?.length &&
-                  !compiledJson.regex_rules?.length &&
-                  !compiledJson.ai_rules?.length) ? (
+                  (!compiledJson.ast_rules?.dangerous_functions?.length &&
+                    !compiledJson.regex_rules?.length &&
+                    !compiledJson.ai_rules?.length) ? (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -683,17 +683,17 @@ const RuleManager = ({ targetId, projectName }) => {
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: idx * 0.05 }}
-                        className="bg-[rgba(16,18,38,0.6)] border border-violet-500/15 rounded-xl overflow-hidden group hover:border-violet-500/35 transition-all"
+                        className="bg-white border border-violet-200 rounded-xl overflow-hidden group hover:border-violet-300 transition-all"
                       >
                         <div className="h-[2px] bg-gradient-to-r from-violet-500/60 to-transparent" />
                         <div className="p-4 flex flex-col gap-3">
                           <div className="flex justify-between items-start">
                             <div className="flex flex-col gap-1">
                               <div className="flex items-center gap-2">
-                                <span className="text-[9px] font-black bg-violet-500/20 text-violet-300 px-2 py-0.5 rounded-md border border-violet-500/30 uppercase tracking-wider">
+                                <span className="text-[9px] font-black bg-violet-50 text-violet-600 px-2 py-0.5 rounded-md border border-violet-200 uppercase tracking-wider">
                                   REGEX
                                 </span>
-                                <span className="font-mono font-black text-violet-300 text-sm">
+                                <span className="font-mono font-black text-violet-600 text-sm">
                                   {r.id}
                                 </span>
                               </div>
@@ -710,11 +710,11 @@ const RuleManager = ({ targetId, projectName }) => {
                               <Trash2 size={14} />
                             </button>
                           </div>
-                          <code className="text-[11px] bg-white/[0.04] p-3 rounded-lg text-emerald-400 font-mono break-all border border-white/5">
+                          <code className="text-[11px] bg-slate-50 p-3 rounded-lg text-emerald-700 font-mono break-all border border-slate-200">
                             {r.pattern}
                           </code>
-                          <div className="flex items-center justify-between pt-1 border-t border-white/5">
-                            <span className="text-[9px] bg-red-500/15 text-red-400 px-2 py-0.5 rounded-full border border-red-500/20 uppercase font-black tracking-wide">
+                          <div className="flex items-center justify-between pt-1 border-t border-slate-200">
+                            <span className="text-[9px] bg-red-50 text-red-600 px-2 py-0.5 rounded-full border border-red-200 uppercase font-black tracking-wide">
                               Security
                             </span>
                             <div className="flex items-center gap-2">
@@ -751,17 +751,17 @@ const RuleManager = ({ targetId, projectName }) => {
                               (compiledJson?.regex_rules?.length || 0) * 0.05 +
                               idx * 0.05,
                           }}
-                          className="bg-[rgba(16,18,38,0.6)] border border-violet-500/15 rounded-xl overflow-hidden group hover:border-violet-500/35 transition-all"
+                          className="bg-white border border-violet-200 rounded-xl overflow-hidden group hover:border-violet-300 transition-all"
                         >
                           <div className="h-[2px] bg-gradient-to-r from-amber-500/60 to-transparent" />
                           <div className="p-4 flex flex-col gap-3">
                             <div className="flex justify-between items-start">
                               <div className="flex flex-col gap-1">
                                 <div className="flex items-center gap-2">
-                                  <span className="text-[9px] font-black bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-md border border-amber-500/30 uppercase tracking-wider">
+                                  <span className="text-[9px] font-black bg-amber-50 text-amber-600 px-2 py-0.5 rounded-md border border-amber-200 uppercase tracking-wider">
                                     AST
                                   </span>
-                                  <span className="font-mono font-black text-violet-300 text-sm">
+                                  <span className="font-mono font-black text-violet-600 text-sm">
                                     {df.name}
                                   </span>
                                 </div>
@@ -778,7 +778,7 @@ const RuleManager = ({ targetId, projectName }) => {
                                 <Trash2 size={14} />
                               </button>
                             </div>
-                            <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                            <div className="flex items-center justify-between pt-2 border-t border-slate-200">
                               <span
                                 className={cn(
                                   "text-[9px] px-2 py-0.5 rounded-full uppercase font-black tracking-wide border",
@@ -826,17 +826,17 @@ const RuleManager = ({ targetId, projectName }) => {
                             (compiledJson?.ast_rules?.dangerous_functions?.length || 0) * 0.05 +
                             idx * 0.05,
                         }}
-                        className="bg-[rgba(16,18,38,0.6)] border border-cyan-500/15 rounded-xl overflow-hidden group hover:border-cyan-500/35 transition-all"
+                        className="bg-white border border-cyan-200 rounded-xl overflow-hidden group hover:border-cyan-300 transition-all"
                       >
                         <div className="h-[2px] bg-gradient-to-r from-cyan-500/60 to-transparent" />
                         <div className="p-4 flex flex-col gap-3">
                           <div className="flex justify-between items-start">
                             <div className="flex flex-col gap-1">
                               <div className="flex items-center gap-2">
-                                <span className="text-[9px] font-black bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded-md border border-cyan-500/30 uppercase tracking-wider">
+                                <span className="text-[9px] font-black bg-cyan-50 text-cyan-600 px-2 py-0.5 rounded-md border border-cyan-200 uppercase tracking-wider">
                                   AI
                                 </span>
-                                <span className="font-mono font-black text-cyan-300 text-sm">
+                                <span className="font-mono font-black text-cyan-600 text-sm">
                                   {ar.id}
                                 </span>
                               </div>
@@ -853,13 +853,13 @@ const RuleManager = ({ targetId, projectName }) => {
                               <Trash2 size={14} />
                             </button>
                           </div>
-                          <div className="bg-white/[0.04] p-3 rounded-lg border border-white/5">
+                          <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
                             <span className="text-[9px] font-bold text-cyan-600 uppercase tracking-widest block mb-1.5">AI Prompt</span>
-                            <p className="text-[11px] text-cyan-400 leading-relaxed italic">
+                            <p className="text-[11px] text-cyan-700 leading-relaxed italic">
                               {ar.prompt}
                             </p>
                           </div>
-                          <div className="flex items-center justify-between pt-1 border-t border-white/5">
+                          <div className="flex items-center justify-between pt-1 border-t border-slate-200">
                             <span
                               className={cn(
                                 "text-[9px] px-2 py-0.5 rounded-full uppercase font-black tracking-wide border",
@@ -935,15 +935,15 @@ const RuleManager = ({ targetId, projectName }) => {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: catIdx * 0.04 }}
-                    className="rounded-2xl border border-white/[0.07] overflow-hidden shadow-xl bg-[rgba(16,22,38,0.45)]"
+                    className="rounded-2xl border border-slate-200 overflow-hidden shadow-sm bg-white"
                   >
                     {/* Accordion header */}
                     <div
                       className={cn(
                         "flex items-center justify-between px-4 py-3.5 border-b",
                         isExpanded
-                          ? ["border-white/[0.08]", pm.bg.replace(/\/\d+/, "/5")]
-                          : "border-white/[0.05] hover:bg-white/[0.02] transition-colors",
+                          ? ["border-slate-200", pm.bg.replace(/\/\d+/, "/5")]
+                          : "border-slate-100 hover:bg-slate-50 transition-colors",
                       )}
                     >
                       <button
@@ -974,7 +974,7 @@ const RuleManager = ({ targetId, projectName }) => {
                         >
                           <PIcon size={14} className={pm.color} />
                         </div>
-                        <span className="font-bold text-sm text-slate-200 uppercase tracking-wider">
+                        <span className="font-bold text-sm text-slate-700 uppercase tracking-wider">
                           {category}
                         </span>
                         <div className="flex items-center gap-1.5">
@@ -998,14 +998,14 @@ const RuleManager = ({ targetId, projectName }) => {
                         <button
                           onClick={() => handleBulkToggle(category, true)}
                           title="Enable All"
-                          className="p-1.5 text-slate-500 hover:text-emerald-400 hover:bg-emerald-500/10 rounded-lg transition-all"
+                          className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
                         >
                           <ToggleRight size={16} />
                         </button>
                         <button
                           onClick={() => handleBulkToggle(category, false)}
                           title="Disable All"
-                          className="p-1.5 text-slate-500 hover:text-slate-300 hover:bg-white/5 rounded-lg transition-all"
+                          className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-all"
                         >
                           <ToggleLeft size={16} />
                         </button>
@@ -1036,27 +1036,28 @@ const RuleManager = ({ targetId, projectName }) => {
                                 globalOverrides?.custom_weights?.[ruleKey] !== undefined
                               );
                               return (
-                              <RuleCard
-                                key={ruleKey}
-                                ruleKey={ruleKey}
-                                meta={meta}
-                                isDisabled={tabEffectiveDisabled.has(ruleKey)}
-                                isCustomWeight={
-                                  tabEffectiveWeights[ruleKey] !== undefined
-                                }
-                                customWeight={tabEffectiveWeights[ruleKey]}
-                                onToggle={(shouldDisable) =>
-                                  handleToggleRule(ruleKey, shouldDisable, false)
-                                }
-                                onWeightChange={(val) =>
-                                  handleWeightChange(ruleKey, val)
-                                }
-                                isOverridden={isOverridden}
-                                onResetOverride={() => handleToggleRule(ruleKey, false, true)}
-                                isGlobalCustomized={isGlobalCustomized}
-                                onResetToDefault={() => handleToggleRule(ruleKey, false, true)}
-                              />
-                            )})}
+                                <RuleCard
+                                  key={ruleKey}
+                                  ruleKey={ruleKey}
+                                  meta={meta}
+                                  isDisabled={tabEffectiveDisabled.has(ruleKey)}
+                                  isCustomWeight={
+                                    tabEffectiveWeights[ruleKey] !== undefined
+                                  }
+                                  customWeight={tabEffectiveWeights[ruleKey]}
+                                  onToggle={(shouldDisable) =>
+                                    handleToggleRule(ruleKey, shouldDisable, false)
+                                  }
+                                  onWeightChange={(val) =>
+                                    handleWeightChange(ruleKey, val)
+                                  }
+                                  isOverridden={isOverridden}
+                                  onResetOverride={() => handleToggleRule(ruleKey, false, true)}
+                                  isGlobalCustomized={isGlobalCustomized}
+                                  onResetToDefault={() => handleToggleRule(ruleKey, false, true)}
+                                />
+                              )
+                            })}
                           </div>
                         </motion.div>
                       )}
@@ -1064,11 +1065,11 @@ const RuleManager = ({ targetId, projectName }) => {
                   </motion.div>
                 );
               })}
-              
+
             {/* Diff/Override Manager Tab */}
             {activeTab === "diff" && (
               <div className="flex flex-col gap-4">
-                
+
                 {(() => { const globalDisabledSet = new Set(globalOverrides?.disabled_core_rules || []); const hasRealOverrides = (projectOverrides?.disabled_core_rules?.length > 0) || (projectOverrides?.enabled_core_rules || []).some(r => globalDisabledSet.has(r)) || Object.keys(projectOverrides?.custom_weights || {}).length > 0; return !hasRealOverrides; })() ? (
                   <div className="py-20 flex flex-col items-center justify-center opacity-60">
                     <CheckCircle2 size={40} className="text-emerald-500 mb-3" />
@@ -1080,28 +1081,28 @@ const RuleManager = ({ targetId, projectName }) => {
                     {(() => {
                       const uniqueOverrides = {};
                       (projectOverrides?.disabled_core_rules || []).forEach(r => {
-                         if (!uniqueOverrides[r]) uniqueOverrides[r] = {};
-                         uniqueOverrides[r].status = "DISABLED";
+                        if (!uniqueOverrides[r]) uniqueOverrides[r] = {};
+                        uniqueOverrides[r].status = "DISABLED";
                       });
                       const globalDisabledSet = new Set(globalOverrides?.disabled_core_rules || []);
                       (projectOverrides?.enabled_core_rules || []).forEach(r => {
-                         // Only show enabled override if it actually overrides a global disable
-                         if (globalDisabledSet.has(r)) {
-                           if (!uniqueOverrides[r]) uniqueOverrides[r] = {};
-                           uniqueOverrides[r].status = "ENABLED";
-                         }
+                        // Only show enabled override if it actually overrides a global disable
+                        if (globalDisabledSet.has(r)) {
+                          if (!uniqueOverrides[r]) uniqueOverrides[r] = {};
+                          uniqueOverrides[r].status = "ENABLED";
+                        }
                       });
                       Object.entries(projectOverrides?.custom_weights || {}).forEach(([r, w]) => {
-                         if (!uniqueOverrides[r]) uniqueOverrides[r] = {};
-                         uniqueOverrides[r].weight = w;
+                        if (!uniqueOverrides[r]) uniqueOverrides[r] = {};
+                        uniqueOverrides[r].weight = w;
                       });
                       return Object.entries(uniqueOverrides).map(([r, overrides]) => (
-                        <DiffCard 
-                          key={`diff-${r}`} 
-                          ruleId={r} 
-                          defaultRules={defaultRules} 
-                          overrides={overrides} 
-                          onReset={() => handleToggleRule(r, false, true)} 
+                        <DiffCard
+                          key={`diff-${r}`}
+                          ruleId={r}
+                          defaultRules={defaultRules}
+                          overrides={overrides}
+                          onReset={() => handleToggleRule(r, false, true)}
                         />
                       ));
                     })()}

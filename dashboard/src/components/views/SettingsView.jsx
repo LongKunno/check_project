@@ -36,29 +36,29 @@ const InfoCard = ({
   icon,
   label,
   value,
-  iconClass = "bg-slate-500/10 border-slate-500/20 text-slate-400",
+  iconClass = "bg-slate-500/10 border-slate-500/20 text-slate-500",
   accent = "",
 }) => (
   <div
-    className={`flex items-center gap-3 p-4 rounded-2xl bg-white/[0.03] border backdrop-blur-sm transition-all hover:bg-white/[0.06] ${accent || "border-white/8"}`}
+    className={`flex items-center gap-3 p-4 rounded-2xl bg-slate-50 border transition-all hover:bg-slate-50 ${accent || "border-white/8"}`}
   >
     <div className={`p-2 rounded-xl border ${iconClass}`}>{icon}</div>
     <div>
       <div className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">
         {label}
       </div>
-      <div className="text-sm font-bold text-white">{value}</div>
+      <div className="text-sm font-bold text-slate-800">{value}</div>
     </div>
   </div>
 );
 
 const SectionTitle = ({ icon, title, description }) => (
   <div className="flex items-center gap-3 mb-5">
-    <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400">
+    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-500">
       {icon}
     </div>
     <div>
-      <h3 className="text-white font-extrabold text-sm tracking-tight">
+      <h3 className="font-extrabold text-slate-800 text-sm tracking-tight">
         {title}
       </h3>
       {description && (
@@ -96,7 +96,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
           setEngineDirty(false);
         }
       }
-    } catch (e) {}
+    } catch (e) { }
   }, []);
 
   useEffect(() => { fetchEngineConfig(); }, [fetchEngineConfig]);
@@ -156,7 +156,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
       .then((d) => {
         if (d) setSystemInfo(d);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // Fetch rules summary
@@ -181,7 +181,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
           disabledCount,
         });
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [selectedRepoId]);
 
   // ── Multi-Level Reset Handler ──────────────────────────────────────────
@@ -225,7 +225,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
       >
         <div>
           <div className="flex items-center gap-3 mb-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-500/10 border border-slate-500/20 text-slate-400 text-xs font-semibold">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-500/10 border border-slate-500/20 text-slate-500 text-xs font-semibold">
               <Settings size={14} /> System Settings
             </div>
             <span className="text-slate-600 text-xs font-medium hidden sm:block">
@@ -233,7 +233,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
             </span>
           </div>
           <h2
-            className="text-3xl lg:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-300 to-slate-500"
+            className="text-3xl lg:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-slate-800 via-slate-600 to-slate-500"
             style={{ fontFamily: "Outfit, sans-serif" }}
           >
             SYSTEM SETTINGS
@@ -247,7 +247,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="bg-[#0f1629]/50 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
+          className="bg-white border border-slate-200 rounded-3xl p-6 shadow-md"
         >
           <SectionTitle
             icon={<Zap size={18} />}
@@ -256,17 +256,16 @@ const SettingsView = ({ selectedRepoId, cn }) => {
           />
 
           {/* AI Enabled Toggle */}
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.03] border border-white/8 mb-4">
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-white/8 mb-4">
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-xl border ${
-                engineConfig.ai_enabled
-                  ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-400"
-                  : "bg-slate-500/10 border-slate-500/20 text-slate-500"
-              }`}>
+              <div className={`p-2 rounded-xl border ${engineConfig.ai_enabled
+                ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-600"
+                : "bg-slate-500/10 border-slate-500/20 text-slate-500"
+                }`}>
                 <ShieldCheck size={16} />
               </div>
               <div>
-                <div className="text-sm font-bold text-white">AI-Powered Analysis</div>
+                <div className="text-sm font-bold text-slate-800">AI-Powered Analysis</div>
                 <div className="text-[11px] text-slate-500 mt-0.5">
                   {engineConfig.ai_enabled
                     ? "Hybrid Validation + Deep Reasoning + Cross-Check (tốn token)"
@@ -280,25 +279,24 @@ const SettingsView = ({ selectedRepoId, cn }) => {
               title={engineConfig.ai_enabled ? "Click to disable AI" : "Click to enable AI"}
             >
               {engineConfig.ai_enabled ? (
-                <ToggleRight size={36} className="text-emerald-400 transition-colors" />
+                <ToggleRight size={36} className="text-emerald-600 transition-colors" />
               ) : (
-                <ToggleLeft size={36} className="text-slate-600 group-hover:text-slate-400 transition-colors" />
+                <ToggleLeft size={36} className="text-slate-600 group-hover:text-slate-500 transition-colors" />
               )}
             </button>
           </div>
 
           {/* Authentication Required Toggle */}
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.03] border border-white/8 mb-4">
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-white/8 mb-4">
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-xl border ${
-                engineConfig.auth_required
-                  ? "bg-blue-500/10 border-blue-500/25 text-blue-400"
-                  : "bg-amber-500/10 border-amber-500/25 text-amber-400"
-              }`}>
+              <div className={`p-2 rounded-xl border ${engineConfig.auth_required
+                ? "bg-blue-500/10 border-blue-500/25 text-blue-600"
+                : "bg-amber-500/10 border-amber-500/25 text-amber-600"
+                }`}>
                 {engineConfig.auth_required ? <Lock size={16} /> : <LockOpen size={16} />}
               </div>
               <div>
-                <div className="text-sm font-bold text-white">Authentication Required</div>
+                <div className="text-sm font-bold text-slate-800">Authentication Required</div>
                 <div className="text-[11px] text-slate-500 mt-0.5">
                   {engineConfig.auth_required
                     ? "Bắt buộc đăng nhập Google OAuth để truy cập Dashboard"
@@ -312,33 +310,32 @@ const SettingsView = ({ selectedRepoId, cn }) => {
               title={engineConfig.auth_required ? "Click to disable authentication" : "Click to enable authentication"}
             >
               {engineConfig.auth_required ? (
-                <ToggleRight size={36} className="text-blue-400 transition-colors" />
+                <ToggleRight size={36} className="text-blue-600 transition-colors" />
               ) : (
-                <ToggleLeft size={36} className="text-slate-600 group-hover:text-slate-400 transition-colors" />
+                <ToggleLeft size={36} className="text-slate-600 group-hover:text-slate-500 transition-colors" />
               )}
             </button>
           </div>
           {!engineConfig.auth_required && (
             <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/5 border border-amber-500/15 mb-4">
-              <AlertTriangle size={14} className="text-amber-400 shrink-0 mt-0.5" />
-              <p className="text-[11px] text-amber-400/80 leading-relaxed">
+              <AlertTriangle size={14} className="text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-[11px] text-amber-600/80 leading-relaxed">
                 <strong>Cảnh báo:</strong> Khi tắt xác thực, bất kỳ ai có quyền truy cập mạng đều có thể vào Dashboard mà không cần đăng nhập. Chỉ nên tắt trong môi trường phát triển local hoặc demo.
               </p>
             </div>
           )}
 
           {/* Test Mode Limit Files */}
-          <div className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.03] border border-white/8 mb-4">
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-white/8 mb-4">
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-xl border ${
-                engineConfig.test_mode_limit_files > 0
-                  ? "bg-amber-500/10 border-amber-500/25 text-amber-400"
-                  : "bg-slate-500/10 border-slate-500/20 text-slate-500"
-              }`}>
+              <div className={`p-2 rounded-xl border ${engineConfig.test_mode_limit_files > 0
+                ? "bg-amber-500/10 border-amber-500/25 text-amber-600"
+                : "bg-slate-500/10 border-slate-500/20 text-slate-500"
+                }`}>
                 <FileSearch size={16} />
               </div>
               <div>
-                <div className="text-sm font-bold text-white">File Scan Limit</div>
+                <div className="text-sm font-bold text-slate-800">File Scan Limit</div>
                 <div className="text-[11px] text-slate-500 mt-0.5">
                   {engineConfig.test_mode_limit_files > 0
                     ? `Test Mode — giới hạn ${engineConfig.test_mode_limit_files} files mỗi lần audit`
@@ -353,7 +350,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
                 max="999"
                 value={engineConfig.test_mode_limit_files}
                 onChange={(e) => handleEngineConfigChange("test_mode_limit_files", Math.max(0, parseInt(e.target.value) || 0))}
-                className="w-20 px-3 py-2 rounded-xl bg-black/30 border border-white/10 text-white text-sm font-mono text-center focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-20 px-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-800 text-sm font-mono text-center focus:outline-none focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/20 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
               <span className="text-[10px] text-slate-600 font-bold">files</span>
             </div>
@@ -364,11 +361,10 @@ const SettingsView = ({ selectedRepoId, cn }) => {
             <button
               onClick={handleEngineSave}
               disabled={engineSaving || !engineDirty}
-              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                engineDirty
-                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-500/15"
-                  : "bg-white/5 border border-white/10 text-slate-500 cursor-not-allowed"
-              }`}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-all ${engineDirty
+                ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-500/15"
+                : "bg-slate-50 border border-slate-200 text-slate-500 cursor-not-allowed"
+                }`}
             >
               {engineSaving ? <Zap className="animate-spin" size={14} /> : <Save size={14} />}
               {engineSaving ? "Saving..." : "Save Changes"}
@@ -376,17 +372,16 @@ const SettingsView = ({ selectedRepoId, cn }) => {
             <button
               onClick={handleTestAiConnection}
               disabled={aiTesting}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 text-sm font-bold hover:bg-white/10 hover:text-white disabled:opacity-50 transition-all"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 text-sm font-bold hover:bg-slate-100 hover:text-slate-800 disabled:opacity-50 transition-all"
             >
               {aiTesting ? <Zap className="animate-spin" size={14} /> : <Wifi size={14} />}
               Test AI Connection
             </button>
             {aiTestResult && (
-              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold ${
-                aiTestResult.status === "healthy"
-                  ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                  : "bg-red-500/10 text-red-400 border border-red-500/20"
-              }`}>
+              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold ${aiTestResult.status === "healthy"
+                ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20"
+                : "bg-red-500/10 text-red-600 border border-red-500/20"
+                }`}>
                 {aiTestResult.status === "healthy" ? <Wifi size={12} /> : <WifiOff size={12} />}
                 {aiTestResult.status === "healthy"
                   ? `Healthy — ${aiTestResult.model}`
@@ -401,7 +396,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-[#0f1629]/50 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
+          className="bg-white border border-slate-200 rounded-3xl p-6 shadow-md"
         >
           <SectionTitle
             icon={<Server size={18} />}
@@ -413,21 +408,21 @@ const SettingsView = ({ selectedRepoId, cn }) => {
               icon={<Cpu size={16} />}
               label="Engine"
               value={`V${import.meta.env.VITE_APP_VERSION || "1.0.0"} Stable`}
-              iconClass="bg-blue-500/10 border-blue-500/20 text-blue-400"
+              iconClass="bg-blue-500/10 border-blue-500/20 text-blue-600"
               accent="border-blue-500/25 shadow-[0_0_15px_-5px_rgba(59,130,246,0.15)]"
             />
             <InfoCard
               icon={<Code2 size={16} />}
               label="Framework"
               value="React + FastAPI"
-              iconClass="bg-violet-500/10 border-violet-500/20 text-violet-400"
+              iconClass="bg-violet-500/10 border-violet-500/20 text-violet-600"
               accent="border-violet-500/25 shadow-[0_0_15px_-5px_rgba(139,92,246,0.15)]"
             />
             <InfoCard
               icon={<Clock size={16} />}
               label="AI Model"
               value={systemInfo?.model || "GPT-4o-mini"}
-              iconClass="bg-cyan-500/10 border-cyan-500/20 text-cyan-400"
+              iconClass="bg-cyan-500/10 border-cyan-500/20 text-cyan-600"
               accent="border-cyan-500/25 shadow-[0_0_15px_-5px_rgba(6,182,212,0.15)]"
             />
           </div>
@@ -438,7 +433,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.15 }}
-          className="bg-[#0f1629]/50 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
+          className="bg-white border border-slate-200 rounded-3xl p-6 shadow-md"
         >
           <SectionTitle
             icon={<ShieldCheck size={18} />}
@@ -450,21 +445,21 @@ const SettingsView = ({ selectedRepoId, cn }) => {
               icon={<ShieldCheck size={16} />}
               label="Core Rules"
               value={rulesInfo ? `${rulesInfo.coreCount} rules` : "—"}
-              iconClass="bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+              iconClass="bg-emerald-500/10 border-emerald-500/20 text-emerald-600"
               accent="border-emerald-500/25 shadow-[0_0_15px_-5px_rgba(16,185,129,0.15)]"
             />
             <InfoCard
               icon={<Zap size={16} />}
               label="Custom AI Rules"
               value={rulesInfo ? `${rulesInfo.customCount} rules` : "—"}
-              iconClass="bg-violet-500/10 border-violet-500/20 text-violet-400"
+              iconClass="bg-violet-500/10 border-violet-500/20 text-violet-600"
               accent="border-violet-500/25 shadow-[0_0_15px_-5px_rgba(139,92,246,0.15)]"
             />
             <InfoCard
               icon={<AlertTriangle size={16} />}
               label="Disabled Rules"
               value={rulesInfo ? `${rulesInfo.disabledCount} rules` : "—"}
-              iconClass="bg-amber-500/10 border-amber-500/20 text-amber-400"
+              iconClass="bg-amber-500/10 border-amber-500/20 text-amber-600"
               accent="border-amber-500/25 shadow-[0_0_15px_-5px_rgba(245,158,11,0.15)]"
             />
           </div>
@@ -475,7 +470,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-[#0f1629]/50 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
+          className="bg-white border border-slate-200 rounded-3xl p-6 shadow-md"
         >
           <SectionTitle
             icon={<Info size={18} />}
@@ -495,10 +490,10 @@ const SettingsView = ({ selectedRepoId, cn }) => {
                 href={link.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-between p-4 rounded-xl bg-white/3 border border-white/8 hover:border-white/15 hover:bg-white/5 transition-all group"
+                className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200 hover:border-violet-300 hover:bg-violet-50 transition-all group"
               >
                 <div>
-                  <div className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">
+                  <div className="text-sm font-bold text-slate-800 group-hover:text-violet-600 transition-colors">
                     {link.label}
                   </div>
                   <div className="text-[11px] text-slate-500 mt-0.5">
@@ -507,7 +502,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
                 </div>
                 <ExternalLink
                   size={14}
-                  className="text-slate-600 group-hover:text-blue-400 transition-colors shrink-0"
+                  className="text-slate-600 group-hover:text-blue-600 transition-colors shrink-0"
                 />
               </a>
             ))}
@@ -519,33 +514,33 @@ const SettingsView = ({ selectedRepoId, cn }) => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
-          className="bg-[#0f1629]/50 backdrop-blur-xl border border-white/10 rounded-3xl p-6 shadow-2xl"
+          className="bg-white border border-slate-200 rounded-3xl p-6 shadow-md"
         >
-          <div className="border border-red-500/20 rounded-2xl p-6 bg-red-900/10">
-            <h3 className="text-red-400 font-extrabold text-sm uppercase tracking-wider mb-5 flex items-center gap-2">
+          <div className="border border-red-500/20 rounded-2xl p-6 bg-red-50">
+            <h3 className="text-red-600 font-extrabold text-sm uppercase tracking-wider mb-5 flex items-center gap-2">
               <ShieldAlert size={16} /> Danger Zone — Multi-Level Reset
             </h3>
 
             {/* ── GLOBAL Section ── */}
             <div className="mb-6 pb-6 border-b border-red-500/10">
               <div className="flex items-center gap-2 mb-4">
-                <span className="text-[10px] font-black uppercase tracking-widest bg-blue-500/15 text-blue-400 px-2.5 py-1 rounded-lg border border-blue-500/25">GLOBAL</span>
-                <span className="text-sm font-bold text-white">Ảnh hưởng tất cả dự án</span>
+                <span className="text-[10px] font-black uppercase tracking-widest bg-blue-500/15 text-blue-600 px-2.5 py-1 rounded-lg border border-blue-500/25">GLOBAL</span>
+                <span className="text-sm font-bold text-slate-800">Ảnh hưởng tất cả dự án</span>
               </div>
               <div className="space-y-2.5">
                 {[
-                  { key: "g-toggles", level: "toggles", label: "Reset Toggles", desc: "Bật lại tất cả rules đã bị tắt ở Global", badgeColor: "bg-amber-500/15 text-amber-400 border-amber-500/25", btnIdle: "bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/25 hover:border-amber-500/40", icon: "🟡" },
-                  { key: "g-weights", level: "weights", label: "Reset Weights", desc: "Đưa trọng số tất cả rules về giá trị gốc", badgeColor: "bg-orange-500/15 text-orange-400 border-orange-500/25", btnIdle: "bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/25 hover:border-orange-500/40", icon: "🟠" },
-                  { key: "g-all", level: "all", label: "Reset All Global", desc: "Khôi phục toàn bộ Global config (toggles + weights)", badgeColor: "bg-red-500/15 text-red-400 border-red-500/25", btnIdle: "bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/25 hover:border-red-500/40", icon: "🔴" },
+                  { key: "g-toggles", level: "toggles", label: "Reset Toggles", desc: "Bật lại tất cả rules đã bị tắt ở Global", badgeColor: "bg-amber-500/15 text-amber-600 border-amber-500/25", btnIdle: "bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border border-amber-500/25 hover:border-amber-500/40", icon: "🟡" },
+                  { key: "g-weights", level: "weights", label: "Reset Weights", desc: "Đưa trọng số tất cả rules về giá trị gốc", badgeColor: "bg-orange-500/15 text-orange-600 border-orange-500/25", btnIdle: "bg-orange-500/10 hover:bg-orange-500/20 text-orange-600 border border-orange-500/25 hover:border-orange-500/40", icon: "🟠" },
+                  { key: "g-all", level: "all", label: "Reset All Global", desc: "Khôi phục toàn bộ Global config (toggles + weights)", badgeColor: "bg-red-500/15 text-red-600 border-red-500/25", btnIdle: "bg-red-500/10 hover:bg-red-500/20 text-red-600 border border-red-500/25 hover:border-red-500/40", icon: "🔴" },
                 ].map(item => {
                   const isConfirming = resetState.confirming === item.key;
                   const isLoading = resetState.loading === item.key;
                   return (
-                    <div key={item.key} className="flex items-center justify-between p-3.5 rounded-xl bg-black/20 border border-white/5 hover:border-white/10 transition-all">
+                    <div key={item.key} className="flex items-center justify-between p-3.5 rounded-xl bg-white border border-slate-200 hover:border-red-200 transition-all shadow-sm">
                       <div className="flex items-center gap-3 min-w-0">
                         <span className="text-base shrink-0">{item.icon}</span>
                         <div className="min-w-0">
-                          <div className="text-sm font-bold text-white">{item.label}</div>
+                          <div className="text-sm font-bold text-slate-800">{item.label}</div>
                           <div className="text-[11px] text-slate-500 truncate">{item.desc}</div>
                         </div>
                       </div>
@@ -555,7 +550,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
                         className={cn(
                           "px-4 py-2 rounded-lg font-bold text-xs transition-all flex items-center gap-1.5 shrink-0 ml-3",
                           isLoading
-                            ? "opacity-50 cursor-not-allowed bg-slate-800 text-slate-500"
+                            ? "opacity-50 cursor-not-allowed bg-slate-100 text-slate-400 border border-slate-200"
                             : isConfirming
                               ? "bg-red-600 hover:bg-red-500 text-white shadow-[0_0_20px_rgba(220,38,38,0.35)] animate-pulse"
                               : item.btnIdle,
@@ -569,7 +564,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
                 })}
               </div>
               {resetState.confirming?.startsWith("g-") && (
-                <p className="mt-2 text-[11px] text-red-400/70 font-medium">
+                <p className="mt-2 text-[11px] text-red-600/70 font-medium">
                   Click lần nữa để xác nhận. Tự hủy sau 4 giây.
                 </p>
               )}
@@ -578,30 +573,30 @@ const SettingsView = ({ selectedRepoId, cn }) => {
             {/* ── PROJECT Section ── */}
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-[10px] font-black uppercase tracking-widest bg-emerald-500/15 text-emerald-400 px-2.5 py-1 rounded-lg border border-emerald-500/25">PROJECT</span>
-                <span className="text-sm font-bold text-white">Chỉ ảnh hưởng dự án hiện tại</span>
+                <span className="text-[10px] font-black uppercase tracking-widest bg-emerald-500/15 text-emerald-600 px-2.5 py-1 rounded-lg border border-emerald-500/25">PROJECT</span>
+                <span className="text-sm font-bold text-slate-800">Chỉ ảnh hưởng dự án hiện tại</span>
               </div>
               <p className="text-[11px] text-slate-500 mb-4 ml-1">
                 Target:{" "}
-                <strong className="text-white font-mono bg-black/30 px-1.5 py-0.5 rounded">
+                <strong className="text-violet-600 font-mono bg-violet-50 px-1.5 py-0.5 rounded border border-violet-100">
                   {selectedRepoId || "chưa chọn"}
                 </strong>
               </p>
               <div className="space-y-2.5">
                 {[
-                  { key: "p-toggles", level: "toggles", label: "Reset Overrides", desc: "Đồng bộ bật/tắt rule với Global (giữ weights + custom rules)", btnIdle: "bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/25 hover:border-amber-500/40", icon: "🟡" },
-                  { key: "p-weights", level: "weights", label: "Reset Weights", desc: "Đưa trọng số về mặc định (giữ toggles + custom rules)", btnIdle: "bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 border border-orange-500/25 hover:border-orange-500/40", icon: "🟠" },
-                  { key: "p-custom", level: "custom", label: "Reset Custom Rules", desc: "Xóa toàn bộ AI rules đã tạo bằng Rule Builder", btnIdle: "bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 border border-violet-500/25 hover:border-violet-500/40", icon: "🟣" },
-                  { key: "p-all", level: "all", label: "Reset All Project", desc: "Xóa toàn bộ cấu hình dự án — nuclear option", btnIdle: "bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/25 hover:border-red-500/40", icon: "🔴" },
+                  { key: "p-toggles", level: "toggles", label: "Reset Overrides", desc: "Đồng bộ bật/tắt rule với Global (giữ weights + custom rules)", btnIdle: "bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border border-amber-500/25 hover:border-amber-500/40", icon: "🟡" },
+                  { key: "p-weights", level: "weights", label: "Reset Weights", desc: "Đưa trọng số về mặc định (giữ toggles + custom rules)", btnIdle: "bg-orange-500/10 hover:bg-orange-500/20 text-orange-600 border border-orange-500/25 hover:border-orange-500/40", icon: "🟠" },
+                  { key: "p-custom", level: "custom", label: "Reset Custom Rules", desc: "Xóa toàn bộ AI rules đã tạo bằng Rule Builder", btnIdle: "bg-violet-500/10 hover:bg-violet-500/20 text-violet-600 border border-violet-500/25 hover:border-violet-500/40", icon: "🟣" },
+                  { key: "p-all", level: "all", label: "Reset All Project", desc: "Xóa toàn bộ cấu hình dự án — nuclear option", btnIdle: "bg-red-500/10 hover:bg-red-500/20 text-red-600 border border-red-500/25 hover:border-red-500/40", icon: "🔴" },
                 ].map(item => {
                   const isConfirming = resetState.confirming === item.key;
                   const isLoading = resetState.loading === item.key;
                   return (
-                    <div key={item.key} className="flex items-center justify-between p-3.5 rounded-xl bg-black/20 border border-white/5 hover:border-white/10 transition-all">
+                    <div key={item.key} className="flex items-center justify-between p-3.5 rounded-xl bg-white border border-slate-200 hover:border-red-200 transition-all shadow-sm">
                       <div className="flex items-center gap-3 min-w-0">
                         <span className="text-base shrink-0">{item.icon}</span>
                         <div className="min-w-0">
-                          <div className="text-sm font-bold text-white">{item.label}</div>
+                          <div className="text-sm font-bold text-slate-800">{item.label}</div>
                           <div className="text-[11px] text-slate-500 truncate">{item.desc}</div>
                         </div>
                       </div>
@@ -611,7 +606,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
                         className={cn(
                           "px-4 py-2 rounded-lg font-bold text-xs transition-all flex items-center gap-1.5 shrink-0 ml-3",
                           !selectedRepoId || isLoading
-                            ? "opacity-50 cursor-not-allowed bg-slate-800 text-slate-500"
+                            ? "opacity-50 cursor-not-allowed bg-slate-100 text-slate-400 border border-slate-200"
                             : isConfirming
                               ? "bg-red-600 hover:bg-red-500 text-white shadow-[0_0_20px_rgba(220,38,38,0.35)] animate-pulse"
                               : item.btnIdle,
@@ -625,7 +620,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
                 })}
               </div>
               {resetState.confirming?.startsWith("p-") && (
-                <p className="mt-2 text-[11px] text-red-400/70 font-medium">
+                <p className="mt-2 text-[11px] text-red-600/70 font-medium">
                   Click lần nữa để xác nhận. Tự hủy sau 4 giây.
                 </p>
               )}

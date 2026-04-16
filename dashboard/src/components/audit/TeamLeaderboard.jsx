@@ -14,8 +14,8 @@ const TeamLeaderboard = ({ members }) => {
       className="glass-card col-span-4"
       style={{
         marginTop: "0.5rem",
-        background: "rgba(15,23,42,0.6)",
-        border: "1px solid rgba(255,255,255,0.05)",
+        background: "#ffffff",
+        border: "1px solid #e2e8f0",
         padding: "1.5rem",
         borderRadius: "16px",
       }}
@@ -70,13 +70,13 @@ const TeamLeaderboard = ({ members }) => {
                 return (
                   <tr
                     key={author}
-                    style={{ background: "rgba(255,255,255,0.02)" }}
+                    style={{ background: "rgba(0,0,0,0.02)" }}
                   >
                     <td
                       style={{
                         padding: "0.75rem 0.5rem",
                         fontWeight: 700,
-                        color: "#f8fafc",
+                        color: "#334155",
                         borderRadius: "8px 0 0 8px",
                       }}
                     >

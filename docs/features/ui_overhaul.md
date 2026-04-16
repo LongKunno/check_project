@@ -474,3 +474,130 @@ Khi sidebar ở chế độ thu nhỏ (80px wide):
 
 ---
 *Cập nhật: 2026-04-13 — Rule Builder Step 2 UX Polish Phase 9*
+
+---
+
+### 26. Light Theme Transition (2026-04-15)
+
+**Mục tiêu:** Chuyển đổi toàn bộ dashboard từ dark theme (navy/glassmorphism) sang light theme (white/slate) chuyên nghiệp, giữ nguyên animations và functionality.
+
+#### 26.1 Palette mới
+| Element | Trước (Dark) | Sau (Light) |
+|---------|-------------|-------------|
+| Background | `rgba(16,22,38,0.55)`, `#0c1222` | `#f8fafc`, `#ffffff` |
+| Text chính | `text-slate-200/300` | `text-slate-700/800` |
+| Borders | `border-white/[0.08]` | `border-slate-200` |
+| Accent badges | `bg-color-500/10 text-color-400` | `bg-color-50 text-color-600` |
+| Shadows | `shadow-2xl`, glow effects | `shadow-sm`, `shadow-md` |
+
+#### 26.2 Files đã sửa (~20 files)
+- **Core:** `index.css`, `App.jsx`, `Sidebar.jsx`
+- **Auth:** `LoginPage.jsx`
+- **UI:** `EmptyState.jsx`, `Pagination.jsx`, `Toast.jsx`, `TerminalLogs.jsx`, `HeroCard.jsx`, `SkeletonLoader.jsx`
+- **Rule Engine:** `RuleManager.jsx`, `RuleManagerParts.jsx`, `RuleBuilder.jsx`, `RuleBuilderParts.jsx`
+- **Views:** `ProjectScoresView.jsx`, `MemberScoresView.jsx`, `HistoryView.jsx`, `SettingsView.jsx`, `RepositoryView.jsx`, `PresentationsStaticView.jsx`
+
+#### 26.3 Nguyên tắc
+- Giữ nguyên tất cả Framer Motion animations
+- `text-white` chỉ giữ trên gradient buttons, còn lại → `text-slate-800`
+- `backdrop-blur` bị loại bỏ toàn bộ
+- Aurora blobs giảm opacity từ `0.3-0.4` → `0.03-0.08`
+- Score colors tăng saturation: `-400` → `-600` cho contrast trên nền sáng
+
+- Nhất quán loading experience trên toàn bộ lazy-loaded routes
+
+#### 26.4 Settings View Contrast Polish (Bugfix 2026-04-16)
+- Xóa bỏ các màu bị kẹt ở chế độ Dark Mode cũ trong component `SettingsView.jsx` gây hiển thị cực kì khó đọc chữ trắng trên nền trắng/sáng:
+  - Header: `bg-gradient-to-r from-white via-slate-300` -> `from-slate-800 via-slate-600 to-slate-500`.
+  - SectionTitle: Loại bỏ `.text-white` bị kẹp chung với `.text-slate-800`.
+  - Quick Links: Đổi nền link items từ `bg-white/3 font-white` sang `bg-slate-50 text-slate-800 hover:text-violet-600`.
+  - Danger Zone: Chuyển nền đỏ thẫm `bg-red-900/10` sang màu dịu hơn `bg-red-50`. Nền các nút bấm đổi từ mờ đen `bg-black/20 text-slate-100` thành `bg-white border-slate-200 text-slate-800`.
+
+---
+*Cập nhật: 2026-04-16 — Settings View Light Theme Polish Phase 26.4*
+
+#### 26.5 AuditView & RepositoryView Contrast Polish (Bugfix 2026-04-16)
+- Đặc biệt xử lý các components thuộc AuditDashboard (`FeatureTable`, `ChartsRow`, `TeamLeaderboard`, `RuleBreakdownTable`, `ViolationLedger`) đang bị mắc màu tàn dư của Dark Theme cũ (nền xạm tối `rgba(15,23,42,0.6)` và chữ trắng nổi `text-white`), gây mù màu và thiếu đồng bộ với Light Mode:
+  - Tất cả background card (Glass-card, KPI Card, Metric Labels) được tẩy nền thành trắng tinh (`bg-white` hoặc `#ffffff`).
+  - Đường viền (`border`) đổi từ viền kính nhẹ (`border-white/5`) sang viền thép (`border-slate-200 / #e2e8f0`).
+  - Text chính được phủ lại mã màu `text-slate-800 / #334155 / #475569` cho độ sắc nét tối ưu.
+  - Hover states ở `ViolationLedger` (các dòng báo cáo vi phạm) được vi chỉnh từ lớp mờ trắng sang overlay bóng đen nhạt (`rgba(0,0,0,0.06)`).
+- Tại RepositoryView:
+  - KpiRow cards: Đổi nền mờ đen `linear-gradient(135deg, rgba(16...,0.7))` -> trắng hoàn toàn.
+  - Form Thêm mới Repo (`RepoFormModal`): Đổi background container từ nền tối `#0f1629` qua nền trắng. Tiêu đề và ô input điều chỉnh lại thành chữ đen thân thiện với Light UI.
+
+---
+*Cập nhật: 2026-04-16 — Audit & Repo Config Light Theme Polish Phase 26.5*
+
+#### 26.6 Final Contrast Sweep (Subagent Audit)
+- Sửa lỗi tương phản văn bản rất khó đọc và sai cấu trúc giao diện Light Mode trên một số màn hình:
+  - `RuleBuilder.jsx`: Thay text-slate-100 thành text-slate-800 để nội dung textarea hiện rõ trên nền slate-50.
+  - `SettingsView.jsx`: Tăng cường text-slate-800 thay cho text-white ở ô input số để hiện rõ số. Nâng text-red-400 lên text-red-600 của Danger Zone giúp cảnh báo nổi bật, mãnh liệt hơn.
+  - `ProjectScoresView.jsx`: Cải thiện toàn bộ text-pink-400 của dashboard Leaderboard thành text-pink-600 cho trải nghiệm Light Mode sáng và sâu hơn.
+
+---
+---
+*Cập nhật: 2026-04-16 — Final Contrast Sweep Phase 26.6*
+
+#### 27.1 Premium Global Layout Hierarchy (Suggestion #1)
+- Triển khai kiến trúc phân tầng không gian (Card-based UI / Layout nổi) cho toàn bộ Dashboard bằng cách phân biệt rõ background tổng và background của thẻ:
+  - **Global Background**: Toàn cảnh App (như định nghĩa ở `index.css`) duy trì lớp nền xám siêu nhạt `bg-slate-50` (`#f8fafc`).
+  - **Cards & Widgets (Dập nổi khối)**: Toàn bộ Card (các `kpi-accent-card`, `RepoCard`, `MemberRow` container, v.v...) được thiết lập cứng màu nền trắng `bg-white`, bo góc mịn màng và được trang bị viền phân cách mỏng `border-slate-200`.
+  - **Micro-Animations & Shadows**: Nâng cấp hiệu ứng hover cho Repository Cards và toàn bộ Header KPI Cards (ở cả trang Project Leaderboard lẫn Member Leaderboard). Khi di chuột vào, thẻ sẽ nhảy nhẹ lên trên (`-translate-y-1` hoặc `-translate-y-0.5`) kèm theo hiệu ứng bung tỏa bóng râm (`shadow-md`).
+  - **Modal Focus**: Các thành phần trôi nổi như `MemberDetailModal` được loại bỏ nền mờ tối (`bg-[#0f1629]/60`), thay vào đó là cấu hình `bg-white` lơ lửng ở trung tâm cùng bộ bóng đen chiều sâu chuyên nghiệp (`shadow-xl shadow-slate-200 / backdrop-blur-sm`).
+
+---
+---
+*Cập nhật: 2026-04-16 — Premium Layout Refactor Phase 27.1*
+
+#### 27.2 Micro-Animations & Empty States Polish (Suggestion #2 & #3)
+- Nâng cấp `ViolationLedger.jsx`: Tối ưu thuộc tính `transition` của Framer Motion `AnimatePresence`. Sử dụng `cubic-bezier(0.4, 0, 0.2, 1)` và `ease` array thay vì chuyển động tuyến tính (linear) để xử lý dứt điểm tình trạng giật cục (khựng) khi đóng/mở Accordion dòng code.
+- Xử lý triệt để lỗi Tailwind dynamic class (`bg-${accentColor}-500/10`) trong component `EmptyState.jsx` bằng định nghĩa `COLOR_MAP` tường minh. Nhờ đó các hiệu ứng Illustration (orbs, floating dots) lấy được mã màu thực tế (amber, rose, cyan, v.v...) từ quá trình build tĩnh, giúp component hiển thị rực rỡ và cao cấp.
+- Áp dụng các thay đổi này xuyên suốt hệ thống theo đề xuất tối ưu.
+
+---
+---
+*Cập nhật: 2026-04-16 — Animations & Assets Phase 27.2*
+
+#### 27.3 Premium Toast Notifications
+- Cải thiện toàn diện Toast Notifications (Thông báo nổi góc màn hình):
+  - **Framer Motion Animations**: Toast nay trượt vào góc phải qua hiệu ứng spring (nảy) mượt mà có kiểm soát (`type: "spring", stiffness: 400, damping: 25`).
+  - **Countdown Component**: Thêm thanh Progress Bar chạy ngược ở viền đáy của của thông báo giúp User biết còn khoảng bao nhiêu lâu sẽ ẩn thông báo (`duration` mặc định 3000ms đối với info/success và 5000ms đối với error).
+  - **Swipe-to-Dismiss**: Kéo (Drag / Panx) toast về bên phải màn hình để tự tắt hoặc hất văng (velocity cao) và thông báo sẽ được dismiss theo thao tác vuốt.
+  - **Design Glossy**: Toast kết hợp viền sáng `bg-white`, `backdrop-blur-md` cùng màng ánh sáng loang siêu nhẹ từ `rgba` qua Tailwind, tạo cảm quan Enterprise/SaaS.
+
+---
+---
+*Cập nhật: 2026-04-16 — Notifications Phase 27.3*
+
+#### 27.4 Low Contrast Text & Gradients Sweeps
+- Khắc phục sự cố tương phản (Contrast Accessibility) ở các Module Header cỡ lớn khi dùng nền sáng (Light Mode):
+  - **Repositoy Manager**: Đỉnh trang dùng text trong suốt (`bg-clip-text text-transparent`) nhưng giải Gradient trước đó sử dụng `from-white` khiến chữ bị tàng hình. Đã thay đổi thành gradient `from-slate-800 via-slate-600 to-slate-500` cho cảm giác sang trọng và chân thực với text đậm.
+  - **Audit History**: Điều chỉnh Gradient từ `from-white via-amber-200` cứng thành `from-amber-600 via-orange-500 to-amber-500` - Giữ tông vàng đồng ấm áp theo vibe của History nhưng rõ ràng gấp 3 lần.
+  - **Meeting Materials**:  Điều chỉnh ánh hồng hạt lựu `from-rose-600 via-pink-500` thay cho màu lợt lạt ban đầu.
+- **Sửa lỗi hiển thị chữ Invisible ở AI Rule Builder (Feature 2)**: Tiêu đề `"Mô Tả Luật Bằng Tiếng Việt"`, `"Kết Quả Biên Dịch AI"`, `"Chạy Thử Gỡ Lỗi"` bên trong trình tạo luật (Rule Builder) trước đó bị cấu hình cưỡng ép `text-white` khiến chúng tàng hình trên nền Card trắng mới. Đổi toàn bộ thành `text-slate-800` để nét chữ hiện lên một cách trong trẻo, quyền lực.
+- **Titanium Slate Consistency**: Đồng bộ hoá TẤT CẢ các tiêu đề phân hệ (Module Headers) bao gồm `PROJECT LEADERBOARD`, `MEMBER LEADERBOARD`, `AUDIT HISTORY`, `MEETING MATERIALS` thành dải Titanium Gradient (`from-slate-800 via-slate-600 to-slate-500`). Từ bỏ các mã màu Neon quá gắt trên nền sáng để nâng cấp lên trải nghiệm Enterprise thuần túy.
+
+#### 27.5 Audit Report & LEDGER Light Mode Overhaul
+- **Violation Ledger**: Chuyển đổi toàn diện ~800 dòng code của component Violation Ledger. Xoá nhổ tận gốc hàng loạt style cứng (inline css) mang âm hưởng Dark Mode như nền Search xám xịt `rgba(0,0,0,0.2)` và chữ rác màu lạnh `#e2e8f0`. Thay thế thành cấu trúc Tailwind chuẩn Light Mode: ô tìm kiếm `bg-slate-50`, viền `border-slate-200`, Accordion List chuyển từ màu `rgba` đục ngầu sang hiệu ứng White Card thuần tuý.
+- **Audit Sidebar**: Loại bỏ hiệu ứng Glasscard tàng hình `rgba(255,255,255,0.03)`. Giờ đây thẻ hiển thị TOP PROBLEMATIC FILES và AUDIT INFO hiển thị vững chãi dưới dạng khối Card trắng xám nổi bật trên nền `bg-slate-50`.
+
+#### 27.6 Gentle Component Badges (Micro-Aesthetics)
+- **Softening Module Subtitles**: Các thẻ phụ đề đầu trang như `Project Leaderboard`, `Team Leaderboard`, `Audit History`, `Presentations` vốn dùng dải nền màu sắc quá rực rỡ (`bg-pink-100`, `bg-cyan-100`) gây chói mắt. Đã được thay thế đồng loạt bằng dải nền Pastel dịu nhẹ (ví dụ `bg-violet-50 text-violet-700`) xen kẽ điểm nhấn tông xuyệt tông tại các icons biểu tượng. Đem lại sự chuyên nghiệp, thanh lịch và bảo toàn bản sắc phân hệ.
+- **Coloring H2 Title Headers**: Khôi phục lại bản sắc màu phân hệ (Module Identity) cho dòng tiêu đề cỡ lớn (`H2 text-5xl`) từ tông Slate trung tính sang dải Gradient có chiều sâu (Rich Tinted Gradients), giúp văn bản hiển thị sống động nhưng lại hiển thị cực kỳ nét và chuyên nghiệp trên nền sáng:
+  - **Project Leaderboard**: Tím hồng quyền lực `from-violet-800 via-fuchsia-700 to-pink-600`.
+  - **Member Leaderboard**: Xanh ngọc lục bảo `from-teal-800 via-cyan-700 to-blue-700`.
+  - **Audit History**: Đỏ cam hổ phách `from-amber-700 via-orange-600 to-red-600`.
+  - **Presentations**: Hồng đào lai tím `from-rose-800 via-pink-700 to-violet-700`.
+
+---
+*Cập nhật: 2026-04-16 — Final Polish Sweep Phase 27.6*
+
+#### 27.7 Dark UI Remediation (Phase 27.7)
+- Khắc phục các component tàn dư của Dark Mode cũ (nền `bg-slate-800` với chữ tối màu) làm hỏng trải nghiệm Light Mode.
+- **MemberScoresView**: Thay thế bộ icon project list trong member breakdown từ nền đen ngòm thẻ `bg-slate-800` sang mảng màu trong trẻo lấp lánh `bg-cyan-500/15 border-cyan-500/25` và `text-cyan-600`. Tiến hành nâng cấp Inline Project Tag thành `bg-cyan-500/10 text-cyan-700`. Progress track cũng được thay màu nền sáng `bg-slate-100`.
+- **App Rule Builder Header**: Tăng cường gradient chữ to của tiêu đề AI RULE BUILDER từ `from-slate-800` u tối sang cấu hình `from-violet-800 via-fuchsia-700 to-pink-600` rực rỡ, theo sát tông màu Pastel Vibrant của Premium Theme.
+- **RuleBuilder, HistoryView & SettingsView**: Quét và tẩy rửa mọi nút Action Buttons có trạng thái Disabled vốn đang giữ mặc định `bg-slate-800 text-slate-500 cursor-not-allowed`. Định dạng lại đồng bộ sang `bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed`.
+
+---
+*Cập nhật: 2026-04-16 — Dark UI Remediation Phase 27.7*

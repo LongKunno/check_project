@@ -5,9 +5,9 @@ import { motion } from "framer-motion";
 
 export function TableSkeleton({ rows = 6, cols = 5 }) {
   return (
-    <div className="bg-[#0f172a]/80 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
+    <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-md">
       {/* Header */}
-      <div className="flex gap-4 px-6 py-4 border-b border-white/5 bg-white/2">
+      <div className="flex gap-4 px-6 py-4 border-b border-slate-100 bg-white/2">
         {Array.from({ length: cols }).map((_, i) => (
           <div
             key={i}
@@ -26,7 +26,7 @@ export function TableSkeleton({ rows = 6, cols = 5 }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: rowIdx * 0.06 }}
-          className="flex items-center gap-4 px-6 py-5 border-b border-white/5"
+          className="flex items-center gap-4 px-6 py-5 border-b border-slate-100"
         >
           {/* Avatar circle for first col */}
           <div
@@ -66,7 +66,7 @@ export function CardSkeleton({ count = 4 }) {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: i * 0.08 }}
-          className="flex items-center gap-3 px-4 py-4 rounded-2xl bg-white/3 border border-white/8 backdrop-blur-sm"
+          className="flex items-center gap-3 px-4 py-4 rounded-2xl bg-slate-50 border border-slate-200 "
         >
           <div
             className="skeleton skeleton-circle"

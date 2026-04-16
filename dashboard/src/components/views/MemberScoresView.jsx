@@ -28,26 +28,26 @@ import TopProgressBar from "../ui/TopProgressBar";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const getRatingColor = (rating) => {
-  if (!rating) return "bg-slate-700/50 text-slate-400 border-slate-600";
+  if (!rating) return "bg-slate-100 text-slate-500 border-slate-600";
   const r = rating.toLowerCase();
   if (r.includes("excellent") || r.includes("xuất sắc"))
-    return "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
+    return "bg-emerald-500/10 text-emerald-600 border-emerald-500/30";
   if (r.includes("good") || r.includes("tốt"))
-    return "bg-blue-500/10 text-blue-400 border-blue-500/30";
+    return "bg-blue-500/10 text-blue-600 border-blue-500/30";
   if (r.includes("fair") || r.includes("khá"))
-    return "bg-amber-500/10 text-amber-400 border-amber-500/30";
+    return "bg-amber-500/10 text-amber-600 border-amber-500/30";
   if (r.includes("average") || r.includes("trung"))
-    return "bg-orange-500/10 text-orange-400 border-orange-500/30";
-  return "bg-rose-500/10 text-rose-400 border-rose-500/30";
+    return "bg-orange-500/10 text-orange-600 border-orange-500/30";
+  return "bg-rose-500/10 text-rose-600 border-rose-500/30";
 };
 
 const getScoreColor = (score) => {
   if (score == null) return "text-slate-500";
-  if (score >= 90) return "text-emerald-400";
-  if (score >= 80) return "text-blue-400";
-  if (score >= 65) return "text-amber-400";
-  if (score >= 45) return "text-orange-400";
-  return "text-rose-400";
+  if (score >= 90) return "text-emerald-600";
+  if (score >= 80) return "text-blue-600";
+  if (score >= 65) return "text-amber-600";
+  if (score >= 45) return "text-orange-600";
+  return "text-rose-600";
 };
 
 const getScoreDotClass = (score) => {
@@ -112,10 +112,10 @@ const PILLAR_ICONS = {
 };
 
 const PILLAR_COLORS = {
-  Maintainability: "text-violet-400",
-  Security: "text-rose-400",
-  Reliability: "text-blue-400",
-  Performance: "text-amber-400",
+  Maintainability: "text-violet-600",
+  Security: "text-rose-600",
+  Reliability: "text-blue-600",
+  Performance: "text-amber-600",
 };
 
 // ─── Rank Badge (replaces emoji medals) ──────────────────────────────────────
@@ -154,14 +154,14 @@ function ScoreBar({ score, pillar }) {
   };
   return (
     <div className="flex items-center gap-2">
-      <div className="flex-1 bg-slate-800 rounded-full h-1.5 overflow-hidden">
+      <div className="flex-1 bg-slate-100 rounded-full h-1.5 overflow-hidden">
         <div
           className={`h-full rounded-full ${colorMap[pillar] || "bg-slate-500"} transition-all duration-700`}
           style={{ width: `${pct}%` }}
         />
       </div>
       <span
-        className={`text-[10px] font-bold w-6 text-right ${PILLAR_COLORS[pillar] || "text-slate-400"}`}
+        className={`text-[10px] font-bold w-6 text-right ${PILLAR_COLORS[pillar] || "text-slate-500"}`}
       >
         {score?.toFixed(1)}
       </span>
@@ -184,33 +184,33 @@ function MemberDetailModal({ member, onClose }) {
         onClick={onClose}
       >
         {/* Backdrop */}
-        <div className="absolute inset-0 bg-white/[0.04] backdrop-blur-sm" />
+        <div className="absolute inset-0 bg-black/30" />
 
         <motion.div
           initial={{ opacity: 0, scale: 0.92, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.92, y: 20 }}
           transition={{ type: "spring", stiffness: 300, damping: 25 }}
-          className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto bg-[#0f1629]/60 border border-white/10 rounded-3xl shadow-2xl shadow-black/50 z-10"
+          className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto bg-white border border-slate-200 rounded-3xl shadow-xl shadow-slate-200 z-10"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="sticky top-0 bg-[#0f1629]/55 backdrop-blur-xl border-b border-white/5 px-6 pt-6 pb-4 flex items-start justify-between z-10">
+          <div className="sticky top-0 bg-white/95 backdrop-blur-sm border-b border-slate-100 px-6 pt-6 pb-4 flex items-start justify-between z-10">
             <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-bold mb-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-600 text-xs font-bold mb-3">
                 <Users size={12} /> Member Profile
               </div>
               <h2
-                className="text-2xl font-black text-white"
+                className="text-2xl font-black text-slate-800"
                 style={{ fontFamily: "Outfit, sans-serif" }}
               >
                 {member.author_name}
               </h2>
-              <p className="text-slate-400 text-sm mt-0.5">{member.email}</p>
+              <p className="text-slate-500 text-sm mt-0.5">{member.email}</p>
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-xl hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+              className="p-2 rounded-xl hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors"
             >
               <X size={20} />
             </button>
@@ -219,7 +219,7 @@ function MemberDetailModal({ member, onClose }) {
           <div className="p-6 space-y-6">
             {/* Score Overview */}
             <div className="grid grid-cols-3 gap-4">
-              <div className="col-span-1 flex flex-col items-center justify-center p-4 rounded-2xl bg-white/[0.06] border border-white/5">
+              <div className="col-span-1 flex flex-col items-center justify-center p-4 rounded-2xl bg-slate-50 border border-slate-100">
                 <div
                   className={`text-4xl font-black bg-clip-text text-transparent bg-gradient-to-br ${getScoreGradient(member.final_score)}`}
                 >
@@ -239,35 +239,35 @@ function MemberDetailModal({ member, onClose }) {
                   {
                     label: "Total LOC",
                     value: member.total_loc?.toLocaleString(),
-                    icon: <Code2 size={14} className="text-cyan-400" />,
+                    icon: <Code2 size={14} className="text-cyan-600" />,
                   },
                   {
                     label: "Projects",
                     value: member.projects_count,
-                    icon: <FolderOpen size={14} className="text-violet-400" />,
+                    icon: <FolderOpen size={14} className="text-violet-600" />,
                   },
                   {
                     label: "Debt",
                     value: formatDebt(member.total_debt_mins),
-                    icon: <Clock size={14} className="text-amber-400" />,
+                    icon: <Clock size={14} className="text-amber-600" />,
                     title: `${member.total_debt_mins} minutes`,
                   },
                   {
                     label: "Rank",
                     value: `#${member._rank}`,
-                    icon: <Award size={14} className="text-emerald-400" />,
+                    icon: <Award size={14} className="text-emerald-600" />,
                   },
                 ].map((s) => (
                   <div
                     key={s.label}
-                    className="flex items-center gap-2.5 p-3 rounded-xl bg-white/3 border border-white/5"
+                    className="flex items-center gap-2.5 p-3 rounded-xl bg-slate-50 border border-slate-100"
                   >
                     {s.icon}
                     <div>
                       <div className="text-[9px] uppercase tracking-widest text-slate-500 font-bold">
                         {s.label}
                       </div>
-                      <div className="text-base font-black text-white">
+                      <div className="text-base font-black text-slate-800">
                         {s.value}
                       </div>
                     </div>
@@ -278,8 +278,8 @@ function MemberDetailModal({ member, onClose }) {
 
             {/* Pillar Scores */}
             {member.pillar_scores && (
-              <div className="p-4 rounded-2xl bg-white/3 border border-white/5">
-                <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">
                   4-Pillar Breakdown
                 </div>
                 <div className="space-y-2.5">
@@ -289,12 +289,12 @@ function MemberDetailModal({ member, onClose }) {
                         <div className="flex items-center gap-1.5 mb-1">
                           <span
                             className={
-                              PILLAR_COLORS[pillar] || "text-slate-400"
+                              PILLAR_COLORS[pillar] || "text-slate-500"
                             }
                           >
                             {PILLAR_ICONS[pillar]}
                           </span>
-                          <span className="text-[11px] font-semibold text-slate-300">
+                          <span className="text-[11px] font-semibold text-slate-600">
                             {pillar}
                           </span>
                         </div>
@@ -309,21 +309,21 @@ function MemberDetailModal({ member, onClose }) {
             {/* Project Breakdown */}
             {member.projects?.length > 0 && (
               <div>
-                <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
+                <div className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">
                   Project Breakdown ({member.projects.length})
                 </div>
                 <div className="space-y-2">
                   {member.projects.map((proj, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center justify-between p-3.5 rounded-xl bg-white/3 border border-white/5 hover:border-white/10 transition-colors"
+                      className="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 border border-slate-100 hover:border-slate-200 transition-colors"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center">
-                          <FolderOpen size={13} className="text-slate-400" />
+                        <div className="w-7 h-7 rounded-lg bg-cyan-500/15 border border-cyan-500/25 flex items-center justify-center shrink-0">
+                          <FolderOpen size={13} className="text-cyan-600" />
                         </div>
                         <div>
-                          <div className="text-sm font-semibold text-white">
+                          <div className="text-sm font-semibold text-slate-800">
                             {proj.project_name}
                           </div>
                           <div className="text-[11px] text-slate-500 font-medium">
@@ -357,7 +357,7 @@ function MemberRow({ member, rank, onClick }) {
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: rank * 0.04 }}
-      className="group border-b border-white/[0.06] hover:bg-white/[0.05] hover:border-l-2 hover:border-l-cyan-500/50 cursor-pointer transition-all duration-200"
+      className="group border-b border-slate-200 hover:bg-slate-50 hover:border-l-2 hover:border-l-cyan-500/50 cursor-pointer transition-all duration-200"
       onClick={() => onClick({ ...member, _rank: rank })}
     >
       {/* Rank */}
@@ -379,7 +379,7 @@ function MemberRow({ member, rank, onClick }) {
             {(member.author_name || member.email || "?")[0].toUpperCase()}
           </div>
           <div className="min-w-0">
-            <div className="font-bold text-white text-sm truncate">
+            <div className="font-bold text-slate-800 text-sm truncate">
               {member.author_name}
             </div>
             <div className="text-[11px] text-slate-500 truncate">
@@ -413,7 +413,7 @@ function MemberRow({ member, rank, onClick }) {
 
       {/* LOC */}
       <td className="px-4 py-4 text-right">
-        <div className="font-bold text-white text-sm">
+        <div className="font-bold text-slate-800 text-sm">
           {formatLoc(member.total_loc)}
         </div>
         <div className="text-[10px] text-slate-500">lines of code</div>
@@ -421,7 +421,7 @@ function MemberRow({ member, rank, onClick }) {
 
       {/* Projects */}
       <td className="px-4 py-4 text-center">
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 text-xs font-semibold">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-700 text-xs font-semibold">
           <FolderOpen size={11} />
           {member.projects_count}
         </span>
@@ -460,15 +460,15 @@ function SortTh({ label, field, sortBy, sortDir, onClick, align = "left" }) {
         className={`flex items-center gap-1 ${align === "right" ? "justify-end" : align === "center" ? "justify-center" : ""}`}
       >
         <span
-          className={`text-[10px] uppercase tracking-widest font-bold transition-colors ${active ? "text-cyan-400" : "text-slate-500 group-hover:text-slate-300"}`}
+          className={`text-[10px] uppercase tracking-widest font-bold transition-colors ${active ? "text-cyan-600" : "text-slate-500 group-hover:text-slate-600"}`}
         >
           {label}
         </span>
         {active ? (
           sortDir === "desc" ? (
-            <ChevronDown size={12} className="text-cyan-400" />
+            <ChevronDown size={12} className="text-cyan-600" />
           ) : (
-            <ChevronUp size={12} className="text-cyan-400" />
+            <ChevronUp size={12} className="text-cyan-600" />
           )
         ) : (
           <ChevronDown
@@ -543,8 +543,8 @@ export const MemberScoresView = ({ cn }) => {
   const avgScore =
     members.length > 0
       ? (
-          members.reduce((s, m) => s + m.final_score, 0) / members.length
-        ).toFixed(1)
+        members.reduce((s, m) => s + m.final_score, 0) / members.length
+      ).toFixed(1)
       : null;
   const totalLoc = members.reduce((s, m) => s + m.total_loc, 0);
 
@@ -563,15 +563,15 @@ export const MemberScoresView = ({ cn }) => {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-semibold">
-                <Users size={14} /> Team Leaderboard
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-cyan-50 text-cyan-700 text-xs font-semibold border border-cyan-200 shadow-sm">
+                <Users size={14} className="text-cyan-600" /> Team Leaderboard
               </div>
               <span className="text-slate-600 text-xs font-medium hidden sm:block">
                 Individual quality across all repositories (3 months)
               </span>
             </div>
             <h2
-              className="text-3xl lg:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-cyan-400 to-violet-400"
+              className="text-3xl lg:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-teal-800 via-cyan-700 to-blue-700"
               style={{ fontFamily: "Outfit, sans-serif" }}
             >
               MEMBER LEADERBOARD
@@ -581,7 +581,7 @@ export const MemberScoresView = ({ cn }) => {
           <button
             onClick={fetchMembers}
             disabled={isLoading}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 text-sm font-semibold transition-all disabled:opacity-40 shrink-0"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 text-sm font-semibold transition-all disabled:opacity-40 shrink-0"
           >
             <RefreshCw size={15} className={isLoading ? "animate-spin" : ""} />
             Refresh
@@ -600,7 +600,7 @@ export const MemberScoresView = ({ cn }) => {
               {
                 label: "Total members",
                 value: members.length,
-                icon: <Users size={16} className="text-cyan-400" />,
+                icon: <Users size={16} className="text-cyan-600" />,
                 accent:
                   "border-cyan-500/25 shadow-[0_0_15px_-5px_rgba(6,182,212,0.15)]",
                 accentLine: "kpi-accent-cyan",
@@ -608,7 +608,7 @@ export const MemberScoresView = ({ cn }) => {
               {
                 label: "Avg score",
                 value: avgScore ? `${avgScore}/100` : "—",
-                icon: <Star size={16} className="text-amber-400" />,
+                icon: <Star size={16} className="text-amber-600" />,
                 accent:
                   "border-amber-500/25 shadow-[0_0_15px_-5px_rgba(245,158,11,0.15)]",
                 accentLine: "kpi-accent-amber",
@@ -616,7 +616,7 @@ export const MemberScoresView = ({ cn }) => {
               {
                 label: "Top Performer",
                 value: topPerformer?.author_name?.split(" ").pop() || "—",
-                icon: <Trophy size={16} className="text-emerald-400" />,
+                icon: <Trophy size={16} className="text-emerald-600" />,
                 accent:
                   "border-emerald-500/25 shadow-[0_0_15px_-5px_rgba(16,185,129,0.15)]",
                 accentLine: "kpi-accent-emerald",
@@ -624,7 +624,7 @@ export const MemberScoresView = ({ cn }) => {
               {
                 label: "Total LOC contributed",
                 value: formatLoc(totalLoc),
-                icon: <Code2 size={16} className="text-violet-400" />,
+                icon: <Code2 size={16} className="text-violet-600" />,
                 accent:
                   "border-violet-500/25 shadow-[0_0_15px_-5px_rgba(139,92,246,0.15)]",
                 accentLine: "kpi-accent-violet",
@@ -632,16 +632,16 @@ export const MemberScoresView = ({ cn }) => {
             ].map((s) => (
               <div
                 key={s.label}
-                className={`kpi-accent-card flex items-center gap-3 px-5 py-5 rounded-2xl bg-white/[0.03] border backdrop-blur-sm transition-all hover:bg-white/[0.06] ${s.accent} ${s.accentLine}`}
+                className={`kpi-accent-card flex items-center gap-3 px-5 py-5 rounded-2xl bg-white border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all ${s.accent} ${s.accentLine}`}
               >
-                <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center shrink-0">
                   {s.icon}
                 </div>
                 <div>
                   <div className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">
                     {s.label}
                   </div>
-                  <div className="text-lg font-black text-white truncate max-w-[140px]">
+                  <div className="text-lg font-black text-slate-800 truncate max-w-[140px]">
                     {s.value}
                   </div>
                 </div>
@@ -652,7 +652,7 @@ export const MemberScoresView = ({ cn }) => {
       </motion.div>
 
       <TopProgressBar isFetching={isLoading && members.length > 0} />
-      
+
       {isLoading && members.length === 0 ? (
         <div className="w-full h-[50vh] flex flex-col items-center justify-center opacity-70">
           <TopProgressBar isFetching={true} />
@@ -666,7 +666,7 @@ export const MemberScoresView = ({ cn }) => {
           action={
             <button
               onClick={fetchMembers}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-sm font-bold hover:bg-cyan-500/20 transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-600 text-sm font-bold hover:bg-cyan-500/20 transition-all"
             >
               <RefreshCw size={14} /> Retry
             </button>
@@ -684,7 +684,7 @@ export const MemberScoresView = ({ cn }) => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className={`bg-[#0f1629]/50 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl transition-all duration-300 ${isLoading ? "opacity-60 pointer-events-none" : ""}`}
+          className={`bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-md transition-all duration-300 ${isLoading ? "opacity-60 pointer-events-none" : ""}`}
         >
           <div className="overflow-x-auto">
             <table
@@ -692,7 +692,7 @@ export const MemberScoresView = ({ cn }) => {
               style={{ "--table-accent": "rgba(6, 182, 212, 0.5)" }}
             >
               <thead>
-                <tr className="border-b border-white/[0.08] bg-white/[0.04]">
+                <tr className="border-b border-slate-200 bg-slate-50">
                   <th className="px-4 py-3 text-center">
                     <span className="text-[10px] uppercase tracking-widest font-bold text-slate-500">
                       #

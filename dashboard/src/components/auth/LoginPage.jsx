@@ -32,27 +32,27 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-[#0c1222] overflow-hidden">
+    <div className="fixed inset-0 flex items-center justify-center bg-slate-50 overflow-hidden">
       {/* ── Aurora background effects ── */}
       <div
-        className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vh] rounded-full opacity-30 blur-[120px] pointer-events-none"
+        className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vh] rounded-full opacity-20 blur-[120px] pointer-events-none"
         style={{
           background:
-            "radial-gradient(circle, rgba(139, 92, 246, 0.25) 0%, transparent 70%)",
+            "radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%)",
         }}
       />
       <div
-        className="absolute bottom-[-15%] right-[-5%] w-[50vw] h-[50vh] rounded-full opacity-20 blur-[100px] pointer-events-none"
+        className="absolute bottom-[-15%] right-[-5%] w-[50vw] h-[50vh] rounded-full opacity-15 blur-[100px] pointer-events-none"
         style={{
           background:
-            "radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%)",
+            "radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, transparent 70%)",
         }}
       />
       <div
-        className="absolute top-[30%] right-[20%] w-[30vw] h-[30vh] rounded-full opacity-15 blur-[80px] pointer-events-none"
+        className="absolute top-[30%] right-[20%] w-[30vw] h-[30vh] rounded-full opacity-10 blur-[80px] pointer-events-none"
         style={{
           background:
-            "radial-gradient(circle, rgba(59, 130, 246, 0.2) 0%, transparent 70%)",
+            "radial-gradient(circle, rgba(59, 130, 246, 0.12) 0%, transparent 70%)",
         }}
       />
 
@@ -63,7 +63,7 @@ const LoginPage = () => {
         transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
         className="relative z-10 w-full max-w-md mx-4"
       >
-        <div className="bg-[rgba(16,22,38,0.6)] backdrop-blur-2xl border border-white/[0.08] rounded-3xl shadow-2xl overflow-hidden">
+        <div className="bg-white border border-slate-200 rounded-3xl shadow-xl overflow-hidden">
           {/* Top accent line */}
           <div className="h-[2px] bg-gradient-to-r from-violet-600 via-purple-500 to-indigo-500" />
 
@@ -80,12 +80,12 @@ const LoginPage = () => {
               }}
               className="flex flex-col items-center gap-4"
             >
-              <div className="bg-gradient-to-br from-violet-500 to-indigo-600 p-4 rounded-2xl shadow-lg shadow-violet-500/30">
+              <div className="bg-gradient-to-br from-violet-500 to-indigo-600 p-4 rounded-2xl shadow-md">
                 <Shield size={40} className="text-white" />
               </div>
               <div className="text-center">
                 <h1
-                  className="text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400"
+                  className="text-2xl font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-violet-600"
                   style={{ fontFamily: "Outfit" }}
                 >
                   AUDIT ENGINE
@@ -103,10 +103,10 @@ const LoginPage = () => {
               transition={{ delay: 0.4 }}
               className="text-center"
             >
-              <p className="text-slate-400 text-sm leading-relaxed">
+              <p className="text-slate-500 text-sm leading-relaxed">
                 AI-Powered Static Analysis
                 <br />
-                <span className="text-slate-500">Code Quality Platform</span>
+                <span className="text-slate-400">Code Quality Platform</span>
               </p>
             </motion.div>
 
@@ -120,7 +120,7 @@ const LoginPage = () => {
               {isLoggingIn ? (
                 <div className="flex items-center gap-3 py-4">
                   <div className="w-5 h-5 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
-                  <span className="text-sm text-slate-400 font-medium">
+                  <span className="text-sm text-slate-500 font-medium">
                     Đang xác thực...
                   </span>
                 </div>
@@ -129,7 +129,7 @@ const LoginPage = () => {
                   <GoogleLogin
                     onSuccess={handleSuccess}
                     onError={handleError}
-                    theme="filled_black"
+                    theme="outline"
                     shape="pill"
                     size="large"
                     width="300"
@@ -144,13 +144,13 @@ const LoginPage = () => {
                 <motion.div
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="w-full bg-rose-500/10 border border-rose-500/25 rounded-xl px-4 py-3 flex items-start gap-2.5"
+                  className="w-full bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 flex items-start gap-2.5"
                 >
                   <AlertTriangle
                     size={16}
-                    className="text-rose-400 shrink-0 mt-0.5"
+                    className="text-rose-500 shrink-0 mt-0.5"
                   />
-                  <span className="text-rose-300 text-xs font-medium leading-relaxed">
+                  <span className="text-rose-600 text-xs font-medium leading-relaxed">
                     {error}
                   </span>
                 </motion.div>

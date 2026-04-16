@@ -24,7 +24,7 @@ const presentations = [
     gradient: "from-violet-500 to-indigo-400",
     accentColor: "rgba(139, 92, 246, 0.15)",
     borderColor: "rgba(139, 92, 246, 0.25)",
-    tagColor: "text-violet-400 bg-violet-500/10 border-violet-500/20",
+    tagColor: "text-violet-600 bg-violet-500/10 border-violet-500/20",
   },
 ];
 
@@ -47,8 +47,8 @@ const PresentationsStaticView = () => {
       {/* ── Page Header ── */}
       <div className="px-8 pt-8 pb-2 shrink-0 page-header-compact">
         <div className="flex items-center gap-3 mb-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-semibold">
-            <MonitorPlay size={14} />
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-rose-50 text-rose-700 text-xs font-semibold border border-rose-200 shadow-sm">
+            <MonitorPlay size={14} className="text-rose-600" />
             Presentations
           </div>
           <span className="text-slate-600 text-xs font-medium hidden sm:block">
@@ -56,7 +56,7 @@ const PresentationsStaticView = () => {
           </span>
         </div>
         <h2
-          className="text-3xl lg:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-rose-200 to-rose-400"
+          className="text-3xl lg:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-rose-800 via-pink-700 to-violet-700"
           style={{ fontFamily: "Outfit, sans-serif" }}
         >
           MEETING MATERIALS
@@ -109,22 +109,22 @@ const PresentationsStaticView = () => {
               </div>
               <ExternalLink
                 size={18}
-                className="text-slate-600 group-hover:text-slate-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all duration-300"
+                className="text-slate-600 group-hover:text-slate-600 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all duration-300"
               />
             </div>
 
             {/* Title */}
-            <h3 className="text-lg font-bold text-slate-200 mb-2 relative z-10 group-hover:text-white transition-colors duration-300">
+            <h3 className="text-lg font-bold text-slate-700 mb-2 relative z-10 group-hover:text-slate-800 transition-colors duration-300">
               {item.title}
             </h3>
 
             {/* Description */}
-            <p className="text-[13px] leading-relaxed text-slate-400 relative z-10 flex-1 group-hover:text-slate-300 transition-colors duration-300">
+            <p className="text-[13px] leading-relaxed text-slate-500 relative z-10 flex-1 group-hover:text-slate-600 transition-colors duration-300">
               {item.description}
             </p>
 
             {/* Footer: Date + CTA */}
-            <div className="mt-5 pt-4 border-t border-white/5 relative z-10 flex items-center justify-between">
+            <div className="mt-5 pt-4 border-t border-slate-100 relative z-10 flex items-center justify-between">
               <div className="flex items-center gap-1.5 text-slate-500 text-xs">
                 <Calendar size={12} />
                 <span>

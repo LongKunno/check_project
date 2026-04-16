@@ -1,7 +1,3 @@
-/**
- * ViolationLedger — Grouped violation list with filters, search, expand/collapse.
- * Tách từ AuditView.jsx (L929-1620, ~700 LOC) để giảm God Object.
- */
 import React, { useState, useMemo } from "react";
 import {
   Code2,
@@ -22,7 +18,7 @@ const sevColors = {
   Blocker: "#ef4444",
   Major: "#f59e0b",
   Minor: "#3b82f6",
-  Info: "#94a3b8",
+  Info: "#64748b",
 };
 
 const getSev = (v) => {
@@ -115,292 +111,115 @@ const ViolationLedger = ({
   };
 
   return (
-    <div
-      className="glass-card"
-      style={{ overflow: "hidden", padding: 0 }}
-    >
+    <div className="bg-white border border-slate-200 rounded-2xl shadow-sm flex flex-col w-full h-full overflow-hidden">
       {/* ═══ HEADER ═══ */}
-      <div style={{ padding: "1.25rem 1.5rem 0" }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "0.85rem",
-          }}
-        >
-          <div
-            className="metric-label"
-            style={{
-              margin: 0,
-              display: "flex",
-              alignItems: "center",
-              gap: "0.5rem",
-            }}
-          >
-            <Code2 size={16} /> VIOLATION LEDGER
-          </div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "0.6rem",
-            }}
-          >
-            <span
-              style={{
-                fontSize: "0.68rem",
-                color: "#475569",
-                fontWeight: 600,
-              }}
-            >
-              {filteredViolations.length}/
-              {violations.length} issues ·{" "}
-              {groupedViolations.length} rules
-            </span>
-            {groupedViolations.length > 0 && (
-              <button
-                onClick={() =>
-                  expandedRules.size >= groupedViolations.length
-                    ? setExpandedRules(new Set())
-                    : setExpandedRules(
-                        new Set(
-                          groupedViolations.map((g) => g.rule_id),
-                        ),
-                      )
-                }
-                style={{
-                  background: "rgba(59,130,246,0.06)",
-                  color: "#60a5fa",
-                  padding: "0.2rem 0.55rem",
-                  borderRadius: "6px",
-                  fontWeight: 700,
-                  border: "1px solid rgba(59,130,246,0.1)",
-                  fontSize: "0.62rem",
-                  cursor: "pointer",
-                  transition: "all 0.15s",
-                }}
-              >
-                {expandedRules.size >= groupedViolations.length
-                  ? "Collapse All"
-                  : "Expand All"}
-              </button>
-            )}
-          </div>
+      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 bg-slate-50/50">
+        <div className="flex items-center gap-2 text-slate-800 font-black tracking-widest text-sm uppercase">
+          <Code2 size={16} className="text-slate-500" />
+          Violation Ledger
         </div>
+        <div className="flex items-center gap-4">
+          <span className="text-xs font-bold text-slate-600">
+            {filteredViolations.length}/{violations.length} issues &middot; {groupedViolations.length} rules
+          </span>
+          {groupedViolations.length > 0 && (
+            <button
+              onClick={() =>
+                expandedRules.size >= groupedViolations.length
+                  ? setExpandedRules(new Set())
+                  : setExpandedRules(new Set(groupedViolations.map((g) => g.rule_id)))
+              }
+              className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-bold rounded-lg border border-blue-100 transition-colors"
+            >
+              {expandedRules.size >= groupedViolations.length ? "Collapse All" : "Expand All"}
+            </button>
+          )}
+        </div>
+      </div>
 
-        {/* ═══ FILTER BAR ═══ */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "0.35rem",
-            flexWrap: "wrap",
-            paddingBottom: "0.85rem",
-            borderBottom: "1px solid rgba(255,255,255,0.05)",
-          }}
-        >
-          {[
-            { key: "all", label: "All", count: violations.length, color: "#94a3b8" },
-            { key: "Critical", label: "Critical", count: severityCounts.Critical, color: "#ef4444" },
-            { key: "Major", label: "Major", count: severityCounts.Major, color: "#f59e0b" },
-            { key: "Minor", label: "Minor", count: severityCounts.Minor, color: "#3b82f6" },
-            { key: "Info", label: "Info", count: severityCounts.Info, color: "#94a3b8" },
-          ].map((f) => {
-            const active = severityFilter === f.key;
-            return (
-              <button
-                key={f.key}
-                onClick={() => {
-                  setSeverityFilter(f.key);
-                  setShowAllInGroup(new Set());
-                }}
-                style={{
-                  padding: "0.22rem 0.55rem",
-                  borderRadius: "6px",
-                  fontSize: "0.65rem",
-                  fontWeight: 700,
-                  border: `1px solid ${active ? f.color + "40" : "rgba(255,255,255,0.06)"}`,
-                  background: active ? f.color + "15" : "transparent",
-                  color: active ? f.color : "#64748b",
-                  cursor: "pointer",
-                  transition: "all 0.15s",
-                }}
-              >
-                {f.label}{" "}
-                {f.count > 0 && (
-                  <span style={{ opacity: 0.7 }}>{f.count}</span>
-                )}
-              </button>
-            );
-          })}
-          {/* Search */}
-          <div
-            style={{
-              marginLeft: "auto",
-              position: "relative",
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
-            <Search
-              size={12}
+      {/* ═══ FILTER BAR ═══ */}
+      <div className="flex items-center gap-2 px-6 py-3 border-b border-slate-100 flex-wrap bg-white">
+        {[
+          { key: "all", label: "All", count: violations.length, color: "#64748b" },
+          { key: "Critical", label: "Critical", count: severityCounts.Critical, color: "#ef4444" },
+          { key: "Major", label: "Major", count: severityCounts.Major, color: "#f59e0b" },
+          { key: "Minor", label: "Minor", count: severityCounts.Minor, color: "#3b82f6" },
+          { key: "Info", label: "Info", count: severityCounts.Info, color: "#94a3b8" },
+        ].map((f) => {
+          const active = severityFilter === f.key;
+          return (
+            <button
+              key={f.key}
+              onClick={() => {
+                setSeverityFilter(f.key);
+                setShowAllInGroup(new Set());
+              }}
               style={{
-                position: "absolute",
-                left: "0.5rem",
-                color: "#475569",
-                pointerEvents: "none",
+                borderColor: active ? `${f.color}40` : "#e2e8f0",
+                backgroundColor: active ? `${f.color}15` : "transparent",
+                color: active ? f.color : "#64748b",
               }}
-            />
-            <input
-              type="text"
-              placeholder="Search file..."
-              value={fileSearch}
-              onChange={(e) => setFileSearch(e.target.value)}
-              style={{
-                background: "rgba(0,0,0,0.2)",
-                border: "1px solid rgba(255,255,255,0.06)",
-                borderRadius: "6px",
-                padding: "0.25rem 0.5rem 0.25rem 1.6rem",
-                color: "#e2e8f0",
-                fontSize: "0.68rem",
-                width: "140px",
-                outline: "none",
-                transition: "all 0.15s",
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = "rgba(96,165,250,0.3)";
-                e.target.style.width = "180px";
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = "rgba(255,255,255,0.06)";
-                if (!e.target.value) e.target.style.width = "140px";
-              }}
-            />
-          </div>
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-colors hover:bg-slate-50`}
+            >
+              {f.label} {f.count > 0 && <span className="opacity-70 ml-1">{f.count}</span>}
+            </button>
+          );
+        })}
+
+        {/* Search */}
+        <div className="ml-auto relative flex items-center">
+          <Search size={14} className="absolute left-3 text-slate-400 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Search file..."
+            value={fileSearch}
+            onChange={(e) => setFileSearch(e.target.value)}
+            className="pl-9 pr-4 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all w-48 focus:w-56"
+          />
         </div>
       </div>
 
       {/* ═══ GROUPED VIOLATIONS LIST ═══ */}
-      <div
-        style={{
-          maxHeight: "700px",
-          overflowY: "auto",
-          padding: "0.5rem 1rem 1rem",
-        }}
-      >
+      <div className="overflow-y-auto flex-1 p-4 bg-slate-50/30">
         {groupedViolations.length > 0 ? (
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "0.35rem",
-            }}
-          >
+          <div className="flex flex-col gap-3">
             {groupedViolations.map((group) => {
               const isExpanded = expandedRules.has(group.rule_id);
-              const sevColor =
-                sevColors[getSev(group.violations[0])] || "#3b82f6";
+              const sevColor = sevColors[getSev(group.violations[0])] || "#3b82f6";
               const visibleCount = showAllInGroup.has(group.rule_id)
                 ? group.violations.length
                 : Math.min(ITEMS_PER_GROUP, group.violations.length);
-              const hiddenCount =
-                group.violations.length - visibleCount;
+              const hiddenCount = group.violations.length - visibleCount;
 
               return (
-                <div key={group.rule_id}>
+                <div key={group.rule_id} className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
                   {/* ── Level 0: Group Header ── */}
                   <div
                     onClick={() => toggleRuleGroup(group.rule_id)}
-                    style={{
-                      background: isExpanded
-                        ? "rgba(255,255,255,0.03)"
-                        : "rgba(0,0,0,0.15)",
-                      padding: "0.6rem 0.85rem",
-                      borderRadius: isExpanded ? "8px 8px 0 0" : "8px",
-                      cursor: "pointer",
-                      transition: "all 0.15s",
-                      borderLeft: `3px solid ${sevColor}`,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.5rem",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!isExpanded)
-                        e.currentTarget.style.background =
-                          "rgba(255,255,255,0.025)";
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isExpanded)
-                        e.currentTarget.style.background =
-                          "rgba(0,0,0,0.15)";
-                    }}
+                    className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-slate-50 transition-colors"
+                    style={{ borderLeft: `4px solid ${sevColor}` }}
                   >
                     <ChevronDown
-                      size={13}
-                      style={{
-                        color: "#475569",
-                        transition: "transform 0.2s",
-                        transform: isExpanded
-                          ? "rotate(0deg)"
-                          : "rotate(-90deg)",
-                        flexShrink: 0,
-                      }}
+                      size={16}
+                      className={`text-slate-400 transition-transform duration-200 ${isExpanded ? "rotate-0" : "-rotate-90"}`}
                     />
-                    <span
-                      style={{
-                        fontFamily: "JetBrains Mono, monospace",
-                        fontWeight: 800,
-                        color: "#e2e8f0",
-                        fontSize: "0.75rem",
-                        minWidth: 0,
-                      }}
-                    >
+                    <span className="font-mono font-bold text-sm text-slate-800 flex items-center gap-2">
                       {group.rule_id}
+                      {group.is_custom && <Sparkles size={12} className="text-amber-500" />}
                     </span>
-                    {group.is_custom && (
-                      <Sparkles
-                        size={10}
-                        style={{ color: "#f59e0b", flexShrink: 0 }}
-                      />
-                    )}
                     <span
-                      style={{
-                        background: `${sevColor}15`,
-                        color: sevColor,
-                        padding: "1px 6px",
-                        borderRadius: "5px",
-                        fontSize: "0.6rem",
-                        fontWeight: 800,
-                        flexShrink: 0,
-                        lineHeight: "1.4",
-                      }}
+                      className="px-2 py-0.5 rounded-md text-[10px] font-black tracking-widest"
+                      style={{ background: `${sevColor}15`, color: sevColor }}
                     >
-                      {group.violations.length}
+                      {group.violations.length} ISSUES
                     </span>
-                    <span style={{ flex: 1 }} />
-                    <span
-                      style={{
-                        fontSize: "0.58rem",
-                        color: "#475569",
-                        fontWeight: 600,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.06em",
-                        flexShrink: 0,
-                      }}
-                    >
+                    <span className="flex-1" />
+                    <span className="text-[10px] uppercase font-bold tracking-widest text-slate-500">
                       {group.pillar}
                     </span>
                     <span
-                      style={{
-                        fontWeight: 800,
-                        color: sevColor,
-                        fontSize: "0.75rem",
-                        fontFamily: "Outfit, sans-serif",
-                        minWidth: "2.8rem",
-                        textAlign: "right",
-                        flexShrink: 0,
-                      }}
+                      className="font-bold text-sm tracking-tight w-12 text-right"
+                      style={{ color: sevColor }}
                     >
                       {group.totalWeight.toFixed(1)}
                     </span>
@@ -413,303 +232,109 @@ const ViolationLedger = ({
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
-                        transition={{
-                          duration: 0.2,
-                          ease: [0.4, 0, 0.2, 1],
-                        }}
-                        style={{ overflow: "hidden" }}
+                        transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                        className="overflow-hidden border-t border-slate-100 bg-slate-50/50"
                       >
-                        <div
-                          style={{
-                            background: "rgba(0,0,0,0.1)",
-                            borderRadius: "0 0 8px 8px",
-                            borderLeft: `3px solid ${sevColor}20`,
-                          }}
-                        >
-                          {group.violations
-                            .slice(0, visibleCount)
-                            .map((v, i) => {
-                              const itemKey =
-                                v.id || `${group.rule_id}-${i}`;
-                              const isItemOpen =
-                                expandedItems.has(itemKey);
+                        {group.violations.slice(0, visibleCount).map((v, i) => {
+                          const itemKey = v.id || `${group.rule_id}-${i}`;
+                          const isItemOpen = expandedItems.has(itemKey);
 
-                              return (
-                                <div key={itemKey}>
-                                  {/* File Row */}
-                                  <div
-                                    onClick={() => toggleItem(itemKey)}
-                                    style={{
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: "0.4rem",
-                                      padding:
-                                        "0.45rem 0.85rem 0.45rem 1.1rem",
-                                      cursor: "pointer",
-                                      transition: "background 0.1s",
-                                      borderBottom:
-                                        (i < visibleCount - 1 ||
-                                          hiddenCount > 0) &&
-                                        !isItemOpen
-                                          ? "1px solid rgba(255,255,255,0.025)"
-                                          : "none",
-                                    }}
-                                    onMouseEnter={(e) =>
-                                      (e.currentTarget.style.background =
-                                        "rgba(255,255,255,0.025)")
-                                    }
-                                    onMouseLeave={(e) =>
-                                      (e.currentTarget.style.background =
-                                        "transparent")
-                                    }
+                          return (
+                            <div key={itemKey} className={`flex flex-col border-b border-slate-100 last:border-b-0`}>
+                              {/* File Row */}
+                              <div
+                                onClick={() => toggleItem(itemKey)}
+                                className={`flex items-center gap-3 px-5 py-2.5 cursor-pointer hover:bg-white transition-colors ${isItemOpen ? "bg-white" : ""}`}
+                              >
+                                <ChevronDown
+                                  size={12}
+                                  className={`text-slate-400 transition-transform duration-300 ${isItemOpen ? "rotate-0" : "-rotate-90"}`}
+                                />
+                                <FileText size={14} className="text-blue-500" />
+                                <span className="font-mono text-xs font-semibold text-slate-700">
+                                  {v.file}
+                                  {v.line ? <span className="text-slate-400">:{v.line}</span> : ""}
+                                </span>
+                                <span className="flex-1" />
+                                <span
+                                  className="px-2 py-0.5 rounded text-[10px] font-black"
+                                  style={{ background: `${sevColor}15`, color: sevColor }}
+                                >
+                                  {v.weight}
+                                </span>
+                              </div>
+
+                              {/* ── Level 2: Expanded Details ── */}
+                              <AnimatePresence>
+                                {isItemOpen && (
+                                  <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: "auto", opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                                    className="overflow-hidden bg-white border-y border-slate-100"
                                   >
-                                    <ChevronDown
-                                      size={10}
-                                      style={{
-                                        color: "#475569",
-                                        transition: "transform 0.15s",
-                                        transform: isItemOpen
-                                          ? "rotate(0deg)"
-                                          : "rotate(-90deg)",
-                                        flexShrink: 0,
-                                      }}
-                                    />
-                                    <FileText
-                                      size={12}
-                                      style={{
-                                        color: "#60a5fa",
-                                        flexShrink: 0,
-                                      }}
-                                    />
-                                    <span
-                                      style={{
-                                        fontFamily:
-                                          "JetBrains Mono, monospace",
-                                        color: "#cbd5e1",
-                                        fontSize: "0.76rem",
-                                        fontWeight: 600,
-                                      }}
-                                    >
-                                      {v.file}
-                                      {v.line ? `:${v.line}` : ""}
-                                    </span>
-                                    <span style={{ flex: 1 }} />
-                                    <span
-                                      style={{
-                                        background: `${sevColor}12`,
-                                        color: sevColor,
-                                        padding: "1px 6px",
-                                        borderRadius: "4px",
-                                        fontSize: "0.62rem",
-                                        fontWeight: 800,
-                                        fontFamily:
-                                          "Outfit, sans-serif",
-                                        flexShrink: 0,
-                                      }}
-                                    >
-                                      {v.weight}
-                                    </span>
-                                  </div>
+                                    <div className="flex flex-col gap-3 px-10 py-4">
+                                      <div className="text-sm font-medium text-slate-600 leading-relaxed">
+                                        {v.reason}
+                                      </div>
 
-                                  {/* ── Level 2: Expanded Details ── */}
-                                  <AnimatePresence>
-                                    {isItemOpen && (
-                                      <motion.div
-                                        initial={{
-                                          height: 0,
-                                          opacity: 0,
-                                        }}
-                                        animate={{
-                                          height: "auto",
-                                          opacity: 1,
-                                        }}
-                                        exit={{ height: 0, opacity: 0 }}
-                                        transition={{ duration: 0.15 }}
-                                        style={{ overflow: "hidden" }}
-                                      >
-                                        <div
-                                          style={{
-                                            padding:
-                                              "0.5rem 0.85rem 0.65rem 2.1rem",
-                                            background:
-                                              "rgba(0,0,0,0.12)",
-                                            borderBottom:
-                                              "1px solid rgba(255,255,255,0.025)",
+                                      {v.snippet && (
+                                        <pre className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs font-mono text-slate-800 overflow-x-auto">
+                                          {v.snippet}
+                                        </pre>
+                                      )}
+
+                                      <div className="flex items-center pt-2">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            fetchFixSuggestion(v);
                                           }}
+                                          disabled={fixingId === v.id}
+                                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${fixingId === v.id
+                                              ? "bg-amber-100 text-amber-600 border border-amber-200"
+                                              : "bg-violet-50 hover:bg-violet-100 text-violet-600 border border-violet-200"
+                                            }`}
                                         >
-                                          {/* Reason */}
-                                          <div
-                                            style={{
-                                              color: "#94a3b8",
-                                              fontSize: "0.73rem",
-                                              lineHeight: 1.55,
-                                              marginBottom: v.snippet
-                                                ? "0.5rem"
-                                                : 0,
-                                            }}
-                                          >
-                                            {v.reason}
-                                          </div>
-                                          {/* Snippet */}
-                                          {v.snippet && (
-                                            <pre
-                                              style={{
-                                                padding:
-                                                  "0.6rem 0.75rem",
-                                                background:
-                                                  "rgba(0,0,0,0.35)",
-                                                borderRadius: "6px",
-                                                overflow: "auto",
-                                                maxHeight: "200px",
-                                                fontSize: "0.72rem",
-                                                color: "#bae6fd",
-                                                fontFamily:
-                                                  "JetBrains Mono, monospace",
-                                                lineHeight: 1.6,
-                                                border:
-                                                  "1px solid rgba(255,255,255,0.04)",
-                                                margin: 0,
-                                              }}
-                                            >
-                                              {v.snippet}
-                                            </pre>
-                                          )}
-                                          {/* AI Fix button */}
-                                          <div
-                                            style={{
-                                              marginTop: "0.45rem",
-                                              display: "flex",
-                                              gap: "0.5rem",
-                                            }}
-                                          >
-                                            <button
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                fetchFixSuggestion(v);
-                                              }}
-                                              disabled={
-                                                fixingId === v.id
-                                              }
-                                              style={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: "4px",
-                                                padding:
-                                                  "0.2rem 0.5rem",
-                                                borderRadius: "5px",
-                                                fontSize: "0.65rem",
-                                                fontWeight: 700,
-                                                background:
-                                                  fixingId === v.id
-                                                    ? "rgba(245,158,11,0.12)"
-                                                    : "rgba(139,92,246,0.08)",
-                                                color:
-                                                  fixingId === v.id
-                                                    ? "#f59e0b"
-                                                    : "#a78bfa",
-                                                border: `1px solid ${fixingId === v.id ? "rgba(245,158,11,0.2)" : "rgba(139,92,246,0.15)"}`,
-                                                cursor: "pointer",
-                                                transition:
-                                                  "all 0.15s",
-                                              }}
-                                            >
-                                              <Wand2 size={11} />
-                                              {fixingId === v.id
-                                                ? "Thinking..."
-                                                : suggestions[v.id]
-                                                  ? "Re-generate"
-                                                  : "Fix with AI"}
-                                            </button>
-                                          </div>
+                                          <Wand2 size={14} />
+                                          {fixingId === v.id ? "Thinking..." : suggestions[v.id] ? "Re-generate" : "Fix with AI"}
+                                        </button>
+                                      </div>
 
-                                          {/* AI Fix Suggestion */}
-                                          {suggestions[v.id] && (
-                                            <div
-                                              style={{
-                                                marginTop: "0.45rem",
-                                                background:
-                                                  "rgba(16,185,129,0.04)",
-                                                border:
-                                                  "1px solid rgba(16,185,129,0.1)",
-                                                borderRadius: "6px",
-                                                padding: "0.6rem",
-                                              }}
-                                            >
-                                              <div
-                                                style={{
-                                                  color: "#10b981",
-                                                  fontWeight: 700,
-                                                  fontSize: "0.6rem",
-                                                  marginBottom:
-                                                    "0.3rem",
-                                                  textTransform:
-                                                    "uppercase",
-                                                  letterSpacing:
-                                                    "0.05em",
-                                                }}
-                                              >
-                                                AI FIX SUGGESTION
-                                              </div>
-                                              <code
-                                                style={{
-                                                  background:
-                                                    "rgba(0,0,0,0.3)",
-                                                  padding: "0.5rem",
-                                                  borderRadius: "5px",
-                                                  display: "block",
-                                                  color: "#bae6fd",
-                                                  fontSize: "0.72rem",
-                                                  whiteSpace:
-                                                    "pre-wrap",
-                                                  lineHeight: 1.5,
-                                                }}
-                                              >
-                                                {suggestions[v.id]}
-                                              </code>
-                                            </div>
-                                          )}
+                                      {suggestions[v.id] && (
+                                        <div className="mt-2 bg-emerald-50 border border-emerald-100 rounded-xl p-4">
+                                          <div className="text-[10px] font-black uppercase text-emerald-600 tracking-widest mb-2 flex items-center gap-2">
+                                            <Sparkles size={12} /> AI FIX SUGGESTION
+                                          </div>
+                                          <code className="block bg-white p-3 rounded-lg border border-emerald-100/50 text-xs text-slate-800 whitespace-pre-wrap font-mono leading-relaxed shadow-sm">
+                                            {suggestions[v.id]}
+                                          </code>
                                         </div>
-                                      </motion.div>
-                                    )}
-                                  </AnimatePresence>
-                                </div>
-                              );
-                            })}
-
-                          {/* Show more button */}
-                          {hiddenCount > 0 && (
-                            <div
-                              onClick={() =>
-                                setShowAllInGroup((prev) => {
-                                  const n = new Set(prev);
-                                  n.add(group.rule_id);
-                                  return n;
-                                })
-                              }
-                              style={{
-                                padding: "0.4rem 1rem",
-                                textAlign: "center",
-                                fontSize: "0.68rem",
-                                color: "#60a5fa",
-                                fontWeight: 600,
-                                cursor: "pointer",
-                                transition: "background 0.1s",
-                                borderTop:
-                                  "1px dashed rgba(96,165,250,0.15)",
-                              }}
-                              onMouseEnter={(e) =>
-                                (e.currentTarget.style.background =
-                                  "rgba(96,165,250,0.04)")
-                              }
-                              onMouseLeave={(e) =>
-                                (e.currentTarget.style.background =
-                                  "transparent")
-                              }
-                            >
-                              Show {hiddenCount} more
+                                      )}
+                                    </div>
+                                  </motion.div>
+                                )}
+                              </AnimatePresence>
                             </div>
-                          )}
-                        </div>
+                          );
+                        })}
+
+                        {/* Show more button */}
+                        {hiddenCount > 0 && (
+                          <div
+                            onClick={() =>
+                              setShowAllInGroup((prev) => {
+                                const n = new Set(prev);
+                                n.add(group.rule_id);
+                                return n;
+                              })
+                            }
+                            className="text-center py-2 text-xs font-bold text-blue-500 hover:bg-blue-50 cursor-pointer transition-colors border-t border-slate-100"
+                          >
+                            Show {hiddenCount} more hidden items
+                          </div>
+                        )}
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -719,58 +344,24 @@ const ViolationLedger = ({
           </div>
         ) : (
           /* ═══ EMPTY STATES ═══ */
-          <div
-            style={{
-              textAlign: "center",
-              color: "var(--text-muted)",
-              padding: "3rem 0",
-            }}
-          >
-            {violations.length === 0 &&
-            reportView === "project" ? (
+          <div className="flex flex-col items-center justify-center py-16 text-slate-500 gap-3">
+            {violations.length === 0 && reportView === "project" ? (
               <>
-                <CheckCircle
-                  size={44}
-                  style={{
-                    marginBottom: "0.75rem",
-                    color: "var(--accent-green)",
-                    opacity: 0.5,
-                  }}
-                />
-                <p style={{ fontSize: "0.85rem" }}>
-                  All clear! No violations found.
-                </p>
+                <CheckCircle size={48} className="text-emerald-400 opacity-50" />
+                <p className="font-medium">All clear! No violations found.</p>
               </>
-            ) : reportView === "member" &&
-              violations.length === 0 ? (
-              <p style={{ fontSize: "0.85rem" }}>
-                Git history is empty. Member report unavailable.
-              </p>
+            ) : reportView === "member" && violations.length === 0 ? (
+              <p className="font-medium">Git history is empty. Member report unavailable.</p>
             ) : (
               <>
-                <Filter
-                  size={36}
-                  style={{ marginBottom: "0.75rem", opacity: 0.3 }}
-                />
-                <p style={{ fontSize: "0.85rem" }}>
-                  No violations match current filters.
-                </p>
+                <Filter size={48} className="opacity-30" />
+                <p className="font-medium">No violations match current filters.</p>
                 <button
                   onClick={() => {
                     setSeverityFilter("all");
                     setFileSearch("");
                   }}
-                  style={{
-                    marginTop: "0.5rem",
-                    background: "rgba(59,130,246,0.08)",
-                    color: "#60a5fa",
-                    padding: "0.3rem 0.8rem",
-                    borderRadius: "6px",
-                    fontWeight: 600,
-                    border: "1px solid rgba(59,130,246,0.12)",
-                    fontSize: "0.72rem",
-                    cursor: "pointer",
-                  }}
+                  className="mt-2 px-4 py-2 bg-blue-50 text-blue-600 font-bold rounded-lg hover:bg-blue-100 transition-colors"
                 >
                   Clear filters
                 </button>

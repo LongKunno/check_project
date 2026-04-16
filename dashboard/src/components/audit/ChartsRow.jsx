@@ -7,13 +7,14 @@ import { Activity, Shield } from "lucide-react";
 import { Doughnut, Bar } from "react-chartjs-2";
 
 const chartCardStyle = {
-  background: "rgba(15,23,42,0.6)",
-  border: "1px solid rgba(255,255,255,0.05)",
+  background: "#ffffff",
+  border: "1px solid #e2e8f0",
+  boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
 };
 
 const titleStyle = {
-  color: "#f1f5f9",
-  fontWeight: 700,
+  color: "#334155",
+  fontWeight: 800,
   fontSize: "0.85rem",
 };
 
@@ -56,12 +57,12 @@ const ChartsRow = ({ violationDistData, severityDistData }) => (
               scales: {
                 y: {
                   beginAtZero: true,
-                  grid: { color: "rgba(255,255,255,0.05)" },
-                  ticks: { color: "#94a3b8", font: { size: 10 } },
+                  grid: { color: "rgba(0,0,0,0.05)" },
+                  ticks: { color: "#64748b", font: { size: 10 } },
                 },
                 x: {
                   grid: { display: false },
-                  ticks: { color: "#94a3b8", font: { size: 10 } },
+                  ticks: { color: "#64748b", font: { size: 10 } },
                 },
               },
               plugins: { legend: { display: false } },

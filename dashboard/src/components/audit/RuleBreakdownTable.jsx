@@ -12,8 +12,8 @@ const RuleBreakdownTable = ({ ruleBreakdown }) => {
     <div
       className="glass-card mb-6"
       style={{
-        background: "rgba(15,23,42,0.6)",
-        border: "1px solid rgba(255,255,255,0.05)",
+        background: "#ffffff",
+        border: "1px solid #e2e8f0",
       }}
     >
       <div
@@ -50,8 +50,9 @@ const RuleBreakdownTable = ({ ruleBreakdown }) => {
             style={{
               position: "sticky",
               top: 0,
-              background: "rgba(15,23,42,0.9)",
+              background: "#f8fafc",
               zIndex: 10,
+              borderBottom: "1px solid #e2e8f0"
             }}
           >
             <tr
@@ -75,13 +76,13 @@ const RuleBreakdownTable = ({ ruleBreakdown }) => {
             {ruleBreakdown.map((rule, idx) => (
               <tr
                 key={idx}
-                style={{ background: "rgba(255,255,255,0.02)" }}
+                style={{ background: "rgba(0,0,0,0.02)" }}
               >
                 <td
                   style={{
                     padding: "0.75rem 0.5rem",
                     fontWeight: 700,
-                    color: "#f8fafc",
+                    color: "#334155",
                     borderRadius: "8px 0 0 8px",
                     fontFamily: "monospace",
                     fontSize: "0.85rem",

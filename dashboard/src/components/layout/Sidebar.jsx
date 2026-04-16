@@ -51,24 +51,24 @@ export const Sidebar = ({
       label: "Project Leaderboard",
       icon: BarChart3,
       activeClass:
-        "bg-pink-500/10 text-pink-400 border border-pink-500/20 shadow-inner glow-pink",
-      iconClass: "text-pink-500/80",
+        "bg-pink-50 text-pink-600 border border-pink-200",
+      iconClass: "text-pink-500",
     },
     {
       path: "/member-scores",
       label: "Member Leaderboard",
       icon: Users,
       activeClass:
-        "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shadow-inner glow-cyan",
-      iconClass: "text-cyan-500/80",
+        "bg-cyan-50 text-cyan-600 border border-cyan-200",
+      iconClass: "text-cyan-500",
     },
     {
       path: "/repositories",
       label: "Repositories",
       icon: FolderOpen,
       activeClass:
-        "bg-teal-500/10 text-teal-400 border border-teal-500/20 shadow-inner glow-teal",
-      iconClass: "text-teal-500/80",
+        "bg-teal-50 text-teal-600 border border-teal-200",
+      iconClass: "text-teal-500",
     },
   ];
 
@@ -79,32 +79,32 @@ export const Sidebar = ({
       label: "Audit Dashboard",
       icon: Activity,
       activeClass:
-        "bg-violet-500/10 text-violet-400 border border-violet-500/20 shadow-inner glow-violet",
-      iconClass: "text-violet-500/80",
+        "bg-violet-50 text-violet-600 border border-violet-200",
+      iconClass: "text-violet-500",
     },
     {
       path: "/rules",
       label: "Rule Manager",
       icon: ShieldCheck,
       activeClass:
-        "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-inner glow-emerald",
-      iconClass: "text-emerald-500/80",
+        "bg-emerald-50 text-emerald-600 border border-emerald-200",
+      iconClass: "text-emerald-500",
     },
     {
       path: "/sandbox",
       label: "Rule Builder",
       icon: Wand2,
       activeClass:
-        "bg-blue-500/10 text-blue-400 border border-blue-500/20 shadow-inner glow-blue",
-      iconClass: "text-blue-500/80",
+        "bg-blue-50 text-blue-600 border border-blue-200",
+      iconClass: "text-blue-500",
     },
     {
       path: "/history",
       label: "Audit History",
       icon: FileSearch,
       activeClass:
-        "bg-amber-500/10 text-amber-400 border border-amber-500/20 shadow-inner glow-amber",
-      iconClass: "text-amber-500/80",
+        "bg-amber-50 text-amber-600 border border-amber-200",
+      iconClass: "text-amber-500",
     },
   ];
 
@@ -115,8 +115,8 @@ export const Sidebar = ({
       label: "Presentations",
       icon: MonitorPlay,
       activeClass:
-        "bg-rose-500/10 text-rose-400 border border-rose-500/20 shadow-inner glow-pink",
-      iconClass: "text-rose-500/80",
+        "bg-rose-50 text-rose-600 border border-rose-200",
+      iconClass: "text-rose-500",
     },
   ];
 
@@ -129,7 +129,7 @@ export const Sidebar = ({
           "flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left overflow-hidden shrink-0 group",
           isPathActive(path)
             ? activeClass
-            : "text-slate-400 hover:bg-white/5 hover:text-white border border-transparent",
+            : "text-slate-500 hover:bg-slate-100 hover:text-slate-800 border border-transparent",
         )}
         title={label}
       >
@@ -151,7 +151,7 @@ export const Sidebar = ({
     <>
       {/* ── Logo Header ── */}
       <div className="flex items-center gap-3 p-6 whitespace-nowrap overflow-hidden shrink-0">
-        <div className="bg-gradient-to-br from-violet-500 to-indigo-600 p-2 rounded-xl shadow-lg shadow-violet-500/20 shrink-0">
+        <div className="bg-gradient-to-br from-violet-500 to-indigo-600 p-2 rounded-xl shadow-md shrink-0">
           <Shield size={24} className="text-white" />
         </div>
         <AnimatePresence>
@@ -163,7 +163,7 @@ export const Sidebar = ({
               className="flex flex-col overflow-hidden"
             >
               <span
-                className="font-black text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400"
+                className="font-black text-lg tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-violet-600"
                 style={{ fontFamily: "Outfit" }}
               >
                 AUDIT ENGINE
@@ -176,7 +176,7 @@ export const Sidebar = ({
         </AnimatePresence>
         <button
           onClick={() => setMobileOpen(false)}
-          className="ml-auto lg:hidden p-1.5 rounded-lg hover:bg-white/10 text-slate-400"
+          className="ml-auto lg:hidden p-1.5 rounded-lg hover:bg-slate-100 text-slate-500"
         >
           <X size={18} />
         </button>
@@ -195,7 +195,7 @@ export const Sidebar = ({
           <select
             value={selectedRepoId}
             onChange={(e) => setSelectedRepoId(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded-xl px-3 py-2 outline-none focus:border-violet-500 text-sm font-semibold shadow-inner cursor-pointer appearance-none"
+            className="w-full bg-white border border-slate-200 text-slate-700 rounded-xl px-3 py-2 outline-none focus:border-violet-500 text-sm font-semibold cursor-pointer appearance-none"
             style={{
               backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`,
               backgroundRepeat: "no-repeat",
@@ -207,7 +207,7 @@ export const Sidebar = ({
               <option
                 key={repo.id}
                 value={repo.id}
-                className="bg-slate-900 text-slate-200"
+                className="bg-white text-slate-700"
               >
                 {repo.name}
               </option>
@@ -215,7 +215,7 @@ export const Sidebar = ({
           </select>
         ) : (
           <div
-            className="flex justify-center items-center w-10 aspect-square bg-slate-800/50 rounded-xl border border-slate-700 mx-auto cursor-pointer hover:bg-slate-700 transition-colors"
+            className="flex justify-center items-center w-10 aspect-square bg-slate-100 rounded-xl border border-slate-200 mx-auto cursor-pointer hover:bg-slate-200 transition-colors"
             title={
               configuredRepos.find((r) => r.id === selectedRepoId)?.name ||
               "Select target"
@@ -252,7 +252,7 @@ export const Sidebar = ({
         </div>
 
         {/* ── Divider ── */}
-        <div className="mx-4 my-3 border-t border-white/5 shrink-0" />
+        <div className="mx-4 my-3 border-t border-slate-200 shrink-0" />
 
         {/* ── SECTION 2: REPOSITORY WORKSPACE ── */}
         <div className="flex flex-col gap-1.5 px-3 shrink-0">
@@ -282,7 +282,7 @@ export const Sidebar = ({
         </div>
 
         {/* ── Divider ── */}
-        <div className="mx-4 my-2 border-t border-white/5 shrink-0" />
+        <div className="mx-4 my-2 border-t border-slate-200 shrink-0" />
 
         {/* ── SECTION 3: SYSTEM INFO ── */}
         <div className="flex flex-col gap-1.5 px-3 mb-1 shrink-0">
@@ -310,13 +310,13 @@ export const Sidebar = ({
       </div>{" "}
       {/* <-- End Nav Items Container --> */}
       {/* ── Footer ── */}
-      <div className="p-4 border-t border-white/5 mt-auto shrink-0 flex flex-col gap-2">
+      <div className="p-4 border-t border-slate-200 mt-auto shrink-0 flex flex-col gap-2">
         <div
           className={cn(
             "flex items-center p-3 rounded-xl border mb-1",
             aiHealth.status === "healthy"
               ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
-              : "bg-slate-800/50 border-slate-700 text-slate-400",
+              : "bg-slate-100 border-slate-200 text-slate-400",
           )}
           title="AI System Health"
         >
@@ -324,8 +324,8 @@ export const Sidebar = ({
             className={cn(
               "w-2 h-2 rounded-full shrink-0",
               aiHealth.status === "healthy"
-                ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]"
-                : "bg-slate-500",
+                ? "bg-emerald-400"
+                : "bg-slate-400",
             )}
           />
           {!isSidebarCollapsed && (
@@ -338,19 +338,19 @@ export const Sidebar = ({
         {user && (
           <div
             className={cn(
-              "flex items-center rounded-xl border border-white/[0.06] bg-[rgba(16,22,38,0.5)] mb-1 transition-all",
+              "flex items-center rounded-xl border border-slate-200 bg-slate-50 mb-1 transition-all",
               isSidebarCollapsed ? "p-2 justify-center" : "p-3 gap-3",
             )}
           >
             <img
-              src={user.picture}
+              src={user.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || "User")}&background=random`}
               alt={user.name}
-              className="w-8 h-8 rounded-full shrink-0 border-2 border-violet-500/40 shadow-[0_0_8px_rgba(139,92,246,0.3)]"
+              className="w-8 h-8 rounded-full shrink-0 border-2 border-violet-300"
               referrerPolicy="no-referrer"
             />
             {!isSidebarCollapsed && (
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-slate-200 truncate">
+                <p className="text-xs font-bold text-slate-800 truncate">
                   {user.name}
                 </p>
                 <p className="text-[10px] text-slate-500 truncate">
@@ -374,8 +374,8 @@ export const Sidebar = ({
           className={cn(
             "flex items-center gap-3 p-3 rounded-xl transition-all w-full text-left overflow-hidden shrink-0 group",
             isPathActive("/settings")
-              ? "bg-slate-500/10 text-slate-400 border border-slate-500/20 shadow-inner"
-              : "text-slate-500 hover:bg-white/5 hover:text-slate-300 border border-transparent",
+              ? "bg-slate-100 text-slate-700 border border-slate-200"
+              : "text-slate-500 hover:bg-slate-100 hover:text-slate-700 border border-transparent",
           )}
         >
           <Settings
@@ -383,7 +383,7 @@ export const Sidebar = ({
             className={cn(
               "shrink-0 transition-transform",
               isPathActive("/settings")
-                ? "rotate-45 text-slate-300"
+                ? "rotate-45 text-slate-600"
                 : "group-hover:rotate-45",
             )}
           />
@@ -402,7 +402,7 @@ export const Sidebar = ({
       {/* Mobile hamburger button */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="fixed top-4 left-4 z-[200] lg:hidden p-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-500/30 border border-white/10 transition-colors"
+        className="fixed top-4 left-4 z-[200] lg:hidden p-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white shadow-md transition-colors"
         aria-label="Open menu"
       >
         <Menu size={20} />
@@ -415,7 +415,7 @@ export const Sidebar = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[150] lg:hidden"
+            className="fixed inset-0 bg-black/30 z-[150] lg:hidden"
             onClick={() => setMobileOpen(false)}
           />
         )}
@@ -429,7 +429,7 @@ export const Sidebar = ({
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: -300, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed top-0 left-0 bottom-0 w-[280px] bg-[#0f1629]/70 backdrop-blur-xl border-r border-white/10 flex flex-col z-[200] shadow-2xl lg:hidden overflow-y-auto"
+            className="fixed top-0 left-0 bottom-0 w-[280px] bg-white border-r border-slate-200 flex flex-col z-[200] shadow-xl lg:hidden overflow-y-auto"
           >
             {sidebarContent}
           </motion.div>
@@ -440,11 +440,11 @@ export const Sidebar = ({
       <motion.div
         initial={false}
         animate={{ width: isSidebarCollapsed ? 80 : 280 }}
-        className="hidden lg:flex flex-shrink-0 bg-[#0f1629]/50 backdrop-blur-xl border-r border-white/10 flex-col relative z-[100] h-full transition-all duration-300 shadow-2xl"
+        className="hidden lg:flex flex-shrink-0 bg-white border-r border-slate-200 flex-col relative z-[100] h-full transition-all duration-300"
       >
         <button
           onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-          className="absolute -right-3.5 top-8 bg-violet-600 hover:bg-violet-500 rounded-full p-1.5 shadow-lg shadow-violet-500/30 border border-white/10 transition-colors z-50 flex items-center justify-center cursor-pointer"
+          className="absolute -right-3.5 top-8 bg-violet-600 hover:bg-violet-500 rounded-full p-1.5 shadow-md transition-colors z-50 flex items-center justify-center cursor-pointer"
         >
           {isSidebarCollapsed ? (
             <ChevronRight size={14} className="text-white" />

@@ -41,8 +41,8 @@ const HeroCard = ({
         reportView === "project"
           ? data?.metrics?.total_loc?.toLocaleString()
           : (
-              data?.scores?.members?.[selectedMember]?.loc || 0
-            ).toLocaleString(),
+            data?.scores?.members?.[selectedMember]?.loc || 0
+          ).toLocaleString(),
       icon: <Code2 size={16} />,
       accent: "#3b82f6",
       accentLine: "kpi-accent-cyan",
@@ -93,8 +93,8 @@ const HeroCard = ({
           reportView === "member"
             ? "rgba(124, 58, 237, 0.2)"
             : "rgba(59, 130, 246, 0.2)",
-        background: "rgba(15, 23, 42, 0.6)",
-        boxShadow: "0 20px 50px -15px rgba(0,0,0,0.5)",
+        background: "#ffffff",
+        boxShadow: "0 4px 20px -5px rgba(0,0,0,0.08)",
         padding: "2rem",
         display: "flex",
         flexDirection: "column",
@@ -118,7 +118,7 @@ const HeroCard = ({
             className="metric-label"
             style={{
               fontSize: "0.8rem",
-              color: "#cbd5e1",
+              color: "#475569",
               display: "flex",
               alignItems: "center",
               gap: "0.5rem",
@@ -212,10 +212,10 @@ const HeroCard = ({
                 style={{
                   fontSize: "0.85rem",
                   padding: "0.4rem 1rem",
-                  background: "rgba(255,255,255,0.08)",
-                  border: "1px solid rgba(255,255,255,0.15)",
+                  background: "rgba(0,0,0,0.04)",
+                  border: "1px solid rgba(0,0,0,0.08)",
                   borderRadius: "10px",
-                  color: "#f8fafc",
+                  color: "#334155",
                   fontWeight: 700,
                 }}
               >
@@ -229,7 +229,7 @@ const HeroCard = ({
         <div
           style={{
             width: "1px",
-            background: "rgba(255,255,255,0.06)",
+            background: "rgba(0,0,0,0.06)",
             flexShrink: 0,
           }}
         />
@@ -265,7 +265,7 @@ const HeroCard = ({
                     style={{
                       fontSize: "0.8rem",
                       fontWeight: 700,
-                      color: "#e2e8f0",
+                      color: "#334155",
                       textTransform: "uppercase",
                       letterSpacing: "0.06em",
                     }}
@@ -295,7 +295,7 @@ const HeroCard = ({
                 <div
                   style={{
                     height: "6px",
-                    background: "rgba(255,255,255,0.06)",
+                    background: "rgba(0,0,0,0.06)",
                     borderRadius: "10px",
                     overflow: "hidden",
                   }}
@@ -329,7 +329,7 @@ const HeroCard = ({
           gridTemplateColumns: "repeat(4, 1fr)",
           gap: "1rem",
           paddingTop: "1.5rem",
-          borderTop: "1px solid rgba(255,255,255,0.05)",
+          borderTop: "1px solid rgba(0,0,0,0.06)",
         }}
       >
         {kpis.map((kpi, i) => (
@@ -340,8 +340,8 @@ const HeroCard = ({
             transition={{ delay: 0.5 + i * 0.08 }}
             className={`hero-kpi-card kpi-accent-card ${kpi.accentLine}`}
             style={{
-              background: "rgba(255,255,255,0.03)",
-              border: "1px solid rgba(255,255,255,0.05)",
+              background: "rgba(0,0,0,0.02)",
+              border: "1px solid rgba(0,0,0,0.06)",
               borderRadius: "12px",
               padding: "1rem 1.25rem",
               display: "flex",
@@ -353,12 +353,12 @@ const HeroCard = ({
               position: "relative",
             }}
             onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+              e.currentTarget.style.background = "rgba(0,0,0,0.04)";
               e.currentTarget.style.borderColor = `${kpi.accent}33`;
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.background = "rgba(255,255,255,0.03)";
-              e.currentTarget.style.borderColor = "rgba(255,255,255,0.05)";
+              e.currentTarget.style.background = "rgba(0,0,0,0.02)";
+              e.currentTarget.style.borderColor = "rgba(0,0,0,0.06)";
             }}
           >
             <div
@@ -386,7 +386,7 @@ const HeroCard = ({
               style={{
                 fontSize: "1.35rem",
                 fontWeight: 900,
-                color: "#f8fafc",
+                color: "#1e293b",
                 fontFamily: "Outfit, sans-serif",
                 whiteSpace: "nowrap",
                 overflow: "hidden",

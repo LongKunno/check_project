@@ -112,8 +112,8 @@ function FeatureTable({ features }) {
     <div
       className="glass-card col-span-4"
       style={{
-        background: "rgba(15,23,42,0.5)",
-        border: "1px solid rgba(255,255,255,0.05)",
+        background: "#ffffff",
+        border: "1px solid #e2e8f0",
         padding: 0,
         borderRadius: "16px",
         overflow: "hidden",
@@ -122,7 +122,7 @@ function FeatureTable({ features }) {
       <div
         style={{
           padding: "1.25rem 1.5rem 0.75rem",
-          borderBottom: "1px solid rgba(255,255,255,0.05)",
+          borderBottom: "1px solid rgba(0,0,0,0.05)",
         }}
       >
         <div
@@ -162,7 +162,7 @@ function FeatureTable({ features }) {
           }}
         >
           <thead>
-            <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <tr style={{ borderBottom: "1px solid rgba(0,0,0,0.06)" }}>
               <th
                 style={{
                   ...thBase,
@@ -191,12 +191,12 @@ function FeatureTable({ features }) {
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: idx * 0.02 }}
-                  style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+                  style={{ borderBottom: "1px solid rgba(0,0,0,0.04)" }}
                 >
                   <td style={{ padding: "0.6rem 1.5rem" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                       <FolderOpen size={13} style={{ color: "#60a5fa", flexShrink: 0 }} />
-                      <span style={{ fontWeight: 700, color: "#f1f5f9", fontSize: "0.8rem" }}>
+                      <span style={{ fontWeight: 700, color: "#334155", fontSize: "0.8rem" }}>
                         {name}
                       </span>
                     </div>

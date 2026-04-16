@@ -22,15 +22,15 @@ import TopProgressBar from "../ui/TopProgressBar";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const getRatingColor = (rating) => {
-  if (!rating) return "bg-slate-700/50 text-slate-400 border-slate-600";
+  if (!rating) return "bg-slate-100 text-slate-500 border-slate-600";
   const r = rating.toLowerCase();
   if (r.includes("excellent") || r.includes("xuất sắc"))
-    return "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
+    return "bg-emerald-500/10 text-emerald-600 border-emerald-500/30";
   if (r.includes("good") || r.includes("tốt"))
-    return "bg-blue-500/10 text-blue-400 border-blue-500/30";
+    return "bg-blue-500/10 text-blue-600 border-blue-500/30";
   if (r.includes("fair") || r.includes("khá"))
-    return "bg-amber-500/10 text-amber-400 border-amber-500/30";
-  return "bg-rose-500/10 text-rose-400 border-rose-500/30";
+    return "bg-amber-500/10 text-amber-600 border-amber-500/30";
+  return "bg-rose-500/10 text-rose-600 border-rose-500/30";
 };
 
 const getRelativeTime = (isoStr) => {
@@ -79,7 +79,7 @@ function ScoreMiniBar({ score, maxScore = 100 }) {
       >
         {score}
       </span>
-      <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
+      <div className="flex-1 h-1.5 rounded-full bg-slate-50 overflow-hidden">
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}
@@ -112,44 +112,44 @@ function HistoryStats({ historyList }) {
         {
           label: "Total scans",
           value: historyList.length,
-          icon: <FileSearch size={15} className="text-amber-400" />,
+          icon: <FileSearch size={15} className="text-amber-600" />,
           accent:
             "border-amber-500/25 shadow-[0_0_15px_-5px_rgba(245,158,11,0.15)]",
         },
         {
           label: "Avg score",
           value: `${avgScore}/100`,
-          icon: <TrendingUp size={15} className="text-cyan-400" />,
+          icon: <TrendingUp size={15} className="text-cyan-600" />,
           accent:
             "border-cyan-500/25 shadow-[0_0_15px_-5px_rgba(6,182,212,0.15)]",
         },
         {
           label: "Best score",
           value: `${bestScore}/100`,
-          icon: <Zap size={15} className="text-emerald-400" />,
+          icon: <Zap size={15} className="text-emerald-600" />,
           accent:
             "border-emerald-500/25 shadow-[0_0_15px_-5px_rgba(16,185,129,0.15)]",
         },
         {
           label: "Last audit",
           value: getRelativeTime(latestDate),
-          icon: <Calendar size={15} className="text-violet-400" />,
+          icon: <Calendar size={15} className="text-violet-600" />,
           accent:
             "border-violet-500/25 shadow-[0_0_15px_-5px_rgba(139,92,246,0.15)]",
         },
       ].map((s) => (
         <div
           key={s.label}
-          className={`flex items-center gap-3 px-5 py-4 rounded-2xl bg-white/[0.03] border backdrop-blur-sm transition-all hover:bg-white/[0.06] ${s.accent}`}
+          className={`flex items-center gap-3 px-5 py-4 rounded-2xl bg-slate-50 border transition-all hover:bg-slate-50 ${s.accent}`}
         >
-          <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center shrink-0">
             {s.icon}
           </div>
           <div>
             <div className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">
               {s.label}
             </div>
-            <div className="text-lg font-black text-white">{s.value}</div>
+            <div className="text-lg font-black text-slate-800">{s.value}</div>
           </div>
         </div>
       ))}
@@ -231,15 +231,15 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold">
-                <FileSearch size={14} /> Audit History
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 text-amber-700 text-xs font-semibold border border-amber-200 shadow-sm">
+                <FileSearch size={14} className="text-amber-600" /> Audit History
               </div>
               <span className="text-slate-600 text-xs font-medium hidden sm:block">
                 Look up and restore previous code analysis sessions
               </span>
             </div>
             <h2
-              className="text-3xl lg:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-200 to-amber-400"
+              className="text-3xl lg:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-700 via-orange-600 to-red-600"
               style={{ fontFamily: "Outfit, sans-serif" }}
             >
               AUDIT HISTORY
@@ -248,7 +248,7 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
 
           <div className="flex items-center gap-3 shrink-0">
             <div
-              className="px-3 py-2 bg-slate-800/80 border border-slate-700 rounded-xl font-mono text-sm text-slate-300 max-w-[220px] truncate"
+              className="px-3 py-2 bg-slate-200 border border-slate-700 rounded-xl font-mono text-sm text-slate-600 max-w-[220px] truncate"
               title={fetchTarget}
             >
               {fetchTarget || "No project selected"}
@@ -256,7 +256,7 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
             <button
               onClick={loadHistory}
               disabled={isLoading || !fetchTarget}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 text-sm font-semibold transition-all disabled:opacity-40"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 text-sm font-semibold transition-all disabled:opacity-40"
             >
               <RefreshCw
                 size={15}
@@ -270,7 +270,7 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
 
       {/* ── Content ── */}
       <TopProgressBar isFetching={isLoading && historyList.length > 0} />
-      
+
       {!fetchTarget ? (
         <EmptyState
           variant="noData"
@@ -299,12 +299,12 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-            className={`bg-[#0f1629]/50 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl transition-all duration-300 ${isLoading ? "opacity-60 pointer-events-none" : ""}`}
+            className={`bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-md transition-all duration-300 ${isLoading ? "opacity-60 pointer-events-none" : ""}`}
           >
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-white/[0.08] bg-white/[0.04]">
+                  <tr className="border-b border-slate-200 bg-slate-50">
                     {[
                       "Scanned At",
                       "Rating",
@@ -336,7 +336,7 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: idx * 0.04 }}
-                          className="border-b border-white/[0.06] hover:bg-white/[0.05] hover:border-l-2 hover:border-l-amber-500/50 transition-all duration-200 group"
+                          className="border-b border-slate-200 hover:bg-slate-50 hover:border-l-2 hover:border-l-amber-500/50 transition-all duration-200 group"
                         >
                           <td className="px-5 py-4">
                             <div className="flex items-center gap-2.5">
@@ -348,7 +348,7 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
                                 }}
                               />
                               <div>
-                                <div className="text-sm font-semibold text-slate-200">
+                                <div className="text-sm font-semibold text-slate-700">
                                   {getRelativeTime(h.timestamp)}
                                 </div>
                                 <div className="text-[10px] text-slate-500 font-mono mt-0.5">
@@ -374,18 +374,18 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
                               </span>
                               {h.scan_mode === "static_only" ? (
                                 <span
-                                  className="inline-flex items-center gap-1 text-[9px] uppercase tracking-wider font-bold text-slate-400 bg-slate-800/80 px-1.5 py-0.5 rounded border border-slate-700/50"
+                                  className="inline-flex items-center gap-1 text-[9px] uppercase tracking-wider font-bold text-slate-500 bg-slate-200 px-1.5 py-0.5 rounded border border-slate-700/50"
                                   title="Static Analysis Only"
                                 >
-                                  <Zap size={10} className="text-slate-400" />{" "}
+                                  <Zap size={10} className="text-slate-500" />{" "}
                                   STATIC
                                 </span>
                               ) : (
                                 <span
-                                  className="inline-flex items-center gap-1 text-[9px] uppercase tracking-wider font-bold text-indigo-300 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20"
+                                  className="inline-flex items-center gap-1 text-[9px] uppercase tracking-wider font-bold text-indigo-600 bg-indigo-500/10 px-1.5 py-0.5 rounded border border-indigo-500/20"
                                   title="AI Augmented Audit"
                                 >
-                                  <Bot size={10} className="text-indigo-400" />{" "}
+                                  <Bot size={10} className="text-indigo-600" />{" "}
                                   AI SCAN
                                 </span>
                               )}
@@ -394,7 +394,7 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
                           <td className="px-5 py-4">
                             <ScoreMiniBar score={h.score} />
                           </td>
-                          <td className="px-5 py-4 text-slate-400 text-sm font-semibold">
+                          <td className="px-5 py-4 text-slate-500 text-sm font-semibold">
                             {h.total_loc?.toLocaleString()} lines
                           </td>
                           <td className="px-5 py-4">
@@ -402,10 +402,10 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
                               className={cn(
                                 "font-bold px-2.5 py-1 rounded-full text-xs border",
                                 h.violations_count > 500
-                                  ? "text-rose-400 bg-rose-500/10 border-rose-500/20"
+                                  ? "text-rose-600 bg-rose-500/10 border-rose-500/20"
                                   : h.violations_count > 100
-                                    ? "text-amber-400 bg-amber-500/10 border-amber-500/20"
-                                    : "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+                                    ? "text-amber-600 bg-amber-500/10 border-amber-500/20"
+                                    : "text-emerald-600 bg-emerald-500/10 border-emerald-500/20",
                               )}
                             >
                               {h.violations_count} issues
@@ -418,8 +418,8 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
                               className={cn(
                                 "flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all",
                                 loadingId === h.id
-                                  ? "bg-slate-800 text-slate-500 cursor-not-allowed"
-                                  : "bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white border border-blue-500/20 hover:shadow-lg hover:shadow-blue-500/20 hover:-translate-y-0.5",
+                                  ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed"
+                                  : "bg-blue-500/10 text-blue-600 hover:bg-blue-500 hover:text-white border border-blue-500/20 hover:shadow-lg hover:shadow-blue-500/20 hover:-translate-y-0.5",
                               )}
                             >
                               {loadingId === h.id ? (

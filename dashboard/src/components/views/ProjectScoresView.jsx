@@ -29,26 +29,26 @@ import TopProgressBar from "../ui/TopProgressBar";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const getRatingColor = (rating) => {
-  if (!rating) return "bg-slate-700/50 text-slate-400 border-slate-600";
+  if (!rating) return "bg-slate-100 text-slate-500 border-slate-200";
   const r = rating.toLowerCase();
   if (r.includes("excellent") || r.includes("xuất sắc"))
-    return "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
+    return "bg-emerald-50 text-emerald-600 border-emerald-200";
   if (r.includes("good") || r.includes("tốt"))
-    return "bg-blue-500/10 text-blue-400 border-blue-500/30";
+    return "bg-blue-50 text-blue-600 border-blue-200";
   if (r.includes("fair") || r.includes("khá"))
-    return "bg-amber-500/10 text-amber-400 border-amber-500/30";
+    return "bg-amber-50 text-amber-600 border-amber-200";
   if (r.includes("average") || r.includes("trung"))
-    return "bg-orange-500/10 text-orange-400 border-orange-500/30";
-  return "bg-rose-500/10 text-rose-400 border-rose-500/30";
+    return "bg-orange-50 text-orange-600 border-orange-200";
+  return "bg-rose-50 text-rose-600 border-rose-200";
 };
 
 const getScoreColor = (score) => {
   if (score == null) return "text-slate-500";
-  if (score >= 90) return "text-emerald-400";
-  if (score >= 80) return "text-blue-400";
-  if (score >= 65) return "text-amber-400";
-  if (score >= 45) return "text-orange-400";
-  return "text-rose-400";
+  if (score >= 90) return "text-emerald-600";
+  if (score >= 80) return "text-blue-600";
+  if (score >= 65) return "text-amber-600";
+  if (score >= 45) return "text-orange-600";
+  return "text-rose-600";
 };
 
 const getScoreDotClass = (score) => {
@@ -157,7 +157,7 @@ function useScanAllQueue(projects, onFinishAll) {
         const res = await fetch("/api/audit/batch/active");
         const data = await res.json();
         if (data.has_active && data.job_id) startPolling(data.job_id);
-      } catch {}
+      } catch { }
     };
     checkActiveBatch();
     return () => {
@@ -186,7 +186,7 @@ function useScanAllQueue(projects, onFinishAll) {
   }, [projects, isScanning, startPolling]);
 
   const stopScan = useCallback(() => {
-    fetch("/api/audit/cancel", { method: "POST" }).catch(() => {});
+    fetch("/api/audit/cancel", { method: "POST" }).catch(() => { });
     if (pollTimerRef.current) clearInterval(pollTimerRef.current);
     setIsScanning(false);
     setActiveJobId(null);
@@ -274,7 +274,7 @@ function ScoreBar({ score }) {
           ? "shadow-amber-500/40"
           : "shadow-rose-500/40";
   return (
-    <div className="w-24 bg-slate-800/80 rounded-full h-2 overflow-hidden">
+    <div className="w-24 bg-slate-200 rounded-full h-2 overflow-hidden">
       <motion.div
         initial={{ width: 0 }}
         animate={{ width: `${pct}%` }}
@@ -288,10 +288,10 @@ function ScoreBar({ score }) {
 // ─── Pillar Mini Bars ─────────────────────────────────────────────────────────
 
 const PILLAR_CONFIG = [
-  { key: "Performance",    label: "P", gradient: "from-cyan-400 to-teal-400",    glow: "shadow-cyan-500/30",   textColor: "text-cyan-400",   bgColor: "bg-cyan-500/10" },
+  { key: "Performance", label: "P", gradient: "from-cyan-400 to-teal-400", glow: "shadow-cyan-500/30", textColor: "text-cyan-400", bgColor: "bg-cyan-500/10" },
   { key: "Maintainability", label: "M", gradient: "from-violet-400 to-purple-400", glow: "shadow-violet-500/30", textColor: "text-violet-400", bgColor: "bg-violet-500/10" },
-  { key: "Reliability",    label: "R", gradient: "from-blue-400 to-indigo-400",  glow: "shadow-blue-500/30",   textColor: "text-blue-400",   bgColor: "bg-blue-500/10" },
-  { key: "Security",       label: "S", gradient: "from-rose-400 to-pink-400",    glow: "shadow-rose-500/30",   textColor: "text-rose-400",   bgColor: "bg-rose-500/10" },
+  { key: "Reliability", label: "R", gradient: "from-blue-400 to-indigo-400", glow: "shadow-blue-500/30", textColor: "text-blue-400", bgColor: "bg-blue-500/10" },
+  { key: "Security", label: "S", gradient: "from-rose-400 to-pink-400", glow: "shadow-rose-500/30", textColor: "text-rose-400", bgColor: "bg-rose-500/10" },
 ];
 
 function PillarBars({ pillarScores }) {
@@ -315,7 +315,7 @@ function PillarBars({ pillarScores }) {
             <span className={`text-[11px] font-bold w-7 text-right ${p.textColor}`}>
               {parseFloat(score).toFixed(1)}
             </span>
-            <div className="flex-1 bg-slate-800/80 rounded-full h-1.5 overflow-hidden min-w-[50px]">
+            <div className="flex-1 bg-slate-200 rounded-full h-1.5 overflow-hidden min-w-[50px]">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${pct}%` }}
@@ -343,15 +343,15 @@ function SortTh({ label, field, sortBy, sortDir, onClick, align = "left" }) {
         className={`flex items-center gap-1 ${align === "right" ? "justify-end" : align === "center" ? "justify-center" : ""}`}
       >
         <span
-          className={`text-[10px] uppercase tracking-widest font-bold transition-colors ${active ? "text-pink-400" : "text-slate-500 group-hover:text-slate-300"}`}
+          className={`text-[10px] uppercase tracking-widest font-bold transition-colors ${active ? "text-pink-600" : "text-slate-500 group-hover:text-slate-600"}`}
         >
           {label}
         </span>
         {active ? (
           sortDir === "desc" ? (
-            <ChevronDown size={12} className="text-pink-400" />
+            <ChevronDown size={12} className="text-pink-600" />
           ) : (
-            <ChevronUp size={12} className="text-pink-400" />
+            <ChevronUp size={12} className="text-pink-600" />
           )
         ) : (
           <ChevronDown
@@ -376,11 +376,10 @@ function ProjectRow({ project, rank, scanState, onSelect }) {
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: rank * 0.04 }}
-      className={`group border-b border-white/[0.06] cursor-pointer transition-all duration-200 ${
-        isRunning
-          ? "bg-indigo-500/5"
-          : "hover:bg-white/[0.05] hover:border-l-2 hover:border-l-pink-500/50"
-      }`}
+      className={`group border-b border-slate-200 cursor-pointer transition-all duration-200 ${isRunning
+        ? "bg-indigo-500/5"
+        : "hover:bg-slate-50 hover:border-l-2 hover:border-l-pink-500/50"
+        }`}
       onClick={() => onSelect?.(project.id)}
     >
       {/* Rank */}
@@ -394,20 +393,19 @@ function ProjectRow({ project, rank, scanState, onSelect }) {
       <td className="px-4 py-4">
         <div className="flex items-center gap-3">
           <div
-            className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 ${
-              isRunning
-                ? "bg-indigo-500/20 border-indigo-500/40 animate-pulse"
-                : "bg-gradient-to-br from-pink-500/20 to-indigo-500/20 border-white/10"
-            }`}
+            className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 ${isRunning
+              ? "bg-indigo-500/20 border-indigo-500/40 animate-pulse"
+              : "bg-gradient-to-br from-pink-500/20 to-indigo-500/20 border-slate-200"
+              }`}
           >
             <FolderOpen
               size={14}
-              className={isRunning ? "text-indigo-400" : "text-pink-400"}
+              className={isRunning ? "text-indigo-400" : "text-pink-600"}
             />
           </div>
           <div className="min-w-0">
             <div
-              className="font-bold text-white text-sm truncate max-w-[180px]"
+              className="font-bold text-slate-800 text-sm truncate max-w-[180px]"
               title={project.name}
             >
               {project.name}
@@ -475,7 +473,7 @@ function ProjectRow({ project, rank, scanState, onSelect }) {
               }
             />
             <span
-              className={`text-sm font-bold ${project.violations_count > 100 ? "text-rose-400" : project.violations_count > 20 ? "text-amber-400" : "text-slate-300"}`}
+              className={`text-sm font-bold ${project.violations_count > 100 ? "text-rose-400" : project.violations_count > 20 ? "text-amber-400" : "text-slate-600"}`}
             >
               {project.violations_count ?? "—"}
             </span>
@@ -489,7 +487,7 @@ function ProjectRow({ project, rank, scanState, onSelect }) {
       <td className="px-4 py-4 text-right">
         <div className="flex items-center justify-end gap-1.5">
           <Clock size={12} className="text-slate-600" />
-          <span className="text-xs text-slate-400 font-medium">
+          <span className="text-xs text-slate-500 font-medium">
             {formatDate(project.latest_timestamp)}
           </span>
         </div>
@@ -572,8 +570,8 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
   const scanned = projects.filter((p) => p.latest_score !== null);
   const avgScore = scanned.length
     ? (
-        scanned.reduce((s, p) => s + p.latest_score, 0) / scanned.length
-      ).toFixed(1)
+      scanned.reduce((s, p) => s + p.latest_score, 0) / scanned.length
+    ).toFixed(1)
     : null;
   const totalViolations = scanned.reduce(
     (s, p) => s + (p.violations_count || 0),
@@ -599,15 +597,15 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-400 text-xs font-semibold">
-                <BarChart3 size={14} /> Project Leaderboard
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-50 text-violet-700 text-xs font-semibold border border-violet-200 shadow-sm">
+                <BarChart3 size={14} className="text-violet-600" /> Project Leaderboard
               </div>
               <span className="text-slate-600 text-xs font-medium hidden sm:block">
                 Code quality ranking for all repositories
               </span>
             </div>
             <h2
-              className="text-3xl lg:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-violet-400 to-fuchsia-400"
+              className="text-3xl lg:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-violet-800 via-fuchsia-700 to-pink-600"
               style={{ fontFamily: "Outfit, sans-serif" }}
             >
               PROJECT LEADERBOARD
@@ -618,7 +616,7 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
             <button
               onClick={fetchScores}
               disabled={isLoading || isScanning}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 text-sm font-semibold transition-all disabled:opacity-40"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 text-sm font-semibold transition-all disabled:opacity-40"
             >
               <RefreshCw
                 size={15}
@@ -637,7 +635,7 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
               <button
                 onClick={startScanAll}
                 disabled={isLoading || projects.length === 0}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-pink-500/10 border border-pink-500/30 text-pink-400 text-sm font-bold hover:bg-pink-500/20 transition-all disabled:opacity-40 group"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-pink-500/10 border border-pink-500/30 text-pink-600 text-sm font-bold hover:bg-pink-500/20 transition-all disabled:opacity-40 group"
               >
                 <Zap
                   size={15}
@@ -661,7 +659,7 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
               {
                 label: "Total projects",
                 value: projects.length,
-                icon: <FolderOpen size={16} className="text-pink-400" />,
+                icon: <FolderOpen size={16} className="text-pink-600" />,
                 accent:
                   "border-pink-500/25 shadow-[0_0_15px_-5px_rgba(236,72,153,0.15)]",
                 accentLine: "kpi-accent-pink",
@@ -693,16 +691,16 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
             ].map((s) => (
               <div
                 key={s.label}
-                className={`kpi-accent-card flex items-center gap-3 px-5 py-5 rounded-2xl bg-white/[0.03] border backdrop-blur-sm transition-all hover:bg-white/[0.06] ${s.accent} ${s.accentLine}`}
+                className={`kpi-accent-card flex items-center gap-3 px-5 py-5 rounded-2xl bg-white border shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all ${s.accent} ${s.accentLine}`}
               >
-                <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-slate-50 flex items-center justify-center shrink-0">
                   {s.icon}
                 </div>
                 <div>
                   <div className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">
                     {s.label}
                   </div>
-                  <div className="text-lg font-black text-white truncate max-w-[140px]">
+                  <div className="text-lg font-black text-slate-800 truncate max-w-[140px]">
                     {s.value}
                   </div>
                 </div>
@@ -739,7 +737,7 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
 
       {/* ── States ── */}
       <TopProgressBar isFetching={isLoading && projects.length > 0} />
-      
+
       {isLoading && projects.length === 0 ? (
         <div className="w-full h-[50vh] flex flex-col items-center justify-center opacity-70">
           <TopProgressBar isFetching={true} />
@@ -753,7 +751,7 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
           action={
             <button
               onClick={fetchScores}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-pink-500/10 border border-pink-500/30 text-pink-400 text-sm font-bold hover:bg-pink-500/20 transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-pink-500/10 border border-pink-500/30 text-pink-600 text-sm font-bold hover:bg-pink-500/20 transition-all"
             >
               <RefreshCw size={14} /> Retry
             </button>
@@ -771,7 +769,7 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className={`bg-[#0f1629]/50 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl transition-all duration-300 ${isLoading ? "opacity-60 pointer-events-none" : ""}`}
+          className={`bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-md transition-all duration-300 ${isLoading ? "opacity-60 pointer-events-none" : ""}`}
         >
           <div className="overflow-x-auto">
             <table
@@ -779,7 +777,7 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
               style={{ "--table-accent": "rgba(236, 72, 153, 0.5)" }}
             >
               <thead>
-                <tr className="border-b border-white/[0.08] bg-white/[0.04]">
+                <tr className="border-b border-slate-200 bg-slate-50">
                   <th className="px-4 py-3 text-center">
                     <span className="text-[10px] uppercase tracking-widest font-bold text-slate-500">
                       #
