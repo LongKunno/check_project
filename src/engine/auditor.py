@@ -186,7 +186,6 @@ class CodeAuditor:
         async def process_chunk(idx, chunk):
             if AuditState.is_cancelled:
                 return idx, chunk, {}
-            await asyncio.sleep(idx * 0.1)
             async with sem_val:
                 return idx, chunk, await ai_service.verify_violations_batch(chunk)
 
@@ -244,7 +243,6 @@ class CodeAuditor:
         async def process_deep(idx, chunk_data):
             if AuditState.is_cancelled:
                 return []
-            await asyncio.sleep(idx * 0.2)
             async with sem_deep:
                 for f in chunk_data:
                     rel = (

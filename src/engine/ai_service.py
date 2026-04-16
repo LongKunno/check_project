@@ -73,7 +73,7 @@ class AiService:
         self.model = os.getenv("AI_MODEL", "gemini-3-flash")
 
         self.client = AsyncOpenAI(
-            base_url=self.base_url, api_key=self.api_key, timeout=60.0
+            base_url=self.base_url, api_key=self.api_key, timeout=180.0
         )
 
     async def _call_llm_json(
