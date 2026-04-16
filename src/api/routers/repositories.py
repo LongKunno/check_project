@@ -186,10 +186,18 @@ async def health_ai():
     try:
         response = await ai_service.client.chat.completions.create(
             model=ai_service.model,
-            messages=[{"role": "user", "content": "Say 'OK'"}],
-            max_tokens=5,
+            messages=[
+                {"role": "system", "content": "You are a health checker. Keep your response very short."},
+                {"role": "user", "content": "Hello, are you working?"}
+            ],
+            max_tokens=10,
+            temperature=0.0
         )
-        if response.choices[0].message.content:
+        content = response.choices[0].message.content
+        if content:
+            # Proxies đôi khi trả về 200 OK nhưng nội dung là chuỗi báo lỗi (vd: Token error, accounts failed...)
+            if "Token error" in content or "failed" in content.lower():
+                return {"status": "unhealthy", "reason": content}
             return {"status": "healthy", "model": ai_service.model}
         return {"status": "unhealthy", "reason": "Empty response"}
     except Exception as e:
