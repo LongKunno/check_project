@@ -181,11 +181,12 @@ class CodeAuditor:
             f"   {len(automated_violations)} vi phạm → {len(chunks)} batch (mỗi batch {batch_size})"
         )
 
-        sem_val = asyncio.Semaphore(25)
+        sem_val = asyncio.Semaphore(10)
 
         async def process_chunk(idx, chunk):
             if AuditState.is_cancelled:
                 return idx, chunk, {}
+            logger.info(f"[PROGRESS] Đang xác thực (Validation) batch {idx + 1}/{len(chunks)}...")
             async with sem_val:
                 return idx, chunk, await ai_service.verify_violations_batch(chunk)
 
@@ -238,11 +239,12 @@ class CodeAuditor:
             f"   {sum(len(c) for c in deep_chunks)} files → {len(deep_chunks)} batches"
         )
 
-        sem_deep = asyncio.Semaphore(25)
+        sem_deep = asyncio.Semaphore(10)
 
         async def process_deep(idx, chunk_data):
             if AuditState.is_cancelled:
                 return []
+            logger.info(f"[PROGRESS] Đang phân tích sâu (Deep Audit) batch {idx + 1}/{len(deep_chunks)}...")
             async with sem_deep:
                 for f in chunk_data:
                     rel = (
