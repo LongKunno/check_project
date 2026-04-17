@@ -42,12 +42,23 @@ const AuditSidebar = ({ data, topFiles }) => (
           {topFiles.map(([filename, count], idx) => (
             <div
               key={idx}
-              className="bg-slate-50 hover:bg-slate-100 transition-colors px-3 py-2.5 rounded-xl flex justify-between items-center border border-slate-100"
+              className="bg-slate-50 hover:bg-slate-100 transition-colors px-3 py-2.5 rounded-xl grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border border-slate-100"
             >
-              <span className="text-sm text-slate-700 font-medium truncate pr-3" title={filename}>
-                {filename}
-              </span>
-              <span className="bg-red-50 text-red-600 border border-red-100 px-2.5 py-1 rounded-lg text-xs font-bold whitespace-nowrap">
+              <div className="relative min-w-0 max-w-full group">
+                <span
+                  className="block min-w-0 max-w-full truncate text-sm text-slate-700 font-medium cursor-help outline-none"
+                  tabIndex={0}
+                >
+                  {filename}
+                </span>
+                <span
+                  className="pointer-events-none absolute bottom-full left-0 z-30 mb-2 w-max max-w-[min(32rem,calc(100vw-4rem))] rounded-lg bg-slate-900 px-3 py-2 text-xs font-medium leading-relaxed text-white opacity-0 shadow-lg transition-opacity duration-150 break-all invisible group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
+                  role="tooltip"
+                >
+                  {filename}
+                </span>
+              </div>
+              <span className="shrink-0 bg-red-50 text-red-600 border border-red-100 px-2.5 py-1 rounded-lg text-xs font-bold whitespace-nowrap">
                 {count} issues
               </span>
             </div>

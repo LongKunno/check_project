@@ -1,7 +1,9 @@
 import React from "react";
 import {
+  Check,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   ChevronsLeft,
   ChevronsRight,
 } from "lucide-react";
@@ -29,10 +31,36 @@ const Pagination = ({
   pageSizeOptions = [5, 10, 20, 50],
   label = "items",
 }) => {
+  const [isPageSizeOpen, setIsPageSizeOpen] = React.useState(false);
+  const pageSizeRef = React.useRef(null);
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
   const startItem = (safeCurrentPage - 1) * pageSize + 1;
   const endItem = Math.min(safeCurrentPage * pageSize, totalItems);
+
+  React.useEffect(() => {
+    if (!isPageSizeOpen) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (!pageSizeRef.current?.contains(event.target)) {
+        setIsPageSizeOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setIsPageSizeOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isPageSizeOpen]);
 
   // Generate page numbers to show (max 5 pages with ellipsis)
   const getPages = () => {
@@ -74,21 +102,49 @@ const Pagination = ({
         </span>
 
         {showPageSizeSelector && onPageSizeChange && (
-          <select
-            value={pageSize}
-            onChange={(e) => {
-              onPageSizeChange(Number(e.target.value));
-              onPageChange(1);
-            }}
-            className="text-[11px] bg-white border border-slate-200 rounded-lg px-2 py-1.5 text-slate-600 font-medium outline-none focus:border-blue-400 cursor-pointer appearance-none"
-            style={{ backgroundImage: "none" }}
+          <div
+            ref={pageSizeRef}
+            className={`pagination-size-shell ${isPageSizeOpen ? "pagination-size-shell-open" : ""}`}
           >
-            {pageSizeOptions.map((s) => (
-              <option key={s} value={s} className="bg-white text-slate-700">
-                {s} / page
-              </option>
-            ))}
-          </select>
+            <button
+              type="button"
+              className="pagination-size-trigger"
+              onClick={() => setIsPageSizeOpen((prev) => !prev)}
+              aria-haspopup="listbox"
+              aria-expanded={isPageSizeOpen}
+            >
+              <span className="pagination-size-value">{pageSize} / page</span>
+              <span className="pagination-size-caret" aria-hidden="true">
+                <ChevronDown size={12} />
+              </span>
+            </button>
+
+            {isPageSizeOpen && (
+              <div className="pagination-size-panel" role="listbox" aria-label="Page size">
+                {pageSizeOptions.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    role="option"
+                    aria-selected={pageSize === s}
+                    className={`pagination-size-item ${pageSize === s ? "pagination-size-item-active" : ""}`}
+                    onClick={() => {
+                      onPageSizeChange(s);
+                      onPageChange(1);
+                      setIsPageSizeOpen(false);
+                    }}
+                  >
+                    <span>{s} / page</span>
+                    {pageSize === s && (
+                      <span className="pagination-size-check" aria-hidden="true">
+                        <Check size={12} />
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
 

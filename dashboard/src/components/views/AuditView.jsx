@@ -6,7 +6,11 @@ import React from "react";
 import {
   Activity,
   AlertTriangle,
+  Check,
+  ChevronDown,
   FolderOpen,
+  Search,
+  UserRound,
   Users,
 } from "lucide-react";
 import { motion } from "framer-motion";
@@ -26,7 +30,7 @@ import {
   getTopProblematicFiles,
   getRuleBreakdownData,
 } from "../../utils/chartHelpers";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 // ─── Feature Table (Inline — depends on local helpers) ──────────────────────
 
@@ -43,6 +47,16 @@ const getScoreDotClass = (score100) => {
   if (score100 >= 65) return "score-dot score-dot-amber";
   if (score100 >= 45) return "score-dot score-dot-orange";
   return "score-dot score-dot-rose";
+};
+
+const getMemberInitials = (member) => {
+  if (!member) return "??";
+  const localPart = member.split("@")[0] || member;
+  const parts = localPart.split(/[._-]+/).filter(Boolean);
+  const initials = (parts.length > 1 ? parts.slice(0, 2) : [localPart.slice(0, 2)])
+    .map((part) => part[0]?.toUpperCase() || "")
+    .join("");
+  return initials || member.slice(0, 2).toUpperCase();
 };
 
 const thBase = {
@@ -253,11 +267,26 @@ const AuditView = ({
   fixingId, suggestions, fetchFixSuggestion,
   activeTab, getSeverityClass, cn,
 }) => {
+  const [isMemberDropdownOpen, setIsMemberDropdownOpen] = useState(false);
+  const [memberSearch, setMemberSearch] = useState("");
+  const memberDropdownRef = useRef(null);
+  const memberSearchInputRef = useRef(null);
+
   const chartCurrentViolations = useMemo(() => {
     if (!data) return [];
     if (reportView === "project") return data.violations || [];
     return data.scores?.members?.[selectedMember]?.violations || [];
   }, [data, reportView, selectedMember]);
+
+  const memberOptions = useMemo(
+    () => Object.keys(data?.scores?.members || {}),
+    [data],
+  );
+  const filteredMemberOptions = useMemo(() => {
+    const keyword = memberSearch.trim().toLowerCase();
+    if (!keyword) return memberOptions;
+    return memberOptions.filter((member) => member.toLowerCase().includes(keyword));
+  }, [memberOptions, memberSearch]);
 
   const memoizedViolationDistData = useMemo(
     () => getViolationDistributionData(chartCurrentViolations),
@@ -292,6 +321,47 @@ const AuditView = ({
     }
     return [];
   }, [data, reportView, selectedMember]);
+
+  useEffect(() => {
+    if (!isMemberDropdownOpen) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (!memberDropdownRef.current?.contains(event.target)) {
+        setIsMemberDropdownOpen(false);
+        setMemberSearch("");
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setIsMemberDropdownOpen(false);
+        setMemberSearch("");
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isMemberDropdownOpen]);
+
+  useEffect(() => {
+    if (!isMemberDropdownOpen) return undefined;
+    const rafId = window.requestAnimationFrame(() => {
+      memberSearchInputRef.current?.focus();
+    });
+    return () => window.cancelAnimationFrame(rafId);
+  }, [isMemberDropdownOpen]);
+
+  useEffect(() => {
+    if (reportView !== "member") {
+      setIsMemberDropdownOpen(false);
+      setMemberSearch("");
+    }
+  }, [reportView]);
 
   return (
     <>
@@ -342,27 +412,82 @@ const AuditView = ({
 
           {/* Member Selector */}
           {reportView === "member" && data.scores.members && Object.keys(data.scores.members).length > 0 && (
-            <div style={{ display: "flex", gap: "1rem", marginBottom: "1.5rem", alignItems: "center" }}>
-              <span style={{ color: "var(--text-muted)", fontWeight: 600 }}>Author:</span>
-              <select
-                value={selectedMember}
-                onChange={(e) => setSelectedMember(e.target.value)}
-                style={{
-                  background: "#1e293b",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  color: "white",
-                  padding: "0.5rem 1rem",
-                  borderRadius: "6px",
-                  outline: "none",
-                  fontSize: "1rem",
-                  cursor: "pointer",
-                  minWidth: "200px",
-                }}
+            <div className="member-select-row">
+              <div
+                ref={memberDropdownRef}
+                className={`member-select-shell ${isMemberDropdownOpen ? "member-select-shell-open" : ""}`}
               >
-                {Object.keys(data.scores.members).map((m) => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
+                <button
+                  type="button"
+                  className="member-select-trigger"
+                  onClick={() => setIsMemberDropdownOpen((prev) => !prev)}
+                  aria-haspopup="listbox"
+                  aria-expanded={isMemberDropdownOpen}
+                >
+                  <span className="member-select-icon" aria-hidden="true">
+                    <UserRound size={16} />
+                  </span>
+                  <span className="member-select-meta">Team member</span>
+                  <span className="member-select-value">{selectedMember}</span>
+                  <span className="member-select-caret" aria-hidden="true">
+                    <ChevronDown size={14} />
+                  </span>
+                </button>
+
+                {isMemberDropdownOpen && (
+                  <div className="member-select-panel">
+                    <div className="member-select-search">
+                      <Search size={15} className="member-select-search-icon" />
+                      <input
+                        ref={memberSearchInputRef}
+                        type="text"
+                        value={memberSearch}
+                        onChange={(e) => setMemberSearch(e.target.value)}
+                        placeholder="Search team member..."
+                        className="member-select-search-input"
+                      />
+                    </div>
+
+                    <div className="member-select-list" role="listbox" aria-label="Team members">
+                      {filteredMemberOptions.length > 0 ? (
+                        filteredMemberOptions.map((member) => (
+                          <button
+                            key={member}
+                            type="button"
+                            role="option"
+                            aria-selected={selectedMember === member}
+                            className={`member-select-item ${selectedMember === member ? "member-select-item-active" : ""}`}
+                            onClick={() => {
+                              setSelectedMember(member);
+                              setIsMemberDropdownOpen(false);
+                              setMemberSearch("");
+                            }}
+                          >
+                            <span className="member-select-avatar" aria-hidden="true">
+                              {getMemberInitials(member)}
+                            </span>
+                            <span className="member-select-item-content">
+                              <span className="member-select-item-name">{member}</span>
+                              <span className="member-select-item-meta">
+                                {selectedMember === member ? "Currently selected" : "Switch author insights"}
+                              </span>
+                            </span>
+                            {selectedMember === member && (
+                              <span className="member-select-check" aria-hidden="true">
+                                <Check size={15} />
+                              </span>
+                            )}
+                          </button>
+                        ))
+                      ) : (
+                        <div className="member-select-empty">
+                          No matching member found for "{memberSearch}".
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

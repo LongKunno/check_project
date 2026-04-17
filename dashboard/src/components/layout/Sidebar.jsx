@@ -1,8 +1,10 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
+  Check,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   Shield,
   FolderOpen,
   Activity,
@@ -13,6 +15,7 @@ import {
   BarChart3,
   Users,
   Menu,
+  Search,
   X,
   MonitorPlay,
   Globe,
@@ -33,7 +36,54 @@ export const Sidebar = ({
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const [isRepoDropdownOpen, setIsRepoDropdownOpen] = React.useState(false);
+  const [repoSearch, setRepoSearch] = React.useState("");
+  const repoDropdownRef = React.useRef(null);
+  const repoSearchRef = React.useRef(null);
   const { user, logout, isAnonymous } = useAuth();
+
+  const selectedRepo = configuredRepos.find((repo) => repo.id === selectedRepoId);
+  const filteredRepos = React.useMemo(() => {
+    const keyword = repoSearch.trim().toLowerCase();
+    if (!keyword) return configuredRepos;
+    return configuredRepos.filter((repo) =>
+      `${repo.name} ${repo.url}`.toLowerCase().includes(keyword),
+    );
+  }, [configuredRepos, repoSearch]);
+
+  React.useEffect(() => {
+    if (!isRepoDropdownOpen) return undefined;
+
+    const handlePointerDown = (event) => {
+      if (!repoDropdownRef.current?.contains(event.target)) {
+        setIsRepoDropdownOpen(false);
+        setRepoSearch("");
+      }
+    };
+
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") {
+        setIsRepoDropdownOpen(false);
+        setRepoSearch("");
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isRepoDropdownOpen]);
+
+  React.useEffect(() => {
+    if (!isRepoDropdownOpen) return undefined;
+    const rafId = window.requestAnimationFrame(() => {
+      repoSearchRef.current?.focus();
+    });
+    return () => window.cancelAnimationFrame(rafId);
+  }, [isRepoDropdownOpen]);
 
   const isPathActive = (path) =>
     location.pathname.startsWith(path) ||
@@ -183,36 +233,88 @@ export const Sidebar = ({
       </div>
       {/* ── TOP: REPO SELECTOR ── */}
       <div className="px-3 mb-4 shrink-0 mt-1">
-        <div
-          className={cn(
-            "text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2 transition-all",
-            isSidebarCollapsed ? "text-center opacity-70" : "px-3 opacity-60",
-          )}
-        >
-          {isSidebarCollapsed ? "Repo" : "Current repository"}
-        </div>
         {!isSidebarCollapsed ? (
-          <select
-            value={selectedRepoId}
-            onChange={(e) => setSelectedRepoId(e.target.value)}
-            className="w-full bg-slate-700/50 border border-slate-600 text-slate-200 rounded-xl px-3 py-2 outline-none focus:border-violet-400 text-sm font-semibold cursor-pointer appearance-none"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E")`,
-              backgroundRepeat: "no-repeat",
-              backgroundPosition: "right 0.75rem center",
-              backgroundSize: "1rem",
-            }}
+          <div
+            ref={repoDropdownRef}
+            className={cn(
+              "sidebar-select-shell",
+              isRepoDropdownOpen && "sidebar-select-shell-open",
+            )}
           >
-            {configuredRepos.map((repo) => (
-              <option
-                key={repo.id}
-                value={repo.id}
-                className="bg-slate-700 text-slate-200"
-              >
-                {repo.name}
-              </option>
-            ))}
-          </select>
+            <button
+              type="button"
+              className="sidebar-select-trigger"
+              onClick={() => setIsRepoDropdownOpen((prev) => !prev)}
+              aria-haspopup="listbox"
+              aria-expanded={isRepoDropdownOpen}
+            >
+              <span className="sidebar-select-icon" aria-hidden="true">
+                <FolderOpen size={15} />
+              </span>
+              <span className="sidebar-select-meta">Repository</span>
+              <span className="sidebar-select-value">
+                {selectedRepo?.name || "Select repository"}
+              </span>
+              <span className="sidebar-select-caret" aria-hidden="true">
+                <ChevronDown size={14} />
+              </span>
+            </button>
+
+            {isRepoDropdownOpen && (
+              <div className="sidebar-select-panel">
+                <div className="sidebar-select-search">
+                  <Search size={14} className="sidebar-select-search-icon" />
+                  <input
+                    ref={repoSearchRef}
+                    type="text"
+                    value={repoSearch}
+                    onChange={(e) => setRepoSearch(e.target.value)}
+                    placeholder="Search repositories..."
+                    className="sidebar-select-search-input"
+                  />
+                </div>
+
+                <div className="sidebar-select-list" role="listbox" aria-label="Repositories">
+                  {filteredRepos.length > 0 ? (
+                    filteredRepos.map((repo) => (
+                      <button
+                        key={repo.id}
+                        type="button"
+                        role="option"
+                        aria-selected={selectedRepoId === repo.id}
+                        className={cn(
+                          "sidebar-select-item",
+                          selectedRepoId === repo.id && "sidebar-select-item-active",
+                        )}
+                        onClick={() => {
+                          setSelectedRepoId(repo.id);
+                          setIsRepoDropdownOpen(false);
+                          setRepoSearch("");
+                        }}
+                      >
+                        <span className="sidebar-select-item-icon" aria-hidden="true">
+                          {repo.name.slice(0, 1).toUpperCase()}
+                        </span>
+                        <span className="sidebar-select-item-content">
+                          <span className="sidebar-select-item-name">{repo.name}</span>
+                          <span className="sidebar-select-item-meta">{repo.url}</span>
+                        </span>
+                        {selectedRepoId === repo.id && (
+                          <span className="sidebar-select-check" aria-hidden="true">
+                            <Check size={14} />
+                          </span>
+                        )}
+                      </button>
+                    ))
+                  ) : (
+                    <div className="sidebar-select-empty">
+                      No repository matches "{repoSearch}".
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         ) : (
           <div
             className="flex justify-center items-center w-10 aspect-square bg-slate-700 rounded-xl border border-slate-600 mx-auto cursor-pointer hover:bg-slate-600 transition-colors"
