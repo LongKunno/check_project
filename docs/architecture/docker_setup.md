@@ -98,6 +98,13 @@ Các biến khởi tạo cần thiết cho ứng dụng AI (có thể copy từ 
 - `AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL`: Thông tin cấu hình LLM Service/Proxy.
 - `TEST_MODE_LIMIT_FILES`: Cấu hình số file tối đa phân tích để tiết kiệm Token trên môi trường test.
 
+Ví dụ cấu hình khi backend chạy trong Docker và LLM router chạy trên máy host:
+```env
+AI_BASE_URL=http://host.docker.internal:20128/v1
+AI_MODEL=cx/gpt-5.4
+AI_API_KEY=your_router_api_key
+```
+
 Các biến dành cho Container (thường nằm ở môi trường của `docker-compose.yml`):
 - `PYTHONUNBUFFERED=1`: Đảm bảo log Python được xuất ngay lập tức.
 - `MAX_MULTIPART_FILES`: Giới hạn số lượng file upload.

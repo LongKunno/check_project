@@ -12,7 +12,7 @@ Xác định xem Backend có thể giao tiếp với AI Provider (OpenAI/Gemini/
 ```json
 {
   "status": "healthy",
-  "model": "gemini-3-flash"
+  "model": "cx/gpt-5.4"
 }
 ```
 

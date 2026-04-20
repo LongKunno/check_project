@@ -18,6 +18,7 @@ class AuthorshipTracker:
         self.target_dir = os.path.abspath(target_dir)
         self.is_git_repo = os.path.exists(os.path.join(self.target_dir, ".git"))
         self.file_authors_cache = {}
+        self.file_member_loc_cache = {}
         self.member_loc = {}  # { email: int } — LOC trong 3 tháng
         self.member_names = {}  # { email: name } — Mapping email → display name
 
@@ -31,7 +32,10 @@ class AuthorshipTracker:
             return self.file_authors_cache[file_path]
 
         line_authors = {}
+        file_member_loc = {}
         if not self.is_git_repo:
+            self.file_authors_cache[file_path] = line_authors
+            self.file_member_loc_cache[file_path] = file_member_loc
             return line_authors
 
         try:
@@ -45,6 +49,8 @@ class AuthorshipTracker:
             )
 
             if result.returncode != 0:
+                self.file_authors_cache[file_path] = line_authors
+                self.file_member_loc_cache[file_path] = file_member_loc
                 return line_authors
 
             lines = result.stdout.splitlines()
@@ -93,6 +99,9 @@ class AuthorshipTracker:
                         if current_email not in self.member_loc:
                             self.member_loc[current_email] = 0
                         self.member_loc[current_email] += 1
+                        if current_email not in file_member_loc:
+                            file_member_loc[current_email] = 0
+                        file_member_loc[current_email] += 1
                         # Lưu mapping email → tên hiển thị (lấy tên gần nhất)
                         self.member_names[current_email] = current_author
 
@@ -106,6 +115,7 @@ class AuthorshipTracker:
             )
 
         self.file_authors_cache[file_path] = line_authors
+        self.file_member_loc_cache[file_path] = file_member_loc
         return line_authors
 
     def get_author_info(self, file_path, line_no):
@@ -126,6 +136,16 @@ class AuthorshipTracker:
     def get_all_member_loc(self):
         """Trả về tổng số dòng code (trong 3 tháng) của từng member, keyed by email."""
         return self.member_loc
+
+    def get_file_member_loc(self, file_path):
+        """Trả về LOC theo member cho một file cụ thể, chỉ tính non-boundary lines."""
+        rel_path = os.path.relpath(file_path, self.target_dir)
+        if not file_path.startswith("/"):
+            rel_path = file_path
+
+        if rel_path not in self.file_member_loc_cache:
+            self.parse_blame(rel_path)
+        return self.file_member_loc_cache.get(rel_path, {})
 
     def get_all_member_names(self):
         """Trả về mapping email → display name."""

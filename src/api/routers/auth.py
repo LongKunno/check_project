@@ -10,7 +10,7 @@ from datetime import datetime, timedelta, timezone
 import jwt
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
-from fastapi import APIRouter, HTTPException, Header
+from fastapi import APIRouter, HTTPException, Header, Request
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
@@ -61,6 +61,26 @@ def create_jwt_token(email: str, name: str, picture: str) -> str:
 def verify_jwt_token(token: str) -> dict:
     """Verify JWT token, trả về payload hoặc raise Exception."""
     return jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+
+
+def decode_authorization_header(authorization: str) -> dict:
+    """Parse Authorization header và trả về JWT payload hợp lệ."""
+    if not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=401, detail="Missing or invalid Authorization header."
+        )
+
+    token = authorization[7:]  # Remove "Bearer " prefix
+
+    try:
+        return verify_jwt_token(token)
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(
+            status_code=401, detail="Token đã hết hạn. Vui lòng đăng nhập lại."
+        )
+    except jwt.InvalidTokenError as e:
+        logger.warning(f"Invalid JWT: {e}")
+        raise HTTPException(status_code=401, detail="Token không hợp lệ.")
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
@@ -116,27 +136,14 @@ async def google_login(body: GoogleLoginRequest):
 
 
 @router.get("/me", response_model=UserInfo)
-async def get_current_user(authorization: str = Header(default="")):
+async def get_current_user(request: Request, authorization: str = Header(default="")):
     """
     Verify JWT từ header Authorization: Bearer <token>.
     Trả về thông tin user nếu hợp lệ.
     """
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(
-            status_code=401, detail="Missing or invalid Authorization header."
-        )
-
-    token = authorization[7:]  # Remove "Bearer " prefix
-
-    try:
-        payload = verify_jwt_token(token)
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(
-            status_code=401, detail="Token đã hết hạn. Vui lòng đăng nhập lại."
-        )
-    except jwt.InvalidTokenError as e:
-        logger.warning(f"Invalid JWT: {e}")
-        raise HTTPException(status_code=401, detail="Token không hợp lệ.")
+    payload = getattr(request.state, "user", None)
+    if payload is None:
+        payload = decode_authorization_header(authorization)
 
     return UserInfo(
         email=payload.get("email", ""),

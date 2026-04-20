@@ -85,7 +85,7 @@ Lưu trữ các luật cấu hình được người dùng chỉ định qua tí
 
 ### 4. Bảng `system_config` (MỚI — V5)
 Key-value store để lưu cấu hình engine runtime, thay đổi từ Settings UI mà không cần restart container.
-- `key` (VARCHAR(64) PRIMARY KEY) — Tên config (e.g. `ai_enabled`, `test_mode_limit_files`).
+- `key` (VARCHAR(64) PRIMARY KEY) — Tên config (e.g. `ai_enabled`, `ai_max_concurrency`, `test_mode_limit_files`).
 - `value` (TEXT NOT NULL) — Giá trị dạng text (parse theo context: bool, int, string).
 - `updated_at` (TIMESTAMP) — Thời điểm cập nhật cuối.
 
@@ -94,10 +94,11 @@ Key-value store để lưu cấu hình engine runtime, thay đổi từ Settings
 | Key | Kiểu | Mặc định | Mô tả |
 |-----|------|----------|-------|
 | `ai_enabled` | bool string | `"false"` (.env) | Bật/tắt AI-Powered Analysis |
+| `ai_max_concurrency` | int string | `"5"` (.env) | Giới hạn số request AI chạy song song cho Validation + Deep Audit |
 | `test_mode_limit_files` | int string | `"0"` (.env) | 0 = full scan, >0 = giới hạn N files |
 
 > [!NOTE]
-> Ưu tiên đọc: DB → .env (fallback). Helper functions: `get_ai_enabled()`, `get_test_mode_limit()` trong `config.py`.
+> Ưu tiên đọc: DB → .env (fallback). Helper functions: `get_ai_enabled()`, `get_ai_max_concurrency()`, `get_test_mode_limit()` trong `config.py`.
 
 ## API CRUD cho Repository Management
 
@@ -118,4 +119,3 @@ Key-value store để lưu cấu hình engine runtime, thay đổi từ Settings
 
 ---
 *Duy trì bởi LongDD.*
-

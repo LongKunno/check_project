@@ -6,6 +6,7 @@ Entry point: khởi tạo FastAPI app, cấu hình Middleware, đăng ký Router
 import os
 import sys
 import logging
+from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -26,9 +27,10 @@ def _patched_multipart_init(self, *args, **kwargs):
 
 starlette.formparsers.MultiPartParser.__init__ = _patched_multipart_init
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 
 from src.engine.database import AuditDatabase
 from src.api.audit_state import AuditState, JobManager
@@ -79,15 +81,9 @@ logger = logging.getLogger(__name__)
 
 # ── App Factory ───────────────────────────────────────────────────────────────
 
-app = FastAPI(
-    title="AI Static Analysis API (V1)",
-    description=f"Hệ thống kiểm toán mã nguồn tự động dựa trên AI Framework V{os.environ.get('APP_VERSION', '1.0.0')}.",
-    version=os.environ.get("APP_VERSION", "1.0.0"),
-)
 
-
-@app.on_event("startup")
-async def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     import asyncio
 
     logger.info("Initializing PostgreSQL Database in background thread...")
@@ -98,6 +94,41 @@ async def startup_event():
         )
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
+    yield
+
+
+app = FastAPI(
+    title="AI Static Analysis API (V1)",
+    description=f"Hệ thống kiểm toán mã nguồn tự động dựa trên AI Framework V{os.environ.get('APP_VERSION', '1.0.0')}.",
+    version=os.environ.get("APP_VERSION", "1.0.0"),
+    lifespan=lifespan,
+)
+
+
+_PUBLIC_PATHS = {
+    "/",
+    "/auth/config",
+    "/auth/google",
+    "/docs",
+    "/docs/oauth2-redirect",
+    "/openapi.json",
+    "/redoc",
+}
+_PUBLIC_PATH_PREFIXES = ("/docs/", "/redoc/")
+
+
+def _is_public_path(path: str) -> bool:
+    return path in _PUBLIC_PATHS or any(
+        path.startswith(prefix) for prefix in _PUBLIC_PATH_PREFIXES
+    )
+
+
+def _apply_browser_headers(response, method: str):
+    response.headers["Access-Control-Allow-Private-Network"] = "true"
+    if method == "OPTIONS":
+        response.headers["Access-Control-Allow-Methods"] = "POST, GET, PUT, DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
 
 
 # ── Middleware ────────────────────────────────────────────────────────────────
@@ -105,13 +136,25 @@ async def startup_event():
 
 @app.middleware("http")
 async def add_private_network_header(request: Request, call_next):
-    """Private Network Access header (yêu cầu bởi Brave/Chromium)."""
+    """Private Network Access header và backend auth enforcement."""
+    if request.method != "OPTIONS" and not _is_public_path(request.url.path):
+        from src.config import get_auth_required
+        from src.api.routers.auth import decode_authorization_header
+
+        if get_auth_required():
+            try:
+                request.state.user = decode_authorization_header(
+                    request.headers.get("Authorization", "")
+                )
+            except HTTPException as exc:
+                response = JSONResponse(
+                    status_code=exc.status_code,
+                    content={"detail": exc.detail},
+                )
+                return _apply_browser_headers(response, request.method)
+
     response = await call_next(request)
-    response.headers["Access-Control-Allow-Private-Network"] = "true"
-    if request.method == "OPTIONS":
-        response.headers["Access-Control-Allow-Methods"] = "POST, GET, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "*"
-    return response
+    return _apply_browser_headers(response, request.method)
 
 
 # CORS origins: Đọc từ env hoặc mặc định cho local development
@@ -127,9 +170,9 @@ app.add_middleware(
 
 
 @app.exception_handler(RequestValidationError)
-async def validation_exception_handler(request: Request, exc):
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
     logger.error(f"Validation Error: {exc.errors()}")
-    return {"detail": exc.errors()}
+    return JSONResponse(status_code=422, content={"detail": exc.errors()})
 
 
 # ── Root ──────────────────────────────────────────────────────────────────────

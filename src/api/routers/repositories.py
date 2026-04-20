@@ -95,8 +95,13 @@ async def update_repository(repo_id: str, request: RepositoryRequest):
     existing = AuditDatabase.get_repository(repo_id)
     if not existing:
         raise HTTPException(status_code=404, detail="Không tìm thấy repository.")
+    if request.id != repo_id:
+        raise HTTPException(
+            status_code=400,
+            detail="ID trong body phải khớp với repo_id trên URL.",
+        )
     AuditDatabase.save_repository(
-        repo_id=request.id,
+        repo_id=repo_id,
         name=request.name,
         url=request.url,
         username=request.username or existing.get("username", ""),
@@ -125,25 +130,32 @@ async def delete_repository(repo_id: str):
 class EngineSettingsRequest(BaseModel):
     ai_enabled: Optional[bool] = None
     test_mode_limit_files: Optional[int] = None
+    ai_max_concurrency: Optional[int] = None
     auth_required: Optional[bool] = None
+
+
+def _build_engine_settings_payload():
+    from src.config import (
+        get_ai_enabled,
+        get_ai_max_concurrency,
+        get_auth_required,
+        get_test_mode_limit,
+    )
+
+    return {
+        "ai_enabled": get_ai_enabled(),
+        "test_mode_limit_files": get_test_mode_limit(),
+        "ai_max_concurrency": get_ai_max_concurrency(),
+        "auth_required": get_auth_required(),
+    }
 
 
 @router.get("/settings/engine")
 async def get_engine_settings():
     """Lấy cấu hình engine hiện tại (đọc DB, fallback .env)."""
-    from src.config import AI_ENABLED, TEST_MODE_LIMIT_FILES, AUTH_REQUIRED
-
-    ai_enabled_val = AuditDatabase.get_config("ai_enabled")
-    test_limit_val = AuditDatabase.get_config("test_mode_limit_files")
-    auth_required_val = AuditDatabase.get_config("auth_required")
-
     return {
         "status": "success",
-        "data": {
-            "ai_enabled": ai_enabled_val.lower() in ("true", "1", "yes") if ai_enabled_val is not None else AI_ENABLED,
-            "test_mode_limit_files": int(test_limit_val) if test_limit_val is not None else TEST_MODE_LIMIT_FILES,
-            "auth_required": auth_required_val.lower() in ("true", "1", "yes") if auth_required_val is not None else AUTH_REQUIRED,
-        },
+        "data": _build_engine_settings_payload(),
     }
 
 
@@ -156,22 +168,21 @@ async def update_engine_settings(request: EngineSettingsRequest):
         if request.test_mode_limit_files < 0:
             raise HTTPException(status_code=400, detail="test_mode_limit_files phải >= 0")
         AuditDatabase.set_config("test_mode_limit_files", str(request.test_mode_limit_files))
+    if request.ai_max_concurrency is not None:
+        if not 1 <= request.ai_max_concurrency <= 100:
+            raise HTTPException(
+                status_code=400,
+                detail="ai_max_concurrency phải nằm trong khoảng 1..100",
+            )
+        AuditDatabase.set_config(
+            "ai_max_concurrency", str(request.ai_max_concurrency)
+        )
     if request.auth_required is not None:
         AuditDatabase.set_config("auth_required", str(request.auth_required).lower())
 
-    # Đọc lại config mới từ DB
-    from src.config import AI_ENABLED, TEST_MODE_LIMIT_FILES, AUTH_REQUIRED
-    ai_enabled_val = AuditDatabase.get_config("ai_enabled")
-    test_limit_val = AuditDatabase.get_config("test_mode_limit_files")
-    auth_required_val = AuditDatabase.get_config("auth_required")
-
     return {
         "status": "success",
-        "data": {
-            "ai_enabled": ai_enabled_val.lower() in ("true", "1", "yes") if ai_enabled_val is not None else AI_ENABLED,
-            "test_mode_limit_files": int(test_limit_val) if test_limit_val is not None else TEST_MODE_LIMIT_FILES,
-            "auth_required": auth_required_val.lower() in ("true", "1", "yes") if auth_required_val is not None else AUTH_REQUIRED,
-        },
+        "data": _build_engine_settings_payload(),
     }
 
 
@@ -202,4 +213,3 @@ async def health_ai():
         return {"status": "unhealthy", "reason": "Empty response"}
     except Exception as e:
         return {"status": "unhealthy", "reason": str(e)}
-

@@ -155,15 +155,23 @@ class CodeAuditor:
     def _step_ai_processing(self, automated_violations):
         """BƯỜC 3: Xử lý AI (Validation + Deep Audit + Cross-Check)."""
         import asyncio
+        from src.config import get_ai_max_concurrency
         from src.engine.ai_service import ai_service
 
+        # Snapshot concurrency một lần cho cả job hiện tại; save setting mới chỉ áp dụng job sau.
+        ai_concurrency = get_ai_max_concurrency()
+
         # 3.1: AI VALIDATION
-        self._step_ai_validation(automated_violations, ai_service, asyncio)
+        self._step_ai_validation(
+            automated_violations, ai_service, asyncio, ai_concurrency
+        )
 
         # 3.2-3.3: AI REASONING + CROSS-CHECK
-        self._step_ai_reasoning(ai_service, asyncio)
+        self._step_ai_reasoning(ai_service, asyncio, ai_concurrency)
 
-    def _step_ai_validation(self, automated_violations, ai_service, asyncio):
+    def _step_ai_validation(
+        self, automated_violations, ai_service, asyncio, ai_concurrency
+    ):
         """BƯỜC 3.1: Xác thực vi phạm bằng AI (lọc False Positive)."""
         logger.info("[3.1/5] Xác thực vi phạm (AI False-Positive Filter)...")
 
@@ -181,13 +189,15 @@ class CodeAuditor:
             f"   {len(automated_violations)} vi phạm → {len(chunks)} batch (mỗi batch {batch_size})"
         )
 
-        sem_val = asyncio.Semaphore(10)
+        sem_val = asyncio.Semaphore(ai_concurrency)
 
         async def process_chunk(idx, chunk):
             if AuditState.is_cancelled:
                 return idx, chunk, {}
-            logger.info(f"[PROGRESS] Đang xác thực (Validation) batch {idx + 1}/{len(chunks)}...")
             async with sem_val:
+                logger.info(
+                    f"[PROGRESS] Đang xác thực (Validation) batch {idx + 1}/{len(chunks)}..."
+                )
                 return idx, chunk, await ai_service.verify_violations_batch(chunk)
 
         async def run_all():
@@ -226,7 +236,7 @@ class CodeAuditor:
                     }
                 )
 
-    def _step_ai_reasoning(self, ai_service, asyncio):
+    def _step_ai_reasoning(self, ai_service, asyncio, ai_concurrency):
         """BƯỚC 3.2: AI Deep Audit + [3.3] Cross-Check flagged issues."""
         logger.info("[3.2/5] Phân tích sâu bằng AI (Deep Reasoning Audit)...")
 
@@ -239,13 +249,15 @@ class CodeAuditor:
             f"   {sum(len(c) for c in deep_chunks)} files → {len(deep_chunks)} batches"
         )
 
-        sem_deep = asyncio.Semaphore(10)
+        sem_deep = asyncio.Semaphore(ai_concurrency)
 
         async def process_deep(idx, chunk_data):
             if AuditState.is_cancelled:
                 return []
-            logger.info(f"[PROGRESS] Đang phân tích sâu (Deep Audit) batch {idx + 1}/{len(deep_chunks)}...")
             async with sem_deep:
+                logger.info(
+                    f"[PROGRESS] Đang phân tích sâu (Deep Audit) batch {idx + 1}/{len(deep_chunks)}..."
+                )
                 for f in chunk_data:
                     rel = (
                         os.path.relpath(f["path"], self.target_dir)
@@ -402,8 +414,42 @@ class CodeAuditor:
         member_punishments = {}
         member_meta = {}
         member_violations = {}
+        member_feature_punishments = {}
+        member_feature_debt = {}
+        member_feature_locs = {}
 
-        import time
+        def ensure_member(email):
+            if email not in member_punishments:
+                member_punishments[email] = {p: 0 for p in WEIGHTS.keys()}
+                member_meta[email] = {
+                    p: {"debt": 0, "max_sev": "Info"} for p in WEIGHTS.keys()
+                }
+                member_violations[email] = []
+                member_feature_punishments[email] = {}
+                member_feature_debt[email] = {}
+
+        def ensure_member_feature(email, feature):
+            ensure_member(email)
+            if feature not in member_feature_punishments[email]:
+                member_feature_punishments[email][feature] = {
+                    p: 0 for p in WEIGHTS.keys()
+                }
+                member_feature_debt[email][feature] = {p: 0 for p in WEIGHTS.keys()}
+
+        def calculate_weighted_pillar_scores(feature_results, total_loc, fallback_punishments):
+            pillar_scores = {}
+            for pillar in WEIGHTS.keys():
+                if total_loc > 0 and feature_results:
+                    w_score = sum(
+                        res["pillars"][pillar] * res.get("loc", 0)
+                        for res in feature_results.values()
+                    )
+                    pillar_scores[pillar] = round(w_score / total_loc, 2)
+                else:
+                    pillar_scores[pillar] = ScoringEngine.calculate_pillar_score(
+                        fallback_punishments[pillar], total_loc, pillar
+                    )
+            return pillar_scores
 
         logger.info(
             "   [AuthTracker] Pre-indexing member contributions from all scanned files..."
@@ -415,6 +461,25 @@ class CodeAuditor:
                 else f_info["path"]
             )
             auth_tracker.parse_blame(rel_path)
+            feature = f_info.get("feature", "unknown")
+            for email, loc in auth_tracker.get_file_member_loc(rel_path).items():
+                if not email or email == "unknown@unknown" or loc <= 0:
+                    continue
+                member_feature_locs.setdefault(email, {})
+                member_feature_locs[email][feature] = (
+                    member_feature_locs[email].get(feature, 0) + loc
+                )
+
+        feature_single_owners = {}
+        for feature, feature_data in self.discovery_data["features"].items():
+            feature_loc = feature_data.get("loc", 0)
+            owners = [
+                email
+                for email, feature_locs in member_feature_locs.items()
+                if feature_locs.get(feature, 0) == feature_loc and feature_loc > 0
+            ]
+            if len(owners) == 1:
+                feature_single_owners[feature] = owners[0]
 
         for feature in self.discovery_data["features"].keys():
             feature_punishments[feature] = {p: 0 for p in WEIGHTS.keys()}
@@ -451,19 +516,22 @@ class CodeAuditor:
             ):
                 feature_meta[feat][pillar]["max_sev"] = meta["severity"]
 
+            email = None
             author_info = auth_tracker.get_author_info(v["file"], v.get("line", 0))
             if not author_info["boundary"]:
-                email = author_info.get("email", "unknown@unknown")
-                if email not in member_punishments:
-                    member_punishments[email] = {p: 0 for p in WEIGHTS.keys()}
-                    member_meta[email] = {
-                        p: {"debt": 0, "max_sev": "Info"} for p in WEIGHTS.keys()
-                    }
-                    member_violations[email] = []
+                candidate_email = author_info.get("email", "unknown@unknown")
+                if candidate_email and candidate_email != "unknown@unknown":
+                    email = candidate_email
+            if not email:
+                email = feature_single_owners.get(feat)
 
+            if email:
+                ensure_member_feature(email, feat)
                 member_punishments[email][pillar] += v["weight"]
                 member_meta[email][pillar]["debt"] += meta["debt"]
                 member_violations[email].append(v)
+                member_feature_punishments[email][feat][pillar] += v["weight"]
+                member_feature_debt[email][feat][pillar] += meta["debt"]
 
         self.feature_results = {}
         project_punishments = {p: 0 for p in WEIGHTS.keys()}
@@ -497,18 +565,9 @@ class CodeAuditor:
                 "debt_mins": sum(m["debt"] for m in feature_meta[feature].values()),
             }
 
-        self.project_pillars = {}
-        for pillar in WEIGHTS.keys():
-            if total_loc > 0 and self.feature_results:
-                w_score = sum(
-                    res["pillars"][pillar] * res.get("loc", 0)
-                    for res in self.feature_results.values()
-                )
-                self.project_pillars[pillar] = round(w_score / total_loc, 2)
-            else:
-                self.project_pillars[pillar] = ScoringEngine.calculate_pillar_score(
-                    project_punishments[pillar], total_loc, pillar
-                )
+        self.project_pillars = calculate_weighted_pillar_scores(
+            self.feature_results, total_loc, project_punishments
+        )
 
         final_score = ScoringEngine.calculate_final_score_from_features(
             self.feature_results
@@ -516,20 +575,42 @@ class CodeAuditor:
         rating = ScoringEngine.get_rating(final_score)
 
         self.member_results = {}
-        member_locs = auth_tracker.get_all_member_loc()
         member_name_map = auth_tracker.get_all_member_names()
         for email, punishments in member_punishments.items():
-            author_loc = member_locs.get(email, 0)
+            author_loc = sum(member_feature_locs.get(email, {}).values())
             if author_loc == 0:
                 continue
 
-            p_scores = {}
-            for pillar in WEIGHTS.keys():
-                p_scores[pillar] = ScoringEngine.calculate_pillar_score(
-                    punishments[pillar], author_loc, pillar
+            member_feature_results = {}
+            for feature, feat_loc in member_feature_locs.get(email, {}).items():
+                if feat_loc <= 0:
+                    continue
+                feature_punishments_for_member = member_feature_punishments[email].get(
+                    feature, {p: 0 for p in WEIGHTS.keys()}
                 )
+                feature_pillar_scores = {}
+                for pillar in WEIGHTS.keys():
+                    feature_pillar_scores[pillar] = ScoringEngine.calculate_pillar_score(
+                        feature_punishments_for_member[pillar], feat_loc, pillar
+                    )
+                member_feature_results[feature] = {
+                    "pillars": feature_pillar_scores,
+                    "final": ScoringEngine.calculate_final_score(feature_pillar_scores),
+                    "loc": feat_loc,
+                    "debt_mins": sum(
+                        member_feature_debt[email].get(feature, {}).values()
+                    ),
+                }
 
-            f_score = ScoringEngine.calculate_final_score(p_scores)
+            p_scores = calculate_weighted_pillar_scores(
+                member_feature_results, author_loc, punishments
+            )
+            f_score = ScoringEngine.calculate_final_score_from_features(
+                member_feature_results
+            )
+            if not member_feature_results:
+                f_score = ScoringEngine.calculate_final_score(p_scores)
+
             self.member_results[email] = {
                 "author_name": member_name_map.get(email, email),
                 "email": email,

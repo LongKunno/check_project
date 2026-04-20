@@ -154,6 +154,8 @@ async def upload_and_audit(
     AuditState.reset()
     temp_dir = tempfile.mkdtemp(prefix="audit_upload_")
     project_name = "uploaded_project"
+    job_id = None
+    background_task_scheduled = False
 
     try:
         for upload_file in files:
@@ -196,6 +198,7 @@ async def upload_and_audit(
         background_tasks.add_task(
             background_audit, job_id, target_path, project_name, temp_dir
         )
+        background_task_scheduled = True
         return {
             "status": "started",
             "job_id": job_id,
@@ -206,7 +209,10 @@ async def upload_and_audit(
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {str(e)}")
     finally:
         # Dọn dẹp nếu background task chưa chạy (lỗi trước khi add_task)
-        if not JobManager.get_job(project_name) and os.path.exists(temp_dir):
+        if job_id and not background_task_scheduled:
+            JobManager.jobs.pop(job_id, None)
+            JobManager.job_logs.pop(job_id, None)
+        if not background_task_scheduled and os.path.exists(temp_dir):
             shutil.rmtree(temp_dir)
 
 

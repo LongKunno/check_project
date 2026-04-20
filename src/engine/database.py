@@ -49,6 +49,8 @@ class AuditDatabase:
 
         max_retries = 10
         conn = None
+        cursor = None
+        schema_ready = False
         for i in range(max_retries):
             try:
                 if not AuditDatabase._pool:
@@ -150,14 +152,17 @@ class AuditDatabase:
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
-
-            cursor.close()
-            AuditDatabase.release_connection(conn)
-
-            # Auto-seed repositories từ config.py nếu bảng trống (Option A)
-            AuditDatabase.seed_default_repositories()
+            schema_ready = True
         except Exception as e:
             logger.error(f"Database Initialization Error: {e}")
+        finally:
+            if cursor:
+                cursor.close()
+            AuditDatabase.release_connection(conn)
+
+        # Auto-seed repositories từ config.py nếu bảng trống (Option A)
+        if schema_ready:
+            AuditDatabase.seed_default_repositories()
 
     # ── System Config (Key-Value Store) ───────────────────────────────────────
 
@@ -584,15 +589,15 @@ class AuditDatabase:
     def seed_default_repositories():
         """Import repositories từ CONFIGURED_REPOSITORIES (config.py) nếu bảng trống.
         Chỉ chạy 1 lần khi lần đầu khởi động với bảng mới."""
-        conn = AuditDatabase.get_connection()
-        cursor = conn.cursor()
+        conn = None
+        cursor = None
         try:
+            conn = AuditDatabase.get_connection()
+            cursor = conn.cursor()
             cursor.execute("SELECT COUNT(*) FROM configured_repositories")
             count = cursor.fetchone()[0]
             if count > 0:
                 logger.info(f"configured_repositories already has {count} entries, skipping seed.")
-                cursor.close()
-                AuditDatabase.release_connection(conn)
                 return
 
             from src.config import CONFIGURED_REPOSITORIES
@@ -616,9 +621,11 @@ class AuditDatabase:
             logger.info(f"Seeded {len(CONFIGURED_REPOSITORIES)} default repositories from config.py.")
         except Exception as e:
             logger.warning(f"Error seeding default repositories: {e}")
-            conn.rollback()
+            if conn:
+                conn.rollback()
         finally:
-            cursor.close()
+            if cursor:
+                cursor.close()
             AuditDatabase.release_connection(conn)
 
     @staticmethod

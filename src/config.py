@@ -30,17 +30,37 @@ SCAN_EXTENSIONS = [".py"]
 # Normalization Factor (K)
 K_FACTOR = 2.0
 
+
+def _parse_int_setting(value, default: int, minimum: int | None = None, maximum: int | None = None) -> int:
+    """Parse integer setting với range guard; lỗi thì fallback về default."""
+    try:
+        parsed = int(value)
+    except (ValueError, TypeError):
+        return default
+
+    if minimum is not None and parsed < minimum:
+        return default
+    if maximum is not None and parsed > maximum:
+        return default
+    return parsed
+
+
 # TEST MODE: Giới hạn số file được phân tích để tiết kiệm Token (chỉ phân tích tối đa N file)
 # Đặt thành 0 hoặc xóa khỏi .env để tắt Test Mode và quét toàn bộ dự án
-try:
-    TEST_MODE_LIMIT_FILES = int(os.getenv("TEST_MODE_LIMIT_FILES", 0))
-except (ValueError, TypeError):
-    TEST_MODE_LIMIT_FILES = 0
+TEST_MODE_LIMIT_FILES = _parse_int_setting(
+    os.getenv("TEST_MODE_LIMIT_FILES", 0), default=0, minimum=0
+)
 
 # AI TOGGLE: Bật/tắt việc sử dụng AI trong quá trình Audit
 # true  = Bật AI (Hybrid Validation + Deep Reasoning + Cross-Check) — đầy đủ nhưng tốn token
 # false = Tắt AI, chỉ dùng Static Analysis (Regex + AST) — nhanh, miễn phí, không cần API key
 AI_ENABLED = os.getenv("AI_ENABLED", "true").lower() in ("true", "1", "yes")
+
+# AI CONCURRENCY: Giới hạn số request AI chạy song song cho Validation + Deep Audit.
+# Miền hợp lệ: 1..100. Nếu parse lỗi hoặc out-of-range thì fallback về 5.
+AI_MAX_CONCURRENCY = _parse_int_setting(
+    os.getenv("AI_MAX_CONCURRENCY", 5), default=5, minimum=1, maximum=100
+)
 
 # AUTH TOGGLE: Bật/tắt yêu cầu đăng nhập Google OAuth
 # true  = Bắt buộc đăng nhập để truy cập Dashboard
@@ -72,6 +92,20 @@ def get_test_mode_limit() -> int:
     except Exception:
         pass
     return TEST_MODE_LIMIT_FILES
+
+
+def get_ai_max_concurrency() -> int:
+    """Đọc AI_MAX_CONCURRENCY từ DB (ưu tiên) hoặc .env (fallback).
+    Giá trị hợp lệ: 1..100; nếu DB lỗi hoặc out-of-range thì fallback về 5."""
+    try:
+        from src.engine.database import AuditDatabase
+
+        val = AuditDatabase.get_config("ai_max_concurrency")
+        if val is not None:
+            return _parse_int_setting(val, default=5, minimum=1, maximum=100)
+    except Exception:
+        pass
+    return AI_MAX_CONCURRENCY
 
 
 def get_auth_required() -> bool:

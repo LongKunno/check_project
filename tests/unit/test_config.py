@@ -1,0 +1,83 @@
+import importlib
+
+import pytest
+
+import src.config as config_module
+from src.engine.database import AuditDatabase
+
+
+def _reload_config():
+    return importlib.reload(config_module)
+
+
+@pytest.fixture(autouse=True)
+def restore_config_module():
+    yield
+    _reload_config()
+
+
+def test_ai_max_concurrency_defaults_to_5_when_env_missing(monkeypatch):
+    monkeypatch.delenv("AI_MAX_CONCURRENCY", raising=False)
+    config = _reload_config()
+    monkeypatch.setattr(
+        AuditDatabase,
+        "get_config",
+        staticmethod(lambda key, default=None: None),
+    )
+
+    assert config.AI_MAX_CONCURRENCY == 5
+    assert config.get_ai_max_concurrency() == 5
+
+
+def test_ai_max_concurrency_uses_env_when_valid(monkeypatch):
+    monkeypatch.setenv("AI_MAX_CONCURRENCY", "12")
+    config = _reload_config()
+    monkeypatch.setattr(
+        AuditDatabase,
+        "get_config",
+        staticmethod(lambda key, default=None: None),
+    )
+
+    assert config.AI_MAX_CONCURRENCY == 12
+    assert config.get_ai_max_concurrency() == 12
+
+
+def test_ai_max_concurrency_prefers_db_override(monkeypatch):
+    monkeypatch.setenv("AI_MAX_CONCURRENCY", "12")
+    config = _reload_config()
+    monkeypatch.setattr(
+        AuditDatabase,
+        "get_config",
+        staticmethod(
+            lambda key, default=None: "17" if key == "ai_max_concurrency" else default
+        ),
+    )
+
+    assert config.get_ai_max_concurrency() == 17
+
+
+def test_ai_max_concurrency_falls_back_to_5_when_env_invalid(monkeypatch):
+    monkeypatch.setenv("AI_MAX_CONCURRENCY", "101")
+    config = _reload_config()
+    monkeypatch.setattr(
+        AuditDatabase,
+        "get_config",
+        staticmethod(lambda key, default=None: None),
+    )
+
+    assert config.AI_MAX_CONCURRENCY == 5
+    assert config.get_ai_max_concurrency() == 5
+
+
+def test_ai_max_concurrency_falls_back_to_5_when_db_invalid(monkeypatch):
+    monkeypatch.setenv("AI_MAX_CONCURRENCY", "12")
+    config = _reload_config()
+    monkeypatch.setattr(
+        AuditDatabase,
+        "get_config",
+        staticmethod(
+            lambda key, default=None: "0" if key == "ai_max_concurrency" else default
+        ),
+    )
+
+    assert config.get_ai_max_concurrency() == 5

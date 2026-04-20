@@ -79,6 +79,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
   const [engineConfig, setEngineConfig] = useState({
     ai_enabled: false,
     test_mode_limit_files: 0,
+    ai_max_concurrency: 5,
     auth_required: true,
   });
   const [engineSaving, setEngineSaving] = useState(false);
@@ -92,7 +93,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
       if (res.ok) {
         const d = await res.json();
         if (d.status === "success") {
-          setEngineConfig(d.data);
+          setEngineConfig((prev) => ({ ...prev, ...d.data }));
           setEngineDirty(false);
         }
       }
@@ -117,7 +118,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
       if (res.ok) {
         const d = await res.json();
         if (d.status === "success") {
-          setEngineConfig(d.data);
+          setEngineConfig((prev) => ({ ...prev, ...d.data }));
           setEngineDirty(false);
           toast.success("Engine configuration saved successfully.", "Settings Updated");
           // Cập nhật AuthContext nếu auth_required đã thay đổi
@@ -126,7 +127,8 @@ const SettingsView = ({ selectedRepoId, cn }) => {
           }
         }
       } else {
-        toast.error("Failed to save settings.", "Error");
+        const d = await res.json().catch(() => null);
+        toast.error(d?.detail || "Failed to save settings.", "Error");
       }
     } catch (e) {
       toast.error("Network error.", "Connection Error");
@@ -286,6 +288,37 @@ const SettingsView = ({ selectedRepoId, cn }) => {
             </button>
           </div>
 
+          {/* AI Max Concurrency */}
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl border bg-cyan-500/10 border-cyan-500/25 text-cyan-600">
+                <Cpu size={16} />
+              </div>
+              <div>
+                <div className="text-sm font-bold text-slate-800">AI Parallel Requests</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">
+                  Giới hạn số request AI chạy song song cho Validation + Deep Audit
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min="1"
+                max="100"
+                value={engineConfig.ai_max_concurrency}
+                onChange={(e) =>
+                  handleEngineConfigChange(
+                    "ai_max_concurrency",
+                    Math.min(100, Math.max(1, parseInt(e.target.value, 10) || 1)),
+                  )
+                }
+                className="w-20 px-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-800 text-sm font-mono text-center focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none placeholder:text-slate-400"
+              />
+              <span className="text-[10px] text-slate-600 font-bold">reqs</span>
+            </div>
+          </div>
+
           {/* Authentication Required Toggle */}
           <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 mb-4">
             <div className="flex items-center gap-3">
@@ -422,7 +455,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
             <InfoCard
               icon={<Clock size={16} />}
               label="AI Model"
-              value={systemInfo?.model || "GPT-4o-mini"}
+              value={systemInfo?.model || "cx/gpt-5.4"}
               iconClass="bg-cyan-500/10 border-cyan-500/20 text-cyan-600"
               accent="border-cyan-500/25 shadow-[0_0_15px_-5px_rgba(6,182,212,0.15)]"
             />
@@ -634,4 +667,3 @@ const SettingsView = ({ selectedRepoId, cn }) => {
 };
 
 export default SettingsView;
-

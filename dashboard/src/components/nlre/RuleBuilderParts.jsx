@@ -94,14 +94,14 @@ export const Stepper = ({ current }) => (
               className={cn(
                 "w-11 h-11 rounded-full flex items-center justify-center font-black text-sm transition-all duration-300 border-2 shrink-0",
                 done ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.3)]"
-                  : active ? "bg-gradient-to-br from-violet-600 to-purple-700 border-violet-400/50 text-slate-700 shadow-[0_0_20px_rgba(139,92,246,0.5)] scale-110"
+                  : active ? "bg-gradient-to-br from-violet-600 to-purple-700 border-violet-400/50 text-white shadow-[0_0_20px_rgba(139,92,246,0.5)] scale-110"
                     : "bg-slate-50 border-slate-200 text-slate-600",
               )}
             >
               {done ? <CheckCircle2 size={18} /> : step.num}
             </div>
             <div className="flex flex-col items-center gap-0.5 text-center">
-              <span className={cn("text-[11px] font-black tracking-wider uppercase", done ? "text-emerald-400" : active ? "text-violet-300" : "text-slate-600")}>{step.label}</span>
+              <span className={cn("text-[11px] font-black tracking-wider uppercase", done ? "text-emerald-500" : active ? "text-violet-600" : "text-slate-600")}>{step.label}</span>
               <span className="text-[9px] text-slate-600 tracking-wide hidden sm:block">{step.sub}</span>
             </div>
           </div>
@@ -151,9 +151,9 @@ export const StreamingTerminal = ({ text, isPending, label }) => {
   }, [isPending]);
 
   return (
-    <div className="flex-1 flex flex-col bg-[#0c1222] border border-slate-200 rounded-2xl overflow-hidden shadow-md max-w-4xl mx-auto w-full relative">
-      <div className="absolute inset-0 bg-gradient-to-b from-violet-500/5 to-transparent pointer-events-none" />
-      <div className="flex items-center justify-between px-5 py-3 bg-violet-900/40 border-b border-violet-500/30 shrink-0 relative z-10">
+    <div className="flex-1 flex flex-col bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm max-w-4xl mx-auto w-full relative">
+      <div className="absolute inset-0 bg-gradient-to-b from-violet-500/5 via-transparent to-slate-50/30 pointer-events-none" />
+      <div className="flex items-center justify-between px-5 py-3 bg-slate-50 border-b border-slate-200 shrink-0 relative z-10">
         <div className="flex items-center gap-3">
           {isPending ? (
             <div className="relative flex h-2.5 w-2.5">
@@ -163,27 +163,27 @@ export const StreamingTerminal = ({ text, isPending, label }) => {
           ) : (
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
           )}
-          <span className="text-xs font-black text-violet-200 uppercase tracking-[0.2em] drop-shadow-md">
+          <span className="text-xs font-black text-violet-700 uppercase tracking-[0.2em]">
             {label || (isPending ? "AI đang tư duy…" : "Hoàn tất")}
           </span>
         </div>
         {isPending && (
-          <div className="flex items-center gap-1.5 text-[10px] font-bold text-violet-400 bg-violet-500/10 px-2 py-0.5 rounded border border-violet-500/20">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded border border-violet-200">
             <Clock size={11} />{elapsed}s
           </div>
         )}
       </div>
-      <div ref={containerRef} className="flex-1 p-6 overflow-y-auto font-mono text-[13px] leading-relaxed whitespace-pre-wrap relative z-10">
+      <div ref={containerRef} className="flex-1 p-6 overflow-y-auto font-mono text-[13px] leading-relaxed whitespace-pre-wrap relative z-10 bg-white">
         {text ? (
-          <span className="text-emerald-300">{text}</span>
+          <span className="text-slate-700">{text}</span>
         ) : (
           <div className="flex flex-col gap-2">
-            <span className="text-violet-300 font-bold animate-pulse">Đang kết nối tới mô hình AI...</span>
+            <span className="text-violet-600 font-bold animate-pulse">Đang kết nối tới mô hình AI...</span>
             <span className="text-slate-500 text-xs">&gt; {loadingMessages[loadingMsgIdx]}</span>
           </div>
         )}
         {isPending && (
-          <span className="inline-block w-2 h-4 bg-emerald-400 ml-0.5 rounded-sm animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
+          <span className="inline-block w-2 h-4 bg-violet-500 ml-0.5 rounded-sm animate-pulse shadow-[0_0_8px_rgba(139,92,246,0.4)]" />
         )}
       </div>
     </div>
@@ -194,28 +194,51 @@ export const StreamingTerminal = ({ text, isPending, label }) => {
 export const VisualRuleConfigurator = ({ config, onChange, readOnly = false }) => {
   if (!config) return null;
 
+  const formatAstType = (value) => value ? value.replaceAll("_", " ") : "";
+
   const handleChange = (cat, subCat, idx, field, val) => {
     if (readOnly || !onChange) return;
     const clone = JSON.parse(JSON.stringify(config));
-    if (cat === "ast_rules") clone[cat][subCat][idx][field] = val;
-    else clone[cat][idx][field] = val;
+    if (cat === "ast_rules") {
+      const target = clone[cat]?.[subCat];
+      if (Array.isArray(target)) clone[cat][subCat][idx][field] = val;
+      else if (target && typeof target === "object") clone[cat][subCat][field] = val;
+    } else clone[cat][idx][field] = val;
     onChange(clone);
   };
+
+  const astGroups = (() => {
+    const astRules = config.ast_rules;
+    if (Array.isArray(astRules)) {
+      return astRules.length
+        ? [{ type: "dangerous_functions", rules: astRules }]
+        : [];
+    }
+    return Object.entries(astRules || {}).flatMap(([type, rawRules]) => {
+      if (Array.isArray(rawRules)) {
+        return rawRules.length ? [{ type, rules: rawRules }] : [];
+      }
+      if (rawRules && typeof rawRules === "object" && Object.keys(rawRules).length > 0) {
+        return [{ type, rules: [{ ...rawRules, _astType: type }] }];
+      }
+      return [];
+    });
+  })();
 
   const renderCard = (item, cat, subCat, idx) => (
     <div key={`${cat}-${subCat}-${idx}`} className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col gap-5 hover:border-violet-400/40 transition-all shadow-sm shrink-0 relative overflow-hidden group">
       <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-violet-500 to-purple-600 opacity-60 group-hover:opacity-100 transition-opacity" />
       <div className="flex flex-col gap-4 shrink-0 pl-2">
         <div className="flex items-center gap-3 min-w-0">
-          <span className="text-xl font-black text-slate-700 truncate drop-shadow-md">{item.id || item.name || "UNNAMED_RULE"}</span>
-          <span className="text-[11px] font-bold text-violet-300 bg-violet-500/20 px-3 py-1 rounded-md border border-violet-400/30 whitespace-nowrap uppercase tracking-widest shadow-sm">{item.pillar || "N/A"}</span>
+          <span className="text-xl font-black text-slate-800 truncate">{item.id || item.name || formatAstType(item._astType)?.toUpperCase() || "UNNAMED_RULE"}</span>
+          <span className="text-[11px] font-bold text-violet-700 bg-violet-50 px-3 py-1 rounded-md border border-violet-200 whitespace-nowrap uppercase tracking-widest shadow-sm">{item.pillar || "N/A"}</span>
         </div>
 
         <div className="flex items-start justify-between gap-5">
           {readOnly ? (
             <div className="flex-1 flex flex-col gap-1.5">
               <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Lý Do (Reason)</span>
-              <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 border border-slate-200 p-3 rounded-xl min-h-[42px]">{item.reason}</p>
+              <p className="text-sm text-slate-700 leading-relaxed bg-slate-50 border border-slate-200 p-3 rounded-xl min-h-[42px]">{item.reason}</p>
             </div>
           ) : (
             <div className="flex-1 flex flex-col gap-1.5">
@@ -232,7 +255,7 @@ export const VisualRuleConfigurator = ({ config, onChange, readOnly = false }) =
           <div className="flex flex-col items-end gap-1.5 shrink-0">
             <label className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Trọng Số (Weight)</label>
             {readOnly ? (
-              <span className="text-sm font-black text-rose-300 bg-rose-500/15 px-4 py-[9px] rounded-xl border border-rose-500/30 shadow-sm min-w-[96px] text-center">{item.weight || 0}</span>
+              <span className="text-sm font-black text-rose-700 bg-rose-50 px-4 py-[9px] rounded-xl border border-rose-200 shadow-sm min-w-[96px] text-center">{item.weight || 0}</span>
             ) : (
               <input type="number"
                 className="w-24 bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-xl px-4 py-2.5 text-sm font-black text-rose-600 text-center focus:outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-500/20 transition-all "
@@ -248,9 +271,9 @@ export const VisualRuleConfigurator = ({ config, onChange, readOnly = false }) =
       <div className="bg-slate-50 rounded-xl p-5 border border-slate-200 font-mono text-sm text-slate-600 break-all overflow-hidden flex flex-col gap-3  shrink-0">
         {(cat === "ai_rules" && item.prompt) && (
           <div className="flex flex-col gap-2 shrink-0">
-            <label className="text-[10px] text-emerald-400 font-bold uppercase tracking-[0.15em]">Lệnh Gọi Trí Tuệ Nhân Tạo (AI Prompt)</label>
+            <label className="text-[10px] text-emerald-600 font-bold uppercase tracking-[0.15em]">Lệnh Gọi Trí Tuệ Nhân Tạo (AI Prompt)</label>
             {readOnly ? (
-              <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl text-slate-600 text-[13px] leading-relaxed">{item.prompt}</div>
+              <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl text-slate-700 text-[13px] leading-relaxed">{item.prompt}</div>
             ) : (
               <textarea
                 className="flex-1 w-full bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-xl focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 p-4 text-emerald-700 outline-none resize-none leading-relaxed text-[13px] transition-all "
@@ -262,9 +285,9 @@ export const VisualRuleConfigurator = ({ config, onChange, readOnly = false }) =
         )}
         {(cat === "regex_rules" && item.pattern) && (
           <div className="flex flex-col gap-2">
-            <label className="text-[10px] text-blue-400 font-bold uppercase tracking-[0.15em]">Biểu Thức Chính Quy (Regex Pattern)</label>
+            <label className="text-[10px] text-blue-600 font-bold uppercase tracking-[0.15em]">Biểu Thức Chính Quy (Regex Pattern)</label>
             {readOnly ? (
-              <div className="bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-blue-200">{item.pattern}</div>
+              <div className="bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-blue-700">{item.pattern}</div>
             ) : (
               <input
                 className="w-full bg-slate-50 border border-slate-200 hover:border-slate-300 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 px-4 py-3 text-blue-700 outline-none transition-all  font-bold"
@@ -274,11 +297,11 @@ export const VisualRuleConfigurator = ({ config, onChange, readOnly = false }) =
             )}
           </div>
         )}
-        {(cat === "ast_rules" && item.name) && (
+        {(cat === "ast_rules" && (item.name || item._astType)) && (
           <div className="flex flex-col gap-2">
-            <span className="text-[10px] text-teal-400 font-bold uppercase tracking-[0.15em]">Target Node (AST)</span>
+            <span className="text-[10px] text-teal-600 font-bold uppercase tracking-[0.15em]">{item.name ? "Target Node (AST)" : "AST Check Type"}</span>
             <div className="bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl">
-              <span className="text-teal-200 font-bold">{item.name}</span>
+              <span className="text-teal-700 font-bold">{item.name || formatAstType(item._astType)}</span>
               {item.args ? <span className="text-slate-500 ml-2">(Args: {item.args})</span> : ""}
             </div>
           </div>
@@ -287,54 +310,53 @@ export const VisualRuleConfigurator = ({ config, onChange, readOnly = false }) =
     </div>
   );
 
-  const hasAst = config.ast_rules && Object.keys(config.ast_rules).length > 0;
-  const hasRegex = config.regex_rules && config.regex_rules.length > 0;
-  const hasAI = config.ai_rules && config.ai_rules.length > 0;
+  const hasAst = astGroups.length > 0;
+  const hasRegex = Array.isArray(config.regex_rules) && config.regex_rules.length > 0;
+  const hasAI = Array.isArray(config.ai_rules) && config.ai_rules.length > 0;
 
   return (
     <div className="flex flex-col gap-8 flex-1 px-8 pb-8">
       <div className="flex flex-col gap-5 shrink-0">
-        <span className="text-lg font-black text-slate-700 flex items-center gap-2"><Sparkles size={20} className="text-violet-400" /> Phân Tích Logic Bằng AI (AI Rules)</span>
+        <span className="text-lg font-black text-slate-800 flex items-center gap-2"><Sparkles size={20} className="text-violet-500" /> Phân Tích Logic Bằng AI (AI Rules)</span>
         {hasAI ? (
           <div className="flex flex-col gap-4 shrink-0 mt-2">
             {config.ai_rules.map((rule, i) => renderCard(rule, "ai_rules", null, i))}
           </div>
         ) : (
-          <div className="bg-slate-50 border border-slate-100 border-dashed rounded-xl p-5 flex items-center gap-3 text-slate-500 text-[13px] italic  mt-2">
+          <div className="bg-slate-50 border border-slate-200 border-dashed rounded-xl p-5 flex items-center gap-3 text-slate-500 text-[13px] italic mt-2">
             <Info size={18} className="opacity-50" /> Không có chỉ thị lệnh phân tích ngữ nghĩa nào được sinh ra.
           </div>
         )}
       </div>
 
       <div className="flex flex-col gap-5 shrink-0 pt-6 border-t border-slate-200">
-        <span className="text-lg font-black text-slate-700 flex items-center gap-2"><Code2 size={20} className="text-blue-400" /> Quét Mã Bằng Biểu Thức Chính Quy (Regex Rules)</span>
+        <span className="text-lg font-black text-slate-800 flex items-center gap-2"><Code2 size={20} className="text-blue-500" /> Quét Mã Bằng Biểu Thức Chính Quy (Regex Rules)</span>
         {hasRegex ? (
           <div className="flex flex-col gap-4 mt-2">
             {config.regex_rules.map((rule, i) => renderCard(rule, "regex_rules", null, i))}
           </div>
         ) : (
-          <div className="bg-slate-50 border border-slate-100 border-dashed rounded-xl p-5 flex items-center gap-3 text-slate-500 text-[13px] italic  mt-2">
+          <div className="bg-slate-50 border border-slate-200 border-dashed rounded-xl p-5 flex items-center gap-3 text-slate-500 text-[13px] italic mt-2">
             <Info size={18} className="opacity-50" /> Không có luật biểu thức chính quy (Regex) nào được tạo đối với rule này.
           </div>
         )}
       </div>
 
       <div className="flex flex-col gap-5 shrink-0 pt-6 border-t border-slate-200">
-        <span className="text-lg font-black text-slate-700 flex items-center gap-2"><Box size={20} className="text-emerald-400" /> Phân Tích Cú Pháp Python (AST Rules)</span>
+        <span className="text-lg font-black text-slate-800 flex items-center gap-2"><Box size={20} className="text-emerald-500" /> Phân Tích Cú Pháp Python (AST Rules)</span>
         {hasAst ? (
           <div className="border-l-2 border-emerald-500/20 pl-5 flex flex-col gap-5 mt-2 ml-2">
-            {Object.entries(config.ast_rules).map(([type, rules]) => {
-              if (!Array.isArray(rules) || rules.length === 0) return null;
+            {astGroups.map(({ type, rules }) => {
               return (
                 <div key={type} className="flex flex-col gap-3">
-                  <span className="text-sm font-black text-emerald-400/80 uppercase tracking-widest">{type}</span>
+                  <span className="text-sm font-black text-emerald-600 uppercase tracking-widest">{formatAstType(type)}</span>
                   {rules.map((rule, i) => renderCard(rule, "ast_rules", type, i))}
                 </div>
               );
             })}
           </div>
         ) : (
-          <div className="bg-slate-50 border border-slate-100 border-dashed rounded-xl p-5 flex items-center gap-3 text-slate-500 text-[13px] italic  mt-2">
+          <div className="bg-slate-50 border border-slate-200 border-dashed rounded-xl p-5 flex items-center gap-3 text-slate-500 text-[13px] italic mt-2">
             <Info size={18} className="opacity-50" /> Không có luật phân tích cú pháp (AST) nào được tạo đối với rule này.
           </div>
         )}

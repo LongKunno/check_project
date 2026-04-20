@@ -70,7 +70,7 @@ class AiService:
             "AI_BASE_URL", "https://parents-sail-gig-anti.trycloudflare.com/v1"
         )
         self.api_key = os.getenv("AI_API_KEY", "xxxxxxx")
-        self.model = os.getenv("AI_MODEL", "gemini-3-flash")
+        self.model = os.getenv("AI_MODEL", "gpt-5.4")
 
         self.client = AsyncOpenAI(
             base_url=self.base_url, api_key=self.api_key, timeout=180.0

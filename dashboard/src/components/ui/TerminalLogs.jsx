@@ -12,6 +12,57 @@ import {
 
 // Phát hiện xem dòng log có phải tiêu đề của một bước [X/5] hay [X.Y/5] hay không
 const STEP_REGEX = /^\[(\d+(?:\.\d+)?\/\d+)\]/;
+const BATCH_PROGRESS_REGEX = /batch\s+(\d+)\s*\/\s*(\d+)/i;
+
+function parseProgressLine(rawLine) {
+  const text = rawLine.replace("[PROGRESS]", "").trim();
+  const batchMatch = text.match(BATCH_PROGRESS_REGEX);
+
+  if (batchMatch) {
+    const current = Number.parseInt(batchMatch[1], 10);
+    const total = Number.parseInt(batchMatch[2], 10);
+    let label = "Batch Progress";
+
+    if (/validation/i.test(text)) {
+      label = "Validation";
+    } else if (/deep audit/i.test(text)) {
+      label = "Deep Audit";
+    }
+
+    return {
+      kind: "batch",
+      headline: `${label} ${current}/${total}`,
+      detail: text,
+      batch: {
+        current,
+        total,
+        percent: total > 0 ? Math.round((current / total) * 100) : 0,
+      },
+    };
+  }
+
+  if (/^AI Audit:/i.test(text)) {
+    return {
+      kind: "detail",
+      headline: "Deep Audit File",
+      detail: text.replace(/^AI Audit:\s*/i, "").trim(),
+    };
+  }
+
+  if (/^Scanning:/i.test(text)) {
+    return {
+      kind: "detail",
+      headline: "Scanning",
+      detail: text.replace(/^Scanning:\s*/i, "").trim(),
+    };
+  }
+
+  return {
+    kind: "detail",
+    headline: "Processing",
+    detail: text,
+  };
+}
 
 // Tô màu inline dựa trên nội dung dòng log
 function colorizeLog(text) {
@@ -152,21 +203,33 @@ const TerminalLogs = React.memo(({ isAuditing, jobId }) => {
   // Groups: array of { label: string, lines: string[] }
   const [groups, setGroups] = useState([]);
   const [activeGroupIdx, setActiveGroupIdx] = useState(0);
-  const [currentFile, setCurrentFile] = useState(null); // For Status Bar
+  const [progressState, setProgressState] = useState(null);
   const logsEndRef = useRef(null);
   const scrollContainerRef = useRef(null);
 
   const processLine = useCallback((rawLine) => {
-    // Filter out PROGRESS lines → only update StatusBar, don't store in terminal
     if (rawLine.startsWith("[PROGRESS]")) {
-      const filePart = rawLine.replace("[PROGRESS]", "").trim();
-      setCurrentFile(filePart);
+      const parsed = parseProgressLine(rawLine);
+      setProgressState((prev) => {
+        if (parsed.kind === "batch") {
+          return parsed;
+        }
+
+        return {
+          headline: parsed.headline,
+          detail: parsed.detail,
+          batch: prev?.batch || null,
+        };
+      });
       return;
     }
 
-    setGroups((prev) => {
-      const isStepHeader = STEP_REGEX.test(rawLine);
+    const isStepHeader = STEP_REGEX.test(rawLine);
+    if (isStepHeader) {
+      setProgressState(null);
+    }
 
+    setGroups((prev) => {
       if (isStepHeader || prev.length === 0) {
         // Start a new group
         const newGroup = { label: rawLine, lines: [] };
@@ -188,14 +251,14 @@ const TerminalLogs = React.memo(({ isAuditing, jobId }) => {
     let eventSource;
     if (isAuditing && jobId) {
       setGroups([]);
-      setCurrentFile(null);
+      setProgressState(null);
       setActiveGroupIdx(0);
 
       eventSource = new EventSource(`/api/audit/jobs/${jobId}/logs`);
       eventSource.onmessage = (e) => {
         if (e.data === "[END_OF_STREAM]") {
           eventSource.close();
-          setCurrentFile(null);
+          setProgressState(null);
           return;
         }
         processLine(e.data);
@@ -241,21 +304,48 @@ const TerminalLogs = React.memo(({ isAuditing, jobId }) => {
       </div>
 
       {/* ── Status Bar — Progress Ticker ── */}
-      {currentFile && (
-        <div className="flex items-center gap-3 px-5 py-2 bg-cyan-50 border-b border-cyan-200">
-          <FileCode2
-            size={14}
-            className="text-cyan-600 shrink-0 animate-pulse"
-          />
-          <span className="text-cyan-700 text-xs font-mono font-semibold overflow-hidden text-ellipsis whitespace-nowrap">
-            {currentFile}
-          </span>
-          <div className="ml-auto flex items-center gap-1.5">
-            <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
-            <span className="text-cyan-600 text-[10px] font-bold uppercase tracking-widest">
-              Processing
-            </span>
+      {progressState && (
+        <div className="px-5 py-3 bg-cyan-50 border-b border-cyan-200">
+          <div className="flex items-start gap-3">
+            <FileCode2
+              size={14}
+              className="text-cyan-600 shrink-0 animate-pulse mt-0.5"
+            />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-cyan-700 text-[10px] font-bold uppercase tracking-[0.18em]">
+                  {progressState.headline}
+                </span>
+                {progressState.batch && (
+                  <span className="text-cyan-600 text-[10px] font-bold">
+                    {progressState.batch.percent}%
+                  </span>
+                )}
+              </div>
+              <div className="text-cyan-700 text-xs font-mono font-semibold overflow-hidden text-ellipsis whitespace-nowrap mt-1">
+                {progressState.detail}
+              </div>
+            </div>
+            <div className="ml-auto flex items-center gap-1.5 shrink-0">
+              <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+              <span className="text-cyan-600 text-[10px] font-bold uppercase tracking-widest">
+                Processing
+              </span>
+            </div>
           </div>
+          {progressState.batch && (
+            <div className="mt-3">
+              <div className="h-2 rounded-full bg-cyan-100 border border-cyan-200 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-cyan-500 via-sky-500 to-indigo-500 transition-all duration-500"
+                  style={{ width: `${progressState.batch.percent}%` }}
+                />
+              </div>
+              <div className="mt-1 text-[10px] text-cyan-700 font-semibold text-right">
+                Batch {progressState.batch.current}/{progressState.batch.total}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -560,18 +560,18 @@ const RuleBuilder = ({ targetId, projectName }) => {
                   <motion.div
                     initial={{ opacity: 0, scale: 0.96 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="flex-1 max-w-2xl mx-auto w-full bg-[#101828] border border-amber-500/30 rounded-2xl flex flex-col items-center justify-center text-center relative overflow-hidden shadow-md p-10"
+                    className="flex-1 max-w-2xl mx-auto w-full bg-white border border-amber-200 rounded-2xl flex flex-col items-center justify-center text-center relative overflow-hidden shadow-sm p-10"
                   >
                     <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500" />
                     <XCircle size={60} className="text-amber-500/70 mb-6" />
-                    <h3 className="text-2xl font-black text-amber-400 mb-3 uppercase tracking-widest">
+                    <h3 className="text-2xl font-black text-amber-600 mb-3 uppercase tracking-widest">
                       Luật Đã Tồn Tại
                     </h3>
-                    <p className="text-slate-500 mb-6 max-w-md leading-relaxed text-sm">
+                    <p className="text-slate-600 mb-6 max-w-md leading-relaxed text-sm">
                       Hệ thống phát hiện luật này trùng với Core Rule đang hoạt
                       động:
                     </p>
-                    <code className="text-amber-400 px-5 py-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-lg font-mono font-black block mb-8">
+                    <code className="text-amber-700 px-5 py-3 bg-amber-50 border border-amber-200 rounded-xl text-lg font-mono font-black block mb-8">
                       {compiledJson.existing_rule}
                     </code>
                     <button
@@ -595,31 +595,33 @@ const RuleBuilder = ({ targetId, projectName }) => {
                 )}
 
                 {/* Footer */}
-                <div className="flex justify-between items-center mt-5 pt-4 border-t border-slate-200 shrink-0">
-                  <span className="text-xs text-slate-600">
-                    Bạn có thể chỉnh sửa trực tiếp nội dung JSON ở trên.
-                  </span>
-                  <button
-                    onClick={() => setWizardStep(3)}
-                    disabled={
-                      isCompiling ||
-                      isAutoFixing ||
-                      !compiledJson ||
-                      compiledJson._is_duplicate
-                    }
-                    className={cn(
-                      "flex items-center gap-2.5 px-7 py-3 rounded-xl font-black text-sm uppercase tracking-wider transition-all duration-200",
-                      "disabled:opacity-40 disabled:cursor-not-allowed",
-                      !isCompiling &&
-                        !isAutoFixing &&
-                        compiledJson &&
-                        !compiledJson._is_duplicate
-                        ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-[0_4px_20px_rgba(139,92,246,0.4)] hover:shadow-[0_4px_28px_rgba(139,92,246,0.6)] hover:-translate-y-0.5 active:scale-95"
-                        : "bg-slate-100 text-slate-400 border border-slate-200",
-                    )}
-                  >
-                    Tiến Vào Sandbox <ChevronRight size={16} />
-                  </button>
+                <div className="mt-5 px-6 lg:px-8 pb-6 lg:pb-8 shrink-0">
+                  <div className="flex justify-between items-center pt-4 border-t border-slate-200">
+                    <span className="text-xs text-slate-600">
+                      Bạn có thể chỉnh sửa trực tiếp nội dung JSON ở trên.
+                    </span>
+                    <button
+                      onClick={() => setWizardStep(3)}
+                      disabled={
+                        isCompiling ||
+                        isAutoFixing ||
+                        !compiledJson ||
+                        compiledJson._is_duplicate
+                      }
+                      className={cn(
+                        "flex items-center gap-2.5 px-7 py-3 rounded-xl font-black text-sm uppercase tracking-wider transition-all duration-200",
+                        "disabled:opacity-40 disabled:cursor-not-allowed",
+                        !isCompiling &&
+                          !isAutoFixing &&
+                          compiledJson &&
+                          !compiledJson._is_duplicate
+                          ? "bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-[0_4px_20px_rgba(139,92,246,0.4)] hover:shadow-[0_4px_28px_rgba(139,92,246,0.6)] hover:-translate-y-0.5 active:scale-95"
+                          : "bg-slate-100 text-slate-400 border border-slate-200",
+                      )}
+                    >
+                      Tiến Vào Sandbox <ChevronRight size={16} />
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -662,10 +664,10 @@ const RuleBuilder = ({ targetId, projectName }) => {
 
                 {/* Split pane */}
                 <div className="flex-1 flex gap-4 min-h-0">
-                  <div className="w-[45%] flex flex-col bg-[#0c1222] border border-slate-700 rounded-2xl overflow-hidden focus-within:border-violet-500/40 transition-colors">
+                  <div className="w-[45%] flex flex-col bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm focus-within:border-violet-500/40 transition-colors">
                     <div className="flex items-center justify-between bg-slate-50 border-b border-slate-200 py-2.5 px-4 shrink-0">
                       <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-                        <Database size={12} className="text-violet-400" /> Trình Quản Lý & Tinh Chỉnh
+                        <Database size={12} className="text-violet-500" /> Trình Quản Lý & Tinh Chỉnh
                       </span>
                     </div>
                     <div className="flex-1 flex flex-col overflow-hidden min-h-0 relative">
@@ -679,12 +681,12 @@ const RuleBuilder = ({ targetId, projectName }) => {
 
                   {/* Gutter */}
                   <div className="flex items-center justify-center w-4 shrink-0">
-                    <div className="w-px h-full bg-slate-50 relative">
+                    <div className="w-px h-full bg-slate-200 relative">
                       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col gap-1">
                         {[...Array(5)].map((_, i) => (
                           <div
                             key={i}
-                            className="w-1 h-1 rounded-full bg-slate-100"
+                            className="w-1 h-1 rounded-full bg-slate-300"
                           />
                         ))}
                       </div>
@@ -694,10 +696,10 @@ const RuleBuilder = ({ targetId, projectName }) => {
                   {/* Right panels */}
                   <div className="flex-1 flex flex-col gap-3 min-h-0">
                     {/* Code input */}
-                    <div className="flex-1 flex flex-col bg-[#0c1222] border border-slate-700 rounded-2xl overflow-hidden focus-within:border-blue-500/40 transition-colors min-h-0">
+                    <div className="flex-1 flex flex-col bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm focus-within:border-blue-500/40 transition-colors min-h-0">
                       <div className="flex items-center bg-slate-50 border-b border-slate-200 py-2.5 px-4 shrink-0">
                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-                          <Terminal size={12} className="text-blue-400" /> Mã
+                          <Terminal size={12} className="text-blue-500" /> Mã
                           Nguồn Mô Phỏng
                         </span>
                       </div>
@@ -709,13 +711,13 @@ const RuleBuilder = ({ targetId, projectName }) => {
                           setIsTestRun(false);
                         }}
                         placeholder="# Viết hoặc dán code cần test luật bên trái..."
-                        className="flex-1 w-full font-mono text-[12px] bg-transparent p-4 text-slate-700 outline-none resize-none leading-7 border-none focus:ring-0 placeholder-slate-700"
+                        className="flex-1 w-full font-mono text-[12px] bg-white p-4 text-slate-800 outline-none resize-none leading-7 border-none focus:ring-0 placeholder-slate-400"
                         spellCheck={false}
                       />
                     </div>
 
                     {/* Results */}
-                    <div className="flex-1 flex flex-col bg-[#0c1222] border border-slate-700 rounded-2xl overflow-hidden min-h-0">
+                    <div className="flex-1 flex flex-col bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm min-h-0">
                       <div className="flex items-center justify-between bg-slate-50 border-b border-slate-200 py-2.5 px-4 shrink-0">
                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
                           <Box size={12} /> Kết Quả Phân Tích
@@ -744,7 +746,7 @@ const RuleBuilder = ({ targetId, projectName }) => {
 
                       <div className="flex-1 overflow-auto p-4 bg-slate-50">
                         {isTesting ? (
-                          <div className="flex flex-col items-center justify-center h-full text-blue-400 gap-3">
+                          <div className="flex flex-col items-center justify-center h-full text-blue-600 gap-3">
                             <div className="w-8 h-8 border-3 border-blue-500 border-t-transparent rounded-full animate-spin" />
                             <p className="text-[10px] font-bold uppercase tracking-widest animate-pulse">
                               Analyzing AST & Regex…
@@ -763,13 +765,13 @@ const RuleBuilder = ({ targetId, projectName }) => {
                           <motion.div
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            className="flex flex-col items-center justify-center h-full bg-emerald-500/5 rounded-xl border border-emerald-500/10"
+                            className="flex flex-col items-center justify-center h-full bg-emerald-50 rounded-xl border border-emerald-200"
                           >
                             <CheckCircle2
                               size={32}
-                              className="text-emerald-500/70 mb-2"
+                              className="text-emerald-600 mb-2"
                             />
-                            <span className="font-black text-emerald-400 text-xs uppercase tracking-widest">
+                            <span className="font-black text-emerald-700 text-xs uppercase tracking-widest">
                               Không Có Vi Phạm
                             </span>
                           </motion.div>
@@ -781,17 +783,17 @@ const RuleBuilder = ({ targetId, projectName }) => {
                                 initial={{ opacity: 0, x: -8 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: i * 0.06 }}
-                                className="bg-red-500/8 border border-red-500/25 rounded-xl p-3 flex flex-col gap-2 border-l-2 border-l-red-500/60"
+                                className="bg-red-50 border border-red-200 rounded-xl p-3 flex flex-col gap-2 border-l-2 border-l-red-500/70"
                               >
                                 <div className="flex items-center justify-between">
-                                  <span className="font-black text-red-400 font-mono text-xs">
+                                  <span className="font-black text-red-700 font-mono text-xs">
                                     {v.rule_id}
                                   </span>
-                                  <span className="text-[9px] font-bold text-red-400 bg-red-500/15 px-2 py-0.5 rounded-full border border-red-500/25 flex items-center gap-1">
+                                  <span className="text-[9px] font-bold text-red-700 bg-red-100 px-2 py-0.5 rounded-full border border-red-200 flex items-center gap-1">
                                     <AlertTriangle size={9} /> Line {v.line}
                                   </span>
                                 </div>
-                                <p className="text-slate-600 text-xs leading-relaxed">
+                                <p className="text-slate-700 text-xs leading-relaxed">
                                   {v.reason}
                                 </p>
                               </motion.div>

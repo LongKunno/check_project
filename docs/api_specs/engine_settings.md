@@ -1,6 +1,6 @@
 # API: Engine Settings
 
-Quản lý cấu hình engine runtime (AI toggle, file scan limit, authentication toggle) — thay đổi từ UI mà không cần restart.
+Quản lý cấu hình engine runtime (AI toggle, AI concurrency, file scan limit, authentication toggle) — thay đổi từ UI mà không cần restart.
 
 ## `GET /api/settings/engine`
 
@@ -12,6 +12,7 @@ Quản lý cấu hình engine runtime (AI toggle, file scan limit, authenticatio
   "status": "success",
   "data": {
     "ai_enabled": false,
+    "ai_max_concurrency": 5,
     "test_mode_limit_files": 1,
     "auth_required": true
   }
@@ -26,6 +27,7 @@ Quản lý cấu hình engine runtime (AI toggle, file scan limit, authenticatio
 ```json
 {
   "ai_enabled": true,
+  "ai_max_concurrency": 8,
   "test_mode_limit_files": 0,
   "auth_required": false
 }
@@ -37,6 +39,7 @@ Quản lý cấu hình engine runtime (AI toggle, file scan limit, authenticatio
   "status": "success",
   "data": {
     "ai_enabled": true,
+    "ai_max_concurrency": 8,
     "test_mode_limit_files": 0,
     "auth_required": false
   }
@@ -46,7 +49,7 @@ Quản lý cấu hình engine runtime (AI toggle, file scan limit, authenticatio
 **Response (400):**
 ```json
 {
-  "detail": "test_mode_limit_files phải >= 0"
+  "detail": "ai_max_concurrency phải nằm trong khoảng 1..100"
 }
 ```
 
@@ -66,7 +69,7 @@ Quản lý cấu hình engine runtime (AI toggle, file scan limit, authenticatio
 - Config lưu trong bảng `system_config` (key-value store)
 - Ưu tiên đọc: **DB → .env** (fallback)
 - Runtime reload: không cần restart container
-- Helper functions: `get_ai_enabled()`, `get_test_mode_limit()`, `get_auth_required()` trong `src/config.py`
+- Helper functions: `get_ai_enabled()`, `get_ai_max_concurrency()`, `get_test_mode_limit()`, `get_auth_required()` trong `src/config.py`
 
 ### Luồng Authentication Toggle
 
