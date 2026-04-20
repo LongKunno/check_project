@@ -81,3 +81,57 @@ def test_ai_max_concurrency_falls_back_to_5_when_db_invalid(monkeypatch):
     )
 
     assert config.get_ai_max_concurrency() == 5
+
+
+def test_member_recent_months_defaults_to_3_when_env_missing(monkeypatch):
+    monkeypatch.delenv("MEMBER_RECENT_MONTHS", raising=False)
+    config = _reload_config()
+    monkeypatch.setattr(
+        AuditDatabase,
+        "get_config",
+        staticmethod(lambda key, default=None: None),
+    )
+
+    assert config.MEMBER_RECENT_MONTHS == 3
+    assert config.get_member_recent_months() == 3
+
+
+def test_member_recent_months_uses_env_when_valid(monkeypatch):
+    monkeypatch.setenv("MEMBER_RECENT_MONTHS", "6")
+    config = _reload_config()
+    monkeypatch.setattr(
+        AuditDatabase,
+        "get_config",
+        staticmethod(lambda key, default=None: None),
+    )
+
+    assert config.MEMBER_RECENT_MONTHS == 6
+    assert config.get_member_recent_months() == 6
+
+
+def test_member_recent_months_prefers_db_override(monkeypatch):
+    monkeypatch.setenv("MEMBER_RECENT_MONTHS", "6")
+    config = _reload_config()
+    monkeypatch.setattr(
+        AuditDatabase,
+        "get_config",
+        staticmethod(
+            lambda key, default=None: "9" if key == "member_recent_months" else default
+        ),
+    )
+
+    assert config.get_member_recent_months() == 9
+
+
+def test_member_recent_months_falls_back_to_3_when_db_invalid(monkeypatch):
+    monkeypatch.setenv("MEMBER_RECENT_MONTHS", "6")
+    config = _reload_config()
+    monkeypatch.setattr(
+        AuditDatabase,
+        "get_config",
+        staticmethod(
+            lambda key, default=None: "0" if key == "member_recent_months" else default
+        ),
+    )
+
+    assert config.get_member_recent_months() == 3

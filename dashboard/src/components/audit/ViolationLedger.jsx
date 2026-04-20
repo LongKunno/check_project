@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Code2,
   Search,
@@ -10,8 +10,11 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import Pagination from "../ui/Pagination";
+import { usePaginationState } from "../../hooks/usePaginationState";
 
 const ITEMS_PER_GROUP = 5;
+const GROUPS_PER_PAGE = 8;
 
 const sevColors = {
   Critical: "#ef4444",
@@ -42,6 +45,8 @@ const ViolationLedger = ({
   const [severityFilter, setSeverityFilter] = useState("all");
   const [fileSearch, setFileSearch] = useState("");
   const [showAllInGroup, setShowAllInGroup] = useState(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(GROUPS_PER_PAGE);
 
   const severityCounts = useMemo(() => {
     const c = { Critical: 0, Major: 0, Minor: 0, Info: 0 };
@@ -91,6 +96,19 @@ const ViolationLedger = ({
     });
     return Object.values(groups).sort((a, b) => a.totalWeight - b.totalWeight);
   }, [filteredViolations]);
+  const { pageItems: pagedGroups } = usePaginationState({
+    items: groupedViolations,
+    currentPage,
+    pageSize,
+    onPageChange: setCurrentPage,
+  });
+
+  const areVisibleGroupsExpanded = pagedGroups.length > 0
+    && pagedGroups.every((group) => expandedRules.has(group.rule_id));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [severityFilter, fileSearch, reportView, violations]);
 
   const toggleRuleGroup = (ruleId) => {
     setExpandedRules((prev) => {
@@ -125,13 +143,21 @@ const ViolationLedger = ({
           {groupedViolations.length > 0 && (
             <button
               onClick={() =>
-                expandedRules.size >= groupedViolations.length
-                  ? setExpandedRules(new Set())
-                  : setExpandedRules(new Set(groupedViolations.map((g) => g.rule_id)))
+                areVisibleGroupsExpanded
+                  ? setExpandedRules((prev) => {
+                    const next = new Set(prev);
+                    pagedGroups.forEach((group) => next.delete(group.rule_id));
+                    return next;
+                  })
+                  : setExpandedRules((prev) => {
+                    const next = new Set(prev);
+                    pagedGroups.forEach((group) => next.add(group.rule_id));
+                    return next;
+                  })
               }
               className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-bold rounded-lg border border-blue-100 transition-colors"
             >
-              {expandedRules.size >= groupedViolations.length ? "Collapse All" : "Expand All"}
+              {areVisibleGroupsExpanded ? "Collapse Page" : "Expand Page"}
             </button>
           )}
         </div>
@@ -153,6 +179,7 @@ const ViolationLedger = ({
               onClick={() => {
                 setSeverityFilter(f.key);
                 setShowAllInGroup(new Set());
+                setCurrentPage(1);
               }}
               style={{
                 borderColor: active ? `${f.color}40` : "#e2e8f0",
@@ -173,7 +200,10 @@ const ViolationLedger = ({
             type="text"
             placeholder="Search file..."
             value={fileSearch}
-            onChange={(e) => setFileSearch(e.target.value)}
+            onChange={(e) => {
+              setFileSearch(e.target.value);
+              setCurrentPage(1);
+            }}
             className="pl-9 pr-4 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all w-48 focus:w-56"
           />
         </div>
@@ -183,7 +213,7 @@ const ViolationLedger = ({
       <div className="overflow-y-auto flex-1 p-4 bg-slate-50/30">
         {groupedViolations.length > 0 ? (
           <div className="flex flex-col gap-3">
-            {groupedViolations.map((group) => {
+            {pagedGroups.map((group) => {
               const isExpanded = expandedRules.has(group.rule_id);
               const sevColor = sevColors[getSev(group.violations[0])] || "#3b82f6";
               const visibleCount = showAllInGroup.has(group.rule_id)
@@ -360,6 +390,7 @@ const ViolationLedger = ({
                   onClick={() => {
                     setSeverityFilter("all");
                     setFileSearch("");
+                    setCurrentPage(1);
                   }}
                   className="mt-2 px-4 py-2 bg-blue-50 text-blue-600 font-bold rounded-lg hover:bg-blue-100 transition-colors"
                 >
@@ -370,6 +401,17 @@ const ViolationLedger = ({
           </div>
         )}
       </div>
+
+      <Pagination
+        currentPage={currentPage}
+        totalItems={groupedViolations.length}
+        pageSize={pageSize}
+        onPageChange={setCurrentPage}
+        onPageSizeChange={setPageSize}
+        showPageSizeSelector={true}
+        pageSizeOptions={[5, 8, 12, 20]}
+        label="rule groups"
+      />
     </div>
   );
 };

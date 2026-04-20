@@ -1,19 +1,34 @@
 import uuid
 import time
 import threading
-from typing import Dict, List, Optional
-from pydantic import BaseModel
+from typing import Dict, List, Optional, Literal
+from pydantic import BaseModel, Field
+
+
+class JobProgress(BaseModel):
+    phase: Optional[Literal["validation", "deep_audit"]] = None
+    phase_label: Optional[str] = None
+    total_batches: int = 0
+    batch_size: int = 0
+    last_started_batch: int = 0
+    completed_batches: int = 0
+    active_batches: int = 0
+    pending_batches: int = 0
+    last_detail: str = ""
+    updated_at: float = Field(default_factory=time.time)
 
 
 class JobStatus(BaseModel):
     job_id: str
-    status: str  # "PENDING", "RUNNING", "COMPLETED", "FAILED"
+    status: str  # "PENDING", "RUNNING", "COMPLETED", "FAILED", "CANCELLED"
     message: str = ""
     result: Optional[dict] = None
     started_at: float
     ended_at: Optional[float] = None
     target: str = ""
     job_type: str = "single"  # "single" hoac "batch"
+    progress: Optional[JobProgress] = None
+    cancel_requested: bool = False
 
 
 class JobManager:
@@ -23,6 +38,8 @@ class JobManager:
 
     jobs: Dict[str, JobStatus] = {}
     job_logs: Dict[str, List[str]] = {}
+    TERMINAL_STATUSES = {"COMPLETED", "FAILED", "CANCELLED"}
+    ACTIVE_STATUSES = {"PENDING", "RUNNING"}
 
     # Thread-local storage để track Job đang chạy trên thread nào
     _thread_local = threading.local()
@@ -54,7 +71,7 @@ class JobManager:
         stale_ids = [
             jid
             for jid, job in list(cls.jobs.items())
-            if job.status in ("COMPLETED", "FAILED")
+            if job.status in cls.TERMINAL_STATUSES
             and job.ended_at
             and (now - job.ended_at) > cls.JOB_RETENTION_SECONDS
         ]
@@ -66,15 +83,154 @@ class JobManager:
     def update_job(
         cls, job_id: str, status: str, message: str = "", result: dict = None
     ):
-        if job_id in cls.jobs:
-            job = cls.jobs[job_id]
-            job.status = status
-            if message:
-                job.message = message
-            if result:
-                job.result = result
-            if status in ["COMPLETED", "FAILED"]:
-                job.ended_at = time.time()
+        job = cls.jobs.get(job_id)
+        if not job or job.status in cls.TERMINAL_STATUSES:
+            return False
+
+        if status == "COMPLETED" and job.cancel_requested:
+            status = "CANCELLED"
+            message = message or "Đã hủy theo yêu cầu người dùng."
+            result = None
+
+        job.status = status
+        if message:
+            job.message = message
+        if result is not None:
+            job.result = result
+        if status in cls.TERMINAL_STATUSES:
+            cls.finalize_progress(job_id, last_detail=message or None)
+            job.ended_at = time.time()
+        return True
+
+    @classmethod
+    def request_cancel(
+        cls,
+        job_id: str,
+        message: str = "Đã nhận yêu cầu dừng. Sẽ chờ request AI đang chạy hoàn tất và không mở request mới.",
+    ) -> bool:
+        job = cls.jobs.get(job_id)
+        if not job or job.status in cls.TERMINAL_STATUSES:
+            return False
+
+        job.cancel_requested = True
+        if message:
+            job.message = message
+        if job.progress:
+            job.progress.last_detail = message
+            job.progress.updated_at = time.time()
+        return True
+
+    @classmethod
+    def is_cancel_requested(cls, job_id: Optional[str]) -> bool:
+        if not job_id:
+            return False
+        job = cls.jobs.get(job_id)
+        return bool(job and job.cancel_requested)
+
+    @classmethod
+    def get_active_job_ids(cls) -> List[str]:
+        return [
+            jid
+            for jid, job in cls.jobs.items()
+            if job.status in cls.ACTIVE_STATUSES
+        ]
+
+    @classmethod
+    def start_progress_phase(
+        cls,
+        job_id: str,
+        phase: Literal["validation", "deep_audit"],
+        phase_label: str,
+        total_batches: int,
+        batch_size: int,
+        last_detail: str = "",
+    ):
+        job = cls.jobs.get(job_id)
+        if not job:
+            return
+        job.progress = JobProgress(
+            phase=phase,
+            phase_label=phase_label,
+            total_batches=total_batches,
+            batch_size=batch_size,
+            pending_batches=total_batches,
+            last_detail=last_detail,
+            updated_at=time.time(),
+        )
+
+    @classmethod
+    def record_batch_started(
+        cls, job_id: str, batch_number: int, last_detail: str = ""
+    ):
+        job = cls.jobs.get(job_id)
+        if not job or not job.progress:
+            return
+
+        progress = job.progress
+        progress.last_started_batch = max(progress.last_started_batch, batch_number)
+        progress.active_batches += 1
+        progress.pending_batches = max(
+            progress.total_batches
+            - progress.completed_batches
+            - progress.active_batches,
+            0,
+        )
+        if last_detail:
+            progress.last_detail = last_detail
+        progress.updated_at = time.time()
+
+    @classmethod
+    def record_batch_finished(
+        cls,
+        job_id: str,
+        batch_number: int,
+        last_detail: str = "",
+        completed: bool = True,
+    ):
+        job = cls.jobs.get(job_id)
+        if not job or not job.progress:
+            return
+
+        progress = job.progress
+        progress.active_batches = max(progress.active_batches - 1, 0)
+        progress.last_started_batch = max(progress.last_started_batch, batch_number)
+        if completed:
+            progress.completed_batches = min(
+                progress.completed_batches + 1,
+                progress.total_batches,
+            )
+        progress.pending_batches = max(
+            progress.total_batches
+            - progress.completed_batches
+            - progress.active_batches,
+            0,
+        )
+        if last_detail:
+            progress.last_detail = last_detail
+        progress.updated_at = time.time()
+
+    @classmethod
+    def finalize_progress(cls, job_id: str, last_detail: str = None):
+        job = cls.jobs.get(job_id)
+        if not job or not job.progress:
+            return
+
+        progress = job.progress
+        progress.active_batches = 0
+        progress.pending_batches = max(
+            progress.total_batches - progress.completed_batches,
+            0,
+        )
+        if last_detail:
+            progress.last_detail = last_detail
+        progress.updated_at = time.time()
+
+    @classmethod
+    def clear_progress(cls, job_id: str):
+        job = cls.jobs.get(job_id)
+        if not job:
+            return
+        job.progress = None
 
     @classmethod
     def log(cls, job_id: str, message: str):

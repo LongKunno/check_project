@@ -37,7 +37,12 @@ function run_cmd() {
     case "$1" in
         start)
             echo "Starting project services (Fast)..."
-            docker compose up -d
+            if docker compose up -d; then
+                echo "Restarting backend to apply mounted Python source changes..."
+                docker compose restart backend
+            else
+                exit 1
+            fi
             ;;
         rebuild)
             echo "Rebuilding and starting project services..."

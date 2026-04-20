@@ -31,6 +31,7 @@ function parseProgressLine(rawLine) {
 
     return {
       kind: "batch",
+      label,
       headline: `${label} ${current}/${total}`,
       detail: text,
       batch: {
@@ -199,7 +200,7 @@ function StepGroup({ stepLabel, lines, isActive, defaultOpen }) {
 
 // --------------- Main Component ---------------
 
-const TerminalLogs = React.memo(({ isAuditing, jobId }) => {
+const TerminalLogs = React.memo(({ isAuditing, jobId, progress = null }) => {
   // Groups: array of { label: string, lines: string[] }
   const [groups, setGroups] = useState([]);
   const [activeGroupIdx, setActiveGroupIdx] = useState(0);
@@ -210,16 +211,19 @@ const TerminalLogs = React.memo(({ isAuditing, jobId }) => {
   const processLine = useCallback((rawLine) => {
     if (rawLine.startsWith("[PROGRESS]")) {
       const parsed = parseProgressLine(rawLine);
-      setProgressState((prev) => {
-        if (parsed.kind === "batch") {
-          return parsed;
-        }
-
-        return {
-          headline: parsed.headline,
+      if (parsed.kind === "batch") {
+        setProgressState((prev) => ({
+          headline: parsed.label,
           detail: parsed.detail,
           batch: prev?.batch || null,
-        };
+        }));
+        return;
+      }
+
+      setProgressState({
+        headline: parsed.headline,
+        detail: parsed.detail,
+        batch: null,
       });
       return;
     }
@@ -277,6 +281,29 @@ const TerminalLogs = React.memo(({ isAuditing, jobId }) => {
     }
   }, [groups]);
 
+  const apiProgress = progress?.phase
+    ? {
+        headline:
+          progress.last_started_batch > 0
+            ? `${progress.phase_label || "AI"} batch ${progress.last_started_batch}/${progress.total_batches}`
+            : `${progress.phase_label || "AI"} queued`,
+        detail: progress.last_detail || progressState?.detail || "",
+        batch:
+          progress.total_batches > 0
+            ? {
+                current: progress.last_started_batch,
+                total: progress.total_batches,
+                percent: Math.round(
+                  (Math.min(progress.last_started_batch, progress.total_batches) /
+                    progress.total_batches) *
+                    100,
+                ),
+              }
+            : null,
+      }
+    : null;
+  const displayProgress = apiProgress || progressState;
+
   if (!isAuditing) return null;
 
   return (
@@ -304,7 +331,7 @@ const TerminalLogs = React.memo(({ isAuditing, jobId }) => {
       </div>
 
       {/* ── Status Bar — Progress Ticker ── */}
-      {progressState && (
+      {displayProgress && (
         <div className="px-5 py-3 bg-cyan-50 border-b border-cyan-200">
           <div className="flex items-start gap-3">
             <FileCode2
@@ -314,16 +341,16 @@ const TerminalLogs = React.memo(({ isAuditing, jobId }) => {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <span className="text-cyan-700 text-[10px] font-bold uppercase tracking-[0.18em]">
-                  {progressState.headline}
+                  {displayProgress.headline}
                 </span>
-                {progressState.batch && (
+                {displayProgress.batch && (
                   <span className="text-cyan-600 text-[10px] font-bold">
-                    {progressState.batch.percent}%
+                    {displayProgress.batch.percent}%
                   </span>
                 )}
               </div>
               <div className="text-cyan-700 text-xs font-mono font-semibold overflow-hidden text-ellipsis whitespace-nowrap mt-1">
-                {progressState.detail}
+                {displayProgress.detail}
               </div>
             </div>
             <div className="ml-auto flex items-center gap-1.5 shrink-0">
@@ -333,16 +360,16 @@ const TerminalLogs = React.memo(({ isAuditing, jobId }) => {
               </span>
             </div>
           </div>
-          {progressState.batch && (
+          {displayProgress.batch && (
             <div className="mt-3">
               <div className="h-2 rounded-full bg-cyan-100 border border-cyan-200 overflow-hidden">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-cyan-500 via-sky-500 to-indigo-500 transition-all duration-500"
-                  style={{ width: `${progressState.batch.percent}%` }}
+                  style={{ width: `${displayProgress.batch.percent}%` }}
                 />
               </div>
               <div className="mt-1 text-[10px] text-cyan-700 font-semibold text-right">
-                Batch {progressState.batch.current}/{progressState.batch.total}
+                Batch {displayProgress.batch.current}/{displayProgress.batch.total}
               </div>
             </div>
           )}

@@ -24,6 +24,7 @@ import {
 import EmptyState from "../ui/EmptyState";
 import Pagination from "../ui/Pagination";
 import TopProgressBar from "../ui/TopProgressBar";
+import { usePaginationState } from "../../hooks/usePaginationState";
 import { getRatingColor, getScoreColor, getScoreDotClass, getScoreGradient } from "../../utils/scoreHelpers";
 import { RankBadge } from "../ui/RankBadge";
 
@@ -475,6 +476,13 @@ export const MemberScoresView = ({ cn }) => {
     const vb = b[sortBy] ?? 0;
     return sortDir === "desc" ? vb - va : va - vb;
   });
+  const { pageItems: pagedMembers, pageStartIndex: memPageStartIndex } =
+    usePaginationState({
+      items: sorted,
+      currentPage: memPage,
+      pageSize: memPageSize,
+      onPageChange: setMemPage,
+    });
 
   // KPI Stats
   const topPerformer =
@@ -508,7 +516,7 @@ export const MemberScoresView = ({ cn }) => {
                 <Users size={14} className="text-cyan-600" /> Team Leaderboard
               </div>
               <span className="text-slate-600 text-xs font-medium hidden sm:block">
-                Individual quality across all repositories (3 months)
+                Individual quality across all repositories within the configured recency window
               </span>
             </div>
             <h2
@@ -687,16 +695,14 @@ export const MemberScoresView = ({ cn }) => {
                 </tr>
               </thead>
               <tbody>
-                {sorted
-                  .slice((memPage - 1) * memPageSize, memPage * memPageSize)
-                  .map((member, idx) => (
-                    <MemberRow
-                      key={member.email}
-                      member={member}
-                      rank={(memPage - 1) * memPageSize + idx + 1}
-                      onClick={setSelectedMember}
-                    />
-                  ))}
+                {pagedMembers.map((member, idx) => (
+                  <MemberRow
+                    key={member.email}
+                    member={member}
+                    rank={memPageStartIndex + idx + 1}
+                    onClick={setSelectedMember}
+                  />
+                ))}
               </tbody>
             </table>
           </div>

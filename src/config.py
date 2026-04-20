@@ -62,6 +62,12 @@ AI_MAX_CONCURRENCY = _parse_int_setting(
     os.getenv("AI_MAX_CONCURRENCY", 5), default=5, minimum=1, maximum=100
 )
 
+# MEMBER RECENCY WINDOW: Chỉ tính Git authorship trong N tháng gần đây cho member scoring.
+# Miền hợp lệ: 1..24. Nếu parse lỗi hoặc out-of-range thì fallback về 3.
+MEMBER_RECENT_MONTHS = _parse_int_setting(
+    os.getenv("MEMBER_RECENT_MONTHS", 3), default=3, minimum=1, maximum=24
+)
+
 # AUTH TOGGLE: Bật/tắt yêu cầu đăng nhập Google OAuth
 # true  = Bắt buộc đăng nhập để truy cập Dashboard
 # false = Bỏ qua xác thực, mọi người đều truy cập được (dùng cho local dev / demo)
@@ -106,6 +112,20 @@ def get_ai_max_concurrency() -> int:
     except Exception:
         pass
     return AI_MAX_CONCURRENCY
+
+
+def get_member_recent_months() -> int:
+    """Đọc MEMBER_RECENT_MONTHS từ DB (ưu tiên) hoặc .env (fallback).
+    Giá trị hợp lệ: 1..24; nếu DB lỗi hoặc out-of-range thì fallback về 3."""
+    try:
+        from src.engine.database import AuditDatabase
+
+        val = AuditDatabase.get_config("member_recent_months")
+        if val is not None:
+            return _parse_int_setting(val, default=3, minimum=1, maximum=24)
+    except Exception:
+        pass
+    return MEMBER_RECENT_MONTHS
 
 
 def get_auth_required() -> bool:

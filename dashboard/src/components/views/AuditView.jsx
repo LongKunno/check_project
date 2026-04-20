@@ -23,6 +23,7 @@ import ChartsRow from "../audit/ChartsRow";
 import RuleBreakdownTable from "../audit/RuleBreakdownTable";
 import AuditSidebar from "../audit/AuditSidebar";
 import TeamLeaderboard from "../audit/TeamLeaderboard";
+import { usePaginationState } from "../../hooks/usePaginationState";
 import {
   getScoreColorClass,
   getViolationDistributionData,
@@ -120,7 +121,12 @@ function FeatureTable({ features }) {
     entries.length > 0 ? Object.keys(entries[0][1].pillars) : [];
   const [ftPage, setFtPage] = useState(1);
   const [ftPageSize, setFtPageSize] = useState(10);
-  const paged = entries.slice((ftPage - 1) * ftPageSize, ftPage * ftPageSize);
+  const { pageItems: paged } = usePaginationState({
+    items: entries,
+    currentPage: ftPage,
+    pageSize: ftPageSize,
+    onPageChange: setFtPage,
+  });
 
   return (
     <div
@@ -259,7 +265,7 @@ function FeatureTable({ features }) {
 // ─── Main AuditView Component ───────────────────────────────────────────────
 
 const AuditView = ({
-  data, error, isAuditing, jobId,
+  data, error, isAuditing, jobId, auditProgress,
   reportView, setReportView,
   selectedMember, setSelectedMember,
   activeLedgerTab,
@@ -282,6 +288,8 @@ const AuditView = ({
     () => Object.keys(data?.scores?.members || {}),
     [data],
   );
+  const hasMemberScores = memberOptions.length > 0;
+  const memberRecentMonths = data?.metadata?.member_recent_months || 3;
   const filteredMemberOptions = useMemo(() => {
     const keyword = memberSearch.trim().toLowerCase();
     if (!keyword) return memberOptions;
@@ -366,7 +374,7 @@ const AuditView = ({
   return (
     <>
       {/* Terminal Mini */}
-      <TerminalLogs isAuditing={isAuditing} jobId={jobId} />
+      <TerminalLogs isAuditing={isAuditing} jobId={jobId} progress={auditProgress} />
 
       {/* Error */}
       {error && (
@@ -399,19 +407,44 @@ const AuditView = ({
             <button
               onClick={() => {
                 setReportView("member");
-                if (!selectedMember && data.scores.members && Object.keys(data.scores.members).length > 0) {
-                  setSelectedMember(Object.keys(data.scores.members)[0]);
+                if (!selectedMember && hasMemberScores) {
+                  setSelectedMember(memberOptions[0]);
                 }
               }}
               className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold uppercase tracking-wider transition-all ${reportView === "member" ? "bg-violet-500/15 text-violet-400 border border-violet-500/20" : "text-slate-500 hover:text-slate-300 border border-transparent"}`}
-              disabled={!data.scores.members || Object.keys(data.scores.members).length === 0}
+              disabled={!hasMemberScores}
+              title={
+                !hasMemberScores
+                  ? `Không có dữ liệu đánh giá thành viên trong ${memberRecentMonths} tháng gần đây.`
+                  : undefined
+              }
             >
               <Users size={16} /> Team Analytics
             </button>
           </div>
 
+          {!hasMemberScores && (
+            <div
+              className="glass-card"
+              style={{
+                marginBottom: "1.25rem",
+                background: "#fff7ed",
+                border: "1px solid #fdba74",
+                color: "#9a3412",
+                display: "flex",
+                alignItems: "flex-start",
+                gap: "0.75rem",
+              }}
+            >
+              <AlertTriangle size={18} style={{ marginTop: "0.1rem", flexShrink: 0 }} />
+              <div style={{ fontSize: "0.92rem", lineHeight: 1.6 }}>
+                Chưa có dữ liệu đánh giá thành viên vì dự án không phát sinh thay đổi mã nguồn trong {memberRecentMonths} tháng gần đây.
+              </div>
+            </div>
+          )}
+
           {/* Member Selector */}
-          {reportView === "member" && data.scores.members && Object.keys(data.scores.members).length > 0 && (
+          {reportView === "member" && hasMemberScores && (
             <div className="member-select-row">
               <div
                 ref={memberDropdownRef}

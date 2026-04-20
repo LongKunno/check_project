@@ -6,7 +6,6 @@ import os
 import shutil
 import tempfile
 import asyncio
-import sys
 
 from fastapi import (
     APIRouter,
@@ -21,14 +20,35 @@ from fastapi.responses import StreamingResponse
 from typing import List, Optional
 from pydantic import BaseModel
 
-from src.engine.auditor import CodeAuditor
+from src.engine.auditor import AuditCancelledError, CodeAuditor
 from src.engine.scoring import ScoringEngine
 from src.engine.database import AuditDatabase
 from src.api.git_helper import GitHelper
 from src.api.audit_state import AuditState, JobManager
-from src.config import get_ai_enabled
+from src.config import get_ai_enabled, get_member_recent_months
 
 router = APIRouter()
+
+
+def _raise_if_job_cancelled(
+    job_id: Optional[str],
+    message: str = "Đã hủy theo yêu cầu người dùng.",
+):
+    if job_id and JobManager.is_cancel_requested(job_id):
+        raise AuditCancelledError(message)
+
+
+def _request_cancel_for_job(
+    job_id: str,
+    message: str = "Đã nhận yêu cầu dừng. Sẽ chờ request AI đang chạy hoàn tất và không mở request mới.",
+) -> bool:
+    cancelled = JobManager.request_cancel(job_id, message=message)
+    if cancelled:
+        JobManager.log(
+            job_id,
+            "[SYSTEM] Đã nhận yêu cầu huỷ. Chờ request AI đang chạy hoàn tất, không mở request mới...",
+        )
+    return cancelled
 
 
 def run_auditor_with_capture(target_path, target_id=None, job_id=None):
@@ -52,7 +72,17 @@ def run_auditor_with_capture(target_path, target_id=None, job_id=None):
             db_rules = AuditDatabase.get_effective_rules(target_id)
             if db_rules:
                 custom_rules = db_rules
-        auditor = CodeAuditor(target_path, custom_rules=custom_rules)
+        cancel_check = (
+            (lambda: JobManager.is_cancel_requested(job_id))
+            if job_id
+            else (lambda: AuditState.is_cancelled)
+        )
+        auditor = CodeAuditor(
+            target_path,
+            custom_rules=custom_rules,
+            cancel_check=cancel_check,
+            job_id=job_id,
+        )
         auditor.run()
         return auditor
     finally:
@@ -63,6 +93,7 @@ def run_auditor_with_capture(target_path, target_id=None, job_id=None):
 
 def _build_and_save_audit_result(auditor, target_str, project_name):
     total_loc = auditor.discovery_data["total_loc"]
+    member_recent_months = get_member_recent_months()
     final_score = ScoringEngine.calculate_final_score_from_features(
         auditor.feature_results
     )
@@ -81,6 +112,9 @@ def _build_and_save_audit_result(auditor, target_str, project_name):
             "project_pillars": auditor.project_pillars,
             "features": auditor.feature_results,
             "members": getattr(auditor, "member_results", {}),
+        },
+        "metadata": {
+            "member_recent_months": member_recent_months,
         },
         "violations": auditor.violations,
     }
@@ -130,14 +164,35 @@ async def get_audit_status():
 async def cancel_audit():
     """Hủy phiên kiểm toán đang chạy."""
     AuditState.cancel()
+    cancelled_count = 0
+    for jid in JobManager.get_active_job_ids():
+        cancelled_count += int(_request_cancel_for_job(jid))
 
-    # Huỷ cả các Job đang chạy trong JobManager (Batch Scanning)
-    for jid, job in JobManager.jobs.items():
-        if job.status in ["PENDING", "RUNNING"]:
-            JobManager.update_job(jid, "FAILED", "Đã bị huỷ bởi người dùng.")
-            JobManager.log(jid, "[SYSTEM] Đã nhận lệnh huỷ từ người dùng.")
+    if cancelled_count == 0:
+        return {
+            "status": "success",
+            "message": "Không có job đang chạy để hủy.",
+        }
 
     return {"status": "success", "message": "Đã gửi tín hiệu hủy quét mã nguồn."}
+
+
+@router.post("/audit/jobs/{job_id}/cancel")
+async def cancel_job(job_id: str):
+    """Yêu cầu dừng một job cụ thể ở checkpoint an toàn gần nhất."""
+    if not JobManager.get_job(job_id):
+        raise HTTPException(status_code=404, detail="Không tìm thấy Job ID.")
+
+    if not _request_cancel_for_job(job_id):
+        return {
+            "status": "success",
+            "message": "Job đã kết thúc trước đó.",
+        }
+
+    return {
+        "status": "success",
+        "message": "Đã nhận yêu cầu dừng job. Hệ thống sẽ chờ request AI đang chạy hoàn tất và không mở request mới.",
+    }
 
 
 # ── Upload & Process ──────────────────────────────────────────────────────────
@@ -184,11 +239,15 @@ async def upload_and_audit(
         def background_audit(job_id, target_path, project_name, temp_dir):
             JobManager.update_job(job_id, "RUNNING", "Bắt đầu kiểm toán mã nguồn...")
             try:
+                _raise_if_job_cancelled(job_id)
                 auditor = run_auditor_with_capture(target_path, project_name, job_id)
+                _raise_if_job_cancelled(job_id)
                 result = _build_and_save_audit_result(
                     auditor, project_name, project_name
                 )
                 JobManager.update_job(job_id, "COMPLETED", result=result)
+            except AuditCancelledError as e:
+                JobManager.update_job(job_id, "CANCELLED", message=str(e))
             except Exception as e:
                 JobManager.update_job(job_id, "FAILED", message=str(e))
             finally:
@@ -250,6 +309,8 @@ async def run_audit(target: str = Query(".", description="Path to directory")):
             auditor, target_path, os.path.basename(target_path)
         )
         return result
+    except AuditCancelledError as e:
+        raise HTTPException(status_code=409, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi: {str(e)}")
 
@@ -304,13 +365,20 @@ async def audit_repository(
                 token=token,
                 branch=branch,
             )
+            _raise_if_job_cancelled(
+                job_id,
+                "Đã hủy sau khi hoàn tất batch clone đang chạy.",
+            )
             JobManager.update_job(
                 job_id, "RUNNING", "Đang phân tích tĩnh và áp dụng AI..."
             )
             auditor = run_auditor_with_capture(target_path, target_id, job_id)
+            _raise_if_job_cancelled(job_id)
             project_name = repo_url.split("/")[-1].replace(".git", "")
             result = _build_and_save_audit_result(auditor, repo_url, project_name)
             JobManager.update_job(job_id, "COMPLETED", result=result)
+        except AuditCancelledError as e:
+            JobManager.update_job(job_id, "CANCELLED", message=str(e))
         except Exception as e:
             JobManager.update_job(job_id, "FAILED", message=str(e))
         finally:
@@ -341,6 +409,19 @@ class BatchAuditRequest(BaseModel):
     project_ids: List[str]
 
 
+def _mark_projects_cancelled(
+    batch_result: dict,
+    project_ids: List[str],
+    message: str = "Đã hủy bởi người dùng.",
+):
+    projects = batch_result.setdefault("projects", {})
+    for pid in project_ids:
+        current_status = projects.get(pid, {}).get("status")
+        if current_status in {"COMPLETED", "FAILED", "CANCELLED"}:
+            continue
+        projects[pid] = {"status": "CANCELLED", "message": message}
+
+
 @router.post("/audit/batch")
 async def audit_batch(request: BatchAuditRequest, background_tasks: BackgroundTasks):
     """Quét hàng loạt các dự án trong cấu hình."""
@@ -349,7 +430,7 @@ async def audit_batch(request: BatchAuditRequest, background_tasks: BackgroundTa
 
     # Tìm một active batch (nếu có)
     for jid, job in JobManager.jobs.items():
-        if job.job_type == "batch" and job.status in ["PENDING", "RUNNING"]:
+        if job.job_type == "batch" and job.status in JobManager.ACTIVE_STATUSES:
             return {
                 "status": "started",
                 "job_id": jid,
@@ -371,10 +452,16 @@ async def audit_batch(request: BatchAuditRequest, background_tasks: BackgroundTa
         JobManager.log(
             job_id, f"[BATCH] Bắt đầu quét hàng loạt {len(project_ids)} dự án."
         )
+        batch_result = JobManager.get_job(job_id).result or {"projects": {}}
 
         for idx, pid in enumerate(project_ids):
-            # Kiểm tra tín hiệu huỷ giữa các project
-            if AuditState.is_cancelled:
+            if JobManager.is_cancel_requested(job_id):
+                _mark_projects_cancelled(
+                    batch_result,
+                    project_ids[idx:],
+                    "Đã hủy trước khi bắt đầu project này.",
+                )
+                JobManager.update_job(job_id, "RUNNING", result=batch_result)
                 JobManager.log(job_id, "[BATCH] Đã dừng quét loạt dự án do lệnh huỷ.")
                 break
 
@@ -383,8 +470,7 @@ async def audit_batch(request: BatchAuditRequest, background_tasks: BackgroundTa
                 config_repo = AuditDatabase.get_repository(pid)
 
                 job = JobManager.get_job(job_id)
-                # Dừng nếu job bị huỷ từ API /audit/cancel
-                if not job or job.status == "FAILED":
+                if not job or job.status in {"FAILED", "CANCELLED"}:
                     JobManager.log(job_id, "[BATCH] Job đã kết thúc hoặc bị huỷ.")
                     break
 
@@ -424,10 +510,15 @@ async def audit_batch(request: BatchAuditRequest, background_tasks: BackgroundTa
                     token=token,
                     branch=branch,
                 )
+                _raise_if_job_cancelled(
+                    job_id,
+                    "Đã hủy sau khi hoàn tất batch clone đang chạy.",
+                )
 
                 # 2. Audit
                 JobManager.log(job_id, f"[BATCH] Thực thi kiểm toán: {pid}")
                 auditor = run_auditor_with_capture(target_path, pid, job_id)
+                _raise_if_job_cancelled(job_id)
                 project_name = repo_url.split("/")[-1].replace(".git", "")
                 res = _build_and_save_audit_result(auditor, repo_url, project_name)
 
@@ -436,6 +527,21 @@ async def audit_batch(request: BatchAuditRequest, background_tasks: BackgroundTa
                     "score": res["scores"]["final"],
                 }
                 JobManager.update_job(job_id, "RUNNING", result=batch_result)
+            except AuditCancelledError as e:
+                job = JobManager.get_job(job_id)
+                batch_result = (job.result if job else None) or {"projects": {}}
+                batch_result["projects"][pid] = {
+                    "status": "CANCELLED",
+                    "message": str(e),
+                }
+                _mark_projects_cancelled(
+                    batch_result,
+                    project_ids[idx + 1 :],
+                    "Đã hủy trước khi bắt đầu project này.",
+                )
+                JobManager.update_job(job_id, "RUNNING", result=batch_result)
+                JobManager.log(job_id, f"[BATCH] Đã hủy tại {pid}: {str(e)}")
+                break
             except Exception as e:
                 job = JobManager.get_job(job_id)
                 batch_result = (job.result if job else None) or {"projects": {}}
@@ -446,8 +552,18 @@ async def audit_batch(request: BatchAuditRequest, background_tasks: BackgroundTa
                 if temp_dir and os.path.exists(temp_dir):
                     shutil.rmtree(temp_dir)
 
+        if JobManager.is_cancel_requested(job_id):
+            JobManager.log(job_id, "[BATCH] Batch đã dừng theo yêu cầu người dùng.")
+            JobManager.update_job(
+                job_id,
+                "CANCELLED",
+                "Đã hủy theo yêu cầu người dùng.",
+                result=batch_result,
+            )
+            return
+
         JobManager.log(job_id, "[BATCH] Hoàn tất toàn bộ !")
-        JobManager.update_job(job_id, "COMPLETED", "Hoàn tất Batch.")
+        JobManager.update_job(job_id, "COMPLETED", "Hoàn tất Batch.", result=batch_result)
 
     background_tasks.add_task(background_batch, job_id, request.project_ids)
     return {"status": "started", "job_id": job_id, "message": "Bắt đầu quét hàng loạt."}
@@ -456,7 +572,7 @@ async def audit_batch(request: BatchAuditRequest, background_tasks: BackgroundTa
 @router.get("/audit/batch/active")
 async def get_active_batch():
     for jid, job in JobManager.jobs.items():
-        if job.job_type == "batch" and job.status in ["PENDING", "RUNNING"]:
+        if job.job_type == "batch" and job.status in JobManager.ACTIVE_STATUSES:
             return {"has_active": True, "job_id": jid, "job": job}
     return {"has_active": False}
 
@@ -493,7 +609,7 @@ async def stream_job_logs(job_id: str, request: Request):
                 for line in logs[last_idx:current_len]:
                     yield f"data: {line}\n\n"
                 last_idx = current_len
-            if job_status.status in ["COMPLETED", "FAILED"]:
+            if job_status.status in JobManager.TERMINAL_STATUSES:
                 await asyncio.sleep(1)
                 yield f"data: [END_OF_STREAM]\n\n"
                 break

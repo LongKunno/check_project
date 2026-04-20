@@ -28,7 +28,7 @@ graph TD
 
 ### Các lệnh phổ biến:
 
-- **Khởi động nhanh**: `./manage.sh start` (Dùng container đã build sẵn).
+- **Khởi động nhanh**: `./manage.sh start` (Dùng container đã build sẵn và restart backend để nạp code Python mới đang được bind-mount).
 - **Build lại và chạy**: `./manage.sh rebuild` (Cần khi thay đổi Dockerfile hoặc requirements.txt).
 - **Dừng hệ thống**: `./manage.sh stop`.
 - **Xem logs**: `./manage.sh logs`.
@@ -58,11 +58,21 @@ Backend **không** sử dụng `uvicorn --reload`. Điều này cho phép:
 - **Code tự do trong khi đang chạy test** mà không bị server tự restart giữa chừng.
 - Tránh race condition khi test đang truy vấn database mà server bất ngờ reload.
 
-Sau khi sửa code backend, cần **restart thủ công** container để áp dụng thay đổi:
+Do `src/` đang được bind-mount vào container, thay đổi mã Python **không cần rebuild image**. Tuy nhiên, backend process vẫn phải được restart để nạp module mới vào memory.
+
+Sau khi sửa code backend, cần **restart backend** để áp dụng thay đổi:
 
 ```bash
 docker compose restart backend
 ```
+
+Hoặc dùng:
+
+```bash
+./manage.sh start
+```
+
+Lệnh `./manage.sh start` hiện sẽ đảm bảo backend được restart lại sau khi bring-up service, nhờ đó tránh tình trạng source trên đĩa đã mới nhưng process vẫn giữ module cũ.
 
 > [!TIP]
 > Frontend vẫn sử dụng Vite HMR nên cập nhật tự động khi sửa JSX/CSS.
@@ -87,7 +97,12 @@ Khi có bất kỳ thay đổi nào trong `requirements.txt` hoặc `Dockerfile.
 - **Nguyên nhân**: Container hiện tại đang dùng ảnh (image) cũ chưa có thư viện mới.
 - **Giải pháp**: Chạy `./manage.sh rebuild`.
 
-### 2. Lỗi kết nối AI (Timeout/403)
+### 2. Lỗi `ImportError: cannot import name '...' from 'src.config'`
+- **Nguyên nhân**: Source trong `src/` đã thay đổi nhưng backend process chưa restart, nên Python vẫn giữ module cũ trong memory.
+- **Giải pháp**: Chạy `./manage.sh start` hoặc `docker compose restart backend`.
+- **Lưu ý**: Không cần `rebuild` nếu bạn chỉ sửa mã Python và không thay đổi `requirements.txt` hay `Dockerfile.backend`.
+
+### 3. Lỗi kết nối AI (Timeout/403)
 - **Nguyên nhân**: API Key trong `.env` sai hoặc Proxy/Network gặp sự cố.
 - **Giải pháp**: Kiểm tra lại `.env` và chạy `./manage.sh logs` để xem chi tiết phản hồi từ AI Service.
 

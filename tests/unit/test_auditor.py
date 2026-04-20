@@ -1,6 +1,10 @@
+import asyncio
+
+import pytest
 import src.config
 from src.engine import ai_service as ai_service_module
-from src.engine.auditor import CodeAuditor
+from src.api.audit_state import AuditState, JobManager
+from src.engine.auditor import AuditCancelledError, CodeAuditor
 from src.engine.scoring import ScoringEngine
 
 
@@ -43,6 +47,215 @@ def test_step_ai_processing_reads_concurrency_once_and_reuses_it(monkeypatch):
     assert captured["validation"]["ai_concurrency"] == 7
     assert captured["reasoning"]["service"] is ai_service
     assert captured["reasoning"]["ai_concurrency"] == 7
+
+
+def test_step_ai_validation_updates_structured_job_progress(monkeypatch, tmp_path):
+    class FakeAIService:
+        async def verify_violations_batch(self, chunk):
+            await asyncio.sleep(0.01)
+            return {
+                idx: {
+                    "is_false_positive": False,
+                    "explanation": f"Validated {idx}",
+                    "confidence": 0.95,
+                }
+                for idx, _ in enumerate(chunk)
+            }
+
+    auditor = CodeAuditor(str(tmp_path))
+    monkeypatch.setattr(auditor, "log_violation", lambda violation: None)
+
+    violations = [
+        {
+            "file": f"module_{idx}.py",
+            "reason": "Issue",
+            "type": "Maintainability",
+            "rule_id": "RULE_TEST",
+        }
+        for idx in range(6)
+    ]
+
+    AuditState.is_cancelled = False
+    JobManager.jobs.clear()
+    JobManager.job_logs.clear()
+    job_id = JobManager.create_job("validation-progress")
+    JobManager.set_active_job(job_id)
+
+    try:
+        auditor._step_ai_validation(violations, FakeAIService(), asyncio, 2)
+    finally:
+        JobManager.clear_active_job()
+
+    progress = JobManager.get_job(job_id).progress
+    assert progress is not None
+    assert progress.phase == "validation"
+    assert progress.phase_label == "Validation"
+    assert progress.total_batches == 2
+    assert progress.batch_size == 5
+    assert progress.last_started_batch == 2
+    assert progress.completed_batches == 2
+    assert progress.active_batches == 0
+    assert progress.pending_batches == 0
+
+
+def test_step_ai_reasoning_keeps_progress_consistent_with_out_of_order_batches(tmp_path):
+    class FakeAIService:
+        async def deep_audit_batch(self, chunk_data, custom_rules):
+            first_file = chunk_data[0]["path"]
+            delay = 0.03 if first_file.endswith("file_0.py") else 0.01
+            await asyncio.sleep(delay)
+            return []
+
+        async def verify_flagged_issues(self, flagged, context_cache):
+            return []
+
+    for idx in range(6):
+        (tmp_path / f"file_{idx}.py").write_text(
+            f"print('file {idx}')\n", encoding="utf-8"
+        )
+
+    auditor = CodeAuditor(str(tmp_path))
+    auditor.discovery_data = {
+        "files": [{"path": str(tmp_path / f"file_{idx}.py")} for idx in range(6)]
+    }
+
+    AuditState.is_cancelled = False
+    JobManager.jobs.clear()
+    JobManager.job_logs.clear()
+    job_id = JobManager.create_job("deep-audit-progress")
+    JobManager.set_active_job(job_id)
+
+    try:
+        auditor._step_ai_reasoning(FakeAIService(), asyncio, 3)
+    finally:
+        JobManager.clear_active_job()
+
+    progress = JobManager.get_job(job_id).progress
+    assert progress is not None
+    assert progress.phase == "deep_audit"
+    assert progress.phase_label == "Deep Audit"
+    assert progress.total_batches == 2
+    assert progress.batch_size == 5
+    assert progress.last_started_batch == 2
+    assert progress.completed_batches == 2
+    assert progress.active_batches == 0
+    assert progress.pending_batches == 0
+
+
+def test_run_stops_before_aggregation_when_cancel_requested_after_scanning(monkeypatch):
+    cancel_state = {"requested": False}
+    auditor = CodeAuditor(".", cancel_check=lambda: cancel_state["requested"])
+
+    monkeypatch.setattr(src.config, "get_ai_enabled", lambda: False)
+    monkeypatch.setattr(auditor, "_step_discovery", lambda: None)
+
+    def fake_scanning():
+        cancel_state["requested"] = True
+        return []
+
+    aggregation_called = {"called": False}
+    reporting_called = {"called": False}
+
+    def fake_aggregation():
+        aggregation_called["called"] = True
+        return 100.0, "Excellent"
+
+    def fake_reporting(*args, **kwargs):
+        reporting_called["called"] = True
+
+    monkeypatch.setattr(auditor, "_step_scanning", fake_scanning)
+    monkeypatch.setattr(auditor, "_step_aggregation", fake_aggregation)
+    monkeypatch.setattr(auditor, "_step_reporting", fake_reporting)
+
+    with pytest.raises(AuditCancelledError):
+        auditor.run()
+
+    assert aggregation_called["called"] is False
+    assert reporting_called["called"] is False
+
+
+def test_step_ai_validation_stops_scheduling_new_batches_after_cancel_request(
+    monkeypatch, tmp_path
+):
+    cancel_state = {"requested": False}
+    started_batches = []
+
+    class FakeAIService:
+        async def verify_violations_batch(self, chunk):
+            started_batches.append(len(chunk))
+            cancel_state["requested"] = True
+            await asyncio.sleep(0.01)
+            return {
+                idx: {
+                    "is_false_positive": False,
+                    "explanation": f"Validated {idx}",
+                    "confidence": 0.95,
+                }
+                for idx, _ in enumerate(chunk)
+            }
+
+    auditor = CodeAuditor(str(tmp_path), cancel_check=lambda: cancel_state["requested"])
+    monkeypatch.setattr(auditor, "log_violation", lambda violation: None)
+
+    violations = [
+        {
+            "file": f"module_{idx}.py",
+            "reason": "Issue",
+            "type": "Maintainability",
+            "rule_id": "RULE_TEST",
+        }
+        for idx in range(15)
+    ]
+
+    AuditState.is_cancelled = False
+    JobManager.jobs.clear()
+    JobManager.job_logs.clear()
+    job_id = JobManager.create_job("validation-cancel")
+    JobManager.set_active_job(job_id)
+
+    try:
+        auditor._step_ai_validation(violations, FakeAIService(), asyncio, 1)
+    finally:
+        JobManager.clear_active_job()
+
+    progress = JobManager.get_job(job_id).progress
+    assert started_batches == [5]
+    assert progress is not None
+    assert progress.total_batches == 3
+    assert progress.completed_batches == 1
+    assert progress.pending_batches == 2
+
+
+def test_step_ai_reasoning_skips_cross_check_after_cancel_request(tmp_path):
+    cancel_state = {"requested": False}
+    cross_check_called = {"called": False}
+
+    class FakeAIService:
+        async def deep_audit_batch(self, chunk_data, custom_rules):
+            cancel_state["requested"] = True
+            await asyncio.sleep(0.01)
+            return [
+                {
+                    "needs_verification": True,
+                    "verify_target": "symbol",
+                    "reason": "needs follow-up",
+                }
+            ]
+
+        async def verify_flagged_issues(self, flagged, context_cache):
+            cross_check_called["called"] = True
+            return []
+
+    auditor = CodeAuditor(str(tmp_path), cancel_check=lambda: cancel_state["requested"])
+    auditor.discovery_data = {"files": []}
+    auditor.custom_rules = None
+    auditor._build_deep_audit_batches = lambda: [[{"path": "api.py", "content": "x"}]]
+    auditor._log_ai_violations = lambda confirmed: None
+
+    with pytest.raises(AuditCancelledError):
+        auditor._step_ai_reasoning(FakeAIService(), asyncio, 1)
+
+    assert cross_check_called["called"] is False
 
 
 def test_step_aggregation_matches_project_score_for_single_owner_repo(monkeypatch):

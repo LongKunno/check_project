@@ -14,16 +14,18 @@ export function useAuditState(selectedRepoId, configuredRepos) {
     error: auditError,
     result: auditResult,
     jobId,
-    message: auditMessage,
+    progress: auditProgress,
+    cancelRequested,
     startAudit,
     stopAudit,
+    cancelAudit,
   } = useAuditJob();
 
   const isAuditing = auditStatus === "starting" || auditStatus === "running";
+  const isCancelling = isAuditing && cancelRequested;
 
   const [activeTab] = useState("remote"); // 'local' or 'remote'
   const [folderName, setFolderName] = useState("");
-  const [isCancelling, setIsCancelling] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
@@ -214,11 +216,10 @@ export function useAuditState(selectedRepoId, configuredRepos) {
     isAuditing,
     jobId,
     auditStatus,
-    auditMessage,
+    auditProgress,
     activeTab,
     folderName,
     isCancelling,
-    setIsCancelling,
     uploadProgress,
     isPreparing,
     preparingProgress,
@@ -235,6 +236,7 @@ export function useAuditState(selectedRepoId, configuredRepos) {
     fileInputRef,
     // Actions
     runAudit,
+    cancelAudit,
     stopAudit,
     handleFolderSelect,
     fetchFixSuggestion,

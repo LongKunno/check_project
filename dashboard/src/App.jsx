@@ -53,6 +53,7 @@ const PresentationsStaticView = React.lazy(
 import { Sidebar } from "./components/layout/Sidebar";
 import PageTransition from "./components/ui/PageTransition";
 import { CardSkeleton, TableSkeleton } from "./components/ui/SkeletonLoader";
+import { useToast } from "./components/ui/Toast";
 import { useRepositories } from "./hooks/useRepositories";
 import { useAuditState } from "./hooks/useAuditState";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -69,9 +70,11 @@ function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const toast = useToast();
   const [reportView, setReportView] = useState("project"); // 'project' or 'member'
   const [selectedMember, setSelectedMember] = useState(null);
   const [activeLedgerTab, setActiveLedgerTab] = useState("project"); // legacy, kept for safety
+  const completedCancelToastRef = React.useRef(null);
 
   // ── Hooks Custom ──────────────────────────────────────────────────────────
   const {
@@ -86,14 +89,16 @@ function App() {
     error,
     isAuditing,
     jobId,
+    auditStatus,
+    auditProgress,
     isCancelling,
-    setIsCancelling,
     visibleLimit,
     setVisibleLimit,
     fixingId,
     suggestions,
     activeTab,
     runAudit,
+    cancelAudit,
     fetchFixSuggestion,
   } = useAuditState(selectedRepoId, configuredRepos);
 
@@ -116,6 +121,17 @@ function App() {
     };
     checkAi();
   }, []);
+
+  useEffect(() => {
+    if (auditStatus !== "cancelled" || !jobId) return;
+    if (completedCancelToastRef.current === jobId) return;
+
+    completedCancelToastRef.current = jobId;
+    toast.info(
+      "Audit đã dừng an toàn. Các request AI mới đã bị chặn.",
+      "Audit Cancelled",
+    );
+  }, [auditStatus, jobId, toast]);
 
   // ── Mouse Spotlight ────────────────────────────────────────────────────────
   const glowRef = React.useRef(null);
@@ -298,12 +314,12 @@ function App() {
                     {isAuditing && (
                       <button
                         onClick={async () => {
-                          setIsCancelling(true);
-                          try {
-                            await fetch("/api/audit/cancel", { method: "POST" });
-                          } catch (e) { }
+                          const cancelResult = await cancelAudit(jobId);
+                          if (cancelResult?.message) {
+                            toast.warning(cancelResult.message, "Cancel Requested");
+                          }
                         }}
-                        disabled={isCancelling}
+                        disabled={isCancelling || !jobId}
                         className="btn-stop"
                         title="Cancel audit"
                       >
@@ -582,6 +598,7 @@ function App() {
                         error={error}
                         isAuditing={isAuditing}
                         jobId={jobId}
+                        auditProgress={auditProgress}
                         reportView={reportView}
                         setReportView={setReportView}
                         selectedMember={selectedMember}

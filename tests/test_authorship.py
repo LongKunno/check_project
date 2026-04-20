@@ -13,7 +13,7 @@ def test_authorship_tracker():
         shutil.rmtree(test_dir)
     os.makedirs(test_dir)
 
-    # Tạo dự án git giả với commit cũ hơn 6 tháng và commit mới
+    # Tạo dự án git giả với commit cũ hơn cửa sổ recent mặc định và commit mới
     subprocess.run(["git", "init"], cwd=test_dir, check=True, capture_output=True)
     subprocess.run(["git", "config", "user.name", "TestUser"], cwd=test_dir, check=True)
     subprocess.run(
@@ -45,14 +45,14 @@ def test_authorship_tracker():
     print("Line 1:", info1)
     assert (
         info1["boundary"] == True
-    ), "Dòng 1 phải nằm ngoài vùng 6 tháng (boundary=True)"
+    ), "Dòng 1 phải nằm ngoài cửa sổ recent mặc định (boundary=True)"
 
     # Truy vấn line 3 (commit hôm nay, boundary = False)
     info3 = tracker.get_author_info("main.py", 3)
     print("Line 3:", info3)
     assert (
         info3["boundary"] == False
-    ), "Dòng 3 phải nằm trong vùng 6 tháng (boundary=False)"
+    ), "Dòng 3 phải nằm trong cửa sổ recent mặc định (boundary=False)"
     assert info3["author"] == "TestUser", "Dòng 3 phải thuộc về TestUser"
 
     # Kiểm tra LOC

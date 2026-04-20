@@ -6,6 +6,8 @@ from git import Repo, GitCommandError
 import logging
 import re
 
+from src.config import get_member_recent_months
+
 logger = logging.getLogger(__name__)
 
 
@@ -41,24 +43,32 @@ class GitHelper:
         """
         try:
             clone_url = GitHelper._build_clone_url(repo_url, username, token)
+            member_recent_months = get_member_recent_months()
 
             logger.info(
-                f"Cloning repository into {dest_dir} (Shallow clone, shallow-since=3.months)..."
+                "Cloning repository into %s (Shallow clone, shallow-since=%s.months)...",
+                dest_dir,
+                member_recent_months,
             )
 
-            # Khởi tạo bản sao (Dùng shallow_since thay vì depth=1 để giữ lịch sử 3 tháng cho Member Scoring)
+            # Khởi tạo bản sao với cửa sổ lịch sử đủ cho Member Scoring.
             # Thiết lập GIT_TERMINAL_PROMPT=0 để ngăn việc Git bị treo khi hỏi password tương tác
             env = os.environ.copy()
             env["GIT_TERMINAL_PROMPT"] = "0"
 
-            kwargs = {"shallow_since": "3 months", "env": env}
+            kwargs = {
+                "shallow_since": f"{member_recent_months} months",
+                "env": env,
+            }
             if branch:
                 kwargs["branch"] = branch
 
             try:
                 Repo.clone_from(clone_url, dest_dir, **kwargs)
                 logger.info(
-                    f"Successfully cloned repository (branch: {branch or 'default'}) with 3-month history. Kept .git directory for Authorship analysis."
+                    "Successfully cloned repository (branch: %s) with %s-month history. Kept .git directory for Authorship analysis.",
+                    branch or "default",
+                    member_recent_months,
                 )
             except GitCommandError as shallow_err:
                 if "error processing shallow info" in str(shallow_err.stderr):

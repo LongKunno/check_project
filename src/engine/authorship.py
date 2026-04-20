@@ -3,12 +3,16 @@ import subprocess
 import re
 import logging
 
+from src.config import get_member_recent_months
+
+logger = logging.getLogger(__name__)
+
 
 class AuthorshipTracker:
     """
     Theo dõi tác giả của từng dòng mã nguồn dựa trên Git blame.
-    Chỉ tính toán các dòng mã được commit trong vòng 3 tháng gần đây
-    để đảm bảo tính chính xác và không đánh giá code legacy.
+    Chỉ tính toán các dòng mã được commit trong cửa sổ thời gian cấu hình gần đây
+    để đảm bảo member scoring phản ánh phần mã nguồn mới.
 
     Sử dụng author-mail (email) làm khóa chính để phân biệt thành viên,
     tránh trùng lặp khi cùng một người dùng nhiều tên khác nhau.
@@ -19,14 +23,15 @@ class AuthorshipTracker:
         self.is_git_repo = os.path.exists(os.path.join(self.target_dir, ".git"))
         self.file_authors_cache = {}
         self.file_member_loc_cache = {}
-        self.member_loc = {}  # { email: int } — LOC trong 3 tháng
+        self.member_loc = {}  # { email: int } — LOC trong cửa sổ recent đã cấu hình
         self.member_names = {}  # { email: name } — Mapping email → display name
+        self.recent_months = get_member_recent_months()
 
     def parse_blame(self, file_path):
         """
-        Sử dụng git blame --line-porcelain --since="3 months" để lấy tác giả của từng dòng.
+        Sử dụng git blame --line-porcelain --since=<configured months> để lấy tác giả của từng dòng.
         Lưu trữ kết quả vào cache để sử dụng lại.
-        Trương hợp code cũ hơn 3 tháng, git sẽ đánh dấu commit bằng kí tự boundary (thường là '^').
+        Trường hợp code cũ hơn cửa sổ recent, git sẽ đánh dấu commit bằng kí tự boundary (thường là '^').
         """
         if file_path in self.file_authors_cache:
             return self.file_authors_cache[file_path]
@@ -39,9 +44,15 @@ class AuthorshipTracker:
             return line_authors
 
         try:
-            # Chạy git blame với giới hạn 3 tháng
+            # Chạy git blame với giới hạn thời gian cấu hình
             result = subprocess.run(
-                ["git", "blame", "--line-porcelain", "--since=3.months", file_path],
+                [
+                    "git",
+                    "blame",
+                    "--line-porcelain",
+                    f"--since={self.recent_months}.months",
+                    file_path,
+                ],
                 cwd=self.target_dir,
                 capture_output=True,
                 text=True,
@@ -68,7 +79,7 @@ class AuthorshipTracker:
                 if re.match(r"^[0-9a-f]{40}\s", line):
                     parts = line.split()
                     current_commit = parts[0]
-                    # Nếu commit bắt đầu bằng '^', nó là boundary (ngoài phạm vi 6 tháng)
+                    # Nếu commit bắt đầu bằng '^', nó là boundary (ngoài cửa sổ recent)
                     is_boundary = current_commit.startswith("^")
 
                 elif line.startswith("author "):
@@ -110,7 +121,7 @@ class AuthorshipTracker:
                 i += 1
 
         except Exception as e:
-            logging.getLogger(__name__).warning(
+            logger.warning(
                 f"Error parsing Git blame for {file_path}: {e}"
             )
 
@@ -121,7 +132,7 @@ class AuthorshipTracker:
     def get_author_info(self, file_path, line_no):
         """
         Trả về dictionary chứa {"author": string, "email": string, "boundary": boolean} của 1 dòng mã.
-        Nếu code ngoài 3 tháng hoặc không có thông tin, boundary = True.
+        Nếu code ngoài cửa sổ recent hoặc không có thông tin, boundary = True.
         """
         rel_path = os.path.relpath(file_path, self.target_dir)
         # Fix cho trường hợp file path đã tương đối rồi thì để nguyên
@@ -134,7 +145,7 @@ class AuthorshipTracker:
         )
 
     def get_all_member_loc(self):
-        """Trả về tổng số dòng code (trong 3 tháng) của từng member, keyed by email."""
+        """Trả về tổng số dòng code trong cửa sổ recent của từng member, keyed by email."""
         return self.member_loc
 
     def get_file_member_loc(self, file_path):

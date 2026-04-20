@@ -121,6 +121,7 @@ class TestEngineSettings:
         from src.engine.database import AuditDatabase
 
         monkeypatch.setattr(src.config, "AI_MAX_CONCURRENCY", 5)
+        monkeypatch.setattr(src.config, "MEMBER_RECENT_MONTHS", 3)
         monkeypatch.setattr(
             AuditDatabase,
             "get_config",
@@ -133,6 +134,7 @@ class TestEngineSettings:
         data = response.json()
         assert data["status"] == "success"
         assert data["data"]["ai_max_concurrency"] == 5
+        assert data["data"]["member_recent_months"] == 3
 
     def test_put_engine_settings_updates_ai_max_concurrency(self, client, monkeypatch):
         store = {}
@@ -155,6 +157,27 @@ class TestEngineSettings:
         assert store["ai_max_concurrency"] == "8"
         assert response.json()["data"]["ai_max_concurrency"] == 8
 
+    def test_put_engine_settings_updates_member_recent_months(self, client, monkeypatch):
+        store = {}
+        from src.engine.database import AuditDatabase
+
+        monkeypatch.setattr(
+            AuditDatabase,
+            "get_config",
+            staticmethod(lambda key, default=None: store.get(key, default)),
+        )
+        monkeypatch.setattr(
+            AuditDatabase,
+            "set_config",
+            staticmethod(lambda key, value: store.__setitem__(key, value)),
+        )
+
+        response = client.put("/settings/engine", json={"member_recent_months": 6})
+
+        assert response.status_code == 200
+        assert store["member_recent_months"] == "6"
+        assert response.json()["data"]["member_recent_months"] == 6
+
     @pytest.mark.parametrize("value", [0, 101])
     def test_put_engine_settings_rejects_invalid_ai_max_concurrency(
         self, client, value
@@ -165,6 +188,18 @@ class TestEngineSettings:
         assert (
             response.json()["detail"]
             == "ai_max_concurrency phải nằm trong khoảng 1..100"
+        )
+
+    @pytest.mark.parametrize("value", [0, 25])
+    def test_put_engine_settings_rejects_invalid_member_recent_months(
+        self, client, value
+    ):
+        response = client.put("/settings/engine", json={"member_recent_months": value})
+
+        assert response.status_code == 400
+        assert (
+            response.json()["detail"]
+            == "member_recent_months phải nằm trong khoảng 1..24"
         )
 
 
@@ -254,6 +289,64 @@ class TestAuditEndpoints:
         response = client.get("/audit/jobs/nonexistent-job-id")
         assert response.status_code == 404
 
+    def test_job_status_returns_structured_progress(self, client):
+        from src.api.audit_state import JobManager
+
+        JobManager.jobs.clear()
+        JobManager.job_logs.clear()
+
+        job_id = JobManager.create_job("progress-demo")
+        JobManager.update_job(job_id, "RUNNING", "Đang phân tích tĩnh và áp dụng AI...")
+        JobManager.start_progress_phase(
+            job_id,
+            "validation",
+            "Validation",
+            total_batches=3,
+            batch_size=5,
+            last_detail="Preparing validation batches...",
+        )
+        JobManager.record_batch_started(
+            job_id,
+            2,
+            last_detail="Starting Validation batch 2/3",
+        )
+
+        response = client.get(f"/audit/jobs/{job_id}")
+
+        assert response.status_code == 200
+        progress = response.json()["progress"]
+        assert progress["phase"] == "validation"
+        assert progress["phase_label"] == "Validation"
+        assert progress["total_batches"] == 3
+        assert progress["batch_size"] == 5
+        assert progress["last_started_batch"] == 2
+        assert progress["completed_batches"] == 0
+        assert progress["active_batches"] == 1
+        assert progress["pending_batches"] == 2
+
+        JobManager.start_progress_phase(
+            job_id,
+            "deep_audit",
+            "Deep Audit",
+            total_batches=2,
+            batch_size=5,
+            last_detail="Preparing deep audit batches...",
+        )
+        JobManager.record_batch_started(
+            job_id,
+            1,
+            last_detail="Starting Deep Audit batch 1/2",
+        )
+
+        response = client.get(f"/audit/jobs/{job_id}")
+
+        assert response.status_code == 200
+        progress = response.json()["progress"]
+        assert progress["phase"] == "deep_audit"
+        assert progress["phase_label"] == "Deep Audit"
+        assert progress["total_batches"] == 2
+        assert progress["last_started_batch"] == 1
+
     def test_upload_process_keeps_temp_dir_until_background_task_finishes(self, client, monkeypatch):
         from src.api.audit_state import JobManager
         from src.api.routers import audit as audit_router_module
@@ -300,6 +393,66 @@ class TestAuditEndpoints:
         assert job.status == "COMPLETED"
         assert job.result["status"] == "success"
         assert not os.path.exists(observed["target_path"])
+
+    def test_cancel_job_endpoint_marks_job_cancel_requested(self, client):
+        from src.api.audit_state import JobManager
+
+        JobManager.jobs.clear()
+        JobManager.job_logs.clear()
+        job_id = JobManager.create_job("cancel-me")
+        JobManager.update_job(job_id, "RUNNING", "Running")
+
+        response = client.post(f"/audit/jobs/{job_id}/cancel")
+
+        assert response.status_code == 200
+        job = JobManager.get_job(job_id)
+        assert job is not None
+        assert job.status == "RUNNING"
+        assert job.cancel_requested is True
+
+    def test_upload_process_cancelled_job_does_not_save_result(self, client, monkeypatch):
+        from src.api.audit_state import JobManager
+        from src.api.routers import audit as audit_router_module
+
+        observed = {"build_called": False}
+
+        def fake_run_auditor_with_capture(target_path, target_id=None, job_id=None):
+            JobManager.request_cancel(job_id, "Cancel requested during test.")
+            return object()
+
+        def fake_build_and_save_audit_result(auditor, target_str, project_name):
+            observed["build_called"] = True
+            return {
+                "status": "success",
+                "target": target_str,
+                "project_name": project_name,
+            }
+
+        JobManager.jobs.clear()
+        JobManager.job_logs.clear()
+        monkeypatch.setattr(
+            audit_router_module,
+            "run_auditor_with_capture",
+            fake_run_auditor_with_capture,
+        )
+        monkeypatch.setattr(
+            audit_router_module,
+            "_build_and_save_audit_result",
+            fake_build_and_save_audit_result,
+        )
+
+        response = client.post(
+            "/audit/process",
+            files=[("files", ("nested/demo.py", b"print('ok')\n", "text/x-python"))],
+        )
+
+        assert response.status_code == 200
+        job = JobManager.get_job(response.json()["job_id"])
+
+        assert job is not None
+        assert job.status == "CANCELLED"
+        assert observed["build_called"] is False
+        assert job.result is None
 
 
 class TestAuthEndpoints:

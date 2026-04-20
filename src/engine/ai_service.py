@@ -8,6 +8,22 @@ from pydantic import BaseModel, Field
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 
+try:
+    from src.api.audit_state import AuditState, JobManager
+except ImportError:
+
+    class AuditState:
+        is_cancelled = False
+
+    class JobManager:
+        @staticmethod
+        def get_active_job_id():
+            return None
+
+        @staticmethod
+        def is_cancel_requested(job_id):
+            return False
+
 logger = logging.getLogger(__name__)
 
 load_dotenv()
@@ -76,6 +92,15 @@ class AiService:
             base_url=self.base_url, api_key=self.api_key, timeout=180.0
         )
 
+    def _is_cancel_requested(self) -> bool:
+        try:
+            job_id = JobManager.get_active_job_id()
+            if job_id and JobManager.is_cancel_requested(job_id):
+                return True
+        except Exception:
+            logger.debug("AI cancel lookup failed unexpectedly.", exc_info=True)
+        return getattr(AuditState, "is_cancelled", False)
+
     async def _call_llm_json(
         self,
         prompt: str,
@@ -84,6 +109,11 @@ class AiService:
         max_retries: int = 3,
     ) -> Any:
         for attempt in range(max_retries):
+            if self._is_cancel_requested():
+                logger.info(
+                    "⏹️ Bỏ qua request AI mới vì job đã nhận yêu cầu huỷ."
+                )
+                return None
             try:
                 messages = [
                     {"role": "system", "content": system_message},
@@ -111,8 +141,18 @@ class AiService:
 
                     json_str_fixed = re.sub(r'\\(?!["\\/bfnrtu])', r"\\\\", json_str)
                     data = json.loads(json_str_fixed, strict=False)
+                if self._is_cancel_requested():
+                    logger.info(
+                        "⏹️ Bỏ qua kết quả AI vừa nhận vì job đã nhận yêu cầu huỷ."
+                    )
+                    return None
                 return response_model.model_validate(data)
             except Exception as e:
+                if self._is_cancel_requested():
+                    logger.info(
+                        "⏹️ Dừng retry AI sau request đang chạy vì job đã nhận yêu cầu huỷ."
+                    )
+                    return None
                 logger.warning(f"⚠️ AI call attempt {attempt + 1} failed: {e}")
                 if attempt < max_retries - 1:
                     await asyncio.sleep(2 * (attempt + 1))

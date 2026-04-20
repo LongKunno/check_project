@@ -18,6 +18,7 @@ import EmptyState from "../ui/EmptyState";
 import Pagination from "../ui/Pagination";
 import { useToast } from "../ui/Toast";
 import TopProgressBar from "../ui/TopProgressBar";
+import { usePaginationState } from "../../hooks/usePaginationState";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -170,6 +171,12 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
   const [histPage, setHistPage] = useState(1);
   const [histPageSize, setHistPageSize] = useState(10);
   const toast = useToast();
+  const { pageItems: pagedHistory } = usePaginationState({
+    items: historyList,
+    currentPage: histPage,
+    pageSize: histPageSize,
+    onPageChange: setHistPage,
+  });
 
   const loadHistory = () => {
     if (!fetchTarget) return;
@@ -323,12 +330,7 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {historyList
-                    .slice(
-                      (histPage - 1) * histPageSize,
-                      histPage * histPageSize,
-                    )
-                    .map((h, idx) => {
+                  {pagedHistory.map((h, idx) => {
                       const colorClass = getScoreColorClass(h.score / 10);
                       return (
                         <motion.tr

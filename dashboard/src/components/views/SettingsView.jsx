@@ -80,6 +80,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
     ai_enabled: false,
     test_mode_limit_files: 0,
     ai_max_concurrency: 5,
+    member_recent_months: 3,
     auth_required: true,
   });
   const [engineSaving, setEngineSaving] = useState(false);
@@ -357,6 +358,37 @@ const SettingsView = ({ selectedRepoId, cn }) => {
               </p>
             </div>
           )}
+
+          {/* Member Recency Window */}
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl border bg-violet-500/10 border-violet-500/25 text-violet-600">
+                <Clock size={16} />
+              </div>
+              <div>
+                <div className="text-sm font-bold text-slate-800">Member Recency Window</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">
+                  Cửa sổ thời gian dùng để tính đánh giá thành viên từ Git authorship gần đây
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min="1"
+                max="24"
+                value={engineConfig.member_recent_months}
+                onChange={(e) =>
+                  handleEngineConfigChange(
+                    "member_recent_months",
+                    Math.min(24, Math.max(1, parseInt(e.target.value, 10) || 1)),
+                  )
+                }
+                className="w-20 px-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-800 text-sm font-mono text-center focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none placeholder:text-slate-400"
+              />
+              <span className="text-[10px] text-slate-600 font-bold">months</span>
+            </div>
+          </div>
 
           {/* Test Mode Limit Files */}
           <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 mb-4">

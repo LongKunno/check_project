@@ -956,10 +956,9 @@ h1 {
 }
 
 .pagination-size-panel {
-  position: absolute;
-  top: calc(100% + 0.45rem);
-  left: 0;
-  min-width: 100%;
+  position: fixed;
+  z-index: 1200;
+  box-sizing: border-box;
   padding: 0.35rem;
   border: 1px solid rgba(226, 232, 240, 0.95);
   border-radius: 14px;
@@ -967,6 +966,15 @@ h1 {
   box-shadow:
     0 16px 32px rgba(15, 23, 42, 0.12),
     0 4px 12px rgba(96, 165, 250, 0.08);
+  overscroll-behavior: contain;
+}
+
+.pagination-size-panel[data-placement="bottom"] {
+  transform-origin: top left;
+}
+
+.pagination-size-panel[data-placement="top"] {
+  transform-origin: bottom left;
 }
 
 .pagination-size-item {
@@ -983,6 +991,7 @@ h1 {
   font-size: 0.72rem;
   font-weight: 700;
   text-align: left;
+  white-space: nowrap;
   transition: background-color 150ms ease, border-color 150ms ease;
 }
 

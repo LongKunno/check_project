@@ -131,6 +131,7 @@ class EngineSettingsRequest(BaseModel):
     ai_enabled: Optional[bool] = None
     test_mode_limit_files: Optional[int] = None
     ai_max_concurrency: Optional[int] = None
+    member_recent_months: Optional[int] = None
     auth_required: Optional[bool] = None
 
 
@@ -139,6 +140,7 @@ def _build_engine_settings_payload():
         get_ai_enabled,
         get_ai_max_concurrency,
         get_auth_required,
+        get_member_recent_months,
         get_test_mode_limit,
     )
 
@@ -146,6 +148,7 @@ def _build_engine_settings_payload():
         "ai_enabled": get_ai_enabled(),
         "test_mode_limit_files": get_test_mode_limit(),
         "ai_max_concurrency": get_ai_max_concurrency(),
+        "member_recent_months": get_member_recent_months(),
         "auth_required": get_auth_required(),
     }
 
@@ -176,6 +179,15 @@ async def update_engine_settings(request: EngineSettingsRequest):
             )
         AuditDatabase.set_config(
             "ai_max_concurrency", str(request.ai_max_concurrency)
+        )
+    if request.member_recent_months is not None:
+        if not 1 <= request.member_recent_months <= 24:
+            raise HTTPException(
+                status_code=400,
+                detail="member_recent_months phải nằm trong khoảng 1..24",
+            )
+        AuditDatabase.set_config(
+            "member_recent_months", str(request.member_recent_months)
         )
     if request.auth_required is not None:
         AuditDatabase.set_config("auth_required", str(request.auth_required).lower())

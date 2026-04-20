@@ -16,20 +16,57 @@ from src.engine.verification import VerificationStep
 from src.engine.scoring import ScoringEngine
 
 try:
-    from src.api.audit_state import AuditState
+    from src.api.audit_state import AuditState, JobManager
 except ImportError:
 
     class AuditState:
         is_cancelled = False
 
+    class JobManager:
+        @staticmethod
+        def get_active_job_id():
+            return None
+
+        @staticmethod
+        def is_cancel_requested(job_id):
+            return False
+
+        @staticmethod
+        def start_progress_phase(*args, **kwargs):
+            return None
+
+        @staticmethod
+        def record_batch_started(*args, **kwargs):
+            return None
+
+        @staticmethod
+        def record_batch_finished(*args, **kwargs):
+            return None
+
+        @staticmethod
+        def clear_progress(*args, **kwargs):
+            return None
+
+
+class AuditCancelledError(Exception):
+    """Raised when an audit job stops at a safe cancellation checkpoint."""
+
 
 class CodeAuditor:
-    def __init__(self, target_dir=".", custom_rules=None):
+    def __init__(
+        self,
+        target_dir=".",
+        custom_rules=None,
+        cancel_check=None,
+        job_id=None,
+    ):
         """
         Khởi tạo Auditor cho một thư mục cụ thể.
         """
         self.target_dir = os.path.abspath(target_dir)
         self.custom_rules = custom_rules
+        self.cancel_check = cancel_check
+        self.job_id = job_id
         self.discovery_data = None
 
         # Đường dẫn xuất báo cáo (luôn nằm trong thư mục 'reports' của project hiện tại)
@@ -41,6 +78,81 @@ class CodeAuditor:
         self.report_path = os.path.join(report_dir, "Final_Audit_Report.md")
         self.violations = []
         self.violation_counter = 0
+
+    def _get_active_job_id(self):
+        """Lấy job đang active để cập nhật progress batch cho API polling."""
+        if self.job_id:
+            return self.job_id
+        try:
+            return JobManager.get_active_job_id()
+        except Exception:
+            return None
+
+    def _is_cancel_requested(self):
+        try:
+            if self.cancel_check and self.cancel_check():
+                return True
+        except Exception:
+            logger.debug("Cancel checker failed unexpectedly.", exc_info=True)
+        try:
+            job_id = self._get_active_job_id()
+            if job_id and JobManager.is_cancel_requested(job_id):
+                return True
+        except Exception:
+            logger.debug("JobManager cancellation lookup failed.", exc_info=True)
+        return AuditState.is_cancelled
+
+    def _raise_if_cancelled(self, message="Đã hủy theo yêu cầu người dùng."):
+        if self._is_cancel_requested():
+            raise AuditCancelledError(message)
+
+    def _start_active_job_progress(
+        self,
+        phase,
+        phase_label,
+        total_batches,
+        batch_size,
+        last_detail="",
+    ):
+        job_id = self._get_active_job_id()
+        if not job_id:
+            return
+        JobManager.start_progress_phase(
+            job_id,
+            phase,
+            phase_label,
+            total_batches,
+            batch_size,
+            last_detail=last_detail,
+        )
+
+    def _record_active_job_batch_started(self, batch_number, last_detail=""):
+        job_id = self._get_active_job_id()
+        if not job_id:
+            return
+        JobManager.record_batch_started(job_id, batch_number, last_detail=last_detail)
+
+    def _record_active_job_batch_finished(
+        self,
+        batch_number,
+        last_detail="",
+        completed=True,
+    ):
+        job_id = self._get_active_job_id()
+        if not job_id:
+            return
+        JobManager.record_batch_finished(
+            job_id,
+            batch_number,
+            last_detail=last_detail,
+            completed=completed,
+        )
+
+    def _clear_active_job_progress(self):
+        job_id = self._get_active_job_id()
+        if not job_id:
+            return
+        JobManager.clear_progress(job_id)
 
     def log_violation(self, violation_data: dict):
         """Ghi nhận một vi phạm mới và lưu vào danh sách.
@@ -84,12 +196,16 @@ class CodeAuditor:
 
     def run(self):
         """Thực thi toàn bộ quy trình kiểm toán."""
+        self._raise_if_cancelled("Job đã bị hủy trước khi bắt đầu kiểm toán.")
         with open(self.ledger_path, "w") as f:
             f.write("# SỔ CÁI VI PHẠM (AI VIOLATION LEDGER)\n\n")
         logger.info(f"🚀 Bắt đầu kiểm toán: {self.target_dir}")
 
+        self._raise_if_cancelled("Đã hủy trước bước Discovery.")
         self._step_discovery()
+        self._raise_if_cancelled("Đã hủy sau bước Discovery.")
         automated_violations = self._step_scanning()
+        self._raise_if_cancelled("Đã hủy sau bước quét tĩnh.")
 
         from src.config import get_ai_enabled
 
@@ -102,12 +218,16 @@ class CodeAuditor:
                     "rule_id", ""
                 ).startswith("FORBIDDEN")
                 self.log_violation({**v, "is_custom": is_custom})
+            self._raise_if_cancelled("Đã hủy sau bước quét tĩnh.")
 
+        self._raise_if_cancelled("Đã hủy trước bước tổng hợp.")
         final_score, rating = self._step_aggregation()
+        self._raise_if_cancelled("Đã hủy trước bước xuất báo cáo.")
         self._step_reporting(final_score, rating)
 
     def _step_discovery(self):
         """BƯỜC 1: Khám phá tài nguyên."""
+        self._raise_if_cancelled("Đã hủy trước khi chạy Discovery.")
         logger.info("[1/5] Khám phá cấu trúc dự án (Discovery)...")
         discovery = DiscoveryStep(self.target_dir)
         self.discovery_data = discovery.run_discovery()
@@ -134,6 +254,7 @@ class CodeAuditor:
 
     def _step_scanning(self):
         """BƯỜC 2: Quét tĩnh (Regex + AST)."""
+        self._raise_if_cancelled("Đã hủy trước khi chạy Static Verification.")
         logger.info("[2/5] Quét tĩnh mã nguồn (Regex + Python AST)...")
 
         files = self.discovery_data.get("files", [])
@@ -161,13 +282,17 @@ class CodeAuditor:
         # Snapshot concurrency một lần cho cả job hiện tại; save setting mới chỉ áp dụng job sau.
         ai_concurrency = get_ai_max_concurrency()
 
-        # 3.1: AI VALIDATION
-        self._step_ai_validation(
-            automated_violations, ai_service, asyncio, ai_concurrency
-        )
+        try:
+            self._raise_if_cancelled("Đã hủy trước bước AI Validation.")
+            self._step_ai_validation(
+                automated_violations, ai_service, asyncio, ai_concurrency
+            )
 
-        # 3.2-3.3: AI REASONING + CROSS-CHECK
-        self._step_ai_reasoning(ai_service, asyncio, ai_concurrency)
+            self._raise_if_cancelled("Đã hủy sau bước AI Validation.")
+            self._step_ai_reasoning(ai_service, asyncio, ai_concurrency)
+            self._raise_if_cancelled("Đã hủy sau bước AI Reasoning.")
+        finally:
+            self._clear_active_job_progress()
 
     def _step_ai_validation(
         self, automated_violations, ai_service, asyncio, ai_concurrency
@@ -188,24 +313,73 @@ class CodeAuditor:
         logger.info(
             f"   {len(automated_violations)} vi phạm → {len(chunks)} batch (mỗi batch {batch_size})"
         )
-
-        sem_val = asyncio.Semaphore(ai_concurrency)
+        self._start_active_job_progress(
+            "validation",
+            "Validation",
+            len(chunks),
+            batch_size,
+            last_detail="Preparing validation batches...",
+        )
 
         async def process_chunk(idx, chunk):
-            if AuditState.is_cancelled:
-                return idx, chunk, {}
-            async with sem_val:
-                logger.info(
-                    f"[PROGRESS] Đang xác thực (Validation) batch {idx + 1}/{len(chunks)}..."
+            batch_number = idx + 1
+            self._record_active_job_batch_started(
+                batch_number,
+                last_detail=f"Starting Validation batch {batch_number}/{len(chunks)}",
+            )
+            logger.info(
+                f"[PROGRESS] Đang xác thực (Validation) batch {batch_number}/{len(chunks)}..."
+            )
+            try:
+                batch_results = await ai_service.verify_violations_batch(chunk)
+                self._record_active_job_batch_finished(
+                    batch_number,
+                    last_detail=(
+                        f"Completed Validation batch {batch_number}/{len(chunks)}"
+                    ),
                 )
-                return idx, chunk, await ai_service.verify_violations_batch(chunk)
+                return idx, chunk, batch_results
+            except Exception:
+                self._record_active_job_batch_finished(
+                    batch_number,
+                    last_detail=f"Validation batch {batch_number}/{len(chunks)} failed",
+                    completed=False,
+                )
+                raise
 
         async def run_all():
-            tasks = [process_chunk(idx, c) for idx, c in enumerate(chunks)]
-            return [await f for f in asyncio.as_completed(tasks)]
+            completed = []
+            pending = set()
+            next_idx = 0
+
+            def schedule_next():
+                nonlocal next_idx
+                if self._is_cancel_requested() or next_idx >= len(chunks):
+                    return False
+                pending.add(asyncio.create_task(process_chunk(next_idx, chunks[next_idx])))
+                next_idx += 1
+                return True
+
+            for _ in range(min(ai_concurrency, len(chunks))):
+                if not schedule_next():
+                    break
+
+            while pending:
+                done, pending = await asyncio.wait(
+                    pending,
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
+                for task in done:
+                    completed.append(await task)
+                while len(pending) < ai_concurrency and schedule_next():
+                    pass
+            return completed
 
         loop = asyncio.new_event_loop()
-        completed = loop.run_until_complete(run_all())
+        try:
+            completed = loop.run_until_complete(run_all())
+        finally:
+            loop.close()
 
         for idx, chunk, batch_results in completed:
             for i, v in enumerate(chunk):
@@ -248,55 +422,110 @@ class CodeAuditor:
         logger.info(
             f"   {sum(len(c) for c in deep_chunks)} files → {len(deep_chunks)} batches"
         )
-
-        sem_deep = asyncio.Semaphore(ai_concurrency)
+        self._start_active_job_progress(
+            "deep_audit",
+            "Deep Audit",
+            len(deep_chunks),
+            5,
+            last_detail="Preparing deep audit batches...",
+        )
 
         async def process_deep(idx, chunk_data):
-            if AuditState.is_cancelled:
-                return []
-            async with sem_deep:
-                logger.info(
-                    f"[PROGRESS] Đang phân tích sâu (Deep Audit) batch {idx + 1}/{len(deep_chunks)}..."
+            batch_number = idx + 1
+            self._record_active_job_batch_started(
+                batch_number,
+                last_detail=f"Starting Deep Audit batch {batch_number}/{len(deep_chunks)}",
+            )
+            logger.info(
+                f"[PROGRESS] Đang phân tích sâu (Deep Audit) batch {batch_number}/{len(deep_chunks)}..."
+            )
+            for f in chunk_data:
+                rel = (
+                    os.path.relpath(f["path"], self.target_dir)
+                    if self.target_dir in f["path"]
+                    else f["path"]
                 )
-                for f in chunk_data:
-                    rel = (
-                        os.path.relpath(f["path"], self.target_dir)
-                        if self.target_dir in f["path"]
-                        else f["path"]
-                    )
-                    logger.info(f"[PROGRESS] AI Audit: {rel}")
-                return await ai_service.deep_audit_batch(chunk_data, self.custom_rules)
+                logger.info(f"[PROGRESS] AI Audit: {rel}")
+            try:
+                batch_results = await ai_service.deep_audit_batch(
+                    chunk_data, self.custom_rules
+                )
+                self._record_active_job_batch_finished(
+                    batch_number,
+                    last_detail=(
+                        f"Completed Deep Audit batch {batch_number}/{len(deep_chunks)}"
+                    ),
+                )
+                return batch_results
+            except Exception:
+                self._record_active_job_batch_finished(
+                    batch_number,
+                    last_detail=f"Deep Audit batch {batch_number}/{len(deep_chunks)} failed",
+                    completed=False,
+                )
+                raise
 
         async def run_all():
-            tasks = [process_deep(idx, c) for idx, c in enumerate(deep_chunks)]
-            return [await f for f in asyncio.as_completed(tasks)]
+            completed = []
+            pending = set()
+            next_idx = 0
+
+            def schedule_next():
+                nonlocal next_idx
+                if self._is_cancel_requested() or next_idx >= len(deep_chunks):
+                    return False
+                pending.add(
+                    asyncio.create_task(process_deep(next_idx, deep_chunks[next_idx]))
+                )
+                next_idx += 1
+                return True
+
+            for _ in range(min(ai_concurrency, len(deep_chunks))):
+                if not schedule_next():
+                    break
+
+            while pending:
+                done, pending = await asyncio.wait(
+                    pending,
+                    return_when=asyncio.FIRST_COMPLETED,
+                )
+                for task in done:
+                    completed.append(await task)
+                while len(pending) < ai_concurrency and schedule_next():
+                    pass
+            return completed
 
         loop = asyncio.new_event_loop()
-        all_results = loop.run_until_complete(run_all())
+        try:
+            all_results = loop.run_until_complete(run_all())
 
-        confirmed, flagged = [], []
-        for batch in all_results:
-            for rv in batch:
-                (flagged if rv.get("needs_verification") else confirmed).append(rv)
+            confirmed, flagged = [], []
+            for batch in all_results:
+                for rv in batch:
+                    (flagged if rv.get("needs_verification") else confirmed).append(rv)
 
-        if flagged:
-            logger.info(
-                f"[3.3/5] Xác minh chéo (Cross-Check) {len(flagged)} mục nghi vấn..."
-            )
-            from src.engine.symbol_indexer import AstContextExtractor
+            self._raise_if_cancelled("Đã hủy sau khi hoàn tất các batch Deep Audit đang chạy.")
+            if flagged:
+                logger.info(
+                    f"[3.3/5] Xác minh chéo (Cross-Check) {len(flagged)} mục nghi vấn..."
+                )
+                from src.engine.symbol_indexer import AstContextExtractor
 
-            indexer = AstContextExtractor(self.target_dir)
-            indexer.index_project()
-            context_cache = {}
-            for fv in flagged:
-                target = fv.get("verify_target")
-                if target and target not in context_cache:
-                    context_cache[target] = indexer.get_symbol_snippet(target)
-            verified = loop.run_until_complete(
-                ai_service.verify_flagged_issues(flagged, context_cache)
-            )
-            confirmed.extend(verified)
+                indexer = AstContextExtractor(self.target_dir)
+                indexer.index_project()
+                context_cache = {}
+                for fv in flagged:
+                    target = fv.get("verify_target")
+                    if target and target not in context_cache:
+                        context_cache[target] = indexer.get_symbol_snippet(target)
+                verified = loop.run_until_complete(
+                    ai_service.verify_flagged_issues(flagged, context_cache)
+                )
+                confirmed.extend(verified)
+        finally:
+            loop.close()
 
+        self._raise_if_cancelled("Đã hủy trước khi ghi nhận kết quả AI.")
         self._log_ai_violations(confirmed)
 
     def _build_deep_audit_batches(self):
@@ -398,6 +627,7 @@ class CodeAuditor:
 
     def _step_aggregation(self):
         """BƯỜC 4: Tổng hợp và tính điểm."""
+        self._raise_if_cancelled("Đã hủy trước bước tổng hợp.")
         logger.info("[4/5] Tổng hợp kết quả và tính điểm (Aggregation)...")
         from src.config import WEIGHTS
         from src.engine.authorship import AuthorshipTracker
@@ -626,6 +856,7 @@ class CodeAuditor:
 
     def _step_reporting(self, final_score, rating):
         """BƯỜC 5: Xuất báo cáo."""
+        self._raise_if_cancelled("Đã hủy trước bước xuất báo cáo.")
         logger.info("[5/5] Xuất báo cáo (Reporting)...")
         self.generate_report(
             self.feature_results, self.project_pillars, final_score, rating

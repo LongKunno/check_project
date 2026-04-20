@@ -27,6 +27,7 @@ import { TableSkeleton, CardSkeleton } from "../ui/SkeletonLoader";
 import EmptyState from "../ui/EmptyState";
 import Pagination from "../ui/Pagination";
 import TopProgressBar from "../ui/TopProgressBar";
+import { usePaginationState } from "../../hooks/usePaginationState";
 import { getRatingColor, getScoreColor, getScoreDotClass, getScoreGradient } from "../../utils/scoreHelpers";
 import { RankBadge } from "../ui/RankBadge";
 
@@ -58,6 +59,7 @@ const SCAN_STATUS = {
   RUNNING: "running",
   DONE: "done",
   ERROR: "error",
+  CANCELLED: "cancelled",
 };
 
 // ─── Scan All — sequential queue hook ────────────────────────────────────────
@@ -66,6 +68,7 @@ function useScanAllQueue(projects, onFinishAll) {
   const [scanStates, setScanStates] = useState({});
   const [isScanning, setIsScanning] = useState(false);
   const [activeJobId, setActiveJobId] = useState(null);
+  const [cancelRequested, setCancelRequested] = useState(false);
   const pollTimerRef = useRef(null);
 
   const startPolling = useCallback(
@@ -89,12 +92,15 @@ function useScanAllQueue(projects, onFinishAll) {
               if (pData.status === "RUNNING") st = SCAN_STATUS.RUNNING;
               if (pData.status === "COMPLETED") st = SCAN_STATUS.DONE;
               if (pData.status === "FAILED") st = SCAN_STATUS.ERROR;
+              if (pData.status === "CANCELLED") st = SCAN_STATUS.CANCELLED;
               newStates[pid] = {
                 status: st,
                 message:
                   pData.message ||
                   (st === SCAN_STATUS.DONE
                     ? "Done"
+                    : st === SCAN_STATUS.CANCELLED
+                      ? "Cancelled"
                     : st === SCAN_STATUS.RUNNING
                       ? "Analyzing..."
                       : ""),
@@ -102,11 +108,17 @@ function useScanAllQueue(projects, onFinishAll) {
             });
             setScanStates((prev) => ({ ...prev, ...newStates }));
           }
+          setCancelRequested(Boolean(data.cancel_requested));
 
-          if (data.status === "COMPLETED" || data.status === "FAILED") {
+          if (
+            data.status === "COMPLETED" ||
+            data.status === "FAILED" ||
+            data.status === "CANCELLED"
+          ) {
             clearInterval(pollTimerRef.current);
             pollTimerRef.current = null;
             setIsScanning(false);
+            setCancelRequested(false);
             onFinishAll?.();
           }
         } catch {
@@ -139,6 +151,7 @@ function useScanAllQueue(projects, onFinishAll) {
       init[id] = { status: SCAN_STATUS.IDLE, message: "" };
     });
     setScanStates(init);
+    setCancelRequested(false);
     try {
       const res = await fetch("/api/audit/batch", {
         method: "POST",
@@ -152,14 +165,28 @@ function useScanAllQueue(projects, onFinishAll) {
     }
   }, [isScanning, startPolling]);
 
-  const stopScan = useCallback(() => {
-    fetch("/api/audit/cancel", { method: "POST" }).catch(() => { });
-    if (pollTimerRef.current) clearInterval(pollTimerRef.current);
-    setIsScanning(false);
-    setActiveJobId(null);
-  }, []);
+  const stopScan = useCallback(async () => {
+    if (!activeJobId) return;
+    try {
+      const response = await fetch(`/api/audit/jobs/${activeJobId}/cancel`, {
+        method: "POST",
+      });
+      if (response.ok) {
+        setCancelRequested(true);
+      }
+    } catch {
+      /* ignore transient errors */
+    }
+  }, [activeJobId]);
 
-  return { scanStates, isScanning, activeJobId, startScanSelected, stopScan };
+  return {
+    scanStates,
+    isScanning,
+    activeJobId,
+    cancelRequested,
+    startScanSelected,
+    stopScan,
+  };
 }
 
 // ─── Scan Selection Modal ─────────────────────────────────────────────────────
@@ -329,6 +356,11 @@ function ScanPill({ state }) {
       icon: <XCircle size={10} />,
       text: "Error",
       cls: "bg-rose-50 text-rose-600 border-rose-200",
+    },
+    [SCAN_STATUS.CANCELLED]: {
+      icon: <AlertCircle size={10} />,
+      text: "Cancelled",
+      cls: "bg-amber-50 text-amber-600 border-amber-200",
     },
   }[state.status];
   if (!cfg) return null;
@@ -632,8 +664,14 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
     fetchScores();
   }, [fetchScores]);
 
-  const { scanStates, isScanning, activeJobId, startScanSelected, stopScan } =
-    useScanAllQueue(projects, fetchScores);
+  const {
+    scanStates,
+    isScanning,
+    activeJobId,
+    cancelRequested,
+    startScanSelected,
+    stopScan,
+  } = useScanAllQueue(projects, fetchScores);
 
   const [showScanModal, setShowScanModal] = useState(false);
 
@@ -658,6 +696,13 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
       return sortDir === "desc" ? vb.localeCompare(va) : va.localeCompare(vb);
     return sortDir === "desc" ? vb - va : va - vb;
   });
+  const { pageItems: pagedProjects, pageStartIndex: projPageStartIndex } =
+    usePaginationState({
+      items: sorted,
+      currentPage: projPage,
+      pageSize: projPageSize,
+      onPageChange: setProjPage,
+    });
 
   // KPI
   const scanned = projects.filter((p) => p.latest_score !== null);
@@ -721,9 +766,11 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
               {isScanning ? (
                 <button
                   onClick={stopScan}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-sm font-bold hover:bg-rose-500/20 transition-all"
+                  disabled={cancelRequested}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-sm font-bold hover:bg-rose-500/20 transition-all disabled:opacity-50"
                 >
-                  <XCircle size={15} /> Stop
+                  <XCircle size={15} />
+                  {cancelRequested ? "Cancelling..." : "Stop"}
                 </button>
               ) : (
                 <button
@@ -921,17 +968,15 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {sorted
-                    .slice((projPage - 1) * projPageSize, projPage * projPageSize)
-                    .map((project, idx) => (
-                      <ProjectRow
-                        key={project.id}
-                        project={project}
-                        rank={(projPage - 1) * projPageSize + idx + 1}
-                        scanState={scanStates[project.id]}
-                        onSelect={onSelectProject}
-                      />
-                    ))}
+                  {pagedProjects.map((project, idx) => (
+                    <ProjectRow
+                      key={project.id}
+                      project={project}
+                      rank={projPageStartIndex + idx + 1}
+                      scanState={scanStates[project.id]}
+                      onSelect={onSelectProject}
+                    />
+                  ))}
                 </tbody>
               </table>
             </div>
