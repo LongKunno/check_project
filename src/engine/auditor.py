@@ -191,7 +191,7 @@ class CodeAuditor:
         # Ghi nối vào file Ledger (Sổ cái bằng chứng)
         with open(self.ledger_path, "a") as f:
             f.write(
-                f"- [{pillar}] | [{file}:{line}] | Lý do: {reason} | Trình bày: {rule_id} | Trọng số: {weight}\n"
+                f"- [{pillar}] | [{file}:{line}] | Lý do: {reason} | Trình bày: {rule_id} | Điểm phạt: {weight}\n"
             )
 
     def run(self):
@@ -961,7 +961,7 @@ class CodeAuditor:
             for v in self.violations[:10]:
                 rule_info = f" (Rule: {v['rule_id']})" if v.get("rule_id") else ""
                 f.write(
-                    f"- **[{v['pillar']}]** {v['file']}: {v['reason']}{rule_info} (Trọng số: {v['weight']})\n"
+                    f"- **[{v['pillar']}]** {v['file']}: {v['reason']}{rule_info} (Điểm phạt: {v['weight']})\n"
                 )
 
             if not self.violations:

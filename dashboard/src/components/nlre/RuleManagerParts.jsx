@@ -194,7 +194,7 @@ export const RuleCard = ({
             <code className={cn("font-mono text-[12px] font-black px-2.5 py-1 rounded-md border", sevMeta.bg, sevMeta.color, sevMeta.border)}>{ruleKey}</code>
             <span className={cn("text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider border", sevMeta.bg, sevMeta.color, sevMeta.border)}>{meta.severity}</span>
             {isCustomWeight && !isOverridden && !isGlobalCustomized && (
-              <span className="text-[9px] bg-violet-50 text-violet-600 px-2 py-0.5 rounded-full border border-violet-200 font-black uppercase tracking-wide">✦ Custom Weight</span>
+              <span className="text-[9px] bg-violet-50 text-violet-600 px-2 py-0.5 rounded-full border border-violet-200 font-black uppercase tracking-wide">✦ Custom Penalty</span>
             )}
             {isOverridden && (
               <span className="text-[9px] bg-orange-50 text-orange-600 px-2 py-0.5 rounded-full border border-orange-200 font-black uppercase tracking-wide flex items-center gap-1 cursor-pointer hover:bg-orange-100 transition-colors" title="This rule setting is explicitly overriding the Global preset">
@@ -230,7 +230,7 @@ export const RuleCard = ({
             {expanded ? "Ẩn chi tiết" : "Xem pattern"}
           </button>
           <div className="flex items-center gap-2">
-            <span className="text-[9px] text-slate-500 font-black uppercase tracking-widest">WEIGHT</span>
+            <span className="text-[9px] text-slate-500 font-black uppercase tracking-widest">PENALTY</span>
             <WeightInput
               value={isCustomWeight ? customWeight : meta.weight !== undefined ? meta.weight : -2.0}
               onChange={onWeightChange}

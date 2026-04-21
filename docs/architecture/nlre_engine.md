@@ -27,8 +27,8 @@ sequenceDiagram
     User->>Dashboard (React): Bấm "Lưu Rule Cục Bộ" (Thành Rules chính thức)
     Dashboard (React)->>API Server: POST /api/rules/save
     User->>Dashboard (React): Chuyển qua Tab "Danh sách Rule" (Quản lý)
-    Dashboard (React)->>API Server: POST /api/rules/toggle & /api/rules/save (chỉnh Weight bằng Wheel Event)
-    API Server->>SQLite DB: Cập nhật `project_rules` (Toggled Rules, Compiled_json & Custom Weights)
+    Dashboard (React)->>API Server: POST /api/rules/toggle & /api/rules/save (chỉnh điểm phạt bằng Wheel Event)
+    API Server->>SQLite DB: Cập nhật `project_rules` (Toggled Rules, Compiled_json & Custom Penalties)
 
     %% Flow kiểm toán Two-stage (Asynchronous V1.0.0)
     Note over User, Auditor Engine: Luồng Thực thi Bất Đồng Bộ (Background Job V1.0.0)

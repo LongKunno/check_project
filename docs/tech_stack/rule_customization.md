@@ -113,7 +113,6 @@ Mỗi rule được định nghĩa dưới dạng một object đơn nhất tron
 - Không xóa bất kỳ key nào (`regex`, `ast`, `ai`). Nếu không dùng thì để `null`.
 - Các Trụ cột (`pillar`/`category`) hợp lệ: `Performance`, `Maintainability`, `Reliability`, `Security`.
 - Sau khi chỉnh sửa `rules.json`, không cần khởi động lại server nếu chạy ở chế độ `--reload`.
-- Trọng số (`weight`) phải là số âm để tính vào điểm phạt.
+- Điểm phạt (`weight`) phải là số âm để tính vào tổng mức phạt.
 - **Best Practice (Chống False Positive):** Để hệ thống không tóm nhầm các từ khoá nằm trong vùng comment/văn bản giải thích, hãy ưu tiên sử dụng `ast` thay vì `regex` bất cứ lúc nào có thể (ví dụ: bắt lỗi hàm cấm thì nên đẩy vào cấu trúc `dangerous_functions` thay vì gõ text regex). Sử dụng `ai` nếu cấu trúc logic buộc phải đánh giá qua ngữ cảnh.
-
 

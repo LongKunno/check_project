@@ -113,7 +113,7 @@ class VerificationStep:
             ]
 
     def _apply_custom_weights(self, merged):
-        """Áp dụng Custom Weights."""
+        """Áp dụng điểm phạt tùy chỉnh từ custom_weights."""
         custom_weights = self.custom_rules.get("custom_weights", {})
         if not custom_weights:
             return

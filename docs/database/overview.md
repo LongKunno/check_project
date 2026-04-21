@@ -36,7 +36,7 @@ erDiagram
         text natural_text "Yêu cầu bằng ngôn ngữ tự nhiên"
         json compiled_json "JSON String (AST/Regex Rules)"
         json disabled_core_rules "Danh sách ID Core Rule bị tắt"
-        json custom_weights "Dictionary trọng số (Weight Override)"
+        json custom_weights "Dictionary điểm phạt ghi đè (Penalty Override)"
     }
     
     AUDIT_HISTORY {
@@ -81,7 +81,7 @@ Lưu trữ các luật cấu hình được người dùng chỉ định qua tí
 - `natural_text` (TEXT) - Yêu cầu bằng ngôn ngữ tự nhiên.
 - `compiled_json` (TEXT) - Lưu trữ dưới dạng JSON string.
 - `disabled_core_rules` (TEXT) - JSON Array lưu danh sách ID Core Rule bị tắt.
-- `custom_weights` (TEXT) - JSON Dictionary lưu trữ trọng số (Weight Override) của từng luật cụ thể.
+- `custom_weights` (TEXT) - JSON Dictionary lưu trữ điểm phạt ghi đè (Penalty Override) của từng luật cụ thể.
 
 ### 4. Bảng `system_config` (MỚI — V5)
 Key-value store để lưu cấu hình engine runtime, thay đổi từ Settings UI mà không cần restart container.

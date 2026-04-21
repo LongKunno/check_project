@@ -17,7 +17,7 @@ Sự chuyển đổi từ lỗi kỹ thuật sang điểm số được thực h
 flowchart TD
     A[Mã nguồn dự án] --> B{Phân tách theo Tính Năng / Feature}
     B --> C[Phát hiện Vi phạm thô]
-    C --> D(Gán trọng số lỗi âm\nVD: -5, -0.5)
+    C --> D(Gán điểm phạt âm\nVD: -5, -0.5)
     
     D --> E{Phân bổ theo\n4 Trụ Cột}
     E --> F[Performance]
@@ -37,7 +37,7 @@ flowchart TD
     N --> O[🚀 Điểm Tổng Thể Dự Án]
 ```
 
-1. **Trọng số (Weighting)**: Mỗi loại vi phạm được gán một trọng số âm (ví dụ: Hardcoded Secret -5, Print statement -0.5).
+1. **Điểm phạt (Penalty Score)**: Mỗi loại vi phạm được gán một điểm phạt âm (ví dụ: Hardcoded Secret -5, Print statement -0.5).
 2. **Điểm số trụ cột (Pillar Score)**:
    - Công thức: `Điểm = 10 / (1 + (Điểm phạt chuẩn hóa / K_FACTOR))`
    - *Điểm phạt chuẩn hóa* được tính bằng cách chia điểm phạt tuyệt đối cho **Số ngàn dòng code an toàn (Effective LOC/1000)**.

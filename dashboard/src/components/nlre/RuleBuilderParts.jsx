@@ -253,7 +253,7 @@ export const VisualRuleConfigurator = ({ config, onChange, readOnly = false }) =
           )}
 
           <div className="flex flex-col items-end gap-1.5 shrink-0">
-            <label className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Trọng Số (Weight)</label>
+            <label className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Điểm Phạt</label>
             {readOnly ? (
               <span className="text-sm font-black text-rose-700 bg-rose-50 px-4 py-[9px] rounded-xl border border-rose-200 shadow-sm min-w-[96px] text-center">{item.weight || 0}</span>
             ) : (

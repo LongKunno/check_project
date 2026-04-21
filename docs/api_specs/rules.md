@@ -50,7 +50,7 @@ Lưu quy tắc (natural + compiled).
 {
   "target": "test_target",
   "natural_text": "Cấm dùng eval",
-  "compiled_json": { ... }, // Optional, có thể null nếu chỉ lưu Custom Weights
+  "compiled_json": { ... }, // Optional, có thể null nếu chỉ lưu điểm phạt tùy chỉnh
   "custom_weights": {"HARDCODED_SECRET": -2.0}
 }
 ```

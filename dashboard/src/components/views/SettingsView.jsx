@@ -596,7 +596,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
               <div className="space-y-2.5">
                 {[
                   { key: "g-toggles", level: "toggles", label: "Reset Toggles", desc: "Bật lại tất cả rules đã bị tắt ở Global", badgeColor: "bg-amber-500/15 text-amber-600 border-amber-500/25", btnIdle: "bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border border-amber-500/25 hover:border-amber-500/40", icon: "🟡" },
-                  { key: "g-weights", level: "weights", label: "Reset Weights", desc: "Đưa trọng số tất cả rules về giá trị gốc", badgeColor: "bg-orange-500/15 text-orange-600 border-orange-500/25", btnIdle: "bg-orange-500/10 hover:bg-orange-500/20 text-orange-600 border border-orange-500/25 hover:border-orange-500/40", icon: "🟠" },
+                  { key: "g-weights", level: "weights", label: "Reset Penalties", desc: "Đưa điểm phạt của tất cả rules về giá trị gốc", badgeColor: "bg-orange-500/15 text-orange-600 border-orange-500/25", btnIdle: "bg-orange-500/10 hover:bg-orange-500/20 text-orange-600 border border-orange-500/25 hover:border-orange-500/40", icon: "🟠" },
                   { key: "g-all", level: "all", label: "Reset All Global", desc: "Khôi phục toàn bộ Global config (toggles + weights)", badgeColor: "bg-red-500/15 text-red-600 border-red-500/25", btnIdle: "bg-red-500/10 hover:bg-red-500/20 text-red-600 border border-red-500/25 hover:border-red-500/40", icon: "🔴" },
                 ].map(item => {
                   const isConfirming = resetState.confirming === item.key;
@@ -651,7 +651,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
               <div className="space-y-2.5">
                 {[
                   { key: "p-toggles", level: "toggles", label: "Reset Overrides", desc: "Đồng bộ bật/tắt rule với Global (giữ weights + custom rules)", btnIdle: "bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border border-amber-500/25 hover:border-amber-500/40", icon: "🟡" },
-                  { key: "p-weights", level: "weights", label: "Reset Weights", desc: "Đưa trọng số về mặc định (giữ toggles + custom rules)", btnIdle: "bg-orange-500/10 hover:bg-orange-500/20 text-orange-600 border border-orange-500/25 hover:border-orange-500/40", icon: "🟠" },
+                  { key: "p-weights", level: "weights", label: "Reset Penalties", desc: "Đưa điểm phạt về mặc định (giữ toggles + custom rules)", btnIdle: "bg-orange-500/10 hover:bg-orange-500/20 text-orange-600 border border-orange-500/25 hover:border-orange-500/40", icon: "🟠" },
                   { key: "p-custom", level: "custom", label: "Reset Custom Rules", desc: "Xóa toàn bộ AI rules đã tạo bằng Rule Builder", btnIdle: "bg-violet-500/10 hover:bg-violet-500/20 text-violet-600 border border-violet-500/25 hover:border-violet-500/40", icon: "🟣" },
                   { key: "p-all", level: "all", label: "Reset All Project", desc: "Xóa toàn bộ cấu hình dự án — nuclear option", btnIdle: "bg-red-500/10 hover:bg-red-500/20 text-red-600 border border-red-500/25 hover:border-red-500/40", icon: "🔴" },
                 ].map(item => {

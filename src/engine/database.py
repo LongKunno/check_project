@@ -438,7 +438,7 @@ class AuditDatabase:
 
     @staticmethod
     def save_custom_weights(target_id, custom_weights):
-        """Lưu lại trọng số tuỳ chỉnh của các rules cho dự án."""
+        """Lưu lại điểm phạt tùy chỉnh của các rules cho dự án."""
         conn = AuditDatabase.get_connection()
         cursor = conn.cursor()
 

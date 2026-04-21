@@ -87,11 +87,11 @@ Việc sử dụng trực tiếp AI (LLM) để chấm điểm code (ví dụ: "
 ### Giải pháp (Options & Decision & Why)
 **Quyết định**: Áp dụng mô hình **Hybrid AI-Static Analysis**.
 
-1. **Static Analysis as Primary (Xương sống)**: Các công cụ deterministic (AST, Regex) vẫn là nguồn phát hiện lỗi chính. Mỗi lỗi được gán một "Trọng số âm" (Penalty Weight) cố định.
+1. **Static Analysis as Primary (Xương sống)**: Các công cụ deterministic (AST, Regex) vẫn là nguồn phát hiện lỗi chính. Mỗi lỗi được gán một "Điểm phạt âm" (Penalty Score) cố định.
 2. **AI as Contextual Validator (Bộ lọc ngữ cảnh)**: AI không trực tiếp đưa ra điểm số. AI chỉ trả lời câu hỏi: *"Dựa trên ngữ cảnh này, vi phạm Static Analysis vừa tìm thấy có phải là False Positive không?"*.
 3. **Cơ chế ổn định (Stability Mechanism)**:
-   - Nếu AI xác nhận là lỗi thật: Áp dụng 100% trọng số phạt.
-   - Nếu AI xác định là False Positive: Giảm trọng số phạt về 0 hoặc một mức tối thiểu.
+   - Nếu AI xác nhận là lỗi thật: Áp dụng 100% điểm phạt.
+   - Nếu AI xác định là False Positive: Giảm điểm phạt về 0 hoặc một mức tối thiểu.
    - **Calibration (Hiệu chuẩn)**: Sử dụng JSON Schema (Instructor/Pydantic) để ép AI phân loại lỗi vào các nhóm Severity (Critical, High, Medium, Low) đã được định nghĩa điểm phạt sẵn trong hệ thống.
 
 **Tại sao?**: Giữ được sự chính xác nhờ AI (giảm nhiễu) nhưng vẫn duy trì tính ổn định tuyệt đối của công thức toán học đằng sau điểm số.

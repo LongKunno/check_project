@@ -136,7 +136,7 @@ const RuleManager = ({ targetId, projectName }) => {
       // KHÔNG gọi fetchRules() ở đây — optimistic update đã đủ
       // fetchRules sẽ ghi đè state trước khi render kịp
     } catch (e) {
-      showToast("Lỗi lưu trọng số", "error");
+      showToast("Lỗi lưu điểm phạt", "error");
     }
   };
 
@@ -488,7 +488,7 @@ const RuleManager = ({ targetId, projectName }) => {
                 icon: ShieldCheck,
                 count: Object.keys(defaultRules).length,
                 activeGrad: "from-emerald-600 to-teal-600",
-                desc: "Ghi đè luật riêng cho dự án hiện tại. Kế thừa Global nhưng cho phép Bật/Tắt hoặc thay đổi trọng số độc lập.",
+                desc: "Ghi đè luật riêng cho dự án hiện tại. Kế thừa Global nhưng cho phép Bật/Tắt hoặc thay đổi điểm phạt độc lập.",
               },
               {
                 id: "custom",
@@ -504,7 +504,7 @@ const RuleManager = ({ targetId, projectName }) => {
                 icon: GitCompare,
                 count: Object.keys(projectOverrides?.custom_weights || {}).length + (projectOverrides?.disabled_core_rules || []).length + (projectOverrides?.enabled_core_rules || []).filter(r => (globalOverrides?.disabled_core_rules || []).includes(r)).length,
                 activeGrad: "from-orange-600 to-amber-600",
-                desc: "Hiển thị tất cả tùy chỉnh Rule (trạng thái, trọng số) của dự án này so với thiết lập Global mặc định.",
+                desc: "Hiển thị tất cả tùy chỉnh Rule (trạng thái, điểm phạt) của dự án này so với thiết lập Global mặc định.",
               },
             ].map((tab) => (
               <button
@@ -662,9 +662,9 @@ const RuleManager = ({ targetId, projectName }) => {
             {showTabInfo && (() => {
               const tabs = {
                 global: { icon: Globe, label: "Global Rules", desc: "Chỉnh sửa luật áp dụng chung cho toàn bộ hệ thống. Thay đổi ở đây ảnh hưởng tới tất cả dự án.", color: "blue" },
-                project: { icon: ShieldCheck, label: "Project Overrides", desc: "Ghi đè luật riêng cho dự án hiện tại. Kế thừa Global nhưng cho phép Bật/Tắt hoặc thay đổi trọng số độc lập.", color: "emerald" },
+                project: { icon: ShieldCheck, label: "Project Overrides", desc: "Ghi đè luật riêng cho dự án hiện tại. Kế thừa Global nhưng cho phép Bật/Tắt hoặc thay đổi điểm phạt độc lập.", color: "emerald" },
                 custom: { icon: Wand2, label: "Custom AI Rules", desc: "Quản lý các luật tùy chỉnh do AI sinh ra (Regex & AST). Dùng Rule Builder để tạo luật mới.", color: "violet" },
-                diff: { icon: GitCompare, label: "Override Manager", desc: "Hiển thị tất cả tùy chỉnh Rule (trạng thái, trọng số) của dự án này so với thiết lập Global mặc định.", color: "orange" },
+                diff: { icon: GitCompare, label: "Override Manager", desc: "Hiển thị tất cả tùy chỉnh Rule (trạng thái, điểm phạt) của dự án này so với thiết lập Global mặc định.", color: "orange" },
               };
               const info = tabs[showTabInfo];
               if (!info) return null;

@@ -29,7 +29,7 @@ def calculate_score(punishment: float, loc: int) -> float:
     Tính toán điểm dựa trên mức phạt và tổng số dòng code.
 
     Args:
-        punishment (float): Tổng trọng số lỗi tìm thấy.
+        punishment (float): Tổng điểm phạt của các lỗi tìm thấy.
         loc (int): Tổng số dòng code của project.
 
     Returns:

@@ -38,7 +38,7 @@ class DeepAuditViolation(BaseModel):
     )
     reason: str = Field(..., description="Giải thích chi tiết lỗi logic/kiến trúc")
     weight: float = Field(
-        ..., description="Trọng số phạt (từ -0.5 đến -2.0, KHÔNG được quá -2.0)"
+        ..., description="Điểm phạt (từ -0.5 đến -2.0, KHÔNG được quá -2.0)"
     )
     confidence: float = Field(..., description="Độ tin cậy từ 0.0 đến 1.0")
     line: int = Field(default=0, description="Dòng code xảy ra lỗi (nếu xác định được)")
