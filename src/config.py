@@ -70,8 +70,22 @@ AI_MAX_CONCURRENCY = _parse_int_setting(
 )
 
 # OPENAI BATCH MODEL: model dùng riêng cho Batch API chính thức.
-OPENAI_BATCH_MODEL = (
-    os.getenv("OPENAI_BATCH_MODEL", "gpt-5.4-mini").strip() or "gpt-5.4-mini"
+OPENAI_BATCH_MODEL_FALLBACK = "gpt-4.1-nano"
+OPENAI_BATCH_MODEL_OVERRIDES = {
+    "gpt-5-nano": "gpt-4.1-nano",
+}
+
+
+def normalize_openai_batch_model(value: str | None) -> str:
+    """Chuẩn hóa batch model để runtime cũ không tiếp tục dùng model không mong muốn."""
+    model = str(value or "").strip()
+    if not model:
+        return OPENAI_BATCH_MODEL_FALLBACK
+    return OPENAI_BATCH_MODEL_OVERRIDES.get(model, model)
+
+
+OPENAI_BATCH_MODEL = normalize_openai_batch_model(
+    os.getenv("OPENAI_BATCH_MODEL", OPENAI_BATCH_MODEL_FALLBACK)
 )
 
 # OPENAI BATCH API KEY: ưu tiên DB (mã hóa), fallback .env
@@ -163,7 +177,7 @@ def get_openai_batch_model() -> str:
 
         val = AuditDatabase.get_config("openai_batch_model")
         if val:
-            return str(val).strip()
+            return normalize_openai_batch_model(str(val))
     except Exception:
         pass
     return OPENAI_BATCH_MODEL

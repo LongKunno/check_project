@@ -7,6 +7,7 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
+from src.engine.ai_pricing_research import ai_pricing_research
 from src.engine.ai_telemetry import ai_telemetry
 
 router = APIRouter()
@@ -25,6 +26,12 @@ class PricingEntryRequest(BaseModel):
 
 class PricingCatalogRequest(BaseModel):
     items: List[PricingEntryRequest]
+
+
+class PricingResearchRequest(BaseModel):
+    provider: str
+    model: str
+    mode: Optional[str] = None
 
 
 class BudgetPolicyRequest(BaseModel):
@@ -75,7 +82,7 @@ async def list_ai_requests(
     model: Optional[str] = Query(default=None),
     mode: Optional[str] = Query(default=None),
     page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=25, ge=1, le=100),
+    page_size: int = Query(default=10, ge=1, le=100),
 ):
     return {
         "status": "success",
@@ -90,6 +97,22 @@ async def list_ai_requests(
             mode=mode,
             page=page,
             page_size=page_size,
+        ),
+    }
+
+
+@router.get("/ai/filters/meta")
+async def get_ai_filters_meta(
+    date_from: Optional[str] = Query(default=None),
+    date_to: Optional[str] = Query(default=None),
+    project: Optional[str] = Query(default=None),
+):
+    return {
+        "status": "success",
+        "data": ai_telemetry.get_filter_metadata(
+            date_from=date_from,
+            date_to=date_to,
+            project=project,
         ),
     }
 
@@ -124,6 +147,23 @@ async def update_ai_pricing(request: PricingCatalogRequest):
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/ai/pricing/research")
+async def research_ai_pricing(request: PricingResearchRequest):
+    try:
+        return {
+            "status": "success",
+            "data": ai_pricing_research.research(
+                provider=request.provider,
+                model=request.model,
+                mode=request.mode,
+            ),
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except RuntimeError as e:
+        raise HTTPException(status_code=502, detail=str(e))
 
 
 @router.get("/ai/budget")

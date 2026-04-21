@@ -709,7 +709,6 @@ Trả về JSON:
         body = {
             "model": batch_model,
             "messages": messages,
-            "temperature": 0.0,
             "response_format": {"type": "json_object"},
         }
         return body
@@ -916,7 +915,28 @@ Trả về JSON:
             custom_id = item.get("custom_id")
             if not custom_id:
                 continue
-            parsed[custom_id] = item.get("error") or item
+            response = item.get("response") or {}
+            body = response.get("body") or {}
+            nested_error = body.get("error") if isinstance(body.get("error"), dict) else {}
+            top_level_error = item.get("error")
+            top_level_message = (
+                top_level_error.get("message")
+                if isinstance(top_level_error, dict)
+                else top_level_error
+            )
+            message = (
+                nested_error.get("message")
+                or top_level_message
+                or item.get("message")
+                or ""
+            )
+            parsed[custom_id] = {
+                "status_code": response.get("status_code"),
+                "message": self._normalize_content(message),
+                "body": body,
+                "error": nested_error or top_level_error or {},
+                "raw": item,
+            }
         return parsed
 
     async def resolve_chat_completion_batch(
@@ -974,8 +994,8 @@ Trả về JSON:
                     mode="openai_batch",
                     model=batch_model,
                     error_reason=error.get("message")
-                    or json.dumps(error, ensure_ascii=False),
-                    output_payload=error,
+                    or json.dumps(error.get("raw") or error, ensure_ascii=False),
+                    output_payload=error.get("raw") or error,
                 )
             pending_map = self._get_pending_batch_requests(batch_id)
             unresolved = [

@@ -625,6 +625,58 @@ class AuditDatabase:
         return results
 
     @staticmethod
+    def get_latest_audits_for_targets(targets, include_full_json=False):
+        """Lấy bản audit mới nhất cho mỗi target trong một lần query."""
+        cleaned_targets = [str(target).strip() for target in (targets or []) if str(target).strip()]
+        if not cleaned_targets:
+            return {}
+
+        conn = AuditDatabase.get_connection()
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        columns = (
+            "id, timestamp, target, score, rating, total_loc, violations_count, "
+            "pillar_scores, scan_mode"
+        )
+        if include_full_json:
+            columns += ", full_json"
+
+        cursor.execute(
+            f"""
+            SELECT DISTINCT ON (target) {columns}
+            FROM audit_history
+            WHERE target = ANY(%s)
+            ORDER BY target, timestamp DESC
+            """,
+            (cleaned_targets,),
+        )
+        rows = cursor.fetchall()
+        cursor.close()
+        AuditDatabase.release_connection(conn)
+
+        results = {}
+        for row in rows:
+            d = dict(row)
+            if "timestamp" in d and isinstance(d["timestamp"], datetime):
+                d["timestamp"] = d["timestamp"].isoformat()
+            try:
+                d["pillar_scores"] = json.loads(d.get("pillar_scores", "{}"))
+            except Exception as e:
+                logger.warning(
+                    f"Error parsing pillar_scores in get_latest_audits_for_targets: {e}"
+                )
+                d["pillar_scores"] = {}
+            if include_full_json and d.get("full_json"):
+                try:
+                    d["full_json"] = json.loads(d["full_json"])
+                except Exception as e:
+                    logger.warning(
+                        f"Error parsing full_json in get_latest_audits_for_targets: {e}"
+                    )
+                    d["full_json"] = None
+            results[d["target"]] = d
+        return results
+
+    @staticmethod
     def get_audit_by_id(audit_id):
         """Retrieves details of a single audit including the full JSON payload by ID."""
         conn = AuditDatabase.get_connection()

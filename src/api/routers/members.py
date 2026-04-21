@@ -8,7 +8,6 @@ repository đã cấu hình, gộp theo email và tính điểm Weighted Average
 import logging
 from fastapi import APIRouter
 
-from src.config import CONFIGURED_REPOSITORIES
 from src.engine.database import AuditDatabase
 from src.engine.scoring import ScoringEngine
 
@@ -159,26 +158,18 @@ async def get_members_scores():
     }
     """
     all_member_entries = []
+    repositories = AuditDatabase.get_all_repositories(include_credentials=False)
+    latest_audits = AuditDatabase.get_latest_audits_for_targets(
+        [repo.get("url", "") for repo in repositories],
+        include_full_json=True,
+    )
 
-    for repo in CONFIGURED_REPOSITORIES:
+    for repo in repositories:
         repo_url = repo.get("url", "")
-        project_name = (
-            repo_url.split("/")[-1].replace(".git", "")
-            if repo_url
-            else repo.get("name", repo.get("id", "unknown"))
-        )
+        project_name = repo.get("name") or repo.get("id") or "unknown"
 
         try:
-            history = AuditDatabase.get_history(repo_url)
-            if not history:
-                continue
-
-            latest = history[0]
-            audit_id = latest.get("id")
-            if not audit_id:
-                continue
-
-            audit_detail = AuditDatabase.get_audit_by_id(audit_id)
+            audit_detail = latest_audits.get(repo_url)
             if not audit_detail or not audit_detail.get("full_json"):
                 continue
 

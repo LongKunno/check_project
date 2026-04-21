@@ -83,6 +83,139 @@ class TestRepositoriesScores:
             for field in ["id", "name", "url", "latest_score"]:
                 assert field in repo, f"Missing field '{field}'"
 
+    def test_scores_use_latest_audit_lookup_instead_of_history_loop(self, client, monkeypatch):
+        from src.engine.database import AuditDatabase
+
+        monkeypatch.setattr(
+            AuditDatabase,
+            "get_all_repositories",
+            staticmethod(
+                lambda include_credentials=False: [
+                    {"id": "repo-1", "name": "Repo 1", "url": "https://example.com/repo-1.git"},
+                    {"id": "repo-2", "name": "Repo 2", "url": "https://example.com/repo-2.git"},
+                ]
+            ),
+        )
+        monkeypatch.setattr(
+            AuditDatabase,
+            "get_latest_audits_for_targets",
+            staticmethod(
+                lambda targets, include_full_json=False: {
+                    "https://example.com/repo-1.git": {
+                        "score": 91.5,
+                        "rating": "A",
+                        "timestamp": "2026-04-21T10:00:00",
+                        "violations_count": 2,
+                        "pillar_scores": {"Security": 9.0},
+                    }
+                }
+            ),
+        )
+        monkeypatch.setattr(
+            AuditDatabase,
+            "get_history",
+            staticmethod(lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("legacy history path should not be used"))),
+        )
+
+        response = client.get("/repositories/scores")
+
+        assert response.status_code == 200, response.text
+        payload = response.json()["data"]
+        assert payload[0]["latest_score"] == 91.5
+        assert payload[0]["violations_count"] == 2
+        assert payload[1]["latest_score"] is None
+
+
+class TestMembersScores:
+    """GET /members/scores — bảng xếp hạng thành viên."""
+
+    def test_members_scores_uses_active_repositories_and_latest_audit_lookup(
+        self, client, monkeypatch
+    ):
+        from src.engine.database import AuditDatabase
+
+        monkeypatch.setattr(
+            AuditDatabase,
+            "get_all_repositories",
+            staticmethod(
+                lambda include_credentials=False: [
+                    {"id": "repo-1", "name": "Repo 1", "url": "https://example.com/repo-1.git"},
+                    {"id": "repo-2", "name": "Repo 2", "url": "https://example.com/repo-2.git"},
+                ]
+            ),
+        )
+        monkeypatch.setattr(
+            AuditDatabase,
+            "get_latest_audits_for_targets",
+            staticmethod(
+                lambda targets, include_full_json=False: {
+                    "https://example.com/repo-1.git": {
+                        "full_json": {
+                            "scores": {
+                                "members": {
+                                    "dev@example.com": {
+                                        "email": "dev@example.com",
+                                        "author_name": "Dev One",
+                                        "loc": 120,
+                                        "debt_mins": 30,
+                                        "pillars": {
+                                            "Performance": 9.0,
+                                            "Maintainability": 8.0,
+                                            "Reliability": 8.5,
+                                            "Security": 9.5,
+                                        },
+                                        "final": 88.0,
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "https://example.com/repo-2.git": {
+                        "full_json": {
+                            "scores": {
+                                "members": {
+                                    "dev@example.com": {
+                                        "email": "dev@example.com",
+                                        "author_name": "Dev One",
+                                        "loc": 80,
+                                        "debt_mins": 15,
+                                        "pillars": {
+                                            "Performance": 8.0,
+                                            "Maintainability": 9.0,
+                                            "Reliability": 8.5,
+                                            "Security": 9.0,
+                                        },
+                                        "final": 87.0,
+                                    }
+                                }
+                            }
+                        }
+                    },
+                }
+            ),
+        )
+        monkeypatch.setattr(
+            AuditDatabase,
+            "get_history",
+            staticmethod(lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("legacy history path should not be used"))),
+        )
+        monkeypatch.setattr(
+            AuditDatabase,
+            "get_audit_by_id",
+            staticmethod(lambda *_args, **_kwargs: (_ for _ in ()).throw(AssertionError("legacy audit detail path should not be used"))),
+        )
+
+        response = client.get("/members/scores")
+
+        assert response.status_code == 200, response.text
+        payload = response.json()
+        assert payload["status"] == "success"
+        assert payload["total_members"] == 1
+        member = payload["data"][0]
+        assert member["email"] == "dev@example.com"
+        assert member["projects_count"] == 2
+        assert member["total_loc"] == 200
+
 
 class TestHistoryEndpoint:
     """GET /history — Lịch sử audit."""
@@ -144,7 +277,7 @@ class TestEngineSettings:
 
         monkeypatch.setattr(src.config, "AI_MAX_CONCURRENCY", 5)
         monkeypatch.setattr(src.config, "AI_MODE", "realtime")
-        monkeypatch.setattr(src.config, "OPENAI_BATCH_MODEL", "gpt-5.4-mini")
+        monkeypatch.setattr(src.config, "OPENAI_BATCH_MODEL", "gpt-4.1-nano")
         monkeypatch.setattr(src.config, "MEMBER_RECENT_MONTHS", 3)
         monkeypatch.setattr(
             AuditDatabase,
@@ -159,7 +292,7 @@ class TestEngineSettings:
         assert data["status"] == "success"
         assert data["data"]["ai_max_concurrency"] == 5
         assert data["data"]["ai_mode"] == "realtime"
-        assert data["data"]["openai_batch_model"] == "gpt-5.4-mini"
+        assert data["data"]["openai_batch_model"] == "gpt-4.1-nano"
         assert data["data"]["member_recent_months"] == 3
 
     def test_put_engine_settings_updates_ai_mode_and_batch_model(self, client, monkeypatch):
@@ -187,6 +320,32 @@ class TestEngineSettings:
         assert store["openai_batch_model"] == "gpt-5.4"
         assert response.json()["data"]["ai_mode"] == "openai_batch"
         assert response.json()["data"]["openai_batch_model"] == "gpt-5.4"
+
+    def test_put_engine_settings_normalizes_legacy_gpt_5_nano_batch_model(
+        self, client, monkeypatch
+    ):
+        store = {}
+        from src.engine.database import AuditDatabase
+
+        monkeypatch.setattr(
+            AuditDatabase,
+            "get_config",
+            staticmethod(lambda key, default=None: store.get(key, default)),
+        )
+        monkeypatch.setattr(
+            AuditDatabase,
+            "set_config",
+            staticmethod(lambda key, value: store.__setitem__(key, value)),
+        )
+
+        response = client.put(
+            "/settings/engine",
+            json={"openai_batch_model": "gpt-5-nano"},
+        )
+
+        assert response.status_code == 200, response.text
+        assert store["openai_batch_model"] == "gpt-4.1-nano"
+        assert response.json()["data"]["openai_batch_model"] == "gpt-4.1-nano"
 
     def test_put_engine_settings_encrypts_batch_api_key(self, client, monkeypatch):
         store = {}

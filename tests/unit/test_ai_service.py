@@ -205,3 +205,30 @@ def test_parse_error_lines_extracts_custom_id():
     )
 
     assert parsed["validation-0"]["message"] == "bad request"
+
+
+def test_build_chat_completion_body_omits_temperature_for_batch_requests():
+    import src.engine.ai_service as ai_service_module
+
+    service = ai_service_module.AiService()
+
+    body = service._build_chat_completion_body(
+        [{"role": "user", "content": "hello"}],
+        model="gpt-4.1-nano",
+    )
+
+    assert body["model"] == "gpt-4.1-nano"
+    assert "temperature" not in body
+    assert body["response_format"] == {"type": "json_object"}
+
+
+def test_parse_error_lines_prefers_nested_openai_error_message():
+    import src.engine.ai_service as ai_service_module
+
+    service = ai_service_module.AiService()
+    parsed = service._parse_error_lines(
+        '{"custom_id":"validation-1","response":{"status_code":400,"body":{"error":{"message":"Unsupported value: temperature","type":"invalid_request_error"}}},"error":null}'
+    )
+
+    assert parsed["validation-1"]["status_code"] == 400
+    assert parsed["validation-1"]["message"] == "Unsupported value: temperature"

@@ -57,7 +57,7 @@ def test_ai_mode_prefers_db_override(monkeypatch):
 
 
 def test_openai_batch_model_prefers_db_override(monkeypatch):
-    monkeypatch.setenv("OPENAI_BATCH_MODEL", "gpt-5.4-mini")
+    monkeypatch.setenv("OPENAI_BATCH_MODEL", "gpt-4.1-nano")
     config = _reload_config()
     monkeypatch.setattr(
         AuditDatabase,
@@ -68,6 +68,19 @@ def test_openai_batch_model_prefers_db_override(monkeypatch):
     )
 
     assert config.get_openai_batch_model() == "gpt-5.4"
+
+
+def test_openai_batch_model_legacy_gpt_5_nano_maps_to_gpt_4_1_nano(monkeypatch):
+    monkeypatch.setenv("OPENAI_BATCH_MODEL", "gpt-5-nano")
+    config = _reload_config()
+    monkeypatch.setattr(
+        AuditDatabase,
+        "get_config",
+        staticmethod(lambda key, default=None: None),
+    )
+
+    assert config.OPENAI_BATCH_MODEL == "gpt-4.1-nano"
+    assert config.get_openai_batch_model() == "gpt-4.1-nano"
 
 
 def test_ai_max_concurrency_uses_env_when_valid(monkeypatch):

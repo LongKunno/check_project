@@ -258,6 +258,51 @@ def test_step_ai_reasoning_skips_cross_check_after_cancel_request(tmp_path):
     assert cross_check_called["called"] is False
 
 
+def test_step_ai_validation_batch_api_surfaces_openai_batch_error_message(monkeypatch):
+    auditor = CodeAuditor(".")
+    violations = [
+        {
+            "file": "src/config.py",
+            "reason": "Issue",
+            "type": "Reliability",
+            "rule_id": "RULE_TEST",
+        }
+    ]
+
+    monkeypatch.setattr(
+        auditor,
+        "_get_orchestration_state",
+        lambda: {
+            "stage": "validation_submitted",
+            "validation_batch_id": "batch-1",
+        },
+    )
+    monkeypatch.setattr(auditor, "_start_active_job_progress", lambda *args, **kwargs: None)
+    monkeypatch.setattr(auditor, "_update_orchestration_state", lambda *args, **kwargs: None)
+    monkeypatch.setattr(auditor, "_ai_telemetry_context", lambda source: {})
+    monkeypatch.setattr(
+        auditor,
+        "_resolve_remote_batch_results",
+        lambda *args, **kwargs: {
+            "outputs": {},
+            "errors": {
+                "validation-0": {
+                    "status_code": 400,
+                    "message": "Unsupported value: 'temperature' does not support 0 with this model.",
+                }
+            },
+        },
+    )
+
+    with pytest.raises(RuntimeError) as exc:
+        auditor._step_ai_validation_batch_api(violations, object())
+
+    assert "validation-0" in str(exc.value)
+    assert "Unsupported value: 'temperature' does not support 0 with this model." in str(
+        exc.value
+    )
+
+
 def test_step_aggregation_matches_project_score_for_single_owner_repo(monkeypatch):
     import src.engine.authorship as authorship_module
 

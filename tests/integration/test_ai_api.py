@@ -84,6 +84,107 @@ def test_ai_requests_endpoint_returns_paginated_payload(ai_client, monkeypatch):
     assert captured["mode"] == "realtime"
 
 
+def test_ai_filters_meta_endpoint(ai_client, monkeypatch):
+    import src.api.routers.ai as ai_router_module
+
+    captured = {}
+
+    monkeypatch.setattr(
+        ai_router_module.ai_telemetry,
+        "get_filter_metadata",
+        lambda **kwargs: (
+            captured.update(kwargs)
+            or {
+                "projects": ["demo"],
+                "sources": ["audit.validation"],
+                "providers": ["openai", "google"],
+                "models": ["gpt-5.4"],
+                "statuses": ["completed"],
+                "modes": ["realtime"],
+                "models_by_provider": {"openai": ["gpt-5.4"]},
+            }
+        ),
+    )
+
+    response = ai_client.get(
+        "/ai/filters/meta?project=demo&date_from=2026-04-01&date_to=2026-04-21"
+    )
+
+    assert response.status_code == 200
+    payload = response.json()["data"]
+    assert payload["projects"] == ["demo"]
+    assert payload["models_by_provider"]["openai"] == ["gpt-5.4"]
+    assert captured["project"] == "demo"
+    assert captured["date_from"] == "2026-04-01"
+    assert captured["date_to"] == "2026-04-21"
+
+
+def test_ai_pricing_research_endpoint(ai_client, monkeypatch):
+    import src.api.routers.ai as ai_router_module
+
+    monkeypatch.setattr(
+        ai_router_module.ai_pricing_research,
+        "research",
+        lambda **kwargs: {
+            "suggestions": [
+                {
+                    "provider": kwargs["provider"],
+                    "mode": kwargs["mode"],
+                    "model": kwargs["model"],
+                    "input_cost_per_million": 0.75,
+                    "output_cost_per_million": 4.5,
+                    "cached_input_cost_per_million": 0.075,
+                    "currency": "USD",
+                    "is_active": True,
+                    "source_label": "OpenAI model page",
+                    "source_url": "https://developers.openai.com/api/docs/models/gpt-5.4-mini/",
+                }
+            ],
+            "warnings": [],
+            "sources": [
+                {
+                    "label": "OpenAI model page",
+                    "url": "https://developers.openai.com/api/docs/models/gpt-5.4-mini/",
+                }
+            ],
+        },
+    )
+
+    response = ai_client.post(
+        "/ai/pricing/research",
+        json={
+            "provider": "openai",
+            "model": "gpt-5.4-mini",
+            "mode": "realtime",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()["data"]
+    assert payload["suggestions"][0]["model"] == "gpt-5.4-mini"
+    assert payload["suggestions"][0]["mode"] == "realtime"
+
+
+def test_ai_pricing_research_endpoint_returns_400_on_invalid_request(ai_client, monkeypatch):
+    import src.api.routers.ai as ai_router_module
+
+    def fail(**_kwargs):
+        raise ValueError("Pricing research requires a non-empty model.")
+
+    monkeypatch.setattr(
+        ai_router_module.ai_pricing_research,
+        "research",
+        fail,
+    )
+
+    response = ai_client.post(
+        "/ai/pricing/research",
+        json={"provider": "openai", "model": "", "mode": "realtime"},
+    )
+
+    assert response.status_code == 400
+
+
 def test_ai_pricing_update_endpoint(ai_client, monkeypatch):
     import src.api.routers.ai as ai_router_module
 

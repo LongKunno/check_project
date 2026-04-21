@@ -60,6 +60,15 @@ class AiTelemetry:
         "estimated_requests": 0,
         "by_source": {},
     }
+    DEFAULT_REQUEST_STATUSES = (
+        "completed",
+        "failed",
+        "blocked_budget",
+        "submitted",
+        "running",
+    )
+    DEFAULT_REQUEST_MODES = ("realtime", "openai_batch")
+    DEFAULT_PROVIDERS = ("openai", "anthropic", "google", "proxy")
 
     def __init__(self):
         self._pending_batches: Dict[str, Dict[str, Dict[str, Any]]] = {}
@@ -554,6 +563,125 @@ class AiTelemetry:
         return {
             "today_spend": round(daily, 8),
             "month_spend": round(monthly, 8),
+        }
+
+    def get_filter_metadata(
+        self,
+        *,
+        date_from: Optional[str] = None,
+        date_to: Optional[str] = None,
+        project: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        projects = set([project] if project else [])
+        sources = set()
+        providers = set(self.DEFAULT_PROVIDERS)
+        models = set()
+        statuses = set(self.DEFAULT_REQUEST_STATUSES)
+        modes = set(self.DEFAULT_REQUEST_MODES)
+        models_by_provider: Dict[str, set] = {}
+
+        if not self._db_ready():
+            rows = self._filter_memory_rows(
+                date_from=date_from,
+                date_to=date_to,
+                project=project,
+            )
+        else:
+            where = []
+            params: List[Any] = []
+            if date_from:
+                where.append("created_at >= %s")
+                params.append(date_from)
+            if date_to:
+                where.append("created_at < %s")
+                params.append(date_to)
+            if project:
+                where.append("project = %s")
+                params.append(project)
+            clause = f"WHERE {' AND '.join(where)}" if where else ""
+            try:
+                conn = AuditDatabase.get_connection()
+                try:
+                    cursor = conn.cursor(cursor_factory=RealDictCursor)
+                    cursor.execute(
+                        f"""
+                        SELECT project, source, provider, model, status, mode
+                        FROM ai_request_logs
+                        {clause}
+                        """,
+                        tuple(params),
+                    )
+                    rows = [dict(row) for row in cursor.fetchall()]
+                    cursor.close()
+                finally:
+                    AuditDatabase.release_connection(conn)
+            except Exception:
+                rows = self._filter_memory_rows(
+                    date_from=date_from,
+                    date_to=date_to,
+                    project=project,
+                )
+
+        for row in rows:
+            row_project = (row.get("project") or "").strip()
+            row_source = (row.get("source") or "").strip()
+            row_provider = (row.get("provider") or "").strip()
+            row_model = (row.get("model") or "").strip()
+            row_status = (row.get("status") or "").strip()
+            row_mode = (row.get("mode") or "").strip()
+
+            if row_project:
+                projects.add(row_project)
+            if row_source:
+                sources.add(row_source)
+            if row_provider:
+                providers.add(row_provider)
+            if row_model:
+                models.add(row_model)
+            if row_status:
+                statuses.add(row_status)
+            if row_mode:
+                modes.add(row_mode)
+            if row_provider and row_model:
+                models_by_provider.setdefault(row_provider, set()).add(row_model)
+
+        for item in self.get_pricing_catalog():
+            provider_value = (item.get("provider") or "").strip()
+            model_value = (item.get("model") or "").strip()
+            mode_value = (item.get("mode") or "").strip()
+            if provider_value:
+                providers.add(provider_value)
+            if model_value:
+                models.add(model_value)
+            if mode_value:
+                modes.add(mode_value)
+            if provider_value and model_value:
+                models_by_provider.setdefault(provider_value, set()).add(model_value)
+
+        default_providers = list(self.DEFAULT_PROVIDERS)
+        ordered_providers = [
+            value for value in default_providers if value in providers
+        ] + sorted(value for value in providers if value not in default_providers)
+        default_statuses = list(self.DEFAULT_REQUEST_STATUSES)
+        ordered_statuses = [
+            value for value in default_statuses if value in statuses
+        ] + sorted(value for value in statuses if value not in default_statuses)
+        default_modes = list(self.DEFAULT_REQUEST_MODES)
+        ordered_modes = [
+            value for value in default_modes if value in modes
+        ] + sorted(value for value in modes if value not in default_modes)
+
+        return {
+            "projects": sorted(projects),
+            "sources": sorted(sources),
+            "providers": ordered_providers,
+            "models": sorted(models),
+            "statuses": ordered_statuses,
+            "modes": ordered_modes,
+            "models_by_provider": {
+                provider_key: sorted(model_values)
+                for provider_key, model_values in sorted(models_by_provider.items())
+            },
         }
 
     def _budget_error_message(self, policy: Dict[str, Any], usage: Dict[str, float]) -> str:

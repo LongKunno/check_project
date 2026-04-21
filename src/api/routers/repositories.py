@@ -9,6 +9,7 @@ from typing import Optional
 from src.engine.database import AuditDatabase
 from src.engine.settings_crypto import encrypt_setting
 from src.engine.ai_telemetry import AiBudgetExceededError
+from src.config import normalize_openai_batch_model
 
 router = APIRouter()
 
@@ -36,12 +37,14 @@ async def get_configured_repositories():
 async def get_projects_scores():
     """Lấy danh sách điểm số (lần audit gần nhất) của toàn bộ dự án đã cấu hình."""
     repos = AuditDatabase.get_all_repositories(include_credentials=False)
+    latest_audits = AuditDatabase.get_latest_audits_for_targets(
+        [repo.get("url", "") for repo in repos]
+    )
     public_repos = []
 
     for repo in repos:
         try:
-            history = AuditDatabase.get_history(repo["url"])
-            latest = history[0] if history and len(history) > 0 else None
+            latest = latest_audits.get(repo["url"])
 
             public_repos.append(
                 {
@@ -200,12 +203,13 @@ async def update_engine_settings(request: EngineSettingsRequest):
             "ai_max_concurrency", str(request.ai_max_concurrency)
         )
     if request.openai_batch_model is not None:
-        model = request.openai_batch_model.strip()
-        if not model:
+        raw_model = request.openai_batch_model.strip()
+        if not raw_model:
             raise HTTPException(
                 status_code=400,
                 detail="openai_batch_model không được để trống",
             )
+        model = normalize_openai_batch_model(raw_model)
         AuditDatabase.set_config("openai_batch_model", model)
     if request.clear_openai_batch_api_key:
         AuditDatabase.set_config("openai_batch_api_key_encrypted", "")

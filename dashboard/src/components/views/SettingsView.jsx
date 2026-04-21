@@ -81,7 +81,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
     ai_mode: "realtime",
     test_mode_limit_files: 0,
     ai_max_concurrency: 5,
-    openai_batch_model: "gpt-5.4-mini",
+    openai_batch_model: "gpt-4.1-nano",
     openai_batch_api_key: "",
     openai_batch_api_key_configured: false,
     clear_openai_batch_api_key: false,

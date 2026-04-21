@@ -21,6 +21,9 @@ export function useRepositories() {
           const result = await response.json();
           if (result.status === "success") {
             setConfiguredRepos(result.data);
+            if (result.data.length > 0) {
+              setSelectedRepoId((current) => current || result.data[0].id);
+            }
 
             // Cố gắng tìm dự án có lần chấm điểm gần nhất
             try {
@@ -40,11 +43,6 @@ export function useRepositories() {
               }
             } catch (err) {
               console.error("Failed to fetch global history:", err);
-            }
-
-            // Fallback lấy dự án đầu tiên
-            if (result.data.length > 0) {
-              setSelectedRepoId(result.data[0].id);
             }
           }
         }

@@ -765,6 +765,21 @@ class CodeAuditor:
             raise AuditCancelledError("Đã hủy theo yêu cầu người dùng.")
         return result
 
+    def _build_batch_request_error(
+        self, label: str, request_id: str, error: Dict[str, Any]
+    ) -> str:
+        status_code = error.get("status_code") if isinstance(error, dict) else None
+        message = ""
+        if isinstance(error, dict):
+            message = str(error.get("message") or "").strip()
+            if not message:
+                raw_payload = error.get("raw") or error
+                message = json.dumps(raw_payload, ensure_ascii=False)
+        prefix = f"OpenAI Batch {label} thất bại cho request {request_id}"
+        if status_code:
+            prefix += f" (HTTP {status_code})"
+        return f"{prefix}: {message}"
+
     def _step_ai_batch_processing(self, automated_violations, ai_service, asyncio):
         logger.info("[3/5] Chạy AI bằng OpenAI Batch API...")
 
@@ -841,10 +856,20 @@ class CodeAuditor:
             )
 
         for idx, chunk in enumerate(chunks):
-            output = outputs.get(f"validation-{idx}")
-            if not output or not output.get("content"):
+            request_id = f"validation-{idx}"
+            output = outputs.get(request_id)
+            error = errors.get(request_id)
+            if error:
                 raise RuntimeError(
-                    f"Thiếu kết quả OpenAI Batch Validation cho request validation-{idx}"
+                    self._build_batch_request_error("Validation", request_id, error)
+                )
+            if not output:
+                raise RuntimeError(
+                    f"Thiếu kết quả OpenAI Batch Validation cho request {request_id}"
+                )
+            if not output.get("content"):
+                raise RuntimeError(
+                    f"Kết quả OpenAI Batch Validation rỗng cho request {request_id}"
                 )
             batch_results = {
                 item.index: item.model_dump()
