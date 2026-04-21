@@ -1,7 +1,9 @@
 from datetime import datetime
+import json
 
 import pytest
 
+import src.engine.ai_telemetry as ai_telemetry_module
 from src.engine.ai_telemetry import AiBudgetExceededError, ai_telemetry
 from src.engine.database import AuditDatabase
 
@@ -231,3 +233,165 @@ def test_overview_includes_breakdowns():
         "openai",
         "proxy",
     }
+
+
+def test_save_pricing_catalog_uses_bulk_insert_when_db_ready(monkeypatch):
+    calls = {"execute": [], "execute_values": None, "commits": 0, "released": 0}
+
+    class FakeCursor:
+        def execute(self, query, params=None):
+            calls["execute"].append((query, params))
+
+        def close(self):
+            return None
+
+    class FakeConnection:
+        def __init__(self):
+            self.cursor_obj = FakeCursor()
+
+        def cursor(self, *args, **kwargs):
+            return self.cursor_obj
+
+        def commit(self):
+            calls["commits"] += 1
+
+    def fake_execute_values(cursor, query, rows, template=None, page_size=100):
+        calls["execute_values"] = {
+            "cursor": cursor,
+            "query": query,
+            "rows": list(rows),
+            "template": template,
+            "page_size": page_size,
+        }
+
+    AuditDatabase._pool = object()
+    monkeypatch.setattr(
+        AuditDatabase,
+        "get_connection",
+        staticmethod(lambda: FakeConnection()),
+    )
+    monkeypatch.setattr(
+        AuditDatabase,
+        "release_connection",
+        staticmethod(lambda conn: calls.__setitem__("released", calls["released"] + 1)),
+    )
+    monkeypatch.setattr(ai_telemetry_module, "execute_values", fake_execute_values)
+    monkeypatch.setattr(
+        ai_telemetry,
+        "get_pricing_catalog",
+        lambda: list(ai_telemetry._memory_pricing_catalog),
+    )
+
+    ai_telemetry.save_pricing_catalog(
+        [
+            {
+                "provider": "openai",
+                "mode": "realtime",
+                "model": "gpt-4.1-nano",
+                "input_cost_per_million": 0.1,
+                "output_cost_per_million": 0.2,
+                "cached_input_cost_per_million": 0.05,
+                "currency": "USD",
+                "is_active": True,
+            },
+            {
+                "provider": "openai",
+                "mode": "openai_batch",
+                "model": "gpt-4.1-nano",
+                "input_cost_per_million": 0.08,
+                "output_cost_per_million": 0.16,
+                "cached_input_cost_per_million": 0.04,
+                "currency": "USD",
+                "is_active": True,
+            },
+        ]
+    )
+
+    assert any("DELETE FROM ai_pricing_catalog" in query for query, _ in calls["execute"])
+    assert calls["execute_values"] is not None
+    assert len(calls["execute_values"]["rows"]) == 2
+    assert calls["commits"] == 1
+    assert calls["released"] == 1
+
+
+def test_annotate_scope_uses_bulk_update_when_db_ready(monkeypatch):
+    calls = {"execute_values": None, "commits": 0, "released": 0}
+
+    class FakeCursor:
+        def __init__(self):
+            self.executed = []
+
+        def execute(self, query, params=None):
+            self.executed.append((query, params))
+
+        def fetchall(self):
+            return [
+                {"request_id": "req-1", "metadata": json.dumps({"existing": 1})},
+                {"request_id": "req-2", "metadata": ""},
+            ]
+
+        def close(self):
+            return None
+
+    class FakeConnection:
+        def __init__(self):
+            self.cursor_obj = FakeCursor()
+
+        def cursor(self, *args, **kwargs):
+            return self.cursor_obj
+
+        def commit(self):
+            calls["commits"] += 1
+
+    def fake_execute_values(cursor, query, rows, template=None, page_size=100):
+        calls["execute_values"] = {
+            "cursor": cursor,
+            "query": query,
+            "rows": list(rows),
+            "template": template,
+            "page_size": page_size,
+        }
+
+    record = ai_telemetry.begin_request(
+        payload="validation",
+        provider="proxy",
+        mode="realtime",
+        model="scope-model",
+        context={"source": "audit.validation", "job_id": "audit-job"},
+    )
+    ai_telemetry.begin_request(
+        payload="deep",
+        provider="proxy",
+        mode="realtime",
+        model="scope-model",
+        context={"source": "audit.deep_audit", "job_id": "audit-job"},
+    )
+
+    AuditDatabase._pool = object()
+    monkeypatch.setattr(
+        AuditDatabase,
+        "get_connection",
+        staticmethod(lambda: FakeConnection()),
+    )
+    monkeypatch.setattr(
+        AuditDatabase,
+        "release_connection",
+        staticmethod(lambda conn: calls.__setitem__("released", calls["released"] + 1)),
+    )
+    monkeypatch.setattr(ai_telemetry_module, "execute_values", fake_execute_values)
+
+    ai_telemetry.annotate_scope(
+        job_id="audit-job",
+        source_prefix="audit.",
+        metadata={"audit_id": 42, "history_id": 42},
+    )
+
+    detail = ai_telemetry.get_request_detail(record["request_id"])
+    assert detail["metadata"]["audit_id"] == 42
+    assert calls["execute_values"] is not None
+    assert len(calls["execute_values"]["rows"]) == 2
+    first_row = calls["execute_values"]["rows"][0]
+    assert first_row[0] == "req-1"
+    assert json.loads(first_row[1])["audit_id"] == 42
+    assert calls["commits"] == 1
+    assert calls["released"] == 1

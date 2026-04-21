@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from typing import Any, Dict, Iterable, List, Optional
 from urllib.parse import urlparse
 
-from psycopg2.extras import RealDictCursor
+from psycopg2.extras import RealDictCursor, execute_values
 
 from src.engine.database import AuditDatabase
 
@@ -396,26 +396,31 @@ class AiTelemetry:
             try:
                 cursor = conn.cursor()
                 cursor.execute("DELETE FROM ai_pricing_catalog")
-                for entry in normalized:
-                    cursor.execute(
+                if normalized:
+                    execute_values(
+                        cursor,
                         """
                         INSERT INTO ai_pricing_catalog (
                             provider, mode, model,
                             input_cost_per_million, output_cost_per_million,
                             cached_input_cost_per_million, currency, is_active, updated_at
                         )
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+                        VALUES %s
                         """,
-                        (
-                            entry["provider"],
-                            entry["mode"],
-                            entry["model"],
-                            entry["input_cost_per_million"],
-                            entry["output_cost_per_million"],
-                            entry["cached_input_cost_per_million"],
-                            entry["currency"],
-                            entry["is_active"],
-                        ),
+                        [
+                            (
+                                entry["provider"],
+                                entry["mode"],
+                                entry["model"],
+                                entry["input_cost_per_million"],
+                                entry["output_cost_per_million"],
+                                entry["cached_input_cost_per_million"],
+                                entry["currency"],
+                                entry["is_active"],
+                            )
+                            for entry in normalized
+                        ],
+                        template="(%s, %s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)",
                     )
                 conn.commit()
                 cursor.close()
@@ -1322,16 +1327,26 @@ class AiTelemetry:
                     tuple(params),
                 )
                 rows = cursor.fetchall()
+                updated_rows = []
                 for row in rows:
                     current = _json_loads(row.get("metadata"), {})
                     current.update(merged_updates)
-                    cursor.execute(
+                    updated_rows.append(
+                        (
+                            row["request_id"],
+                            _json_dumps(current),
+                        )
+                    )
+                if updated_rows:
+                    execute_values(
+                        cursor,
                         """
-                        UPDATE ai_request_logs
-                        SET metadata = %s
-                        WHERE request_id = %s
+                        UPDATE ai_request_logs AS logs
+                        SET metadata = updates.metadata
+                        FROM (VALUES %s) AS updates(request_id, metadata)
+                        WHERE logs.request_id = updates.request_id
                         """,
-                        (_json_dumps(current), row["request_id"]),
+                        updated_rows,
                     )
                 conn.commit()
                 cursor.close()
