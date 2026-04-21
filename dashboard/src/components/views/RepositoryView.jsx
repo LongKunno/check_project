@@ -26,6 +26,16 @@ import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 const cn = (...inputs) => twMerge(clsx(inputs));
+const buildRepositoryApiUrl = (repoId) => `/api/repositories/${encodeURI(repoId)}`;
+
+async function readApiError(response) {
+  try {
+    const payload = await response.json();
+    return payload?.detail || payload?.message || "Server error";
+  } catch {
+    return "Server error";
+  }
+}
 
 /* ─── Page Header ──────────────────────────────────────────────────────── */
 const PageHeader = ({ repoCount, onAdd }) => (
@@ -326,15 +336,14 @@ const RepositoryView = () => {
     setSaving(true);
     try {
       const method = editingRepo ? "PUT" : "POST";
-      const url = editingRepo ? `/api/repositories/${editingRepo}` : "/api/repositories";
+      const url = editingRepo ? buildRepositoryApiUrl(editingRepo) : "/api/repositories";
       const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(repoForm) });
       if (res.ok) {
         toast.success(`Repository "${repoForm.name}" ${editingRepo ? "đã cập nhật" : "đã tạo"} thành công.`, editingRepo ? "Updated" : "Created");
         setShowForm(false);
         fetchRepos();
       } else {
-        const err = await res.json();
-        toast.error(err.detail || "Server error", "Error");
+        toast.error(await readApiError(res), "Error");
       }
     } catch (e) {
       toast.error("Lỗi kết nối mạng", "Connection Error");
@@ -346,10 +355,13 @@ const RepositoryView = () => {
   const handleDelete = async (repoId, repoName) => {
     if (!window.confirm(`Bạn có chắc muốn xóa repository "${repoName}"?\n(Dữ liệu audit history vẫn giữ nguyên)`)) return;
     try {
-      const res = await fetch(`/api/repositories/${repoId}`, { method: "DELETE" });
+      const res = await fetch(buildRepositoryApiUrl(repoId), { method: "DELETE" });
       if (res.ok) {
+        setRepos((current) => current.filter((repo) => repo.id !== repoId));
         toast.success(`Repository "${repoName}" đã xóa.`, "Deleted");
         fetchRepos();
+      } else {
+        toast.error(await readApiError(res), "Error");
       }
     } catch (e) {
       toast.error("Xóa thất bại.", "Error");

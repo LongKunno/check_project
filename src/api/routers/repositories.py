@@ -89,7 +89,7 @@ async def create_repository(request: RepositoryRequest):
     return {"status": "success", "message": f"Repository '{request.name}' đã được lưu."}
 
 
-@router.put("/repositories/{repo_id}")
+@router.put("/repositories/{repo_id:path}")
 async def update_repository(repo_id: str, request: RepositoryRequest):
     """Cập nhật thông tin repository."""
     existing = AuditDatabase.get_repository(repo_id)
@@ -114,7 +114,7 @@ async def update_repository(repo_id: str, request: RepositoryRequest):
 # ── DELETE ────────────────────────────────────────────────────────────────────
 
 
-@router.delete("/repositories/{repo_id}")
+@router.delete("/repositories/{repo_id:path}")
 async def delete_repository(repo_id: str):
     """Soft-delete repository (vô hiệu hóa, không xóa dữ liệu)."""
     existing = AuditDatabase.get_repository(repo_id)
