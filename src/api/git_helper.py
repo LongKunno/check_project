@@ -1,6 +1,6 @@
 import os
 import shutil
-import urllib.parse
+import base64
 from typing import Optional
 from git import Repo, GitCommandError
 import logging
@@ -13,21 +13,74 @@ logger = logging.getLogger(__name__)
 
 class GitHelper:
     @staticmethod
-    def _build_clone_url(
-        repo_url: str, username: Optional[str], token: Optional[str]
+    def _append_git_config(env: dict, key: str, value: str) -> None:
+        count = int(env.get("GIT_CONFIG_COUNT", "0"))
+        env[f"GIT_CONFIG_KEY_{count}"] = key
+        env[f"GIT_CONFIG_VALUE_{count}"] = value
+        env["GIT_CONFIG_COUNT"] = str(count + 1)
+
+    @staticmethod
+    def _build_git_env(username: Optional[str], token: Optional[str]) -> dict:
+        env = os.environ.copy()
+        env["GIT_TERMINAL_PROMPT"] = "0"
+        if username and token:
+            basic_auth = base64.b64encode(
+                f"{username}:{token}".encode("utf-8")
+            ).decode("ascii")
+            GitHelper._append_git_config(
+                env,
+                "http.extraHeader",
+                f"Authorization: Basic {basic_auth}",
+            )
+        return env
+
+    @staticmethod
+    def _sanitize_git_error(
+        message: str,
+        username: Optional[str],
+        token: Optional[str],
     ) -> str:
-        if not (username and token):
-            return repo_url
+        sanitized = str(message or "")
+        sanitized = re.sub(r"(?<=://)[^@\s]+(?=@)", "***", sanitized)
 
-        quoted_username = urllib.parse.quote(username)
-        quoted_token = urllib.parse.quote(token)
+        for secret in (username, token):
+            if not secret:
+                continue
+            secret = str(secret)
+            replacements = {
+                secret,
+                base64.b64encode(secret.encode("utf-8")).decode("ascii"),
+            }
+            for replacement in replacements:
+                if replacement:
+                    sanitized = sanitized.replace(replacement, "***")
 
-        if "://" in repo_url:
-            protocol, rest = repo_url.split("://", 1)
-            if "@" in rest:
-                rest = rest.split("@", 1)[1]
-            return f"{protocol}://{quoted_username}:{quoted_token}@{rest}"
-        return f"https://{quoted_username}:{quoted_token}@{repo_url}"
+        if username and token:
+            basic_auth = base64.b64encode(
+                f"{username}:{token}".encode("utf-8")
+            ).decode("ascii")
+            sanitized = sanitized.replace(basic_auth, "***")
+
+        return sanitized
+
+    @staticmethod
+    def _should_retry_full_clone(error: GitCommandError) -> bool:
+        detail = " ".join(
+            filter(
+                None,
+                [
+                    getattr(error, "stderr", ""),
+                    getattr(error, "stdout", ""),
+                    str(error),
+                ],
+            )
+        ).lower()
+        shallow_signals = (
+            "shallow",
+            "depth",
+            "dumb http transport does not support shallow capabilities",
+        )
+        return any(signal in detail for signal in shallow_signals)
 
     @staticmethod
     def clone_repository(
@@ -39,10 +92,9 @@ class GitHelper:
     ) -> bool:
         """
         Clones a git repository to a destination directory.
-        Handles formatting the URL with credentials if necessary.
+        Sử dụng auth header qua env thay vì nhúng credentials trực tiếp vào URL.
         """
         try:
-            clone_url = GitHelper._build_clone_url(repo_url, username, token)
             member_recent_months = get_member_recent_months()
 
             logger.info(
@@ -53,8 +105,7 @@ class GitHelper:
 
             # Khởi tạo bản sao với cửa sổ lịch sử đủ cho Member Scoring.
             # Thiết lập GIT_TERMINAL_PROMPT=0 để ngăn việc Git bị treo khi hỏi password tương tác
-            env = os.environ.copy()
-            env["GIT_TERMINAL_PROMPT"] = "0"
+            env = GitHelper._build_git_env(username, token)
 
             kwargs = {
                 "shallow_since": f"{member_recent_months} months",
@@ -64,14 +115,14 @@ class GitHelper:
                 kwargs["branch"] = branch
 
             try:
-                Repo.clone_from(clone_url, dest_dir, **kwargs)
+                Repo.clone_from(repo_url, dest_dir, **kwargs)
                 logger.info(
                     "Successfully cloned repository (branch: %s) with %s-month history. Kept .git directory for Authorship analysis.",
                     branch or "default",
                     member_recent_months,
                 )
             except GitCommandError as shallow_err:
-                if "error processing shallow info" in str(shallow_err.stderr):
+                if GitHelper._should_retry_full_clone(shallow_err):
                     logger.warning(
                         "Shallow clone failed. Falling back to full clone..."
                     )
@@ -82,7 +133,7 @@ class GitHelper:
                     fallback_kwargs = {"env": env}
                     if branch:
                         fallback_kwargs["branch"] = branch
-                    Repo.clone_from(clone_url, dest_dir, **fallback_kwargs)
+                    Repo.clone_from(repo_url, dest_dir, **fallback_kwargs)
                     logger.info("Successfully performed a full clone as a fallback.")
                 else:
                     raise shallow_err
@@ -90,17 +141,16 @@ class GitHelper:
             return True
 
         except GitCommandError as e:
-            logger.error(f"Git clone failed. Command output: {e.stderr}")
-            # Lọc thông báo lỗi để không lộ token (App Password) bằng Regex an toàn
-            error_msg = str(e.stderr)
-            if token:
-                # Xóa toàn bộ credentials format (://user:pass@)
-                error_msg = re.sub(r"(?<=://)[^@]+(?=@)", "***", error_msg)
-                # Fallback cho token đứng một mình, hoặc urlencdoded
-                error_msg = error_msg.replace(token, "***")
+            error_msg = GitHelper._sanitize_git_error(
+                getattr(e, "stderr", "") or str(e),
+                username,
+                token,
+            )
+            logger.error("Git clone failed. Command output: %s", error_msg)
             raise Exception(
                 f"Không thể clone repository. Vui lòng kiểm tra lại URL, Username và Token. Chi tiết: {error_msg}"
             )
         except Exception as e:
-            logger.error(f"Unexpected error during clone: {e}")
-            raise Exception(f"Lỗi hệ thống khi clone repository: {str(e)}")
+            sanitized = GitHelper._sanitize_git_error(str(e), username, token)
+            logger.error("Unexpected error during clone: %s", sanitized)
+            raise Exception(f"Lỗi hệ thống khi clone repository: {sanitized}")

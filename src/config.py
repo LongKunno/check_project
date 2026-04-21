@@ -1,4 +1,5 @@
 # Configuration for AI Static Analysis Auditor
+import logging
 import os
 
 # Pillar Weights
@@ -29,6 +30,8 @@ SCAN_EXTENSIONS = [".py"]
 
 # Normalization Factor (K)
 K_FACTOR = 2.0
+
+logger = logging.getLogger(__name__)
 
 
 def _parse_int_setting(value, default: int, minimum: int | None = None, maximum: int | None = None) -> int:
@@ -103,137 +106,114 @@ MEMBER_RECENT_MONTHS = _parse_int_setting(
 AUTH_REQUIRED = os.getenv("AUTH_REQUIRED", "true").lower() in ("true", "1", "yes")
 
 
-def _db_config_available() -> bool:
-    return True
+def _get_db_config_value(key: str):
+    try:
+        from src.engine.database import AuditDatabase
+
+        return AuditDatabase.get_config(key)
+    except Exception:
+        logger.warning(
+            "Không thể đọc config '%s' từ database, dùng fallback từ env/default.",
+            key,
+            exc_info=True,
+        )
+        return None
 
 
 def get_ai_enabled() -> bool:
     """Đọc AI_ENABLED từ DB (ưu tiên) hoặc .env (fallback).
     Cho phép thay đổi runtime từ Settings UI mà không cần restart."""
-    if not _db_config_available():
-        return AI_ENABLED
-    try:
-        from src.engine.database import AuditDatabase
-        val = AuditDatabase.get_config("ai_enabled")
-        if val is not None:
-            return val.lower() in ("true", "1", "yes")
-    except Exception:
-        pass
+    val = _get_db_config_value("ai_enabled")
+    if val is not None:
+        return str(val).lower() in ("true", "1", "yes")
     return AI_ENABLED
 
 
 def get_ai_mode() -> str:
     """Đọc AI_MODE từ DB (ưu tiên) hoặc .env (fallback)."""
-    if not _db_config_available():
-        return AI_MODE
-    try:
-        from src.engine.database import AuditDatabase
-
-        val = AuditDatabase.get_config("ai_mode")
-        if val in {"realtime", "openai_batch"}:
-            return val
-    except Exception:
-        pass
+    val = _get_db_config_value("ai_mode")
+    if val in {"realtime", "openai_batch"}:
+        return val
     return AI_MODE
 
 
 def get_test_mode_limit() -> int:
     """Đọc TEST_MODE_LIMIT_FILES từ DB (ưu tiên) hoặc .env (fallback).
     0 = full scan (production), >0 = giới hạn N files (test)."""
-    if not _db_config_available():
-        return TEST_MODE_LIMIT_FILES
-    try:
-        from src.engine.database import AuditDatabase
-        val = AuditDatabase.get_config("test_mode_limit_files")
-        if val is not None:
-            return int(val)
-    except Exception:
-        pass
+    val = _get_db_config_value("test_mode_limit_files")
+    if val is not None:
+        return _parse_int_setting(val, default=TEST_MODE_LIMIT_FILES, minimum=0)
     return TEST_MODE_LIMIT_FILES
 
 
 def get_ai_max_concurrency() -> int:
     """Đọc AI_MAX_CONCURRENCY từ DB (ưu tiên) hoặc .env (fallback).
     Giá trị hợp lệ: 1..100; nếu DB lỗi hoặc out-of-range thì fallback về 5."""
-    if not _db_config_available():
-        return AI_MAX_CONCURRENCY
-    try:
-        from src.engine.database import AuditDatabase
-
-        val = AuditDatabase.get_config("ai_max_concurrency")
-        if val is not None:
-            return _parse_int_setting(val, default=5, minimum=1, maximum=100)
-    except Exception:
-        pass
+    val = _get_db_config_value("ai_max_concurrency")
+    if val is not None:
+        return _parse_int_setting(
+            val,
+            default=5,
+            minimum=1,
+            maximum=100,
+        )
     return AI_MAX_CONCURRENCY
 
 
 def get_openai_batch_model() -> str:
     """Đọc OPENAI_BATCH_MODEL từ DB (ưu tiên) hoặc .env (fallback)."""
-    if not _db_config_available():
-        return OPENAI_BATCH_MODEL
-    try:
-        from src.engine.database import AuditDatabase
-
-        val = AuditDatabase.get_config("openai_batch_model")
-        if val:
-            return normalize_openai_batch_model(str(val))
-    except Exception:
-        pass
+    val = _get_db_config_value("openai_batch_model")
+    if val:
+        return normalize_openai_batch_model(str(val))
     return OPENAI_BATCH_MODEL
 
 
 def get_openai_batch_api_key() -> str:
     """Đọc OpenAI Batch API key từ DB (mã hóa, ưu tiên) hoặc .env (fallback)."""
-    if not _db_config_available():
-        return OPENAI_BATCH_API_KEY
-    try:
-        from src.engine.database import AuditDatabase
-        from src.engine.settings_crypto import decrypt_setting
+    val = _get_db_config_value("openai_batch_api_key_encrypted")
+    if val:
+        from src.engine.settings_crypto import SettingsCryptoError, decrypt_setting
 
-        val = AuditDatabase.get_config("openai_batch_api_key_encrypted")
-        if val:
+        try:
             decrypted = decrypt_setting(val)
-            if decrypted:
-                return decrypted
-    except Exception:
-        pass
+        except SettingsCryptoError:
+            if OPENAI_BATCH_API_KEY:
+                logger.warning(
+                    "Không thể giải mã OpenAI Batch API key từ DB, dùng fallback từ biến môi trường."
+                )
+                return OPENAI_BATCH_API_KEY
+            raise
+        if decrypted:
+            return decrypted
     return OPENAI_BATCH_API_KEY
 
 
 def has_openai_batch_api_key() -> bool:
     """True nếu có OpenAI Batch API key từ DB hoặc .env."""
-    return bool(get_openai_batch_api_key())
+    encrypted_val = _get_db_config_value("openai_batch_api_key_encrypted")
+    return bool(str(encrypted_val or "").strip() or OPENAI_BATCH_API_KEY)
 
 
 def get_member_recent_months() -> int:
     """Đọc MEMBER_RECENT_MONTHS từ DB (ưu tiên) hoặc .env (fallback).
     Giá trị hợp lệ: 1..24; nếu DB lỗi hoặc out-of-range thì fallback về 3."""
-    if not _db_config_available():
-        return MEMBER_RECENT_MONTHS
-    try:
-        from src.engine.database import AuditDatabase
-
-        val = AuditDatabase.get_config("member_recent_months")
-        if val is not None:
-            return _parse_int_setting(val, default=3, minimum=1, maximum=24)
-    except Exception:
-        pass
+    val = _get_db_config_value("member_recent_months")
+    if val is not None:
+        return _parse_int_setting(
+            val,
+            default=3,
+            minimum=1,
+            maximum=24,
+        )
     return MEMBER_RECENT_MONTHS
 
 
 def get_auth_required() -> bool:
     """Đọc AUTH_REQUIRED từ DB (ưu tiên) hoặc .env (fallback).
     True = bắt buộc đăng nhập, False = bỏ qua xác thực."""
-    if not _db_config_available():
-        return AUTH_REQUIRED
-    try:
-        from src.engine.database import AuditDatabase
-        val = AuditDatabase.get_config("auth_required")
-        if val is not None:
-            return val.lower() in ("true", "1", "yes")
-    except Exception:
-        pass
+    val = _get_db_config_value("auth_required")
+    if val is not None:
+        return str(val).lower() in ("true", "1", "yes")
     return AUTH_REQUIRED
 
 # [DEPRECATED] RULES_METADATA & SEVERITY have been moved to: src/engine/rules.json

@@ -24,7 +24,6 @@ ALLOWED_EMAILS = [
     for e in os.environ.get("ALLOWED_EMAILS", "").split(",")
     if e.strip()
 ]
-JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "change-me-in-production-please")
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRY_DAYS = 7
 
@@ -48,6 +47,7 @@ class LoginResponse(BaseModel):
 # ── Helpers ───────────────────────────────────────────────────────────────────
 def create_jwt_token(email: str, name: str, picture: str) -> str:
     """Tạo JWT token với thông tin user, hết hạn sau JWT_EXPIRY_DAYS ngày."""
+    jwt_secret_key = _get_jwt_secret_key()
     payload = {
         "email": email,
         "name": name,
@@ -55,12 +55,20 @@ def create_jwt_token(email: str, name: str, picture: str) -> str:
         "iat": datetime.now(timezone.utc),
         "exp": datetime.now(timezone.utc) + timedelta(days=JWT_EXPIRY_DAYS),
     }
-    return jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+    return jwt.encode(payload, jwt_secret_key, algorithm=JWT_ALGORITHM)
 
 
 def verify_jwt_token(token: str) -> dict:
     """Verify JWT token, trả về payload hoặc raise Exception."""
-    return jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITHM])
+    jwt_secret_key = _get_jwt_secret_key()
+    return jwt.decode(token, jwt_secret_key, algorithms=[JWT_ALGORITHM])
+
+
+def _get_jwt_secret_key() -> str:
+    jwt_secret_key = os.environ.get("JWT_SECRET_KEY", "").strip()
+    if jwt_secret_key:
+        return jwt_secret_key
+    raise RuntimeError("JWT_SECRET_KEY chưa được cấu hình trên server.")
 
 
 def decode_authorization_header(authorization: str) -> dict:
@@ -74,6 +82,9 @@ def decode_authorization_header(authorization: str) -> dict:
 
     try:
         return verify_jwt_token(token)
+    except RuntimeError as exc:
+        logger.error("JWT secret missing during token verification.")
+        raise HTTPException(status_code=500, detail=str(exc))
     except jwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=401, detail="Token đã hết hạn. Vui lòng đăng nhập lại."
@@ -126,7 +137,11 @@ async def google_login(body: GoogleLoginRequest):
         )
 
     # Step 4: Issue JWT
-    token = create_jwt_token(email, name, picture)
+    try:
+        token = create_jwt_token(email, name, picture)
+    except RuntimeError as exc:
+        logger.error("JWT secret missing during token creation.")
+        raise HTTPException(status_code=500, detail=str(exc))
     logger.info(f"User logged in: {email}")
 
     return LoginResponse(

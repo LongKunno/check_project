@@ -11,7 +11,7 @@ import logging
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from src.engine.database import AuditDatabase
 
@@ -173,7 +173,7 @@ class SaveRulesRequest(BaseModel):
     target: str
     natural_text: str = ""
     compiled_json: Optional[dict] = None
-    custom_weights: dict = {}
+    custom_weights: dict = Field(default_factory=dict)
 
 
 @router.post("/rules/save")

@@ -323,6 +323,8 @@ class JobManager:
 
     @classmethod
     def restore_persisted_jobs(cls):
+        cls.jobs.clear()
+        cls.job_logs.clear()
         for raw_job in AuditDatabase.get_active_runtime_jobs():
             job = JobStatus.model_validate(raw_job)
             cls.jobs[job.job_id] = job

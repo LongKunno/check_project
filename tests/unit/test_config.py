@@ -4,6 +4,7 @@ import pytest
 
 import src.config as config_module
 from src.engine.database import AuditDatabase
+from src.engine.settings_crypto import SettingsCryptoError
 
 
 def _reload_config():
@@ -189,3 +190,48 @@ def test_member_recent_months_falls_back_to_3_when_db_invalid(monkeypatch):
     )
 
     assert config.get_member_recent_months() == 3
+
+
+def test_openai_batch_api_key_falls_back_to_env_when_db_decrypt_fails(monkeypatch):
+    monkeypatch.setenv("OPENAI_BATCH_API_KEY", "env-key")
+    config = _reload_config()
+
+    monkeypatch.setattr(
+        AuditDatabase,
+        "get_config",
+        staticmethod(
+            lambda key, default=None: "encrypted-value"
+            if key == "openai_batch_api_key_encrypted"
+            else default
+        ),
+    )
+
+    def fake_decrypt(_value):
+        raise SettingsCryptoError("decrypt failed")
+
+    monkeypatch.setattr("src.engine.settings_crypto.decrypt_setting", fake_decrypt)
+
+    assert config.get_openai_batch_api_key() == "env-key"
+
+
+def test_openai_batch_api_key_raises_when_db_decrypt_fails_without_env(monkeypatch):
+    monkeypatch.delenv("OPENAI_BATCH_API_KEY", raising=False)
+    config = _reload_config()
+
+    monkeypatch.setattr(
+        AuditDatabase,
+        "get_config",
+        staticmethod(
+            lambda key, default=None: "encrypted-value"
+            if key == "openai_batch_api_key_encrypted"
+            else default
+        ),
+    )
+
+    def fake_decrypt(_value):
+        raise SettingsCryptoError("decrypt failed")
+
+    monkeypatch.setattr("src.engine.settings_crypto.decrypt_setting", fake_decrypt)
+
+    with pytest.raises(SettingsCryptoError):
+        config.get_openai_batch_api_key()

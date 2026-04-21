@@ -521,38 +521,40 @@ class AuditDatabase:
         """Saves a new audit session to the database."""
         conn = AuditDatabase.get_connection()
         cursor = conn.cursor()
-        serialized_full_json = json.dumps(full_json) if full_json else None
-        cursor.execute(
-            """
-            INSERT INTO audit_history (target, score, rating, total_loc, violations_count, pillar_scores, full_json, scan_mode)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            RETURNING id
-        """,
-            (
-                target,
-                score,
-                rating,
-                loc,
-                violations_count,
-                json.dumps(pillar_scores),
-                serialized_full_json,
-                scan_mode,
-            ),
-        )
-        audit_id = cursor.fetchone()[0]
-        if isinstance(full_json, dict):
-            enriched = dict(full_json)
-            metadata = dict(enriched.get("metadata") or {})
-            metadata["audit_id"] = audit_id
-            enriched["metadata"] = metadata
+        try:
+            serialized_full_json = json.dumps(full_json) if full_json else None
             cursor.execute(
-                "UPDATE audit_history SET full_json = %s WHERE id = %s",
-                (json.dumps(enriched), audit_id),
+                """
+                INSERT INTO audit_history (target, score, rating, total_loc, violations_count, pillar_scores, full_json, scan_mode)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id
+            """,
+                (
+                    target,
+                    score,
+                    rating,
+                    loc,
+                    violations_count,
+                    json.dumps(pillar_scores),
+                    serialized_full_json,
+                    scan_mode,
+                ),
             )
-        conn.commit()
-        cursor.close()
-        AuditDatabase.release_connection(conn)
-        return audit_id
+            audit_id = cursor.fetchone()[0]
+            if isinstance(full_json, dict):
+                enriched = dict(full_json)
+                metadata = dict(enriched.get("metadata") or {})
+                metadata["audit_id"] = audit_id
+                enriched["metadata"] = metadata
+                cursor.execute(
+                    "UPDATE audit_history SET full_json = %s WHERE id = %s",
+                    (json.dumps(enriched), audit_id),
+                )
+            conn.commit()
+            return audit_id
+        finally:
+            cursor.close()
+            AuditDatabase.release_connection(conn)
 
     @staticmethod
     def _empty_ai_summary():

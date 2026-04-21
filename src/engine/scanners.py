@@ -199,7 +199,11 @@ class PythonASTScanner(BaseScanner):
             elif isinstance(node.type, ast.Attribute) and node.type.attr == "Exception":
                 is_general_exception = True
 
-        if is_bare or is_general_exception:
+        is_swallowed_exception = (
+            len(node.body) == 1 and isinstance(node.body[0], ast.Pass)
+        )
+
+        if (is_bare or is_general_exception) and not is_swallowed_exception:
             # Chỉ phạt nếu body không xử lý gì (chỉ pass hoặc rỗng)
             # Logging, raise, hay bất kỳ statement nào đều tính là đã xử lý → bỏ qua
             if not self._except_body_has_handling(node):
@@ -225,7 +229,7 @@ class PythonASTScanner(BaseScanner):
                         )
                     )
 
-        if len(node.body) == 1 and isinstance(node.body[0], ast.Pass):
+        if is_swallowed_exception:
             rule = ast_rules_by_type.get("swallowed_exception")
             if rule:
                 snippet = "\n".join(

@@ -231,8 +231,8 @@
     },
     {
       "id": "HIGH_COMPLEXITY",
-      "pillar": "Performance",
-      "category": "Performance",
+      "pillar": "Maintainability",
+      "category": "Maintainability",
       "severity": "Minor",
       "debt": 15,
       "reason": "Cyclomatic Complexity too high (Too many nested loops/branches)",

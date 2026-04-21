@@ -351,6 +351,8 @@ class TestEngineSettings:
         store = {}
         from src.engine.database import AuditDatabase
 
+        monkeypatch.setenv("SETTINGS_ENCRYPTION_KEY", "test-settings-secret")
+
         monkeypatch.setattr(
             AuditDatabase,
             "get_config",
@@ -686,6 +688,24 @@ class TestAuditEndpoints:
         assert job.status == "RUNNING"
         assert job.cancel_requested is True
 
+    def test_cancel_audit_endpoint_does_not_flip_legacy_global_cancel_flag(
+        self, client
+    ):
+        from src.api.audit_state import AuditState, JobManager
+
+        JobManager.jobs.clear()
+        JobManager.job_logs.clear()
+        AuditState.is_cancelled = False
+
+        job_id = JobManager.create_job("cancel-all")
+        JobManager.update_job(job_id, "RUNNING", "Running")
+
+        response = client.post("/audit/cancel")
+
+        assert response.status_code == 200
+        assert AuditState.is_cancelled is False
+        assert JobManager.get_job(job_id).cancel_requested is True
+
     def test_upload_process_cancelled_job_does_not_save_result(self, client, monkeypatch):
         from src.api.audit_state import JobManager
         from src.api.routers import audit as audit_router_module
@@ -733,6 +753,14 @@ class TestAuditEndpoints:
         assert job.status == "CANCELLED"
         assert observed["build_called"] is False
         assert job.result is None
+
+    def test_legacy_audit_rejects_path_outside_workspace_with_commonpath(
+        self, client
+    ):
+        response = client.get("/audit", params={"target": ".."})
+
+        assert response.status_code == 403
+        assert "không gian ứng dụng" in response.json()["detail"]
 
 
 class TestAuthEndpoints:

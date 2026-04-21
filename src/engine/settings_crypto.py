@@ -5,12 +5,24 @@ import os
 from cryptography.fernet import Fernet, InvalidToken
 
 
-def _derive_fernet_key() -> bytes:
+class SettingsCryptoError(RuntimeError):
+    """Raised when encrypted settings cannot be safely encrypted/decrypted."""
+
+
+def _get_encryption_secret() -> str:
     secret = (
-        os.getenv("SETTINGS_ENCRYPTION_KEY")
-        or os.getenv("JWT_SECRET_KEY")
-        or "change-me-in-production-please"
+        os.getenv("SETTINGS_ENCRYPTION_KEY", "").strip()
+        or os.getenv("JWT_SECRET_KEY", "").strip()
     )
+    if not secret:
+        raise SettingsCryptoError(
+            "Thiếu SETTINGS_ENCRYPTION_KEY hoặc JWT_SECRET_KEY để mã hóa cấu hình đã lưu."
+        )
+    return secret
+
+
+def _derive_fernet_key() -> bytes:
+    secret = _get_encryption_secret()
     digest = hashlib.sha256(secret.encode("utf-8")).digest()
     return base64.urlsafe_b64encode(digest)
 
@@ -32,5 +44,7 @@ def decrypt_setting(value: str) -> str:
     try:
         decrypted = get_settings_cipher().decrypt(value.encode("utf-8"))
         return decrypted.decode("utf-8")
-    except InvalidToken:
-        return ""
+    except InvalidToken as exc:
+        raise SettingsCryptoError(
+            "Không thể giải mã cấu hình đã lưu. Hãy kiểm tra secret mã hóa hoặc lưu lại giá trị này."
+        ) from exc

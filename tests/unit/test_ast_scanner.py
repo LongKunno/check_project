@@ -10,7 +10,9 @@ from tests.conftest import scan_code, assert_violation_found, assert_no_violatio
 class TestBareExcept:
     """BARE_EXCEPT — except: hoặc except Exception: không xử lý."""
 
-    def test_bare_except_with_pass_detected(self, ast_scanner, ast_only_rules):
+    def test_bare_except_with_pass_is_reported_once_as_swallowed(
+        self, ast_scanner, ast_only_rules
+    ):
         code = """
 try:
     risky()
@@ -18,9 +20,12 @@ except:
     pass
 """
         violations = scan_code(ast_scanner, code, ast_only_rules)
-        assert_violation_found(violations, "BARE_EXCEPT")
+        assert_violation_found(violations, "SWALLOWED_EXCEPTION")
+        assert_no_violation(violations, "BARE_EXCEPT")
 
-    def test_except_exception_with_pass_detected(self, ast_scanner, ast_only_rules):
+    def test_except_exception_with_pass_is_reported_once_as_swallowed(
+        self, ast_scanner, ast_only_rules
+    ):
         code = """
 try:
     risky()
@@ -28,7 +33,8 @@ except Exception:
     pass
 """
         violations = scan_code(ast_scanner, code, ast_only_rules)
-        assert_violation_found(violations, "BARE_EXCEPT")
+        assert_violation_found(violations, "SWALLOWED_EXCEPTION")
+        assert_no_violation(violations, "BARE_EXCEPT")
 
     def test_except_with_logging_not_flagged(self, ast_scanner, ast_only_rules):
         code = """
@@ -84,6 +90,24 @@ except ValueError as e:
 """
         violations = scan_code(ast_scanner, code, ast_only_rules)
         assert_no_violation(violations, "SWALLOWED_EXCEPTION")
+
+    def test_swallowed_exception_does_not_double_report_bare_except(
+        self, ast_scanner, ast_only_rules
+    ):
+        code = """
+try:
+    risky()
+except Exception:
+    pass
+"""
+        violations = scan_code(ast_scanner, code, ast_only_rules)
+        relevant = [
+            violation["rule_id"]
+            for violation in violations
+            if violation["rule_id"] in {"BARE_EXCEPT", "SWALLOWED_EXCEPTION"}
+        ]
+
+        assert relevant == ["SWALLOWED_EXCEPTION"]
 
 
 class TestGodObject:

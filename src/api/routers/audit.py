@@ -2,10 +2,12 @@
 Router: Audit routes — Stream logs, scan, repository, jobs, fix suggestions.
 """
 
+import copy
 import os
 import shutil
 import tempfile
 import asyncio
+import logging
 
 from fastapi import (
     APIRouter,
@@ -34,6 +36,7 @@ from src.config import (
 from src.engine.ai_telemetry import AiBudgetExceededError, ai_telemetry
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 def _raise_if_job_cancelled(
@@ -83,6 +86,15 @@ def _create_persistent_job_workspace(job_id: str) -> str:
     workspace = os.path.join(_runtime_jobs_root(), job_id)
     os.makedirs(workspace, exist_ok=True)
     return workspace
+
+
+def _is_path_within(base_path: str, candidate_path: str) -> bool:
+    try:
+        return os.path.commonpath(
+            [os.path.abspath(base_path), os.path.abspath(candidate_path)]
+        ) == os.path.abspath(base_path)
+    except ValueError:
+        return False
 
 
 async def _cancel_remote_batches_for_job(job_id: str):
@@ -183,7 +195,7 @@ def _execute_openai_batch_multi_job(job_id: str):
     workspace_path = job.workspace_path or state.get("workspace_path") or ""
     project_ids = state.get("project_ids", [])
     current_index = int(state.get("current_index", 0))
-    batch_result = (job.result or {"projects": {}}).copy()
+    batch_result = copy.deepcopy(job.result or {"projects": {}})
     batch_result.setdefault("projects", {})
 
     JobManager.update_job(
@@ -323,6 +335,13 @@ async def recover_persisted_batch_jobs():
         job = JobManager.get_job(job_id)
         if not job:
             continue
+        if job.cancel_requested:
+            JobManager.update_job(
+                job_id,
+                "CANCELLED",
+                "Job đã được đánh dấu hủy trước khi server khởi động lại.",
+            )
+            continue
         if job.ai_mode != "openai_batch":
             JobManager.update_job(
                 job_id,
@@ -336,6 +355,12 @@ async def recover_persisted_batch_jobs():
             asyncio.create_task(asyncio.to_thread(_execute_openai_batch_multi_job, job_id))
         elif source_kind in {"upload", "repository"}:
             asyncio.create_task(asyncio.to_thread(_execute_openai_batch_single_job, job_id))
+        else:
+            JobManager.update_job(
+                job_id,
+                "FAILED",
+                "Không thể khôi phục job sau khi server restart vì thiếu trạng thái điều phối hợp lệ.",
+            )
 
 
 def run_auditor_with_capture(
@@ -478,7 +503,6 @@ async def get_audit_status():
 @router.post("/audit/cancel")
 async def cancel_audit():
     """Hủy phiên kiểm toán đang chạy."""
-    AuditState.cancel()
     cancelled_count = 0
     for jid in JobManager.get_active_job_ids():
         cancelled_count += int(_request_cancel_for_job(jid))
@@ -571,7 +595,7 @@ async def upload_and_audit(
             # Lưu ý giữ lại project_name tĩnh thay vì đè lên bằng tên thư mục (bug: ghi đè folder)
             relative_path = os.path.join(*safe_parts)
             dest_path = os.path.join(target_path, relative_path)
-            if not os.path.abspath(dest_path).startswith(os.path.abspath(target_path)):
+            if not _is_path_within(target_path, dest_path):
                 continue
             os.makedirs(os.path.dirname(dest_path), exist_ok=True)
             content = await upload_file.read()
@@ -624,7 +648,11 @@ async def upload_and_audit(
             try:
                 JobManager.update_job(job_id, "FAILED", "Khởi tạo job thất bại.")
             except Exception:
-                pass
+                logger.warning(
+                    "Không thể cập nhật trạng thái FAILED cho job %s sau lỗi khởi tạo.",
+                    job_id,
+                    exc_info=True,
+                )
             JobManager.jobs.pop(job_id, None)
             JobManager.job_logs.pop(job_id, None)
         if not background_task_scheduled and temp_dir and os.path.exists(temp_dir):
@@ -638,17 +666,10 @@ async def upload_and_audit(
 async def run_audit(target: str = Query(".", description="Path to directory")):
     """Legacy endpoint: kiểm toán qua đường dẫn (CLI / nội bộ)."""
 
-    # SECURITY FIX: Directory Traversal Prevention
-    if ".." in target or target.startswith("/"):
-        raise HTTPException(
-            status_code=403,
-            detail="Lệnh duyệt tệp trái phép. Chỉ được phép quét trong không gian làm việc hiện tại.",
-        )
-
     base_dir = os.path.abspath(".")
     target_path = os.path.abspath(target)
 
-    if not target_path.startswith(base_dir):
+    if not _is_path_within(base_dir, target_path):
         raise HTTPException(
             status_code=403,
             detail="Đường dẫn quét bị giới hạn trong không gian ứng dụng.",
