@@ -174,6 +174,34 @@ def test_run_stops_before_aggregation_when_cancel_requested_after_scanning(monke
     assert reporting_called["called"] is False
 
 
+def test_log_violation_deduplicates_same_finding_with_different_ai_notes(tmp_path):
+    auditor = CodeAuditor(str(tmp_path))
+
+    auditor.log_violation(
+        {
+            "file": str(tmp_path / "service.py"),
+            "pillar": "Performance",
+            "reason": "N+1 Query Pattern Detected. AI Note: First explanation",
+            "weight": -5.0,
+            "rule_id": "N_PLUS_ONE",
+            "line": 12,
+        }
+    )
+    auditor.log_violation(
+        {
+            "file": str(tmp_path / "service.py"),
+            "pillar": "Performance",
+            "reason": "N+1 Query Pattern Detected. AI Note: Second explanation",
+            "weight": -5.0,
+            "rule_id": "N_PLUS_ONE",
+            "line": 12,
+        }
+    )
+
+    assert len(auditor.violations) == 1
+    assert auditor.violations[0]["rule_id"] == "N_PLUS_ONE"
+
+
 def test_step_ai_validation_stops_scheduling_new_batches_after_cancel_request(
     monkeypatch, tmp_path
 ):

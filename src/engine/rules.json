@@ -650,7 +650,7 @@
       "regex": null,
       "ast": null,
       "ai": {
-        "prompt": "Quét tệp xem có khai báo 'import ...' hay 'from ... import ...' nằm lọt thỏm trong phần thân của hàm (đặc biệt là ngoài logic tránh circular import) hay ở giữa file không. Nếu khai báo import không nằm ở phần đầu tệp, đánh dấu lỗi."
+        "prompt": "Quét tệp xem có khai báo 'import ...' hay 'from ... import ...' nằm trong thân hàm hoặc ở giữa file không. Chỉ đánh cờ khi đây thực sự là deferred import/lazy import không có lý do rõ ràng. Loại bỏ nếu file là test/debug/example, nếu import nằm trong settings bootstrap theo môi trường, hoặc nếu có comment/chứng cứ rõ ràng cho circular import, optional dependency, plugin bootstrap hay runtime setup bắt buộc."
       }
     },
     {

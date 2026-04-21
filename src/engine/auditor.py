@@ -115,6 +115,7 @@ class CodeAuditor:
         self.report_path = os.path.join(report_dir, "Final_Audit_Report.md")
         self.violations = []
         self.violation_counter = 0
+        self._violation_signatures = set()
         self.ai_summary = {
             "total_requests": 0,
             "blocked_requests": 0,
@@ -297,6 +298,35 @@ class CodeAuditor:
             return
         self.violations = payload.get("violations", [])
         self.violation_counter = payload.get("counter", len(self.violations))
+        self._violation_signatures = {
+            self._build_violation_signature(
+                violation.get("file", ""),
+                violation.get("rule_id", ""),
+                violation.get("line", 0),
+                violation.get("reason", ""),
+            )
+            for violation in self.violations
+        }
+
+    def _normalize_violation_reason_for_signature(self, reason: str) -> str:
+        normalized = str(reason or "").strip()
+        if ". AI Note:" in normalized:
+            normalized = normalized.split(". AI Note:", 1)[0].strip()
+        return normalized
+
+    def _build_violation_signature(
+        self,
+        file_path: str,
+        rule_id: str,
+        line: int,
+        reason: str,
+    ) -> tuple:
+        return (
+            str(file_path or ""),
+            str(rule_id or ""),
+            int(line or 0),
+            self._normalize_violation_reason_for_signature(reason),
+        )
 
     def log_violation(self, violation_data: dict):
         """Ghi nhận một vi phạm mới và lưu vào danh sách.
@@ -317,6 +347,18 @@ class CodeAuditor:
         weight = violation_data.get("weight", -1.0)
         rule_id = violation_data.get("rule_id", "")
         line = violation_data.get("line", 0)
+        signature = self._build_violation_signature(file, rule_id, line, reason)
+
+        if signature in self._violation_signatures:
+            logger.debug(
+                "Bỏ qua violation trùng lặp: %s %s:%s",
+                rule_id or "UNKNOWN_RULE",
+                file,
+                line,
+            )
+            return
+
+        self._violation_signatures.add(signature)
 
         violation = {
             "id": f"v_{self.violation_counter}",
