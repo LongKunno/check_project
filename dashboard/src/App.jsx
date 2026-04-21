@@ -50,6 +50,7 @@ const MemberScoresView = React.lazy(() =>
 const PresentationsStaticView = React.lazy(
   () => import("./components/views/PresentationsStaticView"),
 );
+const AiOpsView = React.lazy(() => import("./components/views/AiOpsView"));
 import { Sidebar } from "./components/layout/Sidebar";
 import PageTransition from "./components/ui/PageTransition";
 import { CardSkeleton, TableSkeleton } from "./components/ui/SkeletonLoader";
@@ -247,6 +248,7 @@ function App() {
                 (location.pathname.startsWith("/project-scores") ||
                   location.pathname.startsWith("/member-scores") ||
                   location.pathname.startsWith("/history") ||
+                  location.pathname.startsWith("/ai-ops") ||
                   location.pathname.startsWith("/settings") ||
                   location.pathname.startsWith("/rules") ||
                   location.pathname.startsWith("/sandbox") ||
@@ -512,6 +514,26 @@ function App() {
                           }}
                           cn={cn}
                         />
+                      </Suspense>
+                    </div>
+                  }
+                />
+                <Route
+                  path="/ai-ops"
+                  element={
+                    <div
+                      className="flex-1 flex flex-col w-full"
+                      style={{ minHeight: "calc(100vh - 100px)" }}
+                    >
+                      <Suspense
+                        fallback={
+                          <div className="p-8 space-y-6">
+                            <CardSkeleton count={4} />
+                            <TableSkeleton rows={6} cols={7} />
+                          </div>
+                        }
+                      >
+                        <AiOpsView selectedRepoId={selectedRepoId} />
                       </Suspense>
                     </div>
                   }

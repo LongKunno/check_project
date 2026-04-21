@@ -6,6 +6,7 @@ import React from "react";
 import {
   Activity,
   AlertTriangle,
+  Bot,
   Check,
   ChevronDown,
   FolderOpen,
@@ -49,6 +50,13 @@ const getScoreDotClass = (score100) => {
   if (score100 >= 45) return "score-dot score-dot-orange";
   return "score-dot score-dot-rose";
 };
+
+const usdFmt = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 4,
+});
 
 const getMemberInitials = (member) => {
   if (!member) return "??";
@@ -544,6 +552,39 @@ const AuditView = ({
               <TeamLeaderboard members={data?.scores?.members} />
             )}
           </div>
+
+          {data?.ai_summary ? (
+            <div
+              className="glass-card"
+              style={{
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
+                marginBottom: "1.5rem",
+              }}
+            >
+              <div className="flex flex-wrap items-center gap-3 text-sm">
+                <div className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-3 py-2 font-bold text-indigo-700">
+                  <Bot size={15} />
+                  AI Summary
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">
+                  {data.ai_summary.total_requests || 0} requests
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">
+                  {Number(data.ai_summary.input_tokens || 0).toLocaleString()} in /{" "}
+                  {Number(data.ai_summary.output_tokens || 0).toLocaleString()} out
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">
+                  {usdFmt.format(data.ai_summary.cost_usd || 0)}
+                </div>
+                {data.ai_summary.blocked_requests ? (
+                  <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-amber-700">
+                    {data.ai_summary.blocked_requests} blocked by budget
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
 
           {/* CHARTS ROW */}
           <ChartsRow

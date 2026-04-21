@@ -152,6 +152,135 @@ class AuditDatabase:
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
+
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS runtime_jobs (
+                    job_id TEXT PRIMARY KEY,
+                    status TEXT NOT NULL,
+                    message TEXT DEFAULT '',
+                    result TEXT,
+                    started_at DOUBLE PRECISION NOT NULL,
+                    ended_at DOUBLE PRECISION,
+                    target TEXT DEFAULT '',
+                    job_type TEXT DEFAULT 'single',
+                    progress TEXT,
+                    cancel_requested BOOLEAN DEFAULT FALSE,
+                    ai_mode TEXT DEFAULT 'realtime',
+                    workspace_path TEXT DEFAULT '',
+                    orchestration_state TEXT DEFAULT '{}',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS runtime_job_logs (
+                    id SERIAL PRIMARY KEY,
+                    job_id TEXT NOT NULL,
+                    line_number INTEGER NOT NULL,
+                    message TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(job_id, line_number)
+                )
+            """)
+
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS ai_request_logs (
+                    request_id TEXT PRIMARY KEY,
+                    external_request_id TEXT,
+                    batch_envelope_id TEXT,
+                    source TEXT NOT NULL,
+                    feature TEXT NOT NULL,
+                    provider TEXT NOT NULL,
+                    mode TEXT NOT NULL,
+                    model TEXT NOT NULL,
+                    job_id TEXT,
+                    target TEXT,
+                    project TEXT,
+                    status TEXT NOT NULL,
+                    error_reason TEXT,
+                    input_chars INTEGER DEFAULT 0,
+                    output_chars INTEGER DEFAULT 0,
+                    input_tokens INTEGER DEFAULT 0,
+                    output_tokens INTEGER DEFAULT 0,
+                    cached_tokens INTEGER DEFAULT 0,
+                    estimated_cost DOUBLE PRECISION DEFAULT 0,
+                    usage_source TEXT,
+                    input_preview TEXT,
+                    output_preview TEXT,
+                    input_hash TEXT,
+                    output_hash TEXT,
+                    metadata TEXT DEFAULT '{}',
+                    raw_input_payload TEXT,
+                    raw_output_payload TEXT,
+                    started_at TIMESTAMP,
+                    ended_at TIMESTAMP,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ai_request_logs_created_at ON ai_request_logs(created_at DESC)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ai_request_logs_source ON ai_request_logs(source)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ai_request_logs_target ON ai_request_logs(target)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ai_request_logs_model ON ai_request_logs(model)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ai_request_logs_provider ON ai_request_logs(provider)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ai_request_logs_status ON ai_request_logs(status)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ai_request_logs_job_id ON ai_request_logs(job_id)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ai_request_logs_batch ON ai_request_logs(batch_envelope_id, external_request_id)"
+            )
+
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS ai_pricing_catalog (
+                    id SERIAL PRIMARY KEY,
+                    provider TEXT NOT NULL,
+                    mode TEXT NOT NULL,
+                    model TEXT NOT NULL,
+                    input_cost_per_million DOUBLE PRECISION DEFAULT 0,
+                    output_cost_per_million DOUBLE PRECISION DEFAULT 0,
+                    cached_input_cost_per_million DOUBLE PRECISION DEFAULT 0,
+                    currency TEXT DEFAULT 'USD',
+                    is_active BOOLEAN DEFAULT TRUE,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(provider, mode, model)
+                )
+            """)
+
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS ai_budget_policy (
+                    policy_key TEXT PRIMARY KEY,
+                    daily_budget_usd DOUBLE PRECISION,
+                    monthly_budget_usd DOUBLE PRECISION,
+                    hard_stop_enabled BOOLEAN DEFAULT FALSE,
+                    retention_days INTEGER DEFAULT 30,
+                    raw_payload_retention_enabled BOOLEAN DEFAULT FALSE,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cursor.execute(
+                """
+                INSERT INTO ai_budget_policy (
+                    policy_key, daily_budget_usd, monthly_budget_usd,
+                    hard_stop_enabled, retention_days, raw_payload_retention_enabled, updated_at
+                )
+                VALUES ('global', NULL, NULL, FALSE, 30, FALSE, CURRENT_TIMESTAMP)
+                ON CONFLICT (policy_key) DO NOTHING
+                """
+            )
             schema_ready = True
         except Exception as e:
             logger.error(f"Database Initialization Error: {e}")
@@ -169,6 +298,8 @@ class AuditDatabase:
     @staticmethod
     def get_config(key, default=None):
         """Đọc 1 giá trị config từ bảng system_config."""
+        if not AuditDatabase._pool:
+            return default
         conn = AuditDatabase.get_connection()
         try:
             cursor = conn.cursor()
@@ -197,6 +328,185 @@ class AuditDatabase:
         finally:
             AuditDatabase.release_connection(conn)
 
+    # ── Runtime Jobs & Logs ──────────────────────────────────────────────────
+
+    @staticmethod
+    def upsert_runtime_job(job_data):
+        """Lưu hoặc cập nhật trạng thái runtime job để có thể khôi phục sau restart."""
+        if not AuditDatabase._pool:
+            return
+        conn = AuditDatabase.get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO runtime_jobs (
+                    job_id, status, message, result, started_at, ended_at,
+                    target, job_type, progress, cancel_requested, ai_mode,
+                    workspace_path, orchestration_state, updated_at
+                )
+                VALUES (
+                    %s, %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s, %s,
+                    %s, %s, CURRENT_TIMESTAMP
+                )
+                ON CONFLICT (job_id) DO UPDATE SET
+                    status = EXCLUDED.status,
+                    message = EXCLUDED.message,
+                    result = EXCLUDED.result,
+                    started_at = EXCLUDED.started_at,
+                    ended_at = EXCLUDED.ended_at,
+                    target = EXCLUDED.target,
+                    job_type = EXCLUDED.job_type,
+                    progress = EXCLUDED.progress,
+                    cancel_requested = EXCLUDED.cancel_requested,
+                    ai_mode = EXCLUDED.ai_mode,
+                    workspace_path = EXCLUDED.workspace_path,
+                    orchestration_state = EXCLUDED.orchestration_state,
+                    updated_at = CURRENT_TIMESTAMP
+                """,
+                (
+                    job_data["job_id"],
+                    job_data["status"],
+                    job_data.get("message", ""),
+                    json.dumps(job_data["result"]) if job_data.get("result") is not None else None,
+                    float(job_data["started_at"]),
+                    float(job_data["ended_at"]) if job_data.get("ended_at") is not None else None,
+                    job_data.get("target", ""),
+                    job_data.get("job_type", "single"),
+                    json.dumps(job_data["progress"]) if job_data.get("progress") is not None else None,
+                    bool(job_data.get("cancel_requested", False)),
+                    job_data.get("ai_mode", "realtime"),
+                    job_data.get("workspace_path", ""),
+                    json.dumps(job_data.get("orchestration_state", {})),
+                ),
+            )
+            conn.commit()
+            cursor.close()
+        finally:
+            AuditDatabase.release_connection(conn)
+
+    @staticmethod
+    def get_runtime_job(job_id):
+        if not AuditDatabase._pool:
+            return None
+        conn = AuditDatabase.get_connection()
+        try:
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            cursor.execute(
+                """
+                SELECT job_id, status, message, result, started_at, ended_at,
+                       target, job_type, progress, cancel_requested, ai_mode,
+                       workspace_path, orchestration_state
+                FROM runtime_jobs
+                WHERE job_id = %s
+                """,
+                (job_id,),
+            )
+            row = cursor.fetchone()
+            cursor.close()
+        finally:
+            AuditDatabase.release_connection(conn)
+
+        if not row:
+            return None
+
+        data = dict(row)
+        for field in ("result", "progress", "orchestration_state"):
+            raw = data.get(field)
+            if raw:
+                try:
+                    data[field] = json.loads(raw)
+                except Exception:
+                    data[field] = None if field != "orchestration_state" else {}
+            elif field == "orchestration_state":
+                data[field] = {}
+            else:
+                data[field] = None
+        return data
+
+    @staticmethod
+    def get_active_runtime_jobs():
+        if not AuditDatabase._pool:
+            return []
+        conn = AuditDatabase.get_connection()
+        try:
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            cursor.execute(
+                """
+                SELECT job_id, status, message, result, started_at, ended_at,
+                       target, job_type, progress, cancel_requested, ai_mode,
+                       workspace_path, orchestration_state
+                FROM runtime_jobs
+                WHERE status IN ('PENDING', 'RUNNING')
+                ORDER BY started_at ASC
+                """
+            )
+            rows = cursor.fetchall()
+            cursor.close()
+        finally:
+            AuditDatabase.release_connection(conn)
+
+        results = []
+        for row in rows:
+            data = dict(row)
+            for field in ("result", "progress", "orchestration_state"):
+                raw = data.get(field)
+                if raw:
+                    try:
+                        data[field] = json.loads(raw)
+                    except Exception:
+                        data[field] = None if field != "orchestration_state" else {}
+                elif field == "orchestration_state":
+                    data[field] = {}
+                else:
+                    data[field] = None
+            results.append(data)
+        return results
+
+    @staticmethod
+    def append_runtime_job_log(job_id, line_number, message):
+        if not AuditDatabase._pool:
+            return
+        conn = AuditDatabase.get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO runtime_job_logs (job_id, line_number, message)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (job_id, line_number) DO NOTHING
+                """,
+                (job_id, int(line_number), message),
+            )
+            conn.commit()
+            cursor.close()
+        finally:
+            AuditDatabase.release_connection(conn)
+
+    @staticmethod
+    def get_runtime_job_logs(job_id):
+        if not AuditDatabase._pool:
+            return []
+        conn = AuditDatabase.get_connection()
+        try:
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            cursor.execute(
+                """
+                SELECT line_number, message
+                FROM runtime_job_logs
+                WHERE job_id = %s
+                ORDER BY line_number ASC
+                """,
+                (job_id,),
+            )
+            rows = cursor.fetchall()
+            cursor.close()
+        finally:
+            AuditDatabase.release_connection(conn)
+
+        return [row["message"] for row in rows]
+
     @staticmethod
     def save_audit(
         target,
@@ -211,10 +521,12 @@ class AuditDatabase:
         """Saves a new audit session to the database."""
         conn = AuditDatabase.get_connection()
         cursor = conn.cursor()
+        serialized_full_json = json.dumps(full_json) if full_json else None
         cursor.execute(
             """
             INSERT INTO audit_history (target, score, rating, total_loc, violations_count, pillar_scores, full_json, scan_mode)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
         """,
             (
                 target,
@@ -223,13 +535,52 @@ class AuditDatabase:
                 loc,
                 violations_count,
                 json.dumps(pillar_scores),
-                json.dumps(full_json) if full_json else None,
+                serialized_full_json,
                 scan_mode,
             ),
         )
+        audit_id = cursor.fetchone()[0]
+        if isinstance(full_json, dict):
+            enriched = dict(full_json)
+            metadata = dict(enriched.get("metadata") or {})
+            metadata["audit_id"] = audit_id
+            enriched["metadata"] = metadata
+            cursor.execute(
+                "UPDATE audit_history SET full_json = %s WHERE id = %s",
+                (json.dumps(enriched), audit_id),
+            )
         conn.commit()
         cursor.close()
         AuditDatabase.release_connection(conn)
+        return audit_id
+
+    @staticmethod
+    def _empty_ai_summary():
+        return {
+            "total_requests": 0,
+            "blocked_requests": 0,
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "cached_tokens": 0,
+            "cost_usd": 0.0,
+            "reported_requests": 0,
+            "estimated_requests": 0,
+            "by_source": {},
+        }
+
+    @staticmethod
+    def _extract_ai_summary(full_json):
+        if not isinstance(full_json, dict):
+            return AuditDatabase._empty_ai_summary()
+        summary = full_json.get("ai_summary")
+        if not isinstance(summary, dict):
+            summary = full_json.get("metadata", {}).get("ai_summary")
+        if not isinstance(summary, dict):
+            return AuditDatabase._empty_ai_summary()
+        normalized = {**AuditDatabase._empty_ai_summary(), **summary}
+        if not isinstance(normalized.get("by_source"), dict):
+            normalized["by_source"] = {}
+        return normalized
 
     @staticmethod
     def get_history(target_path=None):
@@ -237,16 +588,14 @@ class AuditDatabase:
         conn = AuditDatabase.get_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
 
-        query_cols = "id, timestamp, target, score, rating, total_loc, violations_count, pillar_scores, scan_mode"
-
         if target_path:
             cursor.execute(
-                "SELECT id, timestamp, target, score, rating, total_loc, violations_count, pillar_scores, scan_mode FROM audit_history WHERE target = %s ORDER BY timestamp DESC",
+                "SELECT id, timestamp, target, score, rating, total_loc, violations_count, pillar_scores, full_json, scan_mode FROM audit_history WHERE target = %s ORDER BY timestamp DESC",
                 (target_path,),
             )
         else:
             cursor.execute(
-                "SELECT id, timestamp, target, score, rating, total_loc, violations_count, pillar_scores, scan_mode FROM audit_history ORDER BY timestamp DESC LIMIT 50"
+                "SELECT id, timestamp, target, score, rating, total_loc, violations_count, pillar_scores, full_json, scan_mode FROM audit_history ORDER BY timestamp DESC LIMIT 50"
             )
 
         rows = cursor.fetchall()
@@ -264,6 +613,14 @@ class AuditDatabase:
             except Exception as e:
                 logger.warning(f"Error parsing pillar_scores: {e}")
                 d["pillar_scores"] = {}
+            full_json = None
+            if row.get("full_json"):
+                try:
+                    full_json = json.loads(row["full_json"])
+                except Exception as e:
+                    logger.warning(f"Error parsing history full_json: {e}")
+            d["ai_summary"] = AuditDatabase._extract_ai_summary(full_json)
+            d.pop("full_json", None)
             results.append(d)
         return results
 
@@ -300,6 +657,7 @@ class AuditDatabase:
             except Exception as e:
                 logger.warning(f"Error parsing full_json: {e}")
                 d["full_json"] = None
+        d["ai_summary"] = AuditDatabase._extract_ai_summary(d.get("full_json"))
         return d
 
     @staticmethod

@@ -78,8 +78,13 @@ const SettingsView = ({ selectedRepoId, cn }) => {
   // ── Engine Configuration State ──────────────────────────────────────────
   const [engineConfig, setEngineConfig] = useState({
     ai_enabled: false,
+    ai_mode: "realtime",
     test_mode_limit_files: 0,
     ai_max_concurrency: 5,
+    openai_batch_model: "gpt-5.4-mini",
+    openai_batch_api_key: "",
+    openai_batch_api_key_configured: false,
+    clear_openai_batch_api_key: false,
     member_recent_months: 3,
     auth_required: true,
   });
@@ -94,7 +99,12 @@ const SettingsView = ({ selectedRepoId, cn }) => {
       if (res.ok) {
         const d = await res.json();
         if (d.status === "success") {
-          setEngineConfig((prev) => ({ ...prev, ...d.data }));
+          setEngineConfig((prev) => ({
+            ...prev,
+            ...d.data,
+            openai_batch_api_key: "",
+            clear_openai_batch_api_key: false,
+          }));
           setEngineDirty(false);
         }
       }
@@ -104,22 +114,38 @@ const SettingsView = ({ selectedRepoId, cn }) => {
   useEffect(() => { fetchEngineConfig(); }, [fetchEngineConfig]);
 
   const handleEngineConfigChange = (key, value) => {
-    setEngineConfig((prev) => ({ ...prev, [key]: value }));
+    setEngineConfig((prev) => ({
+      ...prev,
+      [key]: value,
+      ...(key === "openai_batch_api_key" ? { clear_openai_batch_api_key: false } : {}),
+    }));
     setEngineDirty(true);
   };
 
   const handleEngineSave = async () => {
     setEngineSaving(true);
     try {
+      const payload = { ...engineConfig };
+      if (!payload.openai_batch_api_key) {
+        delete payload.openai_batch_api_key;
+      }
+      if (!payload.clear_openai_batch_api_key) {
+        delete payload.clear_openai_batch_api_key;
+      }
       const res = await fetch("/api/settings/engine", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(engineConfig),
+        body: JSON.stringify(payload),
       });
       if (res.ok) {
         const d = await res.json();
         if (d.status === "success") {
-          setEngineConfig((prev) => ({ ...prev, ...d.data }));
+          setEngineConfig((prev) => ({
+            ...prev,
+            ...d.data,
+            openai_batch_api_key: "",
+            clear_openai_batch_api_key: false,
+          }));
           setEngineDirty(false);
           toast.success("Engine configuration saved successfully.", "Settings Updated");
           // Cập nhật AuthContext nếu auth_required đã thay đổi
@@ -136,6 +162,16 @@ const SettingsView = ({ selectedRepoId, cn }) => {
     } finally {
       setEngineSaving(false);
     }
+  };
+
+  const handleClearBatchKey = () => {
+    setEngineConfig((prev) => ({
+      ...prev,
+      openai_batch_api_key: "",
+      openai_batch_api_key_configured: false,
+      clear_openai_batch_api_key: true,
+    }));
+    setEngineDirty(true);
   };
 
   const handleTestAiConnection = async () => {
@@ -288,6 +324,128 @@ const SettingsView = ({ selectedRepoId, cn }) => {
               )}
             </button>
           </div>
+
+          {engineConfig.ai_enabled && (
+            <>
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 mb-4">
+                <div className="flex items-center justify-between gap-4 flex-wrap">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-xl border ${engineConfig.ai_mode === "openai_batch"
+                      ? "bg-violet-500/10 border-violet-500/25 text-violet-600"
+                      : "bg-cyan-500/10 border-cyan-500/25 text-cyan-600"
+                      }`}>
+                      <Activity size={16} />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-slate-800">AI Execution Mode</div>
+                      <div className="text-[11px] text-slate-500 mt-0.5">
+                        {engineConfig.ai_mode === "openai_batch"
+                          ? "OpenAI Batch API chính thức — bất đồng bộ, tối ưu chi phí, không stream realtime."
+                          : "Realtime API hiện tại — dùng proxy/local endpoint như hệ thống đang chạy."}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center rounded-xl border border-slate-200 bg-white p-1 shrink-0">
+                    {[
+                      { key: "realtime", label: "Realtime" },
+                      { key: "openai_batch", label: "OpenAI Batch" },
+                    ].map((mode) => (
+                      <button
+                        key={mode.key}
+                        onClick={() => handleEngineConfigChange("ai_mode", mode.key)}
+                        className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${engineConfig.ai_mode === mode.key
+                          ? "bg-slate-900 text-white shadow-sm"
+                          : "text-slate-500 hover:text-slate-800"
+                          }`}
+                      >
+                        {mode.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {engineConfig.ai_mode === "realtime" && (
+                <div className="flex items-start gap-2 p-3 rounded-xl bg-cyan-500/5 border border-cyan-500/15 mb-4">
+                  <Info size={14} className="text-cyan-600 shrink-0 mt-0.5" />
+                  <p className="text-[11px] text-cyan-700/90 leading-relaxed">
+                    Realtime mode tiếp tục dùng cấu hình API hiện tại của backend (`AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL`). Khi tắt OpenAI Batch, hệ thống quay về đúng luồng này.
+                  </p>
+                </div>
+              )}
+
+              {engineConfig.ai_mode === "openai_batch" && (
+                <>
+                  <div className="flex items-start gap-2 p-3 rounded-xl bg-violet-500/5 border border-violet-500/15 mb-4">
+                    <Info size={14} className="text-violet-600 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-violet-700/90 leading-relaxed">
+                      Batch mode dùng OpenAI Batch API chính thức cho toàn bộ pipeline AI. Luồng này chờ batch hoàn tất ở backend, có thể resume sau restart và không tự động fallback về realtime nếu submit/poll thất bại.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-xl border bg-violet-500/10 border-violet-500/25 text-violet-600">
+                        <Cpu size={16} />
+                      </div>
+                      <div>
+                        <div className="text-sm font-bold text-slate-800">OpenAI Batch Model</div>
+                        <div className="text-[11px] text-slate-500 mt-0.5">
+                          Model dùng riêng cho OpenAI Batch API
+                        </div>
+                      </div>
+                    </div>
+                    <input
+                      type="text"
+                      value={engineConfig.openai_batch_model}
+                      onChange={(e) => handleEngineConfigChange("openai_batch_model", e.target.value)}
+                      className="w-44 px-3 py-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-800 text-sm font-mono text-center focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition-all placeholder:text-slate-400"
+                    />
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 mb-4">
+                    <div className="flex items-center justify-between gap-4 flex-wrap">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-xl border ${engineConfig.openai_batch_api_key_configured
+                          ? "bg-emerald-500/10 border-emerald-500/25 text-emerald-600"
+                          : "bg-amber-500/10 border-amber-500/25 text-amber-600"
+                          }`}>
+                          <Lock size={16} />
+                        </div>
+                        <div>
+                          <div className="text-sm font-bold text-slate-800">OpenAI Batch API Key</div>
+                          <div className="text-[11px] text-slate-500 mt-0.5">
+                            Lưu mã hóa trong database. API không trả lại plaintext sau khi lưu.
+                          </div>
+                        </div>
+                      </div>
+                      <div className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border ${engineConfig.openai_batch_api_key_configured
+                        ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                        : "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                        }`}>
+                        {engineConfig.openai_batch_api_key_configured ? "Configured" : "Missing"}
+                      </div>
+                    </div>
+                    <div className="mt-3 flex gap-3 flex-wrap">
+                      <input
+                        type="password"
+                        value={engineConfig.openai_batch_api_key}
+                        onChange={(e) => handleEngineConfigChange("openai_batch_api_key", e.target.value)}
+                        placeholder={engineConfig.openai_batch_api_key_configured ? "••••••••••••••••" : "sk-..."}
+                        className="flex-1 min-w-[240px] px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-800 text-sm font-mono focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition-all placeholder:text-slate-400"
+                      />
+                      <button
+                        onClick={handleClearBatchKey}
+                        className="px-4 py-2 rounded-xl bg-slate-100 border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-200 transition-all"
+                      >
+                        Clear Stored Key
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </>
+          )}
 
           {/* AI Max Concurrency */}
           <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 mb-4">
@@ -450,7 +608,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
                 }`}>
                 {aiTestResult.status === "healthy" ? <Wifi size={12} /> : <WifiOff size={12} />}
                 {aiTestResult.status === "healthy"
-                  ? `Healthy — ${aiTestResult.model}`
+                  ? `Healthy — ${aiTestResult.mode || "ai"} / ${aiTestResult.model || aiTestResult.provider || "configured"}`
                   : `Error — ${aiTestResult.reason?.substring(0, 40)}`}
               </div>
             )}

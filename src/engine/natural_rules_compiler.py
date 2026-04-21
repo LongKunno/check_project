@@ -1,6 +1,7 @@
 import json
 import logging
 from src.engine.ai_service import ai_service
+from src.engine.ai_telemetry import AiBudgetExceededError
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any
 
@@ -137,15 +138,21 @@ Nếu KHÔNG trùng lặp, hãy giải thích ngắn gọn cách bạn biên d�
             {"role": "user", "content": prompt},
         ]
 
-        # We need ai_service to have a streaming completion or we use OpenAI API directly from ai_service.client
         try:
-            stream = await ai_service.client.chat.completions.create(
-                model=ai_service.model, messages=messages, stream=True, temperature=0.2
+            async for chunk in ai_service.stream_tracked_chat_completion(
+                messages=messages,
+                source="rules.compile",
+                telemetry={"target": "sandbox", "project": "sandbox"},
+                temperature=0.2,
+            ):
+                yield chunk
+        except AiBudgetExceededError as e:
+            logger.warning(f"Rule Compilation blocked by AI budget: {e}")
+            yield (
+                '\n\n{"error":"budget_exceeded","message":"'
+                + str(e).replace('"', '\\"')
+                + '"}'
             )
-
-            async for chunk in stream:
-                if chunk.choices[0].delta.content is not None:
-                    yield chunk.choices[0].delta.content
         except Exception as e:
             logger.error(f"Rule Compilation Error: {e}")
             yield f"\\n\\n[LỖI]: {str(e)}"
@@ -175,13 +182,20 @@ TUYỆT ĐỐI CHỈ IN RA DUY NHẤT 1 BLOCK MÃ JSON BỌC TRONG ```json VÀ K
         ]
 
         try:
-            stream = await ai_service.client.chat.completions.create(
-                model=ai_service.model, messages=messages, stream=True, temperature=0.1
+            async for chunk in ai_service.stream_tracked_chat_completion(
+                messages=messages,
+                source="rules.auto_fix",
+                telemetry={"target": "sandbox", "project": "sandbox"},
+                temperature=0.1,
+            ):
+                yield chunk
+        except AiBudgetExceededError as e:
+            logger.warning(f"Rule Auto-Fix blocked by AI budget: {e}")
+            yield (
+                '\n\n{"error":"budget_exceeded","message":"'
+                + str(e).replace('"', '\\"')
+                + '"}'
             )
-
-            async for chunk in stream:
-                if chunk.choices[0].delta.content is not None:
-                    yield chunk.choices[0].delta.content
         except Exception as e:
             logger.error(f"Rule Auto-Fix Error: {e}")
             yield f"\\n\\n[LỖI]: {str(e)}"

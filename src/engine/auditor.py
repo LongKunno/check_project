@@ -7,13 +7,16 @@ import os
 import json
 import sys
 import logging
+import uuid
+from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
 
-from src.config import WEIGHTS
+from src.config import WEIGHTS, get_ai_mode, has_openai_batch_api_key
 from src.engine.discovery import DiscoveryStep
 from src.engine.verification import VerificationStep
 from src.engine.scoring import ScoringEngine
+from src.engine.ai_telemetry import ai_telemetry
 
 try:
     from src.api.audit_state import AuditState, JobManager
@@ -47,30 +50,64 @@ except ImportError:
         def clear_progress(*args, **kwargs):
             return None
 
+        @staticmethod
+        def update_progress_detail(*args, **kwargs):
+            return None
+
+        @staticmethod
+        def update_orchestration_state(*args, **kwargs):
+            return None
+
+        @staticmethod
+        def get_orchestration_state(*args, **kwargs):
+            return {}
+
 
 class AuditCancelledError(Exception):
     """Raised when an audit job stops at a safe cancellation checkpoint."""
 
 
 class CodeAuditor:
+    BATCH_STAGE_ORDER = [
+        "init",
+        "discovered",
+        "scanned",
+        "validation_submitted",
+        "validation_completed",
+        "deep_submitted",
+        "deep_completed",
+        "cross_check_submitted",
+        "ai_completed",
+    ]
+
     def __init__(
         self,
         target_dir=".",
         custom_rules=None,
         cancel_check=None,
         job_id=None,
+        workspace_path=None,
+        target_id=None,
     ):
         """
         Khởi tạo Auditor cho một thư mục cụ thể.
         """
         self.target_dir = os.path.abspath(target_dir)
+        self.target_id = target_id or os.path.basename(self.target_dir) or self.target_dir
         self.custom_rules = custom_rules
         self.cancel_check = cancel_check
         self.job_id = job_id
+        self.ai_scope_id = self.job_id or f"adhoc-audit-{uuid.uuid4()}"
+        self.workspace_path = (
+            os.path.abspath(workspace_path) if workspace_path else None
+        )
         self.discovery_data = None
 
-        # Đường dẫn xuất báo cáo (luôn nằm trong thư mục 'reports' của project hiện tại)
-        report_dir = os.path.abspath("reports")
+        report_dir = (
+            os.path.join(self.workspace_path, "reports")
+            if self.workspace_path
+            else os.path.abspath("reports")
+        )
         if not os.path.exists(report_dir):
             os.makedirs(report_dir)
 
@@ -78,6 +115,34 @@ class CodeAuditor:
         self.report_path = os.path.join(report_dir, "Final_Audit_Report.md")
         self.violations = []
         self.violation_counter = 0
+        self.ai_summary = {
+            "total_requests": 0,
+            "blocked_requests": 0,
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "cached_tokens": 0,
+            "cost_usd": 0.0,
+            "reported_requests": 0,
+            "estimated_requests": 0,
+            "by_source": {},
+        }
+        self.ai_mode = get_ai_mode()
+        if self.ai_mode == "openai_batch" and not has_openai_batch_api_key():
+            logger.warning(
+                "OpenAI Batch mode requested but no batch API key is configured. Falling back to realtime."
+            )
+            self.ai_mode = "realtime"
+        if self.job_id:
+            try:
+                job = JobManager.get_job(self.job_id)
+                if job and getattr(job, "ai_mode", None):
+                    self.ai_mode = job.ai_mode
+            except Exception:
+                logger.debug("Không thể đọc ai_mode từ job state.", exc_info=True)
+        self._state_dir = None
+        if self.workspace_path:
+            self._state_dir = os.path.join(self.workspace_path, ".audit_state")
+            os.makedirs(self._state_dir, exist_ok=True)
 
     def _get_active_job_id(self):
         """Lấy job đang active để cập nhật progress batch cho API polling."""
@@ -105,6 +170,28 @@ class CodeAuditor:
     def _raise_if_cancelled(self, message="Đã hủy theo yêu cầu người dùng."):
         if self._is_cancel_requested():
             raise AuditCancelledError(message)
+
+    def _ai_telemetry_context(self, source: str) -> Dict[str, Any]:
+        return {
+            "source": source,
+            "job_id": self.ai_scope_id,
+            "target": self.target_dir,
+            "project": self.target_id,
+        }
+
+    async def _call_ai_with_optional_telemetry(
+        self, method, *args, source: str, **kwargs
+    ):
+        try:
+            return await method(
+                *args,
+                **kwargs,
+                telemetry=self._ai_telemetry_context(source),
+            )
+        except TypeError as exc:
+            if "telemetry" not in str(exc):
+                raise
+            return await method(*args, **kwargs)
 
     def _start_active_job_progress(
         self,
@@ -154,6 +241,63 @@ class CodeAuditor:
             return
         JobManager.clear_progress(job_id)
 
+    def _get_orchestration_state(self) -> dict:
+        if not self.job_id:
+            return {}
+        try:
+            return JobManager.get_orchestration_state(self.job_id) or {}
+        except Exception:
+            return {}
+
+    def _update_orchestration_state(self, **updates):
+        if not self.job_id:
+            return
+        JobManager.update_orchestration_state(self.job_id, **updates)
+
+    def _stage_index(self, stage: str) -> int:
+        try:
+            return self.BATCH_STAGE_ORDER.index(stage)
+        except ValueError:
+            return 0
+
+    def _stage_at_least(self, stage: str, expected: str) -> bool:
+        return self._stage_index(stage) >= self._stage_index(expected)
+
+    def _checkpoint_path(self, name: str) -> str | None:
+        if not self._state_dir:
+            return None
+        return os.path.join(self._state_dir, name)
+
+    def _save_checkpoint(self, name: str, data: Any):
+        path = self._checkpoint_path(name)
+        if not path:
+            return
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+
+    def _load_checkpoint(self, name: str, default=None):
+        path = self._checkpoint_path(name)
+        if not path or not os.path.exists(path):
+            return default
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+
+    def _save_logged_violations_checkpoint(self):
+        self._save_checkpoint(
+            "logged_violations.json",
+            {
+                "violations": self.violations,
+                "counter": self.violation_counter,
+            },
+        )
+
+    def _restore_logged_violations_checkpoint(self):
+        payload = self._load_checkpoint("logged_violations.json")
+        if not payload:
+            return
+        self.violations = payload.get("violations", [])
+        self.violation_counter = payload.get("counter", len(self.violations))
+
     def log_violation(self, violation_data: dict):
         """Ghi nhận một vi phạm mới và lưu vào danh sách.
         Args:
@@ -197,14 +341,38 @@ class CodeAuditor:
     def run(self):
         """Thực thi toàn bộ quy trình kiểm toán."""
         self._raise_if_cancelled("Job đã bị hủy trước khi bắt đầu kiểm toán.")
+        self._restore_logged_violations_checkpoint()
+        stage = self._get_orchestration_state().get("stage", "init")
         with open(self.ledger_path, "w") as f:
             f.write("# SỔ CÁI VI PHẠM (AI VIOLATION LEDGER)\n\n")
         logger.info(f"🚀 Bắt đầu kiểm toán: {self.target_dir}")
 
-        self._raise_if_cancelled("Đã hủy trước bước Discovery.")
-        self._step_discovery()
+        if self.ai_mode == "openai_batch" and self._stage_at_least(stage, "discovered"):
+            self.discovery_data = self._load_checkpoint("discovery_data.json")
+            if self.discovery_data:
+                logger.info("[1/5] Resume từ checkpoint Discovery.")
+        if not self.discovery_data:
+            self._raise_if_cancelled("Đã hủy trước bước Discovery.")
+            self._step_discovery()
+            self._save_checkpoint("discovery_data.json", self.discovery_data)
+            self._update_orchestration_state(stage="discovered")
+
         self._raise_if_cancelled("Đã hủy sau bước Discovery.")
-        automated_violations = self._step_scanning()
+        automated_violations = None
+        if self.ai_mode == "openai_batch" and self._stage_at_least(stage, "scanned"):
+            automated_violations = self._load_checkpoint(
+                "automated_violations.json", []
+            )
+            self.merged_rules = self._load_checkpoint("merged_rules.json", {})
+            logger.info("[2/5] Resume từ checkpoint Static Scanning.")
+        if automated_violations is None:
+            automated_violations = self._step_scanning()
+            self._save_checkpoint("automated_violations.json", automated_violations)
+            self._save_checkpoint(
+                "merged_rules.json", getattr(self, "merged_rules", {})
+            )
+            self._update_orchestration_state(stage="scanned")
+
         self._raise_if_cancelled("Đã hủy sau bước quét tĩnh.")
 
         from src.config import get_ai_enabled
@@ -224,6 +392,10 @@ class CodeAuditor:
         final_score, rating = self._step_aggregation()
         self._raise_if_cancelled("Đã hủy trước bước xuất báo cáo.")
         self._step_reporting(final_score, rating)
+        self.ai_summary = ai_telemetry.summarize_scope(
+            job_id=self.ai_scope_id,
+            source_prefix="audit.",
+        )
 
     def _step_discovery(self):
         """BƯỜC 1: Khám phá tài nguyên."""
@@ -279,6 +451,13 @@ class CodeAuditor:
         from src.config import get_ai_max_concurrency
         from src.engine.ai_service import ai_service
 
+        if self.ai_mode == "openai_batch":
+            try:
+                self._step_ai_batch_processing(automated_violations, ai_service, asyncio)
+            finally:
+                self._clear_active_job_progress()
+            return
+
         # Snapshot concurrency một lần cho cả job hiện tại; save setting mới chỉ áp dụng job sau.
         ai_concurrency = get_ai_max_concurrency()
 
@@ -331,7 +510,11 @@ class CodeAuditor:
                 f"[PROGRESS] Đang xác thực (Validation) batch {batch_number}/{len(chunks)}..."
             )
             try:
-                batch_results = await ai_service.verify_violations_batch(chunk)
+                batch_results = await self._call_ai_with_optional_telemetry(
+                    ai_service.verify_violations_batch,
+                    chunk,
+                    source="audit.validation",
+                )
                 self._record_active_job_batch_finished(
                     batch_number,
                     last_detail=(
@@ -447,8 +630,11 @@ class CodeAuditor:
                 )
                 logger.info(f"[PROGRESS] AI Audit: {rel}")
             try:
-                batch_results = await ai_service.deep_audit_batch(
-                    chunk_data, self.custom_rules
+                batch_results = await self._call_ai_with_optional_telemetry(
+                    ai_service.deep_audit_batch,
+                    chunk_data,
+                    self.custom_rules,
+                    source="audit.deep_audit",
                 )
                 self._record_active_job_batch_finished(
                     batch_number,
@@ -519,7 +705,12 @@ class CodeAuditor:
                     if target and target not in context_cache:
                         context_cache[target] = indexer.get_symbol_snippet(target)
                 verified = loop.run_until_complete(
-                    ai_service.verify_flagged_issues(flagged, context_cache)
+                    self._call_ai_with_optional_telemetry(
+                        ai_service.verify_flagged_issues,
+                        flagged,
+                        context_cache,
+                        source="audit.cross_check",
+                    )
                 )
                 confirmed.extend(verified)
         finally:
@@ -527,6 +718,352 @@ class CodeAuditor:
 
         self._raise_if_cancelled("Đã hủy trước khi ghi nhận kết quả AI.")
         self._log_ai_violations(confirmed)
+
+    def _run_async(self, coroutine):
+        import asyncio
+
+        loop = asyncio.new_event_loop()
+        try:
+            return loop.run_until_complete(coroutine)
+        finally:
+            loop.close()
+
+    def _chunk_list(self, items: List[Any], size: int) -> List[List[Any]]:
+        if not items:
+            return []
+        return [items[i : i + size] for i in range(0, len(items), size)]
+
+    def _handle_remote_batch_status(self, label: str, request_count: int, batch_info: dict):
+        status = (batch_info.get("status") or "unknown").lower()
+        detail = (
+            f"OpenAI Batch {label}: {status} "
+            f"({request_count} requests, batch_id={batch_info.get('id', 'n/a')})"
+        )
+        logger.info(f"[PROGRESS] {detail}")
+        job_id = self._get_active_job_id()
+        if job_id:
+            JobManager.update_progress_detail(
+                job_id,
+                detail,
+                active_batches=0
+                if status in {"completed", "failed", "expired", "cancelled", "canceled"}
+                else 1,
+            )
+
+    def _resolve_remote_batch_results(self, ai_service, batch_id: str, label: str, request_count: int):
+        result = self._run_async(
+            ai_service.resolve_chat_completion_batch(
+                batch_id,
+                on_status=lambda batch: self._handle_remote_batch_status(
+                    label,
+                    request_count,
+                    batch,
+                ),
+            )
+        )
+        if self._is_cancel_requested():
+            raise AuditCancelledError("Đã hủy theo yêu cầu người dùng.")
+        return result
+
+    def _step_ai_batch_processing(self, automated_violations, ai_service, asyncio):
+        logger.info("[3/5] Chạy AI bằng OpenAI Batch API...")
+
+        self._raise_if_cancelled("Đã hủy trước bước OpenAI Batch Validation.")
+        self._step_ai_validation_batch_api(automated_violations, ai_service)
+        self._raise_if_cancelled("Đã hủy sau bước OpenAI Batch Validation.")
+
+        self._step_ai_reasoning_batch_api(ai_service)
+        self._raise_if_cancelled("Đã hủy sau bước OpenAI Batch Deep Audit.")
+        self._update_orchestration_state(stage="ai_completed")
+
+    def _step_ai_validation_batch_api(self, automated_violations, ai_service):
+        logger.info("[3.1/5] OpenAI Batch API — Validation...")
+        state = self._get_orchestration_state()
+        stage = state.get("stage", "init")
+        if self._stage_at_least(stage, "validation_completed"):
+            logger.info("   Resume: bỏ qua submit Validation batch vì đã có checkpoint.")
+            self._restore_logged_violations_checkpoint()
+            return
+
+        batch_size = 5
+        chunks = self._chunk_list(automated_violations, batch_size)
+        if not chunks:
+            logger.info("   Không có vi phạm nào cần xác thực.")
+            self._update_orchestration_state(stage="validation_completed")
+            return
+
+        self._start_active_job_progress(
+            "validation",
+            "Validation (Batch API)",
+            len(chunks),
+            batch_size,
+            last_detail="Preparing OpenAI Batch validation job...",
+        )
+
+        batch_id = state.get("validation_batch_id")
+        if stage != "validation_submitted" or not batch_id:
+            requests = ai_service.build_validation_batch_requests(
+                chunks,
+                telemetry=self._ai_telemetry_context("audit.validation"),
+            )
+            submitted = self._run_async(
+                ai_service.submit_chat_completion_batch(
+                    requests,
+                    metadata={
+                        "job_id": self.job_id or "unknown",
+                        "phase": "validation",
+                    },
+                    telemetry=self._ai_telemetry_context("audit.validation"),
+                )
+            )
+            batch_id = submitted["id"]
+            logger.info(
+                f"   OpenAI Batch Validation đã submit: {batch_id} ({len(chunks)} requests)"
+            )
+            self._update_orchestration_state(
+                stage="validation_submitted",
+                validation_batch_id=batch_id,
+                validation_request_count=len(chunks),
+            )
+
+        result = self._resolve_remote_batch_results(
+            ai_service,
+            batch_id,
+            "validation",
+            len(chunks),
+        )
+
+        outputs = result.get("outputs", {})
+        errors = result.get("errors", {})
+        if errors:
+            logger.warning(
+                f"   OpenAI Batch Validation có {len(errors)} request lỗi: {', '.join(list(errors.keys())[:3])}"
+            )
+
+        for idx, chunk in enumerate(chunks):
+            output = outputs.get(f"validation-{idx}")
+            if not output or not output.get("content"):
+                raise RuntimeError(
+                    f"Thiếu kết quả OpenAI Batch Validation cho request validation-{idx}"
+                )
+            batch_results = {
+                item.index: item.model_dump()
+                for item in ai_service.parse_validation_content(
+                    output["content"]
+                ).results
+            }
+            for item_idx, violation in enumerate(chunk):
+                res = batch_results.get(item_idx, {})
+                is_fp = res.get("is_false_positive", False)
+                ai_reason = res.get("explanation", "")
+                conf = res.get("confidence", 1.0)
+                is_custom = violation.get("rule_id", "").startswith("CUSTOM_") or violation.get(
+                    "rule_id", ""
+                ).startswith("FORBIDDEN")
+
+                if is_fp and conf > 0.7:
+                    label = "Tùy chỉnh" if is_custom else "Core"
+                    logger.info(
+                        f"   ✨ OpenAI Batch loại bỏ FP [{label}]: {violation['reason']} tại {violation['file']}"
+                    )
+                    continue
+
+                final_reason = (
+                    f"{violation['reason']}. AI Note: {ai_reason}"
+                    if ai_reason
+                    else violation["reason"]
+                )
+                self.log_violation(
+                    {
+                        **violation,
+                        "pillar": violation["type"],
+                        "reason": final_reason,
+                        "is_custom": is_custom,
+                    }
+                )
+
+        self._save_logged_violations_checkpoint()
+        job_id = self._get_active_job_id()
+        if job_id:
+            JobManager.update_progress_detail(
+                job_id,
+                f"Completed OpenAI Batch validation ({len(chunks)} requests).",
+                last_started_batch=len(chunks),
+                completed_batches=len(chunks),
+                active_batches=0,
+                pending_batches=0,
+            )
+        self._update_orchestration_state(
+            stage="validation_completed",
+            validation_batch_id="",
+        )
+
+    def _step_ai_reasoning_batch_api(self, ai_service):
+        logger.info("[3.2/5] OpenAI Batch API — Deep Audit...")
+        state = self._get_orchestration_state()
+        stage = state.get("stage", "init")
+        if self._stage_at_least(stage, "ai_completed"):
+            logger.info("   Resume: bỏ qua AI reasoning vì đã hoàn tất ở checkpoint.")
+            self._restore_logged_violations_checkpoint()
+            return
+
+        deep_chunks = self._build_deep_audit_batches()
+        if not deep_chunks:
+            logger.info("   Không có file nào cần AI phân tích.")
+            self._update_orchestration_state(stage="ai_completed")
+            return
+
+        self._start_active_job_progress(
+            "deep_audit",
+            "Deep Audit (Batch API)",
+            len(deep_chunks),
+            5,
+            last_detail="Preparing OpenAI Batch deep audit job...",
+        )
+
+        confirmed = self._load_checkpoint("deep_confirmed.json", [])
+        flagged = self._load_checkpoint("deep_flagged.json", [])
+
+        deep_batch_id = state.get("deep_batch_id")
+        if not self._stage_at_least(stage, "deep_completed"):
+            if stage != "deep_submitted" or not deep_batch_id:
+                requests = ai_service.build_deep_audit_batch_requests(
+                    deep_chunks,
+                    self.custom_rules,
+                    telemetry=self._ai_telemetry_context("audit.deep_audit"),
+                )
+                submitted = self._run_async(
+                    ai_service.submit_chat_completion_batch(
+                        requests,
+                        metadata={
+                            "job_id": self.job_id or "unknown",
+                            "phase": "deep_audit",
+                        },
+                        telemetry=self._ai_telemetry_context("audit.deep_audit"),
+                    )
+                )
+                deep_batch_id = submitted["id"]
+                logger.info(
+                    f"   OpenAI Batch Deep Audit đã submit: {deep_batch_id} ({len(deep_chunks)} requests)"
+                )
+                self._update_orchestration_state(
+                    stage="deep_submitted",
+                    deep_batch_id=deep_batch_id,
+                    deep_request_count=len(deep_chunks),
+                )
+
+            result = self._resolve_remote_batch_results(
+                ai_service,
+                deep_batch_id,
+                "deep_audit",
+                len(deep_chunks),
+            )
+            outputs = result.get("outputs", {})
+            confirmed = []
+            flagged = []
+            for idx in range(len(deep_chunks)):
+                output = outputs.get(f"deep-audit-{idx}")
+                if not output or not output.get("content"):
+                    raise RuntimeError(
+                        f"Thiếu kết quả OpenAI Batch Deep Audit cho request deep-audit-{idx}"
+                    )
+                parsed = ai_service.parse_deep_audit_content(output["content"])
+                for violation in parsed.violations:
+                    payload = violation.model_dump()
+                    (flagged if payload.get("needs_verification") else confirmed).append(
+                        payload
+                    )
+            self._save_checkpoint("deep_confirmed.json", confirmed)
+            self._save_checkpoint("deep_flagged.json", flagged)
+            self._update_orchestration_state(
+                stage="deep_completed",
+                deep_batch_id="",
+            )
+
+        verified = []
+        if flagged:
+            logger.info(
+                f"[3.3/5] OpenAI Batch API — Cross-Check {len(flagged)} mục nghi vấn..."
+            )
+            state = self._get_orchestration_state()
+            cross_chunks = self._chunk_list(flagged, 5)
+            cross_batch_id = state.get("cross_check_batch_id")
+
+            from src.engine.symbol_indexer import AstContextExtractor
+
+            indexer = AstContextExtractor(self.target_dir)
+            indexer.index_project()
+            context_cache = {}
+            for violation in flagged:
+                target = violation.get("verify_target")
+                if target and target not in context_cache:
+                    context_cache[target] = indexer.get_symbol_snippet(target)
+
+            if state.get("stage") != "cross_check_submitted" or not cross_batch_id:
+                requests = ai_service.build_cross_check_batch_requests(
+                    cross_chunks,
+                    context_cache,
+                    telemetry=self._ai_telemetry_context("audit.cross_check"),
+                )
+                submitted = self._run_async(
+                    ai_service.submit_chat_completion_batch(
+                        requests,
+                        metadata={
+                            "job_id": self.job_id or "unknown",
+                            "phase": "cross_check",
+                        },
+                        telemetry=self._ai_telemetry_context("audit.cross_check"),
+                    )
+                )
+                cross_batch_id = submitted["id"]
+                logger.info(
+                    f"   OpenAI Batch Cross-Check đã submit: {cross_batch_id} ({len(cross_chunks)} requests)"
+                )
+                self._update_orchestration_state(
+                    stage="cross_check_submitted",
+                    cross_check_batch_id=cross_batch_id,
+                )
+
+            result = self._resolve_remote_batch_results(
+                ai_service,
+                cross_batch_id,
+                "cross_check",
+                len(cross_chunks),
+            )
+            outputs = result.get("outputs", {})
+            for idx, chunk in enumerate(cross_chunks):
+                output = outputs.get(f"cross-check-{idx}")
+                if not output or not output.get("content"):
+                    raise RuntimeError(
+                        f"Thiếu kết quả OpenAI Batch Cross-Check cho request cross-check-{idx}"
+                    )
+                parsed = ai_service.parse_validation_content(output["content"])
+                for validation in parsed.results:
+                    if 0 <= validation.index < len(chunk) and not validation.is_false_positive:
+                        bug = chunk[validation.index]
+                        bug["reason"] = (
+                            f"{bug['reason']} [Cross-Checked: {validation.explanation}]"
+                        )
+                        verified.append(bug)
+            self._update_orchestration_state(
+                cross_check_batch_id="",
+            )
+
+        confirmed.extend(verified)
+        self._save_checkpoint("deep_final_ai.json", confirmed)
+        self._log_ai_violations(confirmed)
+        self._save_logged_violations_checkpoint()
+        job_id = self._get_active_job_id()
+        if job_id:
+            JobManager.update_progress_detail(
+                job_id,
+                f"Completed OpenAI Batch deep audit ({len(deep_chunks)} requests).",
+                last_started_batch=len(deep_chunks),
+                completed_batches=len(deep_chunks),
+                active_batches=0,
+                pending_batches=0,
+            )
+        self._update_orchestration_state(stage="ai_completed")
 
     def _build_deep_audit_batches(self):
         """Chia files thành các batch thông minh dựa trên kích thước."""

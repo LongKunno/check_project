@@ -4,6 +4,8 @@ import threading
 from typing import Dict, List, Optional, Literal
 from pydantic import BaseModel, Field
 
+from src.engine.database import AuditDatabase
+
 
 class JobProgress(BaseModel):
     phase: Optional[Literal["validation", "deep_audit"]] = None
@@ -29,6 +31,9 @@ class JobStatus(BaseModel):
     job_type: str = "single"  # "single" hoac "batch"
     progress: Optional[JobProgress] = None
     cancel_requested: bool = False
+    ai_mode: str = "realtime"
+    workspace_path: str = ""
+    orchestration_state: dict = Field(default_factory=dict)
 
 
 class JobManager:
@@ -48,7 +53,21 @@ class JobManager:
     JOB_RETENTION_SECONDS = 3600
 
     @classmethod
-    def create_job(cls, target: str = "unknown", job_type: str = "single") -> str:
+    def _persist_job(cls, job_id: str):
+        job = cls.jobs.get(job_id)
+        if not job:
+            return
+        AuditDatabase.upsert_runtime_job(job.model_dump())
+
+    @classmethod
+    def create_job(
+        cls,
+        target: str = "unknown",
+        job_type: str = "single",
+        ai_mode: str = "realtime",
+        workspace_path: str = "",
+        orchestration_state: Optional[dict] = None,
+    ) -> str:
         # Dọn dẹp jobs cũ trước khi tạo mới để ngăn memory leak
         cls.cleanup_old_jobs()
 
@@ -59,8 +78,12 @@ class JobManager:
             started_at=time.time(),
             target=target,
             job_type=job_type,
+            ai_mode=ai_mode,
+            workspace_path=workspace_path,
+            orchestration_state=orchestration_state or {},
         )
         cls.job_logs[job_id] = []
+        cls._persist_job(job_id)
         return job_id
 
     @classmethod
@@ -100,6 +123,7 @@ class JobManager:
         if status in cls.TERMINAL_STATUSES:
             cls.finalize_progress(job_id, last_detail=message or None)
             job.ended_at = time.time()
+        cls._persist_job(job_id)
         return True
 
     @classmethod
@@ -118,6 +142,7 @@ class JobManager:
         if job.progress:
             job.progress.last_detail = message
             job.progress.updated_at = time.time()
+        cls._persist_job(job_id)
         return True
 
     @classmethod
@@ -157,6 +182,7 @@ class JobManager:
             last_detail=last_detail,
             updated_at=time.time(),
         )
+        cls._persist_job(job_id)
 
     @classmethod
     def record_batch_started(
@@ -178,6 +204,7 @@ class JobManager:
         if last_detail:
             progress.last_detail = last_detail
         progress.updated_at = time.time()
+        cls._persist_job(job_id)
 
     @classmethod
     def record_batch_finished(
@@ -208,6 +235,7 @@ class JobManager:
         if last_detail:
             progress.last_detail = last_detail
         progress.updated_at = time.time()
+        cls._persist_job(job_id)
 
     @classmethod
     def finalize_progress(cls, job_id: str, last_detail: str = None):
@@ -224,6 +252,35 @@ class JobManager:
         if last_detail:
             progress.last_detail = last_detail
         progress.updated_at = time.time()
+        cls._persist_job(job_id)
+
+    @classmethod
+    def update_progress_detail(
+        cls,
+        job_id: str,
+        last_detail: str,
+        *,
+        last_started_batch: Optional[int] = None,
+        completed_batches: Optional[int] = None,
+        active_batches: Optional[int] = None,
+        pending_batches: Optional[int] = None,
+    ):
+        job = cls.jobs.get(job_id)
+        if not job or not job.progress:
+            return
+
+        progress = job.progress
+        progress.last_detail = last_detail
+        if last_started_batch is not None:
+            progress.last_started_batch = last_started_batch
+        if completed_batches is not None:
+            progress.completed_batches = completed_batches
+        if active_batches is not None:
+            progress.active_batches = active_batches
+        if pending_batches is not None:
+            progress.pending_batches = pending_batches
+        progress.updated_at = time.time()
+        cls._persist_job(job_id)
 
     @classmethod
     def clear_progress(cls, job_id: str):
@@ -231,11 +288,45 @@ class JobManager:
         if not job:
             return
         job.progress = None
+        cls._persist_job(job_id)
 
     @classmethod
     def log(cls, job_id: str, message: str):
         if job_id and job_id in cls.job_logs:
             cls.job_logs[job_id].append(message)
+            AuditDatabase.append_runtime_job_log(
+                job_id, len(cls.job_logs[job_id]), message
+            )
+
+    @classmethod
+    def update_orchestration_state(cls, job_id: str, **updates):
+        job = cls.jobs.get(job_id)
+        if not job:
+            db_job = AuditDatabase.get_runtime_job(job_id)
+            if not db_job:
+                return
+            job = JobStatus.model_validate(db_job)
+            cls.jobs[job_id] = job
+            cls.job_logs.setdefault(job_id, AuditDatabase.get_runtime_job_logs(job_id))
+
+        state = dict(job.orchestration_state or {})
+        state.update(updates)
+        job.orchestration_state = state
+        cls._persist_job(job_id)
+
+    @classmethod
+    def get_orchestration_state(cls, job_id: str) -> dict:
+        job = cls.get_job(job_id)
+        if not job:
+            return {}
+        return dict(job.orchestration_state or {})
+
+    @classmethod
+    def restore_persisted_jobs(cls):
+        for raw_job in AuditDatabase.get_active_runtime_jobs():
+            job = JobStatus.model_validate(raw_job)
+            cls.jobs[job.job_id] = job
+            cls.job_logs[job.job_id] = AuditDatabase.get_runtime_job_logs(job.job_id)
 
     @classmethod
     def set_active_job(cls, job_id: str):
@@ -254,11 +345,27 @@ class JobManager:
 
     @classmethod
     def get_job(cls, job_id: str) -> Optional[JobStatus]:
-        return cls.jobs.get(job_id)
+        job = cls.jobs.get(job_id)
+        if job:
+            return job
+
+        raw_job = AuditDatabase.get_runtime_job(job_id)
+        if not raw_job:
+            return None
+
+        job = JobStatus.model_validate(raw_job)
+        cls.jobs[job_id] = job
+        cls.job_logs[job_id] = AuditDatabase.get_runtime_job_logs(job_id)
+        return job
 
     @classmethod
     def get_logs(cls, job_id: str) -> List[str]:
-        return cls.job_logs.get(job_id, [])
+        if job_id in cls.job_logs:
+            return cls.job_logs[job_id]
+        logs = AuditDatabase.get_runtime_job_logs(job_id)
+        if logs:
+            cls.job_logs[job_id] = logs
+        return logs
 
 
 # Giữ lại AuditState interface cho các chỗ legacy chưa refactor, trỏ về job "default"

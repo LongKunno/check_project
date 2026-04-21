@@ -157,3 +157,51 @@ def test_call_llm_json_discards_success_response_after_cancel(monkeypatch):
     )
 
     assert result is None
+
+
+def test_build_validation_batch_requests_uses_stable_custom_ids():
+    import src.engine.ai_service as ai_service_module
+
+    service = ai_service_module.AiService()
+
+    requests = service.build_validation_batch_requests(
+        [
+            [{"file": "a.py", "reason": "x", "type": "Security", "snippet": ""}],
+            [{"file": "b.py", "reason": "y", "type": "Reliability", "snippet": ""}],
+        ]
+    )
+
+    assert [item["custom_id"] for item in requests] == [
+        "validation-0",
+        "validation-1",
+    ]
+    assert requests[0]["messages"][0]["role"] == "system"
+    assert requests[0]["messages"][1]["role"] == "user"
+
+
+def test_parse_output_lines_extracts_content():
+    import src.engine.ai_service as ai_service_module
+
+    service = ai_service_module.AiService()
+    parsed = service._parse_output_lines(
+        '\n'.join(
+            [
+                '{"custom_id":"validation-0","response":{"status_code":200,"body":{"choices":[{"message":{"content":"{\\"results\\": []}"}}]}}}',
+                '{"custom_id":"deep-audit-0","response":{"status_code":200,"body":{"choices":[{"message":{"content":"{\\"violations\\": []}"}}]}}}',
+            ]
+        )
+    )
+
+    assert parsed["validation-0"]["content"] == '{"results": []}'
+    assert parsed["deep-audit-0"]["content"] == '{"violations": []}'
+
+
+def test_parse_error_lines_extracts_custom_id():
+    import src.engine.ai_service as ai_service_module
+
+    service = ai_service_module.AiService()
+    parsed = service._parse_error_lines(
+        '{"custom_id":"validation-0","error":{"message":"bad request"}}'
+    )
+
+    assert parsed["validation-0"]["message"] == "bad request"

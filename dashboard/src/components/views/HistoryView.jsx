@@ -61,6 +61,13 @@ const getScoreGradient = (score) => {
   return "from-rose-400 to-red-600";
 };
 
+const compactUsd = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 4,
+});
+
 // ─── Score Mini Bar ──────────────────────────────────────────────────────────
 
 function ScoreMiniBar({ score, maxScore = 100 }) {
@@ -318,6 +325,7 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
                       "Score",
                       "Scale (LOC)",
                       "Violations",
+                      "AI Summary",
                       "Action",
                     ].map((h) => (
                       <th
@@ -412,6 +420,26 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
                             >
                               {h.violations_count} issues
                             </span>
+                          </td>
+                          <td className="px-5 py-4 text-sm text-slate-600">
+                            {h.ai_summary?.total_requests ? (
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-1.5 font-semibold text-slate-700">
+                                  <Bot size={13} className="text-indigo-600" />
+                                  {h.ai_summary.total_requests} req
+                                  {h.ai_summary.blocked_requests
+                                    ? ` / ${h.ai_summary.blocked_requests} blocked`
+                                    : ""}
+                                </div>
+                                <div className="text-xs text-slate-500">
+                                  {Number(h.ai_summary.input_tokens || 0).toLocaleString()} in /{" "}
+                                  {Number(h.ai_summary.output_tokens || 0).toLocaleString()} out /{" "}
+                                  {compactUsd.format(h.ai_summary.cost_usd || 0)}
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-slate-400">No AI usage</span>
+                            )}
                           </td>
                           <td className="px-5 py-4">
                             <button

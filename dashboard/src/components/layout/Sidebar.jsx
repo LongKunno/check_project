@@ -20,6 +20,7 @@ import {
   MonitorPlay,
   Globe,
   LogOut,
+  Bot,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
@@ -119,6 +120,14 @@ export const Sidebar = ({
       activeClass:
         "bg-teal-500/15 text-teal-300 border border-teal-500/25",
       iconClass: "text-teal-400",
+    },
+    {
+      path: "/ai-ops",
+      label: "AI Management",
+      icon: Bot,
+      activeClass:
+        "bg-violet-500/15 text-violet-300 border border-violet-500/25",
+      iconClass: "text-violet-400",
     },
   ];
 

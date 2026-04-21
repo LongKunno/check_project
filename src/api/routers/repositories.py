@@ -7,6 +7,8 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from src.engine.database import AuditDatabase
+from src.engine.settings_crypto import encrypt_setting
+from src.engine.ai_telemetry import AiBudgetExceededError
 
 router = APIRouter()
 
@@ -129,8 +131,12 @@ async def delete_repository(repo_id: str):
 
 class EngineSettingsRequest(BaseModel):
     ai_enabled: Optional[bool] = None
+    ai_mode: Optional[str] = None
     test_mode_limit_files: Optional[int] = None
     ai_max_concurrency: Optional[int] = None
+    openai_batch_model: Optional[str] = None
+    openai_batch_api_key: Optional[str] = None
+    clear_openai_batch_api_key: Optional[bool] = None
     member_recent_months: Optional[int] = None
     auth_required: Optional[bool] = None
 
@@ -138,16 +144,22 @@ class EngineSettingsRequest(BaseModel):
 def _build_engine_settings_payload():
     from src.config import (
         get_ai_enabled,
+        get_ai_mode,
         get_ai_max_concurrency,
         get_auth_required,
         get_member_recent_months,
+        get_openai_batch_model,
         get_test_mode_limit,
+        has_openai_batch_api_key,
     )
 
     return {
         "ai_enabled": get_ai_enabled(),
+        "ai_mode": get_ai_mode(),
         "test_mode_limit_files": get_test_mode_limit(),
         "ai_max_concurrency": get_ai_max_concurrency(),
+        "openai_batch_model": get_openai_batch_model(),
+        "openai_batch_api_key_configured": has_openai_batch_api_key(),
         "member_recent_months": get_member_recent_months(),
         "auth_required": get_auth_required(),
     }
@@ -167,6 +179,13 @@ async def update_engine_settings(request: EngineSettingsRequest):
     """Cập nhật cấu hình engine (lưu vào DB, áp dụng runtime)."""
     if request.ai_enabled is not None:
         AuditDatabase.set_config("ai_enabled", str(request.ai_enabled).lower())
+    if request.ai_mode is not None:
+        if request.ai_mode not in {"realtime", "openai_batch"}:
+            raise HTTPException(
+                status_code=400,
+                detail="ai_mode chỉ hỗ trợ 'realtime' hoặc 'openai_batch'",
+            )
+        AuditDatabase.set_config("ai_mode", request.ai_mode)
     if request.test_mode_limit_files is not None:
         if request.test_mode_limit_files < 0:
             raise HTTPException(status_code=400, detail="test_mode_limit_files phải >= 0")
@@ -180,6 +199,23 @@ async def update_engine_settings(request: EngineSettingsRequest):
         AuditDatabase.set_config(
             "ai_max_concurrency", str(request.ai_max_concurrency)
         )
+    if request.openai_batch_model is not None:
+        model = request.openai_batch_model.strip()
+        if not model:
+            raise HTTPException(
+                status_code=400,
+                detail="openai_batch_model không được để trống",
+            )
+        AuditDatabase.set_config("openai_batch_model", model)
+    if request.clear_openai_batch_api_key:
+        AuditDatabase.set_config("openai_batch_api_key_encrypted", "")
+    elif request.openai_batch_api_key is not None:
+        sanitized = request.openai_batch_api_key.strip()
+        if sanitized:
+            AuditDatabase.set_config(
+                "openai_batch_api_key_encrypted",
+                encrypt_setting(sanitized),
+            )
     if request.member_recent_months is not None:
         if not 1 <= request.member_recent_months <= 24:
             raise HTTPException(
@@ -205,23 +241,17 @@ async def update_engine_settings(request: EngineSettingsRequest):
 async def health_ai():
     """Kiểm tra kết nối và tính sẵn sàng của AI Service."""
     from src.engine.ai_service import ai_service
+    from src.config import get_ai_enabled, get_ai_mode
 
+    if not get_ai_enabled():
+        return {"status": "disabled", "mode": "static_only"}
+
+    ai_mode = get_ai_mode()
     try:
-        response = await ai_service.client.chat.completions.create(
-            model=ai_service.model,
-            messages=[
-                {"role": "system", "content": "You are a health checker. Keep your response very short."},
-                {"role": "user", "content": "Hello, are you working?"}
-            ],
-            max_tokens=10,
-            temperature=0.0
-        )
-        content = response.choices[0].message.content
-        if content:
-            # Proxies đôi khi trả về 200 OK nhưng nội dung là chuỗi báo lỗi (vd: Token error, accounts failed...)
-            if "Token error" in content or "failed" in content.lower():
-                return {"status": "unhealthy", "reason": content}
-            return {"status": "healthy", "model": ai_service.model}
-        return {"status": "unhealthy", "reason": "Empty response"}
+        if ai_mode == "openai_batch":
+            return await ai_service.check_openai_batch_health()
+        return await ai_service.check_realtime_health()
+    except AiBudgetExceededError as e:
+        raise HTTPException(status_code=429, detail=str(e))
     except Exception as e:
-        return {"status": "unhealthy", "reason": str(e)}
+        return {"status": "unhealthy", "mode": ai_mode, "reason": str(e)}

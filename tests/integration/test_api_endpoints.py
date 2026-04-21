@@ -3,9 +3,11 @@ Integration Tests — API Endpoints (Audit, Repositories, History, Health)
 Sử dụng FastAPI TestClient để test API layer.
 """
 
+import io
 import os
 
 import pytest
+from fastapi import BackgroundTasks, UploadFile
 from fastapi.testclient import TestClient
 
 
@@ -29,7 +31,7 @@ class TestRootEndpoint:
 
     def test_root_returns_200(self, client):
         response = client.get("/")
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
 
     def test_root_has_engine_info(self, client):
         response = client.get("/")
@@ -42,7 +44,7 @@ class TestRepositoriesEndpoint:
 
     def test_returns_success(self, client):
         response = client.get("/repositories")
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
         data = response.json()
         assert data["status"] == "success"
         assert isinstance(data["data"], list)
@@ -68,7 +70,7 @@ class TestRepositoriesScores:
 
     def test_returns_success(self, client):
         response = client.get("/repositories/scores")
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
         data = response.json()
         assert data["status"] == "success"
         assert isinstance(data["data"], list)
@@ -87,7 +89,7 @@ class TestHistoryEndpoint:
 
     def test_returns_list(self, client):
         response = client.get("/history")
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
         data = response.json()
         assert isinstance(data, list)
 
@@ -97,7 +99,7 @@ class TestAuditStatus:
 
     def test_returns_status(self, client):
         response = client.get("/audit/status")
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
         data = response.json()
         assert "is_running" in data
 
@@ -105,12 +107,32 @@ class TestAuditStatus:
 class TestHealthAI:
     """GET /health/ai — AI health check."""
 
-    def test_returns_status_field(self, client):
+    def test_returns_status_field(self, client, monkeypatch):
+        import src.config
+        import src.engine.ai_service as ai_service_module
+
+        monkeypatch.setattr(src.config, "get_ai_enabled", lambda: True)
+        monkeypatch.setattr(src.config, "get_ai_mode", lambda: "realtime")
+
+        async def fake_check_realtime_health():
+            return {
+                "status": "healthy",
+                "mode": "realtime",
+                "provider": "proxy",
+                "model": "test-model",
+            }
+
+        monkeypatch.setattr(
+            ai_service_module.ai_service,
+            "check_realtime_health",
+            fake_check_realtime_health,
+        )
+
         response = client.get("/health/ai")
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
         data = response.json()
         assert "status" in data
-        assert data["status"] in ["healthy", "unhealthy"]
+        assert data["status"] in ["healthy", "unhealthy", "disabled"]
 
 
 class TestEngineSettings:
@@ -121,6 +143,8 @@ class TestEngineSettings:
         from src.engine.database import AuditDatabase
 
         monkeypatch.setattr(src.config, "AI_MAX_CONCURRENCY", 5)
+        monkeypatch.setattr(src.config, "AI_MODE", "realtime")
+        monkeypatch.setattr(src.config, "OPENAI_BATCH_MODEL", "gpt-5.4-mini")
         monkeypatch.setattr(src.config, "MEMBER_RECENT_MONTHS", 3)
         monkeypatch.setattr(
             AuditDatabase,
@@ -130,11 +154,100 @@ class TestEngineSettings:
 
         response = client.get("/settings/engine")
 
-        assert response.status_code == 200
+        assert response.status_code == 200, response.text
         data = response.json()
         assert data["status"] == "success"
         assert data["data"]["ai_max_concurrency"] == 5
+        assert data["data"]["ai_mode"] == "realtime"
+        assert data["data"]["openai_batch_model"] == "gpt-5.4-mini"
         assert data["data"]["member_recent_months"] == 3
+
+    def test_put_engine_settings_updates_ai_mode_and_batch_model(self, client, monkeypatch):
+        store = {}
+        from src.engine.database import AuditDatabase
+
+        monkeypatch.setattr(
+            AuditDatabase,
+            "get_config",
+            staticmethod(lambda key, default=None: store.get(key, default)),
+        )
+        monkeypatch.setattr(
+            AuditDatabase,
+            "set_config",
+            staticmethod(lambda key, value: store.__setitem__(key, value)),
+        )
+
+        response = client.put(
+            "/settings/engine",
+            json={"ai_mode": "openai_batch", "openai_batch_model": "gpt-5.4"},
+        )
+
+        assert response.status_code == 200, response.text
+        assert store["ai_mode"] == "openai_batch"
+        assert store["openai_batch_model"] == "gpt-5.4"
+        assert response.json()["data"]["ai_mode"] == "openai_batch"
+        assert response.json()["data"]["openai_batch_model"] == "gpt-5.4"
+
+    def test_put_engine_settings_encrypts_batch_api_key(self, client, monkeypatch):
+        store = {}
+        from src.engine.database import AuditDatabase
+
+        monkeypatch.setattr(
+            AuditDatabase,
+            "get_config",
+            staticmethod(lambda key, default=None: store.get(key, default)),
+        )
+        monkeypatch.setattr(
+            AuditDatabase,
+            "set_config",
+            staticmethod(lambda key, value: store.__setitem__(key, value)),
+        )
+
+        response = client.put(
+            "/settings/engine",
+            json={"openai_batch_api_key": "sk-test"},
+        )
+
+        assert response.status_code == 200, response.text
+        assert store["openai_batch_api_key_encrypted"]
+        assert store["openai_batch_api_key_encrypted"] != "sk-test"
+        assert response.json()["data"]["openai_batch_api_key_configured"] is True
+
+    def test_health_ai_uses_batch_health_when_batch_mode_enabled(self, client, monkeypatch):
+        import src.config
+        import src.engine.ai_service as ai_service_module
+
+        monkeypatch.setattr(src.config, "get_ai_enabled", lambda: True)
+        monkeypatch.setattr(src.config, "get_ai_mode", lambda: "openai_batch")
+
+        async def fake_check_openai_batch_health():
+            return {
+                "status": "healthy",
+                "mode": "openai_batch",
+                "provider": "openai",
+                "model": "gpt-5.4-mini",
+            }
+
+        monkeypatch.setattr(
+            ai_service_module.ai_service,
+            "check_openai_batch_health",
+            fake_check_openai_batch_health,
+        )
+
+        response = client.get("/health/ai")
+
+        assert response.status_code == 200, response.text
+        assert response.json()["mode"] == "openai_batch"
+
+    def test_health_ai_returns_disabled_when_ai_off(self, client, monkeypatch):
+        import src.config
+
+        monkeypatch.setattr(src.config, "get_ai_enabled", lambda: False)
+
+        response = client.get("/health/ai")
+
+        assert response.status_code == 200
+        assert response.json()["status"] == "disabled"
 
     def test_put_engine_settings_updates_ai_max_concurrency(self, client, monkeypatch):
         store = {}
@@ -350,6 +463,7 @@ class TestAuditEndpoints:
     def test_upload_process_keeps_temp_dir_until_background_task_finishes(self, client, monkeypatch):
         from src.api.audit_state import JobManager
         from src.api.routers import audit as audit_router_module
+        import asyncio
 
         observed = {}
 
@@ -378,14 +492,17 @@ class TestAuditEndpoints:
             "_build_and_save_audit_result",
             fake_build_and_save_audit_result,
         )
+        monkeypatch.setattr(audit_router_module, "_is_openai_batch_mode", lambda: False)
 
-        response = client.post(
-            "/audit/process",
-            files=[("files", ("nested/demo.py", b"print('ok')\n", "text/x-python"))],
+        upload = UploadFile(filename="demo.py", file=io.BytesIO(b"print('ok')\n"))
+        background_tasks = BackgroundTasks()
+        response = asyncio.run(
+            audit_router_module.upload_and_audit(background_tasks, files=[upload])
         )
+        for task in background_tasks.tasks:
+            task.func(*task.args, **task.kwargs)
 
-        assert response.status_code == 200
-        job_id = response.json()["job_id"]
+        job_id = response["job_id"]
         job = JobManager.get_job(job_id)
 
         assert observed["job_id"] == job_id
@@ -413,6 +530,7 @@ class TestAuditEndpoints:
     def test_upload_process_cancelled_job_does_not_save_result(self, client, monkeypatch):
         from src.api.audit_state import JobManager
         from src.api.routers import audit as audit_router_module
+        import asyncio
 
         observed = {"build_called": False}
 
@@ -440,14 +558,17 @@ class TestAuditEndpoints:
             "_build_and_save_audit_result",
             fake_build_and_save_audit_result,
         )
+        monkeypatch.setattr(audit_router_module, "_is_openai_batch_mode", lambda: False)
 
-        response = client.post(
-            "/audit/process",
-            files=[("files", ("nested/demo.py", b"print('ok')\n", "text/x-python"))],
+        upload = UploadFile(filename="demo.py", file=io.BytesIO(b"print('ok')\n"))
+        background_tasks = BackgroundTasks()
+        response = asyncio.run(
+            audit_router_module.upload_and_audit(background_tasks, files=[upload])
         )
+        for task in background_tasks.tasks:
+            task.func(*task.args, **task.kwargs)
 
-        assert response.status_code == 200
-        job = JobManager.get_job(response.json()["job_id"])
+        job = JobManager.get_job(response["job_id"])
 
         assert job is not None
         assert job.status == "CANCELLED"

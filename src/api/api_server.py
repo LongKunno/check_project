@@ -92,6 +92,10 @@ async def lifespan(app: FastAPI):
         logger.info(
             "Database initialized successfully without blocking the event loop."
         )
+        from src.api.routers.audit import recover_persisted_batch_jobs
+
+        await recover_persisted_batch_jobs()
+        logger.info("Persisted batch jobs restored.")
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
     yield
@@ -195,6 +199,7 @@ from src.api.routers.history import router as history_router
 from src.api.routers.repositories import router as repositories_router
 from src.api.routers.members import router as members_router
 from src.api.routers.auth import router as auth_router
+from src.api.routers.ai import router as ai_router
 
 app.include_router(audit_router)
 app.include_router(rules_router)
@@ -202,6 +207,7 @@ app.include_router(history_router)
 app.include_router(repositories_router)
 app.include_router(members_router)
 app.include_router(auth_router)
+app.include_router(ai_router)
 
 if __name__ == "__main__":
     import uvicorn

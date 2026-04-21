@@ -308,7 +308,14 @@ async def test_rule(request: TestRuleRequest):
             from src.engine.ai_service import ai_service
 
             # verify_violations_batch trả về { index: { "is_false_positive": bool, "explanation": str }, ... }
-            review_results = await ai_service.verify_violations_batch(violations)
+            review_results = await ai_service.verify_violations_batch(
+                violations,
+                telemetry={
+                    "source": "rules.test.review",
+                    "target": "sandbox.py",
+                    "project": "sandbox",
+                },
+            )
             for str_idx, res in review_results.items():
                 idx = int(str_idx)
                 if idx < len(violations):
@@ -329,7 +336,13 @@ async def test_rule(request: TestRuleRequest):
             files_chunk = [{"path": "sandbox.py", "content": request.code_snippet}]
             # Gọi deep_audit_batch để AI tự lùng sục lỗi
             deep_violations = await ai_service.deep_audit_batch(
-                files_chunk, custom_rules=custom_rules_for_deep
+                files_chunk,
+                custom_rules=custom_rules_for_deep,
+                telemetry={
+                    "source": "rules.test.deep_audit",
+                    "target": "sandbox.py",
+                    "project": "sandbox",
+                },
             )
 
             for dv in deep_violations:

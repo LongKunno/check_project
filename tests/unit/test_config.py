@@ -29,6 +29,47 @@ def test_ai_max_concurrency_defaults_to_5_when_env_missing(monkeypatch):
     assert config.get_ai_max_concurrency() == 5
 
 
+def test_ai_mode_defaults_to_realtime_when_env_missing(monkeypatch):
+    monkeypatch.delenv("AI_MODE", raising=False)
+    config = _reload_config()
+    monkeypatch.setattr(
+        AuditDatabase,
+        "get_config",
+        staticmethod(lambda key, default=None: None),
+    )
+
+    assert config.AI_MODE == "realtime"
+    assert config.get_ai_mode() == "realtime"
+
+
+def test_ai_mode_prefers_db_override(monkeypatch):
+    monkeypatch.setenv("AI_MODE", "realtime")
+    config = _reload_config()
+    monkeypatch.setattr(
+        AuditDatabase,
+        "get_config",
+        staticmethod(
+            lambda key, default=None: "openai_batch" if key == "ai_mode" else default
+        ),
+    )
+
+    assert config.get_ai_mode() == "openai_batch"
+
+
+def test_openai_batch_model_prefers_db_override(monkeypatch):
+    monkeypatch.setenv("OPENAI_BATCH_MODEL", "gpt-5.4-mini")
+    config = _reload_config()
+    monkeypatch.setattr(
+        AuditDatabase,
+        "get_config",
+        staticmethod(
+            lambda key, default=None: "gpt-5.4" if key == "openai_batch_model" else default
+        ),
+    )
+
+    assert config.get_openai_batch_model() == "gpt-5.4"
+
+
 def test_ai_max_concurrency_uses_env_when_valid(monkeypatch):
     monkeypatch.setenv("AI_MAX_CONCURRENCY", "12")
     config = _reload_config()

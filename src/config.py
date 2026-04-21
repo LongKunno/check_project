@@ -56,11 +56,26 @@ TEST_MODE_LIMIT_FILES = _parse_int_setting(
 # false = Tắt AI, chỉ dùng Static Analysis (Regex + AST) — nhanh, miễn phí, không cần API key
 AI_ENABLED = os.getenv("AI_ENABLED", "true").lower() in ("true", "1", "yes")
 
+# AI MODE:
+# - realtime: dùng proxy/local API hiện tại
+# - openai_batch: dùng OpenAI Batch API chính thức
+AI_MODE = os.getenv("AI_MODE", "realtime").strip().lower() or "realtime"
+if AI_MODE not in {"realtime", "openai_batch"}:
+    AI_MODE = "realtime"
+
 # AI CONCURRENCY: Giới hạn số request AI chạy song song cho Validation + Deep Audit.
 # Miền hợp lệ: 1..100. Nếu parse lỗi hoặc out-of-range thì fallback về 5.
 AI_MAX_CONCURRENCY = _parse_int_setting(
     os.getenv("AI_MAX_CONCURRENCY", 5), default=5, minimum=1, maximum=100
 )
+
+# OPENAI BATCH MODEL: model dùng riêng cho Batch API chính thức.
+OPENAI_BATCH_MODEL = (
+    os.getenv("OPENAI_BATCH_MODEL", "gpt-5.4-mini").strip() or "gpt-5.4-mini"
+)
+
+# OPENAI BATCH API KEY: ưu tiên DB (mã hóa), fallback .env
+OPENAI_BATCH_API_KEY = os.getenv("OPENAI_BATCH_API_KEY", "").strip()
 
 # MEMBER RECENCY WINDOW: Chỉ tính Git authorship trong N tháng gần đây cho member scoring.
 # Miền hợp lệ: 1..24. Nếu parse lỗi hoặc out-of-range thì fallback về 3.
@@ -74,9 +89,15 @@ MEMBER_RECENT_MONTHS = _parse_int_setting(
 AUTH_REQUIRED = os.getenv("AUTH_REQUIRED", "true").lower() in ("true", "1", "yes")
 
 
+def _db_config_available() -> bool:
+    return True
+
+
 def get_ai_enabled() -> bool:
     """Đọc AI_ENABLED từ DB (ưu tiên) hoặc .env (fallback).
     Cho phép thay đổi runtime từ Settings UI mà không cần restart."""
+    if not _db_config_available():
+        return AI_ENABLED
     try:
         from src.engine.database import AuditDatabase
         val = AuditDatabase.get_config("ai_enabled")
@@ -87,9 +108,26 @@ def get_ai_enabled() -> bool:
     return AI_ENABLED
 
 
+def get_ai_mode() -> str:
+    """Đọc AI_MODE từ DB (ưu tiên) hoặc .env (fallback)."""
+    if not _db_config_available():
+        return AI_MODE
+    try:
+        from src.engine.database import AuditDatabase
+
+        val = AuditDatabase.get_config("ai_mode")
+        if val in {"realtime", "openai_batch"}:
+            return val
+    except Exception:
+        pass
+    return AI_MODE
+
+
 def get_test_mode_limit() -> int:
     """Đọc TEST_MODE_LIMIT_FILES từ DB (ưu tiên) hoặc .env (fallback).
     0 = full scan (production), >0 = giới hạn N files (test)."""
+    if not _db_config_available():
+        return TEST_MODE_LIMIT_FILES
     try:
         from src.engine.database import AuditDatabase
         val = AuditDatabase.get_config("test_mode_limit_files")
@@ -103,6 +141,8 @@ def get_test_mode_limit() -> int:
 def get_ai_max_concurrency() -> int:
     """Đọc AI_MAX_CONCURRENCY từ DB (ưu tiên) hoặc .env (fallback).
     Giá trị hợp lệ: 1..100; nếu DB lỗi hoặc out-of-range thì fallback về 5."""
+    if not _db_config_available():
+        return AI_MAX_CONCURRENCY
     try:
         from src.engine.database import AuditDatabase
 
@@ -114,9 +154,49 @@ def get_ai_max_concurrency() -> int:
     return AI_MAX_CONCURRENCY
 
 
+def get_openai_batch_model() -> str:
+    """Đọc OPENAI_BATCH_MODEL từ DB (ưu tiên) hoặc .env (fallback)."""
+    if not _db_config_available():
+        return OPENAI_BATCH_MODEL
+    try:
+        from src.engine.database import AuditDatabase
+
+        val = AuditDatabase.get_config("openai_batch_model")
+        if val:
+            return str(val).strip()
+    except Exception:
+        pass
+    return OPENAI_BATCH_MODEL
+
+
+def get_openai_batch_api_key() -> str:
+    """Đọc OpenAI Batch API key từ DB (mã hóa, ưu tiên) hoặc .env (fallback)."""
+    if not _db_config_available():
+        return OPENAI_BATCH_API_KEY
+    try:
+        from src.engine.database import AuditDatabase
+        from src.engine.settings_crypto import decrypt_setting
+
+        val = AuditDatabase.get_config("openai_batch_api_key_encrypted")
+        if val:
+            decrypted = decrypt_setting(val)
+            if decrypted:
+                return decrypted
+    except Exception:
+        pass
+    return OPENAI_BATCH_API_KEY
+
+
+def has_openai_batch_api_key() -> bool:
+    """True nếu có OpenAI Batch API key từ DB hoặc .env."""
+    return bool(get_openai_batch_api_key())
+
+
 def get_member_recent_months() -> int:
     """Đọc MEMBER_RECENT_MONTHS từ DB (ưu tiên) hoặc .env (fallback).
     Giá trị hợp lệ: 1..24; nếu DB lỗi hoặc out-of-range thì fallback về 3."""
+    if not _db_config_available():
+        return MEMBER_RECENT_MONTHS
     try:
         from src.engine.database import AuditDatabase
 
@@ -131,6 +211,8 @@ def get_member_recent_months() -> int:
 def get_auth_required() -> bool:
     """Đọc AUTH_REQUIRED từ DB (ưu tiên) hoặc .env (fallback).
     True = bắt buộc đăng nhập, False = bỏ qua xác thực."""
+    if not _db_config_available():
+        return AUTH_REQUIRED
     try:
         from src.engine.database import AuditDatabase
         val = AuditDatabase.get_config("auth_required")

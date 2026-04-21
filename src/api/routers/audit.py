@@ -25,7 +25,13 @@ from src.engine.scoring import ScoringEngine
 from src.engine.database import AuditDatabase
 from src.api.git_helper import GitHelper
 from src.api.audit_state import AuditState, JobManager
-from src.config import get_ai_enabled, get_member_recent_months
+from src.config import (
+    get_ai_enabled,
+    get_ai_mode,
+    get_member_recent_months,
+    has_openai_batch_api_key,
+)
+from src.engine.ai_telemetry import AiBudgetExceededError, ai_telemetry
 
 router = APIRouter()
 
@@ -51,7 +57,293 @@ def _request_cancel_for_job(
     return cancelled
 
 
-def run_auditor_with_capture(target_path, target_id=None, job_id=None):
+def _is_openai_batch_mode() -> bool:
+    return (
+        get_ai_enabled()
+        and get_ai_mode() == "openai_batch"
+        and has_openai_batch_api_key()
+    )
+
+
+def _assert_openai_batch_ready():
+    if not has_openai_batch_api_key():
+        raise HTTPException(
+            status_code=400,
+            detail="OpenAI Batch mode đang bật nhưng chưa cấu hình API key.",
+        )
+
+
+def _runtime_jobs_root() -> str:
+    root = os.path.abspath(".runtime_jobs")
+    os.makedirs(root, exist_ok=True)
+    return root
+
+
+def _create_persistent_job_workspace(job_id: str) -> str:
+    workspace = os.path.join(_runtime_jobs_root(), job_id)
+    os.makedirs(workspace, exist_ok=True)
+    return workspace
+
+
+async def _cancel_remote_batches_for_job(job_id: str):
+    job = JobManager.get_job(job_id)
+    if not job or job.ai_mode != "openai_batch":
+        return
+
+    state = job.orchestration_state or {}
+    batch_ids = [
+        state.get("validation_batch_id"),
+        state.get("deep_batch_id"),
+        state.get("cross_check_batch_id"),
+    ]
+    batch_ids = [batch_id for batch_id in batch_ids if batch_id]
+    if not batch_ids:
+        return
+
+    from src.engine.ai_service import ai_service
+
+    for batch_id in batch_ids:
+        try:
+            await ai_service.cancel_openai_batch(batch_id)
+            JobManager.log(
+                job_id,
+                f"[SYSTEM] Đã gửi yêu cầu huỷ OpenAI Batch: {batch_id}",
+            )
+        except Exception as exc:
+            JobManager.log(
+                job_id,
+                f"[SYSTEM] Không thể huỷ OpenAI Batch {batch_id}: {exc}",
+            )
+
+
+def _execute_openai_batch_single_job(job_id: str):
+    job = JobManager.get_job(job_id)
+    if not job:
+        return
+
+    state = job.orchestration_state or {}
+    workspace_path = job.workspace_path or state.get("workspace_path") or ""
+    source_kind = state.get("source_kind")
+    target_path = state.get("target_path", "")
+    target_id = state.get("target_id")
+    project_name = state.get("project_name", "uploaded_project")
+
+    JobManager.update_job(job_id, "RUNNING", "Đang chuẩn bị OpenAI Batch audit...")
+
+    try:
+        if source_kind == "repository":
+            repo_url = state["repo_url"]
+            username = state.get("username")
+            token = state.get("token")
+            branch = state.get("branch")
+            if not os.path.exists(target_path) or not os.listdir(target_path):
+                JobManager.update_job(job_id, "RUNNING", "Đang tải mã nguồn từ Git...")
+                GitHelper.clone_repository(
+                    repo_url=repo_url,
+                    dest_dir=target_path,
+                    username=username,
+                    token=token,
+                    branch=branch,
+                )
+            _raise_if_job_cancelled(
+                job_id,
+                "Đã hủy sau khi hoàn tất batch clone đang chạy.",
+            )
+
+        JobManager.update_job(
+            job_id,
+            "RUNNING",
+            "Đang phân tích tĩnh và chạy OpenAI Batch API...",
+        )
+        auditor = run_auditor_with_capture(
+            target_path,
+            target_id,
+            job_id,
+            workspace_path=workspace_path,
+        )
+        _raise_if_job_cancelled(job_id)
+        result = _build_and_save_audit_result(
+            auditor,
+            state.get("result_target", target_id or project_name),
+            project_name,
+        )
+        JobManager.update_job(job_id, "COMPLETED", result=result)
+    except AuditCancelledError as exc:
+        JobManager.update_job(job_id, "CANCELLED", message=str(exc))
+    except Exception as exc:
+        JobManager.update_job(job_id, "FAILED", message=str(exc))
+
+
+def _execute_openai_batch_multi_job(job_id: str):
+    job = JobManager.get_job(job_id)
+    if not job:
+        return
+
+    state = job.orchestration_state or {}
+    workspace_path = job.workspace_path or state.get("workspace_path") or ""
+    project_ids = state.get("project_ids", [])
+    current_index = int(state.get("current_index", 0))
+    batch_result = (job.result or {"projects": {}}).copy()
+    batch_result.setdefault("projects", {})
+
+    JobManager.update_job(
+        job_id,
+        "RUNNING",
+        "Đang tiếp tục Batch audit bằng OpenAI Batch API...",
+        result=batch_result,
+    )
+
+    for idx in range(current_index, len(project_ids)):
+        pid = project_ids[idx]
+        if JobManager.is_cancel_requested(job_id):
+            _mark_projects_cancelled(
+                batch_result,
+                project_ids[idx:],
+                "Đã hủy trước khi bắt đầu project này.",
+            )
+            JobManager.update_job(
+                job_id,
+                "CANCELLED",
+                "Đã hủy theo yêu cầu người dùng.",
+                result=batch_result,
+            )
+            return
+
+        config_repo = AuditDatabase.get_repository(pid)
+        if not config_repo:
+            batch_result["projects"][pid] = {
+                "status": "FAILED",
+                "message": "Không tìm thấy cấu hình.",
+            }
+            JobManager.update_job(job_id, "RUNNING", result=batch_result)
+            continue
+
+        batch_result["projects"][pid] = {"status": "RUNNING"}
+        JobManager.update_job(job_id, "RUNNING", result=batch_result)
+
+        repo_url = config_repo["url"]
+        username = config_repo["username"]
+        token = config_repo["token"]
+        branch = config_repo.get("branch")
+
+        safe_pid = pid.replace("/", "_").replace("\\", "_")
+        project_workspace = os.path.join(workspace_path, "projects", safe_pid)
+        repo_target_path = os.path.join(project_workspace, "repo")
+        os.makedirs(project_workspace, exist_ok=True)
+
+        try:
+            JobManager.update_orchestration_state(
+                job_id,
+                source_kind="repository_batch",
+                current_index=idx,
+                current_project_id=pid,
+                current_project_workspace=project_workspace,
+                target_path=repo_target_path,
+                target_id=pid,
+                project_name=repo_url.split("/")[-1].replace(".git", ""),
+                result_target=repo_url,
+                stage="init",
+                validation_batch_id="",
+                deep_batch_id="",
+                cross_check_batch_id="",
+            )
+            JobManager.log(
+                job_id,
+                f"[BATCH] Đang xử lý: {pid} ({idx+1}/{len(project_ids)})",
+            )
+            if not os.path.exists(repo_target_path) or not os.listdir(repo_target_path):
+                JobManager.log(job_id, f"[BATCH] Đang tải mã nguồn: {repo_url}")
+                GitHelper.clone_repository(
+                    repo_url=repo_url,
+                    dest_dir=repo_target_path,
+                    username=username,
+                    token=token,
+                    branch=branch,
+                )
+            _raise_if_job_cancelled(
+                job_id,
+                "Đã hủy sau khi hoàn tất batch clone đang chạy.",
+            )
+
+            JobManager.log(job_id, f"[BATCH] Thực thi kiểm toán OpenAI Batch: {pid}")
+            auditor = run_auditor_with_capture(
+                repo_target_path,
+                pid,
+                job_id,
+                workspace_path=project_workspace,
+            )
+            _raise_if_job_cancelled(job_id)
+            res = _build_and_save_audit_result(
+                auditor,
+                repo_url,
+                repo_url.split("/")[-1].replace(".git", ""),
+            )
+            batch_result["projects"][pid] = {
+                "status": "COMPLETED",
+                "score": res["scores"]["final"],
+            }
+            JobManager.update_job(job_id, "RUNNING", result=batch_result)
+            JobManager.update_orchestration_state(
+                job_id,
+                current_index=idx + 1,
+                stage="init",
+                validation_batch_id="",
+                deep_batch_id="",
+                cross_check_batch_id="",
+            )
+        except AuditCancelledError as exc:
+            batch_result["projects"][pid] = {
+                "status": "CANCELLED",
+                "message": str(exc),
+            }
+            _mark_projects_cancelled(
+                batch_result,
+                project_ids[idx + 1 :],
+                "Đã hủy trước khi bắt đầu project này.",
+            )
+            JobManager.update_job(
+                job_id,
+                "CANCELLED",
+                "Đã hủy theo yêu cầu người dùng.",
+                result=batch_result,
+            )
+            return
+        except Exception as exc:
+            batch_result["projects"][pid] = {"status": "FAILED", "message": str(exc)}
+            JobManager.update_job(job_id, "RUNNING", result=batch_result)
+            JobManager.log(job_id, f"[BATCH] LỖI tại {pid}: {exc}")
+
+    JobManager.log(job_id, "[BATCH] Hoàn tất toàn bộ !")
+    JobManager.update_job(job_id, "COMPLETED", "Hoàn tất Batch.", result=batch_result)
+
+
+async def recover_persisted_batch_jobs():
+    JobManager.restore_persisted_jobs()
+    for job_id in JobManager.get_active_job_ids():
+        job = JobManager.get_job(job_id)
+        if not job:
+            continue
+        if job.ai_mode != "openai_batch":
+            JobManager.update_job(
+                job_id,
+                "FAILED",
+                "Job realtime trước đó không thể khôi phục sau khi server restart.",
+            )
+            continue
+        state = job.orchestration_state or {}
+        source_kind = state.get("source_kind")
+        if source_kind == "repository_batch":
+            asyncio.create_task(asyncio.to_thread(_execute_openai_batch_multi_job, job_id))
+        elif source_kind in {"upload", "repository"}:
+            asyncio.create_task(asyncio.to_thread(_execute_openai_batch_single_job, job_id))
+
+
+def run_auditor_with_capture(
+    target_path,
+    target_id=None,
+    job_id=None,
+    workspace_path=None,
+):
     """
     Wrapper: chạy audit và route log vào SSE stream.
 
@@ -82,6 +374,8 @@ def run_auditor_with_capture(target_path, target_id=None, job_id=None):
             custom_rules=custom_rules,
             cancel_check=cancel_check,
             job_id=job_id,
+            workspace_path=workspace_path,
+            target_id=target_id,
         )
         auditor.run()
         return auditor
@@ -94,6 +388,10 @@ def run_auditor_with_capture(target_path, target_id=None, job_id=None):
 def _build_and_save_audit_result(auditor, target_str, project_name):
     total_loc = auditor.discovery_data["total_loc"]
     member_recent_months = get_member_recent_months()
+    ai_summary = getattr(auditor, "ai_summary", None) or ai_telemetry.summarize_scope(
+        job_id=getattr(auditor, "ai_scope_id", None),
+        source_prefix="audit.",
+    )
     final_score = ScoringEngine.calculate_final_score_from_features(
         auditor.feature_results
     )
@@ -115,11 +413,17 @@ def _build_and_save_audit_result(auditor, target_str, project_name):
         },
         "metadata": {
             "member_recent_months": member_recent_months,
+            "ai_scope_id": getattr(auditor, "ai_scope_id", None),
         },
+        "ai_summary": ai_summary,
         "violations": auditor.violations,
     }
-    scan_mode = "full_ai" if get_ai_enabled() else "static_only"
-    AuditDatabase.save_audit(
+    if not get_ai_enabled():
+        scan_mode = "static_only"
+    else:
+        scan_mode = "openai_batch" if get_ai_mode() == "openai_batch" else "full_ai"
+    result["metadata"]["audit_id"] = None
+    audit_id = AuditDatabase.save_audit(
         target=target_str,
         score=final_score,
         rating=rating,
@@ -128,6 +432,17 @@ def _build_and_save_audit_result(auditor, target_str, project_name):
         pillar_scores=auditor.project_pillars,
         full_json=result,
         scan_mode=scan_mode,
+    )
+    result["metadata"]["audit_id"] = audit_id
+    ai_telemetry.annotate_scope(
+        job_id=getattr(auditor, "ai_scope_id", None),
+        source_prefix="audit.",
+        metadata={
+            "audit_id": audit_id,
+            "history_id": audit_id,
+            "target": target_str,
+            "project": project_name,
+        },
     )
     return result
 
@@ -167,6 +482,7 @@ async def cancel_audit():
     cancelled_count = 0
     for jid in JobManager.get_active_job_ids():
         cancelled_count += int(_request_cancel_for_job(jid))
+        await _cancel_remote_batches_for_job(jid)
 
     if cancelled_count == 0:
         return {
@@ -189,6 +505,8 @@ async def cancel_job(job_id: str):
             "message": "Job đã kết thúc trước đó.",
         }
 
+    await _cancel_remote_batches_for_job(job_id)
+
     return {
         "status": "success",
         "message": "Đã nhận yêu cầu dừng job. Hệ thống sẽ chờ request AI đang chạy hoàn tất và không mở request mới.",
@@ -202,17 +520,46 @@ async def cancel_job(job_id: str):
 async def upload_and_audit(
     background_tasks: BackgroundTasks, files: List[UploadFile] = File(...)
 ):
-    """Nhận file upload, lưu vào thư mục tạm, giao Job cho Background."""
+    """Nhận file upload, lưu source code và giao Job cho Background."""
     if not files:
         raise HTTPException(status_code=400, detail="Không có file nào được upload.")
 
     AuditState.reset()
-    temp_dir = tempfile.mkdtemp(prefix="audit_upload_")
     project_name = "uploaded_project"
     job_id = None
     background_task_scheduled = False
+    use_batch_mode = _is_openai_batch_mode()
+    temp_dir = None
+    workspace_path = None
 
     try:
+        if use_batch_mode:
+            job_id = JobManager.create_job(
+                project_name,
+                ai_mode="openai_batch",
+            )
+            workspace_path = _create_persistent_job_workspace(job_id)
+            target_path = os.path.join(workspace_path, "source")
+            os.makedirs(target_path, exist_ok=True)
+            JobManager.update_orchestration_state(
+                job_id,
+                source_kind="upload",
+                workspace_path=workspace_path,
+                target_path=target_path,
+                target_id=project_name,
+                project_name=project_name,
+                result_target=project_name,
+                stage="init",
+            )
+            JobManager.update_job(
+                job_id,
+                "PENDING",
+                "Đã nhận source code. Chuẩn bị OpenAI Batch audit...",
+            )
+        else:
+            temp_dir = tempfile.mkdtemp(prefix="audit_upload_")
+            target_path = temp_dir
+
         for upload_file in files:
             raw_path = upload_file.filename
             if not raw_path:
@@ -223,45 +570,50 @@ async def upload_and_audit(
                 continue
             # Lưu ý giữ lại project_name tĩnh thay vì đè lên bằng tên thư mục (bug: ghi đè folder)
             relative_path = os.path.join(*safe_parts)
-            dest_path = os.path.join(temp_dir, relative_path)
-            if not os.path.abspath(dest_path).startswith(os.path.abspath(temp_dir)):
+            dest_path = os.path.join(target_path, relative_path)
+            if not os.path.abspath(dest_path).startswith(os.path.abspath(target_path)):
                 continue
             os.makedirs(os.path.dirname(dest_path), exist_ok=True)
             content = await upload_file.read()
             with open(dest_path, "wb") as f:
                 f.write(content)
 
-        # Trỏ thẳng mục tiêu quét tới gốc temp_dir chứa trọn vẹn toàn bộ các folder
-        target_path = temp_dir
+        if use_batch_mode:
+            background_tasks.add_task(_execute_openai_batch_single_job, job_id)
+        else:
+            job_id = JobManager.create_job(project_name)
 
-        job_id = JobManager.create_job(project_name)
+            def background_audit(job_id, target_path, project_name, temp_dir):
+                JobManager.update_job(job_id, "RUNNING", "Bắt đầu kiểm toán mã nguồn...")
+                try:
+                    _raise_if_job_cancelled(job_id)
+                    auditor = run_auditor_with_capture(target_path, project_name, job_id)
+                    _raise_if_job_cancelled(job_id)
+                    result = _build_and_save_audit_result(
+                        auditor, project_name, project_name
+                    )
+                    JobManager.update_job(job_id, "COMPLETED", result=result)
+                except AuditCancelledError as e:
+                    JobManager.update_job(job_id, "CANCELLED", message=str(e))
+                except Exception as e:
+                    JobManager.update_job(job_id, "FAILED", message=str(e))
+                finally:
+                    if os.path.exists(temp_dir):
+                        shutil.rmtree(temp_dir)
 
-        def background_audit(job_id, target_path, project_name, temp_dir):
-            JobManager.update_job(job_id, "RUNNING", "Bắt đầu kiểm toán mã nguồn...")
-            try:
-                _raise_if_job_cancelled(job_id)
-                auditor = run_auditor_with_capture(target_path, project_name, job_id)
-                _raise_if_job_cancelled(job_id)
-                result = _build_and_save_audit_result(
-                    auditor, project_name, project_name
-                )
-                JobManager.update_job(job_id, "COMPLETED", result=result)
-            except AuditCancelledError as e:
-                JobManager.update_job(job_id, "CANCELLED", message=str(e))
-            except Exception as e:
-                JobManager.update_job(job_id, "FAILED", message=str(e))
-            finally:
-                if os.path.exists(temp_dir):
-                    shutil.rmtree(temp_dir)
+            background_tasks.add_task(
+                background_audit, job_id, target_path, project_name, temp_dir
+            )
 
-        background_tasks.add_task(
-            background_audit, job_id, target_path, project_name, temp_dir
-        )
         background_task_scheduled = True
         return {
             "status": "started",
             "job_id": job_id,
-            "message": "Tiến trình kiểm toán đã được khởi tạo.",
+            "message": (
+                "Đã khởi tạo OpenAI Batch audit."
+                if use_batch_mode
+                else "Tiến trình kiểm toán đã được khởi tạo."
+            ),
         }
 
     except Exception as e:
@@ -269,9 +621,13 @@ async def upload_and_audit(
     finally:
         # Dọn dẹp nếu background task chưa chạy (lỗi trước khi add_task)
         if job_id and not background_task_scheduled:
+            try:
+                JobManager.update_job(job_id, "FAILED", "Khởi tạo job thất bại.")
+            except Exception:
+                pass
             JobManager.jobs.pop(job_id, None)
             JobManager.job_logs.pop(job_id, None)
-        if not background_task_scheduled and os.path.exists(temp_dir):
+        if not background_task_scheduled and temp_dir and os.path.exists(temp_dir):
             shutil.rmtree(temp_dir)
 
 
@@ -349,56 +705,81 @@ async def audit_repository(
         raise HTTPException(status_code=400, detail="Thiếu URL Repository.")
 
     AuditState.reset()
-    temp_dir = tempfile.mkdtemp(prefix="git_audit_")
-    job_id = JobManager.create_job(repo_url)
+    if _is_openai_batch_mode():
+        job_id = JobManager.create_job(
+            repo_url,
+            ai_mode="openai_batch",
+        )
+        workspace_path = _create_persistent_job_workspace(job_id)
+        target_path = os.path.join(workspace_path, "repo")
+        JobManager.update_orchestration_state(
+            job_id,
+            source_kind="repository",
+            workspace_path=workspace_path,
+            repo_url=repo_url,
+            username=username,
+            token=token,
+            branch=branch,
+            target_path=target_path,
+            target_id=request.id or repo_url,
+            project_name=repo_url.split("/")[-1].replace(".git", ""),
+            result_target=repo_url,
+            stage="init",
+        )
+        background_tasks.add_task(_execute_openai_batch_single_job, job_id)
+        message = "Đã bắt đầu OpenAI Batch audit cho repository."
+    else:
+        temp_dir = tempfile.mkdtemp(prefix="git_audit_")
+        job_id = JobManager.create_job(repo_url)
 
-    def background_git_audit(
-        job_id, repo_url, username, token, branch, temp_dir, target_id
-    ):
-        JobManager.update_job(job_id, "RUNNING", "Đang tải mã nguồn từ Git...")
-        try:
-            target_path = os.path.join(temp_dir, "repo")
-            GitHelper.clone_repository(
-                repo_url=repo_url,
-                dest_dir=target_path,
-                username=username,
-                token=token,
-                branch=branch,
-            )
-            _raise_if_job_cancelled(
-                job_id,
-                "Đã hủy sau khi hoàn tất batch clone đang chạy.",
-            )
-            JobManager.update_job(
-                job_id, "RUNNING", "Đang phân tích tĩnh và áp dụng AI..."
-            )
-            auditor = run_auditor_with_capture(target_path, target_id, job_id)
-            _raise_if_job_cancelled(job_id)
-            project_name = repo_url.split("/")[-1].replace(".git", "")
-            result = _build_and_save_audit_result(auditor, repo_url, project_name)
-            JobManager.update_job(job_id, "COMPLETED", result=result)
-        except AuditCancelledError as e:
-            JobManager.update_job(job_id, "CANCELLED", message=str(e))
-        except Exception as e:
-            JobManager.update_job(job_id, "FAILED", message=str(e))
-        finally:
-            if os.path.exists(temp_dir):
-                shutil.rmtree(temp_dir)
+        def background_git_audit(
+            job_id, repo_url, username, token, branch, temp_dir, target_id
+        ):
+            JobManager.update_job(job_id, "RUNNING", "Đang tải mã nguồn từ Git...")
+            try:
+                target_path = os.path.join(temp_dir, "repo")
+                GitHelper.clone_repository(
+                    repo_url=repo_url,
+                    dest_dir=target_path,
+                    username=username,
+                    token=token,
+                    branch=branch,
+                )
+                _raise_if_job_cancelled(
+                    job_id,
+                    "Đã hủy sau khi hoàn tất batch clone đang chạy.",
+                )
+                JobManager.update_job(
+                    job_id, "RUNNING", "Đang phân tích tĩnh và áp dụng AI..."
+                )
+                auditor = run_auditor_with_capture(target_path, target_id, job_id)
+                _raise_if_job_cancelled(job_id)
+                project_name = repo_url.split("/")[-1].replace(".git", "")
+                result = _build_and_save_audit_result(auditor, repo_url, project_name)
+                JobManager.update_job(job_id, "COMPLETED", result=result)
+            except AuditCancelledError as e:
+                JobManager.update_job(job_id, "CANCELLED", message=str(e))
+            except Exception as e:
+                JobManager.update_job(job_id, "FAILED", message=str(e))
+            finally:
+                if os.path.exists(temp_dir):
+                    shutil.rmtree(temp_dir)
 
-    background_tasks.add_task(
-        background_git_audit,
-        job_id,
-        repo_url,
-        username,
-        token,
-        branch,
-        temp_dir,
-        request.id or repo_url,
-    )
+        background_tasks.add_task(
+            background_git_audit,
+            job_id,
+            repo_url,
+            username,
+            token,
+            branch,
+            temp_dir,
+            request.id or repo_url,
+        )
+        message = "Đã bắt đầu clone và kiểm toán."
     return {
         "status": "started",
         "job_id": job_id,
-        "message": "Đã bắt đầu clone và kiểm toán.",
+        "message": message,
     }
 
 
@@ -438,7 +819,16 @@ async def audit_batch(request: BatchAuditRequest, background_tasks: BackgroundTa
             }
 
     AuditState.reset()
-    job_id = JobManager.create_job("batch_scan", job_type="batch")
+    use_batch_mode = _is_openai_batch_mode()
+    if use_batch_mode:
+        job_id = JobManager.create_job(
+            "batch_scan",
+            job_type="batch",
+            ai_mode="openai_batch",
+        )
+        workspace_path = _create_persistent_job_workspace(job_id)
+    else:
+        job_id = JobManager.create_job("batch_scan", job_type="batch")
 
     # Khởi tạo trạng thái cho từng dự án
     initial_result = {"projects": {}}
@@ -447,6 +837,22 @@ async def audit_batch(request: BatchAuditRequest, background_tasks: BackgroundTa
     JobManager.update_job(
         job_id, "RUNNING", "Đang khởi tạo Batch...", result=initial_result
     )
+
+    if use_batch_mode:
+        JobManager.update_orchestration_state(
+            job_id,
+            source_kind="repository_batch",
+            workspace_path=workspace_path,
+            project_ids=request.project_ids,
+            current_index=0,
+            stage="init",
+        )
+        background_tasks.add_task(_execute_openai_batch_multi_job, job_id)
+        return {
+            "status": "started",
+            "job_id": job_id,
+            "message": "Bắt đầu Batch audit bằng OpenAI Batch API.",
+        }
 
     def background_batch(job_id, project_ids):
         JobManager.log(
@@ -648,9 +1054,16 @@ Trả về mã đã sửa (trong block markdown) và giải thích ngắn gọn.
             },
             {"role": "user", "content": prompt},
         ]
-        response = await ai_service.client.chat.completions.create(
-            model=ai_service.model, messages=messages
+        response = await ai_service.create_tracked_chat_completion(
+            messages=messages,
+            source="audit.fix_suggestion",
+            telemetry={
+                "target": request.file_path,
+                "project": "fix_suggestion",
+            },
         )
         return {"suggestion": response.choices[0].message.content}
+    except AiBudgetExceededError as e:
+        raise HTTPException(status_code=429, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

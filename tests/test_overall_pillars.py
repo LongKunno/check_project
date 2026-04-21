@@ -28,8 +28,12 @@ def setup_test_project():
     return test_dir
 
 
-def test_overall_pillars():
+def test_overall_pillars(monkeypatch):
     test_dir = setup_test_project()
+    import src.config
+
+    monkeypatch.setattr(src.config, "get_ai_mode", lambda: "realtime")
+    monkeypatch.setattr(src.config, "get_test_mode_limit", lambda: 0)
     auditor = CodeAuditor(test_dir)
 
     # Mock AI Service to avoid non-deterministic results in unit tests
