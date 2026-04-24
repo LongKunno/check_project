@@ -537,13 +537,13 @@ function ProjectRow({ project, rank, scanState, onSelect }) {
           </div>
           <div className="min-w-0">
             <div
-              className="font-bold text-slate-800 text-sm truncate max-w-[180px]"
+              className="font-bold text-slate-800 text-sm truncate max-w-[240px] xl:max-w-[320px]"
               title={project.name}
             >
               {project.name}
             </div>
             <div
-              className="text-[11px] text-slate-500 truncate max-w-[180px]"
+              className="text-[11px] text-slate-500 truncate max-w-[260px] xl:max-w-[340px]"
               title={project.url}
             >
               {project.url?.replace("https://", "")}
@@ -634,7 +634,7 @@ function ProjectRow({ project, rank, scanState, onSelect }) {
             {regressionMeta.label}
           </span>
           <span
-            className="text-[11px] text-slate-500 max-w-[180px] truncate"
+            className="text-[11px] text-slate-500 max-w-[240px] xl:max-w-[320px] truncate"
             title={regressionLine}
           >
             {regressionLine}
@@ -751,7 +751,7 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
 
   return (
     <>
-      <div className="w-full flex-1 p-6 lg:p-8 max-w-7xl mx-auto relative z-10">
+      <div className="dashboard-page dashboard-page-fluid">
         {/* Background blobs */}
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-pink-500/8 blur-[130px] rounded-full pointer-events-none -z-10" />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-500/8 blur-[100px] rounded-full pointer-events-none -z-10" />
@@ -878,7 +878,7 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
                     <div className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">
                       {s.label}
                     </div>
-                    <div className="text-lg font-black text-slate-800 truncate max-w-[140px]">
+                    <div className="text-lg font-black text-slate-800 truncate max-w-[220px] xl:max-w-[300px]">
                       {s.value}
                     </div>
                   </div>

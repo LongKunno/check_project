@@ -498,7 +498,7 @@ export const MemberScoresView = ({ cn }) => {
   const totalLoc = members.reduce((s, m) => s + m.total_loc, 0);
 
   return (
-    <div className="w-full flex-1 p-6 lg:p-8 max-w-7xl mx-auto relative z-10">
+    <div className="dashboard-page dashboard-page-fluid">
       {/* Background blobs */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-500/8 blur-[130px] rounded-full pointer-events-none -z-10" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-indigo-500/8 blur-[100px] rounded-full pointer-events-none -z-10" />

@@ -350,7 +350,7 @@ function App() {
                       className="flex-1 flex flex-col w-full pb-8"
                     >
                       {/* Header mới cho Rules */}
-                      <div className="px-8 pt-8 pb-4 shrink-0 page-header-compact">
+                      <div className="pt-6 pb-4 shrink-0 page-header-compact">
                         <div className="flex items-center gap-3 mb-2">
                           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-600 text-xs font-semibold">
                             <svg
@@ -403,7 +403,7 @@ function App() {
                       className="flex-1 flex flex-col w-full pb-8"
                     >
                       {/* Header mới cho Sandbox */}
-                      <div className="px-8 pt-8 pb-4 shrink-0 page-header-compact">
+                      <div className="pt-6 pb-4 shrink-0 page-header-compact">
                         <div className="flex items-center gap-3 mb-2">
                           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-violet-50 border border-violet-200 text-violet-600 text-xs font-semibold">
                             <svg

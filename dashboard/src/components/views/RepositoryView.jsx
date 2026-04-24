@@ -369,7 +369,7 @@ const RepositoryView = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col w-full bg-transparent pt-0 pb-12 gap-5 font-sans relative max-w-7xl mx-auto">
+    <div className="dashboard-page dashboard-page-fluid flex flex-col gap-5 bg-transparent font-sans pb-12 pt-0">
       {/* Page Header */}
       <PageHeader repoCount={repos.length} onAdd={openAddForm} />
 

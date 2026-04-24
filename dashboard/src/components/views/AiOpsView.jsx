@@ -1601,7 +1601,7 @@ const AiOpsView = ({ selectedRepoId }) => {
 
   return (
     <>
-      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-1 flex-col gap-8 p-6 lg:p-8">
+      <div className="dashboard-page dashboard-page-fluid flex flex-col gap-8">
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}

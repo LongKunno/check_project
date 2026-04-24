@@ -251,7 +251,7 @@ function TrendsView({ selectedRepoId, targetUrl, configuredRepos = [] }) {
   }, [repositoryData]);
 
   return (
-    <div className="w-full flex-1 p-6 lg:p-8 max-w-7xl mx-auto relative z-10">
+    <div className="dashboard-page dashboard-page-fluid">
       <div className="absolute top-0 right-0 w-[480px] h-[480px] bg-rose-500/6 blur-[130px] rounded-full pointer-events-none -z-10" />
       <div className="absolute bottom-0 left-0 w-[380px] h-[380px] bg-cyan-500/6 blur-[110px] rounded-full pointer-events-none -z-10" />
 

@@ -232,7 +232,7 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
   };
 
   return (
-    <div className="w-full flex-1 p-6 lg:p-8 max-w-6xl mx-auto relative z-10">
+    <div className="dashboard-page dashboard-page-fluid">
       {/* Background blobs */}
       <div className="absolute top-0 right-0 w-[450px] h-[450px] bg-amber-500/6 blur-[120px] rounded-full pointer-events-none -z-10" />
       <div className="absolute bottom-0 left-0 w-[350px] h-[350px] bg-orange-500/6 blur-[100px] rounded-full pointer-events-none -z-10" />
@@ -263,7 +263,7 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
 
           <div className="flex items-center gap-3 shrink-0">
             <div
-              className="px-3 py-2 bg-slate-200 border border-slate-700 rounded-xl font-mono text-sm text-slate-600 max-w-[220px] truncate"
+              className="px-3 py-2 bg-slate-200 border border-slate-700 rounded-xl font-mono text-sm text-slate-600 max-w-[320px] xl:max-w-[460px] truncate"
               title={fetchTarget}
             >
               {fetchTarget || "No project selected"}
@@ -461,7 +461,7 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
                                     {regressionMeta.label}
                                   </span>
                                   <span
-                                    className="text-[11px] text-slate-500 max-w-[180px] truncate"
+                                    className="text-[11px] text-slate-500 max-w-[260px] xl:max-w-[320px] truncate"
                                     title={regressionLine}
                                   >
                                     {regressionLine}

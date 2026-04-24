@@ -425,7 +425,7 @@ const RuleManager = ({ targetId, projectName }) => {
         )}
       </AnimatePresence>
 
-      <div className="flex-1 w-full relative z-10 flex flex-col gap-5 max-w-7xl mx-auto">
+      <div className="dashboard-page dashboard-page-fluid flex flex-col gap-5 pt-0">
         {/* ── Project context pill ── */}
         <div className="flex items-center gap-2 px-1">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />

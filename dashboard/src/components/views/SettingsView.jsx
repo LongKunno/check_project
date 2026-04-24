@@ -257,7 +257,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
   };
 
   return (
-    <div className="w-full flex-1 p-6 lg:p-8 max-w-4xl mx-auto relative z-10">
+    <div className="dashboard-page dashboard-page-contained">
       {/* Background blobs */}
       <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-violet-500/6 blur-[120px] rounded-full pointer-events-none -z-10" />
       <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-slate-500/6 blur-[100px] rounded-full pointer-events-none -z-10" />

@@ -96,9 +96,27 @@ select:-webkit-autofill {
 }
 
 .dashboard-container {
-  max-width: 1400px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 1.25rem clamp(1rem, 2.2vw, 2.25rem) 2rem;
+}
+
+.dashboard-page {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  flex: 1 1 auto;
+  padding: clamp(1rem, 1.6vw, 1.5rem) 0 0;
+}
+
+.dashboard-page-fluid {
+  max-width: none;
+}
+
+.dashboard-page-contained {
+  max-width: 56rem;
   margin: 0 auto;
-  padding: 2rem;
 }
 
 header {
@@ -1710,6 +1728,10 @@ h1 {
 @media (max-width: 1023px) {
   .dashboard-container {
     padding: 1rem;
+  }
+
+  .dashboard-page {
+    padding-top: 1rem;
   }
 
   header {
