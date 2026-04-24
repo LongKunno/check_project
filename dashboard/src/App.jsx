@@ -101,6 +101,8 @@ function App() {
     fixingId,
     suggestions,
     activeTab,
+    useCache,
+    setUseCache,
     runAudit,
     cancelAudit,
     fetchFixSuggestion,
@@ -108,6 +110,9 @@ function App() {
 
   // ── AI Health ──────────────────────────────────────────────────────────────
   const [aiHealth, setAiHealth] = useState({ status: "checking", model: "" });
+  const [aiCachePolicy, setAiCachePolicy] = useState({ enabled: true });
+  const [isAiCachePolicyLoading, setIsAiCachePolicyLoading] = useState(true);
+  const isAiCacheEnabled = aiCachePolicy.enabled !== false;
 
   useEffect(() => {
     const checkAi = async () => {
@@ -125,6 +130,33 @@ function App() {
     };
     checkAi();
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadAiCachePolicy = async () => {
+      setIsAiCachePolicyLoading(true);
+      try {
+        const res = await fetch("/api/ai/cache");
+        const payload = await res.json().catch(() => ({}));
+        if (!cancelled && res.ok) {
+          setAiCachePolicy(payload.data || { enabled: true });
+        }
+      } catch (err) {
+        console.error("Failed to fetch AI cache policy:", err);
+      } finally {
+        if (!cancelled) {
+          setIsAiCachePolicyLoading(false);
+        }
+      }
+    };
+
+    loadAiCachePolicy();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [location.pathname]);
 
   useEffect(() => {
     if (auditStatus !== "cancelled" || !jobId) return;
@@ -300,6 +332,47 @@ function App() {
               {(location.pathname.startsWith("/audit") ||
                 location.pathname === "/") && (
                   <div className="flex items-center gap-4 flex-wrap justify-end ml-auto bg-slate-50 p-2.5 rounded-2xl border border-slate-200">
+                    <div className="min-w-[220px] rounded-2xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+                            Use Cache
+                          </div>
+                          <div className="mt-1 text-sm font-semibold text-slate-700">
+                            {useCache ? "Read + Write" : "Write Only"}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={useCache}
+                          onClick={() => {
+                            if (!isAuditing && isAiCacheEnabled && !isAiCachePolicyLoading) {
+                              setUseCache((current) => !current);
+                            }
+                          }}
+                          disabled={isAuditing || !isAiCacheEnabled || isAiCachePolicyLoading}
+                          className={`relative inline-flex h-7 w-12 shrink-0 rounded-full border transition ${
+                            useCache
+                              ? "border-emerald-500 bg-emerald-500"
+                              : "border-amber-300 bg-amber-400"
+                          } disabled:cursor-not-allowed disabled:opacity-50`}
+                        >
+                          <span
+                            className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition ${
+                              useCache ? "left-6" : "left-0.5"
+                            }`}
+                          />
+                        </button>
+                      </div>
+                      <div className="mt-2 text-[11px] leading-relaxed text-slate-500">
+                        {!isAiCacheEnabled
+                          ? "Global AI Cache đang tắt trong màn AI Cache, nên run này không thể dùng cache."
+                          : useCache
+                            ? "Run hiện tại sẽ đọc cache cũ và tiếp tục ghi cache mới."
+                            : "Run hiện tại bỏ qua cache cũ nhưng vẫn ghi cache mới cho lần sau."}
+                      </div>
+                    </div>
                     <button
                       className="btn-audit"
                       onClick={runAudit}
@@ -635,6 +708,7 @@ function App() {
                       >
                         <ProjectScoresView
                           cn={cn}
+                          isAiCacheEnabled={isAiCacheEnabled}
                           onSelectProject={(repoId) => {
                             setSelectedRepoId(repoId);
                             navigate("/audit");

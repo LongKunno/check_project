@@ -977,10 +977,17 @@ class TestAuditEndpoints:
 
         observed = {}
 
-        def fake_run_auditor_with_capture(target_path, target_id=None, job_id=None):
+        def fake_run_auditor_with_capture(
+            target_path,
+            target_id=None,
+            job_id=None,
+            workspace_path=None,
+            use_cache=None,
+        ):
             observed["target_path"] = target_path
             observed["job_id"] = job_id
             observed["exists_during_run"] = os.path.exists(target_path)
+            observed["use_cache"] = use_cache
             return object()
 
         def fake_build_and_save_audit_result(auditor, target_str, project_name):
@@ -1007,7 +1014,11 @@ class TestAuditEndpoints:
         upload = UploadFile(filename="demo.py", file=io.BytesIO(b"print('ok')\n"))
         background_tasks = BackgroundTasks()
         response = asyncio.run(
-            audit_router_module.upload_and_audit(background_tasks, files=[upload])
+            audit_router_module.upload_and_audit(
+                background_tasks,
+                files=[upload],
+                use_cache=False,
+            )
         )
         for task in background_tasks.tasks:
             task.func(*task.args, **task.kwargs)
@@ -1017,9 +1028,106 @@ class TestAuditEndpoints:
 
         assert observed["job_id"] == job_id
         assert observed["exists_during_run"] is True
+        assert observed["use_cache"] is False
         assert job.status == "COMPLETED"
         assert job.result["status"] == "success"
         assert not os.path.exists(observed["target_path"])
+
+    def test_repository_audit_passes_use_cache_to_background_runner(self, client, monkeypatch):
+        from src.api.audit_state import JobManager
+        from src.api.routers import audit as audit_router_module
+        import asyncio
+
+        observed = {}
+
+        def fake_clone_repository(repo_url, dest_dir, username=None, token=None, branch=None):
+            os.makedirs(dest_dir, exist_ok=True)
+            with open(os.path.join(dest_dir, "demo.py"), "w", encoding="utf-8") as f:
+                f.write("print('ok')\n")
+
+        def fake_run_auditor_with_capture(
+            target_path,
+            target_id=None,
+            job_id=None,
+            workspace_path=None,
+            use_cache=None,
+        ):
+            observed["target_path"] = target_path
+            observed["job_id"] = job_id
+            observed["use_cache"] = use_cache
+            return object()
+
+        def fake_build_and_save_audit_result(auditor, target_str, project_name):
+            return {
+                "status": "success",
+                "target": target_str,
+                "project_name": project_name,
+            }
+
+        JobManager.jobs.clear()
+        JobManager.job_logs.clear()
+        monkeypatch.setattr(
+            audit_router_module.GitHelper,
+            "clone_repository",
+            fake_clone_repository,
+        )
+        monkeypatch.setattr(
+            audit_router_module,
+            "run_auditor_with_capture",
+            fake_run_auditor_with_capture,
+        )
+        monkeypatch.setattr(
+            audit_router_module,
+            "_build_and_save_audit_result",
+            fake_build_and_save_audit_result,
+        )
+        monkeypatch.setattr(audit_router_module, "_is_openai_batch_mode", lambda: False)
+
+        background_tasks = BackgroundTasks()
+        response = asyncio.run(
+            audit_router_module.audit_repository(
+                audit_router_module.RepositoryAuditRequest(
+                    repo_url="https://example.com/demo.git",
+                    use_cache=False,
+                ),
+                background_tasks,
+            )
+        )
+        for task in background_tasks.tasks:
+            task.func(*task.args, **task.kwargs)
+
+        job = JobManager.get_job(response["job_id"])
+
+        assert job is not None
+        assert job.orchestration_state["use_cache"] is False
+        assert observed["job_id"] == response["job_id"]
+        assert observed["use_cache"] is False
+
+    def test_batch_audit_stores_use_cache_in_job_state(self, client, monkeypatch):
+        from src.api.audit_state import JobManager
+        from src.api.routers import audit as audit_router_module
+        import asyncio
+
+        JobManager.jobs.clear()
+        JobManager.job_logs.clear()
+        monkeypatch.setattr(audit_router_module, "_is_openai_batch_mode", lambda: True)
+
+        background_tasks = BackgroundTasks()
+        response = asyncio.run(
+            audit_router_module.audit_batch(
+                audit_router_module.BatchAuditRequest(
+                    project_ids=["demo-project"],
+                    use_cache=False,
+                ),
+                background_tasks,
+            )
+        )
+
+        job = JobManager.get_job(response["job_id"])
+
+        assert job is not None
+        assert job.orchestration_state["use_cache"] is False
+        assert response["status"] == "started"
 
     def test_cancel_job_endpoint_marks_job_cancel_requested(self, client):
         from src.api.audit_state import JobManager
@@ -1062,7 +1170,13 @@ class TestAuditEndpoints:
 
         observed = {"build_called": False}
 
-        def fake_run_auditor_with_capture(target_path, target_id=None, job_id=None):
+        def fake_run_auditor_with_capture(
+            target_path,
+            target_id=None,
+            job_id=None,
+            workspace_path=None,
+            use_cache=None,
+        ):
             JobManager.request_cancel(job_id, "Cancel requested during test.")
             return object()
 

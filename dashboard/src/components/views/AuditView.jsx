@@ -312,6 +312,19 @@ const AuditView = ({
     if (!keyword) return memberOptions;
     return memberOptions.filter((member) => member.toLowerCase().includes(keyword));
   }, [memberOptions, memberSearch]);
+  const aiCacheMeta = data?.metadata?.ai_cache || null;
+  const aiCacheModeLabel =
+    aiCacheMeta?.effective_mode === "read_write"
+      ? "Cache: Read + Write"
+      : aiCacheMeta?.effective_mode === "write_only"
+        ? "Cache: Write Only"
+        : "Cache: Disabled by Policy";
+  const aiCacheModeClasses =
+    aiCacheMeta?.effective_mode === "read_write"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+      : aiCacheMeta?.effective_mode === "write_only"
+        ? "border-amber-200 bg-amber-50 text-amber-700"
+        : "border-slate-200 bg-slate-50 text-slate-700";
   const dependencyHealth = data?.metadata?.dependency_health || null;
   const dependencyHealthMeta = getDependencyHealthMeta(
     dependencyHealth?.status,
@@ -609,6 +622,11 @@ const AuditView = ({
                 <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">
                   {usdFmt.format(data.ai_summary.cost_usd || 0)}
                 </div>
+                {aiCacheMeta ? (
+                  <div className={`rounded-xl border px-3 py-2 ${aiCacheModeClasses}`}>
+                    {aiCacheModeLabel}
+                  </div>
+                ) : null}
                 {data.ai_summary.blocked_requests ? (
                   <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-amber-700">
                     {data.ai_summary.blocked_requests} blocked by budget

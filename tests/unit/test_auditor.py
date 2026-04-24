@@ -121,6 +121,96 @@ def test_step_ai_validation_uses_cache_hits_before_calling_ai(monkeypatch, tmp_p
     assert ai_audit_cache.summarize_run(auditor.ai_scope_id)["hits"] == 1
 
 
+def test_step_ai_validation_skips_cache_reads_but_still_writes_when_disabled_for_run(
+    monkeypatch, tmp_path
+):
+    _reset_ai_cache_state()
+
+    class FakeAIService:
+        def _get_realtime_model(self):
+            return "fresh-model"
+
+        async def verify_violations_batch(self, chunk):
+            return {
+                idx: {
+                    "is_false_positive": False,
+                    "explanation": "Fresh validation",
+                    "confidence": 0.97,
+                }
+                for idx, _ in enumerate(chunk)
+            }
+
+    file_path = tmp_path / "service.py"
+    file_path.write_text("print('fresh')\n", encoding="utf-8")
+
+    auditor = CodeAuditor(str(tmp_path), use_cache=False)
+    auditor.discovery_data = {
+        "files": [{"path": str(file_path)}],
+        "total_files": 1,
+        "total_loc": 1,
+    }
+    auditor.merged_rules = {"rules": []}
+
+    violation = {
+        "file": "service.py",
+        "reason": "Fresh issue",
+        "type": "Reliability",
+        "snippet": "print('fresh')",
+        "rule_id": "RULE_CACHE",
+        "line": 1,
+    }
+    identity = auditor._realtime_cache_identity(FakeAIService(), "validation")
+    payload = auditor._validation_cache_payload(violation, identity)
+    ai_audit_cache.store_entry(
+        entry_type="validation",
+        payload=payload,
+        result_json={
+            "index": 0,
+            "is_false_positive": False,
+            "explanation": "Stale cache",
+            "confidence": 0.91,
+        },
+        source_input_tokens=11,
+        source_output_tokens=4,
+        source_estimated_cost=0.0008,
+    )
+
+    logged = []
+    monkeypatch.setattr(auditor, "log_violation", lambda item: logged.append(item))
+
+    auditor._step_ai_validation([violation], FakeAIService(), asyncio, 1)
+
+    lookup = ai_audit_cache.lookup_entry(entry_type="validation", payload=payload)
+    summary = ai_audit_cache.summarize_run(auditor.ai_scope_id)
+
+    assert len(logged) == 1
+    assert "Stale cache" not in logged[0]["reason"]
+    assert "Fresh validation" in logged[0]["reason"]
+    assert lookup["result_json"]["explanation"] == "Fresh validation"
+    assert summary["hits"] == 0
+    assert summary["misses"] == 0
+    assert summary["writes"] == 1
+
+
+def test_code_auditor_marks_write_only_mode_when_cache_reads_are_disabled(tmp_path):
+    auditor = CodeAuditor(str(tmp_path), use_cache=False)
+
+    assert auditor.cache_runtime["requested"] is False
+    assert auditor.cache_runtime["effective_mode"] == "write_only"
+    assert auditor.cache_runtime["stages"]["validation"]["read_enabled"] is False
+    assert auditor.cache_runtime["stages"]["validation"]["write_enabled"] is True
+
+
+def test_code_auditor_marks_cache_disabled_when_policy_is_off(tmp_path):
+    ai_audit_cache.save_policy({"enabled": False})
+
+    auditor = CodeAuditor(str(tmp_path))
+
+    assert auditor.cache_runtime["requested"] is True
+    assert auditor.cache_runtime["effective_mode"] == "disabled_by_policy"
+    assert auditor.cache_runtime["stages"]["validation"]["write_enabled"] is False
+
+
 def test_step_ai_reasoning_uses_cached_file_results(monkeypatch, tmp_path):
     _reset_ai_cache_state()
 

@@ -33,6 +33,7 @@ export function useAuditState(selectedRepoId, configuredRepos) {
   const [fileCount, setFileCount] = useState(0);
   const [preparingProgress, setPreparingProgress] = useState(0);
   const [isPreparing, setIsPreparing] = useState(false);
+  const [useCache, setUseCache] = useState(true);
   const [history, setHistory] = useState([]);
   const [fixingId, setFixingId] = useState(null);
   const [suggestions, setSuggestions] = useState({});
@@ -160,7 +161,7 @@ export function useAuditState(selectedRepoId, configuredRepos) {
       }
       setError(null);
       setData(null);
-      startAudit({ id: selectedRepoId }, false);
+      startAudit({ id: selectedRepoId, use_cache: useCache }, false);
       return;
     }
 
@@ -197,6 +198,7 @@ export function useAuditState(selectedRepoId, configuredRepos) {
 
       setIsPreparing(false);
       setUploadProgress(100);
+      formData.append("use_cache", String(useCache));
       startAudit(formData, true);
     } catch (err) {
       console.error("CHI TIẾT LỖI TẠO UPLOAD:", err);
@@ -229,6 +231,8 @@ export function useAuditState(selectedRepoId, configuredRepos) {
     history,
     fixingId,
     suggestions,
+    useCache,
+    setUseCache,
     visibleLimit,
     setVisibleLimit,
     // Refs

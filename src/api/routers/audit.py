@@ -15,6 +15,7 @@ from fastapi import (
     Query,
     UploadFile,
     File,
+    Form,
     Request,
     BackgroundTasks,
 )
@@ -142,6 +143,7 @@ def _execute_openai_batch_single_job(job_id: str):
     target_path = state.get("target_path", "")
     target_id = state.get("target_id")
     project_name = state.get("project_name", "uploaded_project")
+    use_cache = bool(state.get("use_cache", True))
 
     JobManager.update_job(job_id, "RUNNING", "Đang chuẩn bị OpenAI Batch audit...")
 
@@ -175,6 +177,7 @@ def _execute_openai_batch_single_job(job_id: str):
             target_id,
             job_id,
             workspace_path=workspace_path,
+            use_cache=use_cache,
         )
         _raise_if_job_cancelled(job_id)
         result = _build_and_save_audit_result(
@@ -198,6 +201,7 @@ def _execute_openai_batch_multi_job(job_id: str):
     workspace_path = job.workspace_path or state.get("workspace_path") or ""
     project_ids = state.get("project_ids", [])
     current_index = int(state.get("current_index", 0))
+    use_cache = bool(state.get("use_cache", True))
     batch_result = copy.deepcopy(job.result or {"projects": {}})
     batch_result.setdefault("projects", {})
 
@@ -286,6 +290,7 @@ def _execute_openai_batch_multi_job(job_id: str):
                 pid,
                 job_id,
                 workspace_path=project_workspace,
+                use_cache=use_cache,
             )
             _raise_if_job_cancelled(job_id)
             res = _build_and_save_audit_result(
@@ -371,6 +376,7 @@ def run_auditor_with_capture(
     target_id=None,
     job_id=None,
     workspace_path=None,
+    use_cache: Optional[bool] = None,
 ):
     """
     Wrapper: chạy audit và route log vào SSE stream.
@@ -404,6 +410,7 @@ def run_auditor_with_capture(
             job_id=job_id,
             workspace_path=workspace_path,
             target_id=target_id,
+            use_cache=use_cache,
         )
         auditor.run()
         return auditor
@@ -449,6 +456,11 @@ def _build_and_save_audit_result(auditor, target_str, project_name):
             "member_recent_months": member_recent_months,
             "ai_scope_id": getattr(auditor, "ai_scope_id", None),
             "dependency_health": dependency_health,
+            "ai_cache": getattr(auditor, "cache_runtime", None)
+            or {
+                "requested": True,
+                "effective_mode": "disabled_by_policy",
+            },
         },
         "ai_summary": ai_summary,
         "cache_summary": cache_summary,
@@ -555,7 +567,9 @@ async def cancel_job(job_id: str):
 
 @router.post("/audit/process")
 async def upload_and_audit(
-    background_tasks: BackgroundTasks, files: List[UploadFile] = File(...)
+    background_tasks: BackgroundTasks,
+    files: List[UploadFile] = File(...),
+    use_cache: bool = Form(True),
 ):
     """Nhận file upload, lưu source code và giao Job cho Background."""
     if not files:
@@ -574,6 +588,7 @@ async def upload_and_audit(
             job_id = JobManager.create_job(
                 project_name,
                 ai_mode="openai_batch",
+                orchestration_state={"use_cache": use_cache},
             )
             workspace_path = _create_persistent_job_workspace(job_id)
             target_path = os.path.join(workspace_path, "source")
@@ -586,6 +601,7 @@ async def upload_and_audit(
                 target_id=project_name,
                 project_name=project_name,
                 result_target=project_name,
+                use_cache=use_cache,
                 stage="init",
             )
             JobManager.update_job(
@@ -618,13 +634,21 @@ async def upload_and_audit(
         if use_batch_mode:
             background_tasks.add_task(_execute_openai_batch_single_job, job_id)
         else:
-            job_id = JobManager.create_job(project_name)
+            job_id = JobManager.create_job(
+                project_name,
+                orchestration_state={"use_cache": use_cache},
+            )
 
-            def background_audit(job_id, target_path, project_name, temp_dir):
+            def background_audit(job_id, target_path, project_name, temp_dir, use_cache):
                 JobManager.update_job(job_id, "RUNNING", "Bắt đầu kiểm toán mã nguồn...")
                 try:
                     _raise_if_job_cancelled(job_id)
-                    auditor = run_auditor_with_capture(target_path, project_name, job_id)
+                    auditor = run_auditor_with_capture(
+                        target_path,
+                        project_name,
+                        job_id,
+                        use_cache=use_cache,
+                    )
                     _raise_if_job_cancelled(job_id)
                     result = _build_and_save_audit_result(
                         auditor, project_name, project_name
@@ -639,7 +663,12 @@ async def upload_and_audit(
                         shutil.rmtree(temp_dir)
 
             background_tasks.add_task(
-                background_audit, job_id, target_path, project_name, temp_dir
+                background_audit,
+                job_id,
+                target_path,
+                project_name,
+                temp_dir,
+                use_cache,
             )
 
         background_task_scheduled = True
@@ -714,6 +743,7 @@ class RepositoryAuditRequest(BaseModel):
     username: Optional[str] = None
     token: Optional[str] = None
     branch: Optional[str] = None
+    use_cache: bool = True
 
 
 @router.post("/audit/repository")
@@ -743,6 +773,7 @@ async def audit_repository(
         job_id = JobManager.create_job(
             repo_url,
             ai_mode="openai_batch",
+            orchestration_state={"use_cache": request.use_cache},
         )
         workspace_path = _create_persistent_job_workspace(job_id)
         target_path = os.path.join(workspace_path, "repo")
@@ -758,16 +789,20 @@ async def audit_repository(
             target_id=request.id or repo_url,
             project_name=repo_url.split("/")[-1].replace(".git", ""),
             result_target=repo_url,
+            use_cache=request.use_cache,
             stage="init",
         )
         background_tasks.add_task(_execute_openai_batch_single_job, job_id)
         message = "Đã bắt đầu OpenAI Batch audit cho repository."
     else:
         temp_dir = tempfile.mkdtemp(prefix="git_audit_")
-        job_id = JobManager.create_job(repo_url)
+        job_id = JobManager.create_job(
+            repo_url,
+            orchestration_state={"use_cache": request.use_cache},
+        )
 
         def background_git_audit(
-            job_id, repo_url, username, token, branch, temp_dir, target_id
+            job_id, repo_url, username, token, branch, temp_dir, target_id, use_cache
         ):
             JobManager.update_job(job_id, "RUNNING", "Đang tải mã nguồn từ Git...")
             try:
@@ -786,7 +821,12 @@ async def audit_repository(
                 JobManager.update_job(
                     job_id, "RUNNING", "Đang phân tích tĩnh và áp dụng AI..."
                 )
-                auditor = run_auditor_with_capture(target_path, target_id, job_id)
+                auditor = run_auditor_with_capture(
+                    target_path,
+                    target_id,
+                    job_id,
+                    use_cache=use_cache,
+                )
                 _raise_if_job_cancelled(job_id)
                 project_name = repo_url.split("/")[-1].replace(".git", "")
                 result = _build_and_save_audit_result(auditor, repo_url, project_name)
@@ -808,6 +848,7 @@ async def audit_repository(
             branch,
             temp_dir,
             request.id or repo_url,
+            request.use_cache,
         )
         message = "Đã bắt đầu clone và kiểm toán."
     return {
@@ -822,6 +863,7 @@ async def audit_repository(
 
 class BatchAuditRequest(BaseModel):
     project_ids: List[str]
+    use_cache: bool = True
 
 
 def _mark_projects_cancelled(
@@ -859,10 +901,15 @@ async def audit_batch(request: BatchAuditRequest, background_tasks: BackgroundTa
             "batch_scan",
             job_type="batch",
             ai_mode="openai_batch",
+            orchestration_state={"use_cache": request.use_cache},
         )
         workspace_path = _create_persistent_job_workspace(job_id)
     else:
-        job_id = JobManager.create_job("batch_scan", job_type="batch")
+        job_id = JobManager.create_job(
+            "batch_scan",
+            job_type="batch",
+            orchestration_state={"use_cache": request.use_cache},
+        )
 
     # Khởi tạo trạng thái cho từng dự án
     initial_result = {"projects": {}}
@@ -879,6 +926,7 @@ async def audit_batch(request: BatchAuditRequest, background_tasks: BackgroundTa
             workspace_path=workspace_path,
             project_ids=request.project_ids,
             current_index=0,
+            use_cache=request.use_cache,
             stage="init",
         )
         background_tasks.add_task(_execute_openai_batch_multi_job, job_id)
@@ -888,7 +936,7 @@ async def audit_batch(request: BatchAuditRequest, background_tasks: BackgroundTa
             "message": "Bắt đầu Batch audit bằng OpenAI Batch API.",
         }
 
-    def background_batch(job_id, project_ids):
+    def background_batch(job_id, project_ids, use_cache):
         JobManager.log(
             job_id, f"[BATCH] Bắt đầu quét hàng loạt {len(project_ids)} dự án."
         )
@@ -957,7 +1005,12 @@ async def audit_batch(request: BatchAuditRequest, background_tasks: BackgroundTa
 
                 # 2. Audit
                 JobManager.log(job_id, f"[BATCH] Thực thi kiểm toán: {pid}")
-                auditor = run_auditor_with_capture(target_path, pid, job_id)
+                auditor = run_auditor_with_capture(
+                    target_path,
+                    pid,
+                    job_id,
+                    use_cache=use_cache,
+                )
                 _raise_if_job_cancelled(job_id)
                 project_name = repo_url.split("/")[-1].replace(".git", "")
                 res = _build_and_save_audit_result(auditor, repo_url, project_name)
@@ -1005,7 +1058,12 @@ async def audit_batch(request: BatchAuditRequest, background_tasks: BackgroundTa
         JobManager.log(job_id, "[BATCH] Hoàn tất toàn bộ !")
         JobManager.update_job(job_id, "COMPLETED", "Hoàn tất Batch.", result=batch_result)
 
-    background_tasks.add_task(background_batch, job_id, request.project_ids)
+    background_tasks.add_task(
+        background_batch,
+        job_id,
+        request.project_ids,
+        request.use_cache,
+    )
     return {"status": "started", "job_id": job_id, "message": "Bắt đầu quét hàng loạt."}
 
 

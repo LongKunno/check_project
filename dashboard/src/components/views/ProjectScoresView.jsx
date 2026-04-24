@@ -149,7 +149,7 @@ function useScanAllQueue(projects, onFinishAll) {
     };
   }, [startPolling]);
 
-  const startScanSelected = useCallback(async (selectedIds) => {
+  const startScanSelected = useCallback(async (selectedIds, useCache = true) => {
     if (isScanning || !selectedIds || selectedIds.size === 0) return;
     const ids = [...selectedIds];
     const init = {};
@@ -162,7 +162,7 @@ function useScanAllQueue(projects, onFinishAll) {
       const res = await fetch("/api/audit/batch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ project_ids: ids }),
+        body: JSON.stringify({ project_ids: ids, use_cache: useCache }),
       });
       const data = await res.json();
       if (data.job_id) startPolling(data.job_id);
@@ -197,9 +197,15 @@ function useScanAllQueue(projects, onFinishAll) {
 
 // ─── Scan Selection Modal ─────────────────────────────────────────────────────
 
-function ScanSelectionModal({ projects, onClose, onConfirm }) {
+function ScanSelectionModal({
+  projects,
+  onClose,
+  onConfirm,
+  isAiCacheEnabled = true,
+}) {
   const [selected, setSelected] = useState(() => new Set(projects.map((p) => p.id)));
   const [search, setSearch] = useState("");
+  const [useCache, setUseCache] = useState(true);
 
   const filtered = useMemo(() => {
     if (!search) return projects;
@@ -322,21 +328,67 @@ function ScanSelectionModal({ projects, onClose, onConfirm }) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-4 border-t border-slate-200 bg-slate-50 shrink-0">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all"
-          >
-            Hủy
-          </button>
-          <button
-            onClick={() => { onConfirm(selected); onClose(); }}
-            disabled={selected.size === 0}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 text-white text-sm font-bold shadow-md hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-          >
-            <Zap size={15} />
-            Run Scan ({selected.size})
-          </button>
+        <div className="border-t border-slate-200 bg-slate-50 shrink-0">
+          <div className="flex items-center justify-between gap-4 px-4 pt-4">
+            <div className="min-w-0 rounded-2xl border border-slate-200 bg-white px-3 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-[10px] font-black uppercase tracking-[0.16em] text-slate-500">
+                    Use Cache
+                  </div>
+                  <div className="mt-1 text-sm font-bold text-slate-700">
+                    {useCache ? "Read + Write" : "Write Only"}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={useCache}
+                  onClick={() => {
+                    if (isAiCacheEnabled) {
+                      setUseCache((current) => !current);
+                    }
+                  }}
+                  disabled={!isAiCacheEnabled}
+                  className={`relative inline-flex h-7 w-12 shrink-0 rounded-full border transition ${
+                    useCache
+                      ? "border-emerald-500 bg-emerald-500"
+                      : "border-amber-300 bg-amber-400"
+                  } disabled:cursor-not-allowed disabled:opacity-50`}
+                >
+                  <span
+                    className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition ${
+                      useCache ? "left-6" : "left-0.5"
+                    }`}
+                  />
+                </button>
+              </div>
+              <div className="mt-2 text-[11px] leading-relaxed text-slate-500">
+                {!isAiCacheEnabled
+                  ? "Global AI Cache đang tắt, nên batch này không thể dùng cache."
+                  : useCache
+                    ? "Batch sẽ đọc cache cũ và tiếp tục ghi cache mới."
+                    : "Batch sẽ bỏ qua cache cũ nhưng vẫn ghi cache mới cho các lần sau."}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between p-4">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 rounded-xl text-sm font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all"
+            >
+              Hủy
+            </button>
+            <button
+              onClick={() => { onConfirm(selected, useCache); onClose(); }}
+              disabled={selected.size === 0}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 text-white text-sm font-bold shadow-md hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            >
+              <Zap size={15} />
+              Run Scan ({selected.size})
+            </button>
+          </div>
         </div>
       </motion.div>
     </motion.div>
@@ -687,7 +739,7 @@ function ProjectRow({ project, rank, scanState, onSelect }) {
 // ─── Module Cache ───
 let cachedProjects = [];
 
-const ProjectScoresView = ({ cn, onSelectProject }) => {
+const ProjectScoresView = ({ cn, onSelectProject, isAiCacheEnabled = true }) => {
   const [projects, setProjects] = useState(cachedProjects);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -1087,8 +1139,9 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
         {showScanModal && (
           <ScanSelectionModal
             projects={projects}
+            isAiCacheEnabled={isAiCacheEnabled}
             onClose={() => setShowScanModal(false)}
-            onConfirm={(selectedIds) => startScanSelected(selectedIds)}
+            onConfirm={(selectedIds, useCache) => startScanSelected(selectedIds, useCache)}
           />
         )}
       </AnimatePresence>

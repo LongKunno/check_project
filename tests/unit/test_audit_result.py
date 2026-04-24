@@ -49,6 +49,7 @@ def test_build_and_save_audit_result_includes_member_recent_months(monkeypatch):
         member_results={},
         violations=[],
         target_dir="/tmp/project",
+        cache_runtime={"requested": False, "effective_mode": "write_only"},
     )
 
     result = audit_router_module._build_and_save_audit_result(
@@ -59,6 +60,7 @@ def test_build_and_save_audit_result_includes_member_recent_months(monkeypatch):
 
     assert result["metadata"]["member_recent_months"] == 6
     assert result["metadata"]["dependency_health"] == dependency_health_payload
+    assert result["metadata"]["ai_cache"]["effective_mode"] == "write_only"
     assert result["dependency_health_status"] == "warning"
     assert result["dependency_health_summary"]["near_eol_count"] == 1
     assert observed["full_json"]["metadata"]["member_recent_months"] == 6

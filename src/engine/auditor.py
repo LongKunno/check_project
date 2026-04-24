@@ -91,6 +91,7 @@ class CodeAuditor:
         target_id=None,
         included_paths=None,
         telemetry_source_prefix="audit",
+        use_cache: Optional[bool] = None,
     ):
         """
         Khởi tạo Auditor cho một thư mục cụ thể.
@@ -141,6 +142,11 @@ class CodeAuditor:
         }
         self.cache_summary = ai_audit_cache.empty_run_summary()
         self.ai_cache_policy = ai_audit_cache.get_policy()
+        self.cache_requested = True if use_cache is None else bool(use_cache)
+        self.cache_runtime = {
+            "requested": self.cache_requested,
+            "effective_mode": "disabled_by_policy",
+        }
         self._cache_index: Optional[ProjectAiCacheIndex] = None
         self._rules_version = ""
         self._custom_rules_hash = ""
@@ -161,6 +167,8 @@ class CodeAuditor:
         if self.workspace_path:
             self._state_dir = os.path.join(self.workspace_path, ".audit_state")
             os.makedirs(self._state_dir, exist_ok=True)
+
+        self._refresh_cache_runtime()
 
     def _get_active_job_id(self):
         """Lấy job đang active để cập nhật progress batch cho API polling."""
@@ -199,6 +207,38 @@ class CodeAuditor:
 
     def _telemetry_source(self, stage: str) -> str:
         return f"{self.telemetry_source_prefix}.{stage}"
+
+    def _cache_stage_write_enabled(self, stage: str) -> bool:
+        return ai_audit_cache.is_enabled_for(stage, self.ai_cache_policy)
+
+    def _cache_stage_read_enabled(self, stage: str) -> bool:
+        return self.cache_requested and self._cache_stage_write_enabled(stage)
+
+    def _refresh_cache_runtime(self):
+        stage_modes = {}
+        for stage in ("validation", "deep_audit", "cross_check"):
+            write_enabled = self._cache_stage_write_enabled(stage)
+            stage_modes[stage] = {
+                "read_enabled": self.cache_requested and write_enabled,
+                "write_enabled": write_enabled,
+            }
+
+        write_enabled = any(
+            stage_state["write_enabled"] for stage_state in stage_modes.values()
+        )
+        if not write_enabled:
+            effective_mode = "disabled_by_policy"
+        elif self.cache_requested:
+            effective_mode = "read_write"
+        else:
+            effective_mode = "write_only"
+
+        self.cache_runtime = {
+            "requested": self.cache_requested,
+            "effective_mode": effective_mode,
+            "global_enabled": bool(self.ai_cache_policy.get("enabled", True)),
+            "stages": stage_modes,
+        }
 
     async def _call_ai_with_optional_telemetry(
         self, method, *args, source: str, **kwargs
@@ -421,6 +461,7 @@ class CodeAuditor:
         self._restore_logged_violations_checkpoint()
         stage = self._get_orchestration_state().get("stage", "init")
         self.ai_cache_policy = ai_audit_cache.get_policy()
+        self._refresh_cache_runtime()
         if self.ai_cache_policy.get("enabled", True):
             ai_audit_cache.cleanup_expired()
         ai_audit_cache.start_run(self.ai_scope_id, self.target_id)
@@ -795,7 +836,7 @@ class CodeAuditor:
         violations: List[Dict[str, Any]],
         identity: Dict[str, Any],
     ) -> Tuple[List[Tuple[Dict[str, Any], Dict[str, Any]]], List[Dict[str, Any]]]:
-        if not ai_audit_cache.is_enabled_for("validation", self.ai_cache_policy):
+        if not self._cache_stage_read_enabled("validation"):
             return [], list(violations)
 
         hits: List[Tuple[Dict[str, Any], Dict[str, Any]]] = []
@@ -821,7 +862,7 @@ class CodeAuditor:
         identity: Dict[str, Any],
         metrics: List[Dict[str, Any]],
     ):
-        if not ai_audit_cache.is_enabled_for("validation", self.ai_cache_policy):
+        if not self._cache_stage_write_enabled("validation"):
             return
         for idx, violation in enumerate(chunk):
             ai_audit_cache.store_entry(
@@ -843,7 +884,7 @@ class CodeAuditor:
         cached_confirmed: List[Dict[str, Any]] = []
         cached_flagged: List[Dict[str, Any]] = []
         misses: List[Dict[str, Any]] = []
-        if not ai_audit_cache.is_enabled_for("deep_audit", self.ai_cache_policy):
+        if not self._cache_stage_read_enabled("deep_audit"):
             misses = cache_index.build_deep_audit_batches(candidate_paths=None)
             flat_misses = [item for chunk in misses for item in chunk]
             return misses, cached_confirmed, cached_flagged, flat_misses
@@ -885,7 +926,7 @@ class CodeAuditor:
         identity: Dict[str, Any],
         metrics: List[Dict[str, Any]],
     ):
-        if not ai_audit_cache.is_enabled_for("deep_audit", self.ai_cache_policy):
+        if not self._cache_stage_write_enabled("deep_audit"):
             return
         for idx, record in enumerate(batch_records):
             ai_audit_cache.store_entry(
@@ -914,7 +955,7 @@ class CodeAuditor:
         context_cache: Dict[str, str],
         identity: Dict[str, Any],
     ) -> Tuple[List[Tuple[Dict[str, Any], Dict[str, Any]]], List[Dict[str, Any]]]:
-        if not ai_audit_cache.is_enabled_for("cross_check", self.ai_cache_policy):
+        if not self._cache_stage_read_enabled("cross_check"):
             return [], list(flagged)
 
         hits: List[Tuple[Dict[str, Any], Dict[str, Any]]] = []
@@ -942,7 +983,7 @@ class CodeAuditor:
         identity: Dict[str, Any],
         metrics: List[Dict[str, Any]],
     ):
-        if not ai_audit_cache.is_enabled_for("cross_check", self.ai_cache_policy):
+        if not self._cache_stage_write_enabled("cross_check"):
             return
         for idx, violation in enumerate(chunk):
             context_text = context_cache.get(violation.get("verify_target", ""), "Code not found")
