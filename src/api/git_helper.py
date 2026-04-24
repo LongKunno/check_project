@@ -89,6 +89,7 @@ class GitHelper:
         username: Optional[str] = None,
         token: Optional[str] = None,
         branch: Optional[str] = None,
+        depth: Optional[int] = None,
     ) -> bool:
         """
         Clones a git repository to a destination directory.
@@ -98,9 +99,11 @@ class GitHelper:
             member_recent_months = get_member_recent_months()
 
             logger.info(
-                "Cloning repository into %s (Shallow clone, shallow-since=%s.months)...",
+                "Cloning repository into %s (%s)...",
                 dest_dir,
-                member_recent_months,
+                f"depth={max(1, int(depth))}"
+                if depth
+                else f"shallow-since={member_recent_months}.months",
             )
 
             # Khởi tạo bản sao với cửa sổ lịch sử đủ cho Member Scoring.
@@ -108,9 +111,13 @@ class GitHelper:
             env = GitHelper._build_git_env(username, token)
 
             kwargs = {
-                "shallow_since": f"{member_recent_months} months",
                 "env": env,
             }
+            if depth:
+                kwargs["depth"] = max(1, int(depth))
+                kwargs["single_branch"] = True
+            else:
+                kwargs["shallow_since"] = f"{member_recent_months} months"
             if branch:
                 kwargs["branch"] = branch
 

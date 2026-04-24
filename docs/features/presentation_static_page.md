@@ -1,133 +1,101 @@
-# Trang tĩnh Web Thuyết Trình (Static Presentation Page)
+# Meeting Materials (Static Presentation Pack)
 
-Trang Web Thuyết Trình là một tính năng Frontend hoàn toàn tách biệt, được thiết kế theo mô hình cắm-rút (Plug and Play) nhằm tối giản hóa việc lưu trữ các URL được sử dụng trong các buổi họp với cấp quản lý.
+`Meeting Materials` là một module frontend tĩnh, dùng để tập hợp các deck HTML phục vụ review kỹ thuật. Module này không phụ thuộc database hay API backend; toàn bộ danh sách deck được hardcode ngay trong dashboard.
 
-## 1. Mô tả Chức năng
+## 1. Mô tả chức năng
 
-- Hiển thị danh sách 3-4 thẻ Card chứa link web thuyết trình.
-- Dữ liệu được hardcode trực tiếp trong biến `presentations` (array) bên trong Component React.
-- Click vào Card sẽ mở URL đích trong tab trình duyệt mới (`target="_blank"`).
+- Hiển thị danh sách card dẫn tới các deck Reveal.js trong `dashboard/public/presentations/`.
+- Mỗi card mở deck ở tab mới qua `target="_blank"`.
+- Phù hợp cho các buổi `tech leads review`, release walkthrough và handoff nội bộ.
 - **Không sử dụng Database, không sử dụng API Backend.**
 
-## 2. Cấu trúc Dữ liệu
+## 2. Cấu trúc dữ liệu
 
-Mỗi phần tử trong mảng `presentations` chứa:
+Mỗi phần tử trong mảng `presentations` của `PresentationsStaticView.jsx` giữ nguyên contract:
 
-| Field         | Type   | Mô tả                                      |
-|---------------|--------|---------------------------------------------|
-| `id`          | string | Mã định danh duy nhất                       |
-| `title`       | string | Tiêu đề buổi thuyết trình                   |
-| `description` | string | Mô tả ngắn nội dung                         |
-| `date`        | string | Ngày thuyết trình (ISO format: YYYY-MM-DD)  |
-| `url`         | string | URL đích dẫn tới web thuyết trình           |
-| `gradient`    | string | Tailwind gradient classes cho màu card       |
-| `accentColor` | string | CSS rgba color cho glow effect               |
-| `borderColor` | string | CSS rgba color cho viền card                 |
-| `tagColor`    | string | Tailwind classes cho badge "Open"            |
+| Field | Type | Mô tả |
+|---|---|---|
+| `id` | string | Mã định danh duy nhất |
+| `title` | string | Tiêu đề deck |
+| `description` | string | Mô tả ngắn nội dung |
+| `date` | string | Ngày cập nhật deck theo ISO `YYYY-MM-DD` |
+| `url` | string | URL public của file HTML |
+| `gradient` | string | Tailwind gradient classes cho card |
+| `accentColor` | string | Màu glow khi hover |
+| `borderColor` | string | Màu viền card |
+| `tagColor` | string | Tailwind classes cho badge CTA |
 
-## 3. Thiết kế Giao diện
+## 3. Kiến trúc plug-and-play
 
-- Sử dụng class `glass-card` có sẵn trong design system (`index.css`).
-- Animation staggered xuất hiện qua `framer-motion` (đã có sẵn trong dự án).
-- Gradient accent bar trên đỉnh mỗi card + glow orb khi hover.
-- Responsive grid: 1 cột (mobile) → 2 cột (tablet) → 3 cột (desktop).
-
-## 4. Kiến trúc Plug-and-Play
-
-Khác với các Component khác trong hệ thống:
-
-1. **Zero Database:** Không yêu cầu tạo bảng dữ liệu trên PostgreSQL.
-2. **Zero API:** Không cần tạo Endpoint Controller từ FastAPI.
-3. **Decoupled State:** Không nằm trong luồng Global State, không tác động vào tiến trình lưu dữ liệu kiểm toán hiện có.
+- **Zero Database:** không cần bảng dữ liệu mới.
+- **Zero API:** không cần endpoint FastAPI.
+- **Decoupled State:** module chỉ render danh sách deck, không chạm vào luồng audit runtime.
 
 ### Các file liên quan
 
 | File | Vai trò |
-|------|---------| 
-| `dashboard/src/components/views/PresentationsStaticView.jsx` | Component chính — Index page (source of truth) |
-| `dashboard/src/App.jsx` | Khai báo Route `/presentations` |
-| `dashboard/src/components/layout/Sidebar.jsx` | NavItem menu "Presentations" |
-| `dashboard/public/presentations/` | Thư mục chứa các file HTML thuyết trình (Reveal.js) |
+|---|---|
+| `dashboard/src/components/views/PresentationsStaticView.jsx` | Index page, source of truth cho danh sách card |
+| `dashboard/src/App.jsx` | Khai báo route `/presentations` |
+| `dashboard/src/components/layout/Sidebar.jsx` | Menu điều hướng "Presentations" |
+| `dashboard/public/presentations/` | Thư mục chứa các deck HTML Reveal.js |
+| `dashboard/public/presentations/review-pack.css` | Shared theme cho toàn bộ release deck |
 
-## 5. Các trang thuyết trình hiện có
+## 4. Bộ deck hiện tại
 
-### Audit Engine — System Overview
+### 1. Audit Engine — Core Architecture
 - **File:** `dashboard/public/presentations/audit-engine.html`
-- **URL truy cập:** `/presentations/audit-engine.html`
-- **Công nghệ:** Reveal.js 5.1 (CDN) + Custom CSS (Midnight Aurora theme)
-- **Nội dung:** 6 slides trình bày kiến trúc hệ thống, 5-Step Pipeline, AI Gatekeeper & NLRE, Scoring Mechanism
-- **Điều hướng:** Dùng phím mũi tên ← → hoặc click nút điều hướng ở góc phải dưới
+- **URL:** `/presentations/audit-engine.html`
+- **Vai trò:** deck nền tảng cho toàn hệ thống
+- **Nội dung chính:** system topology, 5-step audit pipeline, scoring model, runtime boundaries, review checklist
 
-### Thêm trang thuyết trình mới
+### 2. NLRE & Rule Manager — Control Plane
+- **File:** `dashboard/public/presentations/nlre-rule-manager.html`
+- **URL:** `/presentations/nlre-rule-manager.html`
+- **Vai trò:** deck chuyên đề cho rule control plane
+- **Nội dung chính:** 3-tier rule architecture, global/project overrides, Rule Builder flow, reset strategy, edge cases quan trọng
 
-1. Tạo file HTML mới trong `dashboard/public/presentations/` (copy `audit-engine.html` làm template).
-2. Mở file `dashboard/src/components/views/PresentationsStaticView.jsx`, thêm object mới vào mảng `presentations`:
+### 3. AI Ops & Cache — Telemetry Console
+- **File:** `dashboard/public/presentations/ai-ops-cache.html`
+- **URL:** `/presentations/ai-ops-cache.html`
+- **Vai trò:** deck vận hành AI telemetry
+- **Nội dung chính:** AI Ops overview, pricing/budget controls, request explorer, AI cache console, demo flow và giới hạn v1
+
+## 5. Quy ước nội dung
+
+- Style mặc định: **EN heading + VI body**.
+- Mỗi deck nên giữ quy mô khoảng `6-7 slides`, đủ ngắn cho review kỹ thuật 10-15 phút.
+- Không nhồi trùng nội dung giữa các deck:
+  - `Audit Engine` chỉ giữ phần nền tảng.
+  - `NLRE & Rule Manager` tập trung vào rules và override behavior.
+  - `AI Ops & Cache` tập trung vào telemetry, budget, cache, vận hành.
+
+## 6. Cách thêm deck mới
+
+1. Tạo file HTML mới trong `dashboard/public/presentations/`.
+2. Link tới shared stylesheet `review-pack.css` để giữ cùng visual language cho cả pack.
+3. Thêm một object mới vào mảng `presentations` trong `dashboard/src/components/views/PresentationsStaticView.jsx`.
 
 ```javascript
 const presentations = [
   {
-    id: 'pres-new',
-    title: 'Tiêu đề buổi họp mới',
-    description: 'Mô tả nội dung buổi thuyết trình.',
-    date: '2026-04-15',
-    url: '/presentations/ten-file-moi.html',
-    gradient: 'from-blue-500 to-cyan-400',
-    accentColor: 'rgba(59, 130, 246, 0.15)',
-    borderColor: 'rgba(59, 130, 246, 0.25)',
-    tagColor: 'text-blue-400 bg-blue-500/10 border-blue-500/20',
+    id: "pres-new",
+    title: "New Deck Title",
+    description: "Mô tả ngắn nội dung buổi review.",
+    date: "2026-04-23",
+    url: "/presentations/new-deck.html",
+    gradient: "from-blue-500 to-cyan-400",
+    accentColor: "rgba(59, 130, 246, 0.15)",
+    borderColor: "rgba(59, 130, 246, 0.25)",
+    tagColor: "text-blue-600 bg-blue-500/10 border-blue-500/20",
   },
-  // ... các items khác
 ];
 ```
 
-### Bảng màu gợi ý cho gradient
+## 7. Hướng dẫn gỡ bỏ
 
-| Tông màu | `gradient`                        | `accentColor`                    |
-|----------|-----------------------------------|----------------------------------|
-| Xanh dương | `from-blue-500 to-cyan-400`     | `rgba(59, 130, 246, 0.15)`      |
-| Tím        | `from-violet-500 to-fuchsia-400`| `rgba(139, 92, 246, 0.15)`      |
-| Xanh lá    | `from-emerald-500 to-teal-400`  | `rgba(16, 185, 129, 0.15)`      |
-| Hồng       | `from-rose-500 to-pink-400`     | `rgba(244, 63, 94, 0.15)`       |
-| Cam         | `from-amber-500 to-orange-400` | `rgba(245, 158, 11, 0.15)`      |
-
----
-
-## 6. Uninstall Guide (Hướng dẫn tháo gỡ an toàn)
-
-Thực hiện đúng **4 bước** sau để gỡ bỏ hoàn toàn tính năng mà không ảnh hưởng tới hệ thống:
-
-### Bước 1: Gỡ Route trong `dashboard/src/App.jsx`
-
-Xoá dòng import:
-```javascript
-const PresentationsStaticView = React.lazy(() => import('./components/views/PresentationsStaticView'));
-```
-
-Xoá khối Route:
-```jsx
-<Route path="/presentations" element={...} />
-```
-
-Xoá `/presentations` khỏi điều kiện ẩn header (dòng chứa `location.pathname.startsWith`).
-
-### Bước 2: Gỡ Menu trong `dashboard/src/components/layout/Sidebar.jsx`
-
-Xoá icon `MonitorPlay` khỏi dòng import `lucide-react`.
-
-Xoá object trong mảng `navItems`:
-```javascript
-{ path: '/presentations', label: 'Presentations', icon: MonitorPlay, ... }
-```
-
-### Bước 3: Xoá file nguồn
-
-```bash
-rm dashboard/src/components/views/PresentationsStaticView.jsx
-rm -rf dashboard/public/presentations/
-```
-
-### Bước 4: Cập nhật Documentation
-
-Xoá file `docs/features/presentation_static_page.md` và gỡ entry tương ứng trong `mkdocs.yml`.
-
-Sau 4 bước này, tính năng biến mất hoàn toàn khỏi hệ thống.
+1. Gỡ route `/presentations` trong `dashboard/src/App.jsx`.
+2. Gỡ nav item `Presentations` trong `dashboard/src/components/layout/Sidebar.jsx`.
+3. Xoá `dashboard/src/components/views/PresentationsStaticView.jsx`.
+4. Xoá thư mục `dashboard/public/presentations/`.
+5. Gỡ file tài liệu này khỏi `mkdocs.yml` nếu cần.

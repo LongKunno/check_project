@@ -207,7 +207,7 @@ def test_annotate_scope_merges_audit_metadata_into_requests():
 
 def test_overview_includes_breakdowns():
     for source, provider, mode, model in (
-        ("audit.validation", "openai", "realtime", "gpt-5.4"),
+        ("audit.validation", "openai", "realtime", "gpt-5.4-mini"),
         ("health.ai", "proxy", "realtime", "gpt-5.4-mini"),
     ):
         record = ai_telemetry.begin_request(
@@ -233,6 +233,69 @@ def test_overview_includes_breakdowns():
         "openai",
         "proxy",
     }
+
+
+def test_overview_includes_cache_summary(monkeypatch):
+    monkeypatch.setattr(
+        ai_telemetry_module.ai_audit_cache,
+        "get_cache_state",
+        lambda cleanup=False: {
+            "enabled": True,
+            "validation_enabled": True,
+            "deep_audit_enabled": True,
+            "cross_check_enabled": False,
+            "retention_days": 21,
+            "entries_count": 9,
+            "last_hit_at": "2026-04-22T10:00:00",
+            "last_cleanup_at": "2026-04-22T09:00:00",
+        },
+    )
+    monkeypatch.setattr(
+        ai_telemetry_module.ai_audit_cache,
+        "get_overview_summary",
+        lambda **kwargs: {
+            "hits": 8,
+            "misses": 2,
+            "writes": 2,
+            "hit_rate": 0.8,
+            "saved_input_tokens": 120,
+            "saved_output_tokens": 30,
+            "saved_cost_usd": 0.021,
+            "by_stage": {"validation": {"hits": 8}},
+        },
+    )
+
+    overview = ai_telemetry.get_overview()
+
+    assert overview["cache"]["entries_count"] == 9
+    assert overview["cache"]["cross_check_enabled"] is False
+    assert overview["cache"]["hit_rate"] == pytest.approx(0.8)
+    assert overview["cache"]["saved_cost_usd"] == pytest.approx(0.021)
+
+
+def test_usage_series_merges_cache_series(monkeypatch):
+    monkeypatch.setattr(
+        ai_telemetry_module.ai_audit_cache,
+        "get_usage_series",
+        lambda **kwargs: [
+            {
+                "bucket": "2026-04-22",
+                "cache_hits": 5,
+                "cache_misses": 1,
+                "cache_writes": 1,
+                "cache_hit_rate": 0.8333,
+                "saved_input_tokens": 90,
+                "saved_output_tokens": 15,
+                "saved_cost_usd": 0.014,
+            }
+        ],
+    )
+
+    series = ai_telemetry.get_usage_series()
+
+    assert series[0]["bucket"] == "2026-04-22"
+    assert series[0]["cache_hits"] == 5
+    assert series[0]["saved_cost_usd"] == pytest.approx(0.014)
 
 
 def test_save_pricing_catalog_uses_bulk_insert_when_db_ready(monkeypatch):

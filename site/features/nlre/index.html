@@ -1,0 +1,2743 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../dashboard/">
+      
+      
+        <link rel="next" href="../ui_performance/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Natural Language Rules (NLRE) - AI Static Analysis Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#natural-language-rule-engine-nlre-rule-manager" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="AI Static Analysis Documentation" class="md-header__button md-logo" aria-label="AI Static Analysis Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AI Static Analysis Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Natural Language Rules (NLRE)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Trang chủ
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../discovery/" class="md-tabs__link">
+          
+  
+  
+  Tính năng Hệ thống
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../architecture/overview/" class="md-tabs__link">
+          
+  
+  
+  Kiến trúc hệ thống
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../database/overview/" class="md-tabs__link">
+          
+  
+  
+  Database
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../api_specs/stream/" class="md-tabs__link">
+          
+  
+  
+  API Specifications
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../tech_stack/python_rules/" class="md-tabs__link">
+          
+  
+  
+  Quy chuẩn Tech Stack
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../tests/detailed_test_cases/" class="md-tabs__link">
+          
+  
+  
+  Kiểm thử (Quality Assurance)
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="AI Static Analysis Documentation" class="md-nav__button md-logo" aria-label="AI Static Analysis Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    AI Static Analysis Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trang chủ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tính năng Hệ thống
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tính năng Hệ thống
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../discovery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code Discovery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../core_auditor_engine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core Audit Engine
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../real_time_audit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Real-time Streaming
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scoring System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dashboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interactive Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Natural Language Rules (NLRE)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Natural Language Rules (NLRE)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#tong-quan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tổng quan
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#iem-noi-bat-cua-rule-manager-moi-v2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Điểm Nổi Bật của Rule Manager Mới (V2)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#huong-dan-thao-tac-rule-manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hướng dẫn thao tác Rule Manager
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ui-overhaul-phase-7-2026-04-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UI Overhaul — Phase 7 (2026-04-10)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="UI Overhaul — Phase 7 (2026-04-10)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rule-manager-thay-oi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rule Manager — Thay đổi
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rule-builder-thay-oi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rule Builder — Thay đổi
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bugfix-step-3-sandbox-crash-2026-04-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bugfix: Step 3 Sandbox Crash (2026-04-14)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#files-thay-oi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Files thay đổi
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-css-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New CSS classes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-tier-rule-architecture-override-manager-phien-ban-v3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3-Tier Rule Architecture &amp; Override Manager (Phiên bản V3)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3-Tier Rule Architecture &amp; Override Manager (Phiên bản V3)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-kien-truc-3-cap-o-3-tier" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Kiến trúc 3 Cấp Độ (3-Tier)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-giao-dien-4-tabs-override-manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Giao diện 4 Tabs &amp; Override Manager
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-database-schema-project_rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Database Schema project_rules
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-logic-tinh-kpi-active-count-bugfix-2026-04-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Logic Tính KPI Active Count (Bugfix 2026-04-14)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-edge-cases-gotchas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Edge Cases &amp; Gotchas
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-performance-optimization-tabeffectivedisabled-set-2026-04-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Performance Optimization — tabEffectiveDisabled Set (2026-04-14)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-bugfix-rulebuilder-fetchrules-sai-api-path-2026-04-15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Bugfix: RuleBuilder fetchRules sai API path (2026-04-15)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-per-rule-reset-cho-global-tab-2026-04-15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Per-Rule Reset cho Global Tab (2026-04-15)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#9-bugfix-rulebuilder-save-ghi-e-compiled_json-cu-2026-04-15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Bugfix: RuleBuilder Save Ghi Đè compiled_json Cũ (2026-04-15)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#10-bugfix-tab-custom-khong-hien-thi-ai_rules-2026-04-15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Bugfix: Tab Custom Không Hiển Thị ai_rules (2026-04-15)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ui_performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    High-Performance UI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ui_text_selection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Text Selection Fix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../member_overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Member Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ui_language_english/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Language (English)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ui_overhaul/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Overhaul V1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../presentation_static_page/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Presentations Static Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kiến trúc hệ thống
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Kiến trúc hệ thống
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tổng quan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/module_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kiến trúc Module
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/design_decisions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quyết định thiết kế (ADR)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/nlre_engine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NLRE Engine
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/docker_setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Database
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../database/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tổng quan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../database/audit_history/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lịch sử kiểm toán
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Specifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Specifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/stream/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Real-time Stream
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/audit_jobs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background Jobs (V6)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/upload/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upload Project
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/ai_health/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Health Checks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/ai_cache/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Cache
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/fix_suggestion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fix Suggestion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/history/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    History Retrieval
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/repositories/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Repositories & Scores
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/git/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Git Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rules Compiler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/members/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Members & Leaderboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/engine_settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engine Settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quy chuẩn Tech Stack
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Quy chuẩn Tech Stack
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tech_stack/python_rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python Rules
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tech_stack/frontend_rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Frontend Rules
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tech_stack/rule_customization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tùy chỉnh Quy tắc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kiểm thử (Quality Assurance)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Kiểm thử (Quality Assurance)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tests/detailed_test_cases/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Cases Chi tiết
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#tong-quan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tổng quan
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#iem-noi-bat-cua-rule-manager-moi-v2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Điểm Nổi Bật của Rule Manager Mới (V2)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#huong-dan-thao-tac-rule-manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hướng dẫn thao tác Rule Manager
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ui-overhaul-phase-7-2026-04-10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        UI Overhaul — Phase 7 (2026-04-10)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="UI Overhaul — Phase 7 (2026-04-10)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rule-manager-thay-oi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rule Manager — Thay đổi
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rule-builder-thay-oi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Rule Builder — Thay đổi
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bugfix-step-3-sandbox-crash-2026-04-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Bugfix: Step 3 Sandbox Crash (2026-04-14)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#files-thay-oi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Files thay đổi
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#new-css-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        New CSS classes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-tier-rule-architecture-override-manager-phien-ban-v3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3-Tier Rule Architecture &amp; Override Manager (Phiên bản V3)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="3-Tier Rule Architecture &amp; Override Manager (Phiên bản V3)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-kien-truc-3-cap-o-3-tier" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Kiến trúc 3 Cấp Độ (3-Tier)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-giao-dien-4-tabs-override-manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Giao diện 4 Tabs &amp; Override Manager
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-database-schema-project_rules" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Database Schema project_rules
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-logic-tinh-kpi-active-count-bugfix-2026-04-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Logic Tính KPI Active Count (Bugfix 2026-04-14)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-edge-cases-gotchas" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Edge Cases &amp; Gotchas
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-performance-optimization-tabeffectivedisabled-set-2026-04-14" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Performance Optimization — tabEffectiveDisabled Set (2026-04-14)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-bugfix-rulebuilder-fetchrules-sai-api-path-2026-04-15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. Bugfix: RuleBuilder fetchRules sai API path (2026-04-15)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-per-rule-reset-cho-global-tab-2026-04-15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. Per-Rule Reset cho Global Tab (2026-04-15)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#9-bugfix-rulebuilder-save-ghi-e-compiled_json-cu-2026-04-15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. Bugfix: RuleBuilder Save Ghi Đè compiled_json Cũ (2026-04-15)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#10-bugfix-tab-custom-khong-hien-thi-ai_rules-2026-04-15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. Bugfix: Tab Custom Không Hiển Thị ai_rules (2026-04-15)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="natural-language-rule-engine-nlre-rule-manager">Natural Language Rule Engine (NLRE) &amp; Rule Manager</h1>
+<h2 id="tong-quan">Tổng quan</h2>
+<p>Hệ thống quản lý luật đánh giá (Rule Manager) bao gồm 3 phần chính:
+1. <strong>Luật Mặc định (Core Rules):</strong> Các luật kỹ thuật được định nghĩa sẵn bởi hệ thống, phát hiện bằng <strong>Regex + AST</strong> (như SQL Injection, Code Smells...). Người dùng có thể Tắt/Bật bất cứ luật nào nếu thấy không phù hợp với dự án.
+2. <strong>Luật AI-Only (Deep Audit Rules):</strong> Các luật chỉ có thể được phát hiện bởi AI Deep Audit — không có regex hay AST. Hệ thống <strong>tự nhận diện</strong> bằng quy tắc: <code>regex=null</code> + <code>ast=null</code> + <code>ai≠null</code> → AI-only rule. Chỉ cần thêm rule vào <code>rules.json</code> theo format này là tự động hoạt động, không cần sửa code.
+   - Hiện tại gồm 6 luật: <code>UNCHECKED_NONE_RETURN</code>, <code>SILENT_DATA_CORRUPTION</code>, <code>INCONSISTENT_RETURN_TYPE</code>, <code>REDUNDANT_DB_QUERY</code>, <code>MISLEADING_NAME</code>, <code>INSECURE_RANDOM</code>.
+3. <strong>Luật Tùy chỉnh (NLRE):</strong> Tính năng đột phá cho phép mô tả mong muốn thiết lập luật bổ sung bằng Tiếng Việt. AI Agent sẽ hiểu và tạo ra AST &amp; Regex Rules.</p>
+<p>Đặc biệt, Code Auditor sử dụng <strong>Two-Stage Audit Pipeline</strong>:
+- <strong>Stage 1 (Static Check):</strong> Quét siêu nhanh bằng RegEx và AST Python.
+- <strong>Stage 2 (AI Gatekeeper):</strong> AI làm nhiệm vụ rà soát toàn bộ các lỗi tìm được từ Stage 1 nhằm tự động gạt bỏ False Positives. Cả lỗi mặc định và lỗi tùy chỉnh đều bị kiểm tra khắt khe.
+- <strong>Stage 3 (AI Deep Audit):</strong> AI quét sâu toàn bộ source code để tìm lỗi logic/kiến trúc. Tại bước này, các luật <strong>AI-Only</strong> được inject vào prompt để AI kiểm tra có hệ thống, và trả về <code>rule_id</code> cụ thể thay vì gom chung <code>AI_REASONING</code>.</p>
+<h2 id="iem-noi-bat-cua-rule-manager-moi-v2">Điểm Nổi Bật của Rule Manager Mới (V2)</h2>
+<ol>
+<li><strong>Dễ tiếp cận:</strong> Cung cấp sẵn kho <strong>Prompt Templates Gallery</strong> (VD: Cấm eval, Cấm Hardcode, Giới hạn dòng lệnh) bắt mắt và chỉ cần nhấp để tự động điền prompt.</li>
+<li><strong>Interactive Sandbox &amp; Streaming UX:</strong> </li>
+<li>Giao diện tách biệt hoàn toàn giữa <strong>Danh sách Rule</strong> và <strong>Tạo Rule AI</strong>. </li>
+<li>Tích hợp hiệu ứng <strong>Real-time Streaming (Chain-of-Thought)</strong> hiển thị suy nghĩ của AI khi gen rule.</li>
+<li>Tính năng Chạy Thử cho phép mô phỏng thực tế xem luật bắt có đúng không, hỗ trợ <strong>Quét 3 Lớp y hệt Auditor (3-Phase Sandbox Audit)</strong>: <ul>
+<li>(1) Quét Tĩnh</li>
+<li>(2) AI Gác Cổng (chống báo sai)</li>
+<li>(3) AI Deep Audit (để test luật AI-Only).</li>
+</ul>
+</li>
+<li><strong>Smart Auto-Healing (AI Gỡ lỗi JSON):</strong> Khả năng gửi lỗi JSON hoặc False Postives từ Test Case ngược lại cho AI thông qua nút bấm <strong>✨ Auto Fix bằng AI</strong>. Hệ thống sẽ tự động gen luồng stream mới khắc phục mã lỗi cấu trúc.</li>
+<li><strong>Nâng cấp Quét Ngoại lệ (Exceptions):</strong> Engine đã hỗ trợ phát hiện chuyên sâu cho cả <code>except:</code> (Bare except) và <code>except Exception:</code> (General Exception catch-all).</li>
+<li><strong>Quản trị rủi ro &amp; Điểm phạt (Penalty Override) trực quan:</strong></li>
+<li>Cho phép <strong>rê chuột dồn cuộn (Scroll/Wheel)</strong> lên ô số để tinh chỉnh Điểm phạt của từng vi phạm tăng/giảm siêu mượt mà.</li>
+<li>Bất cứ luật gốc (Core Rules) nào gây phiền nhiễu đều có thể "TẮT" (Toggle).</li>
+<li><strong>Giảm nhiễu (Zero False Positives):</strong> Nhờ cơ chế AI Gác Cổng (Stage 2), hệ thống loại bỏ những báo cáo sai ngữ cảnh, đảm bảo tính minh bạch.</li>
+<li><strong>Cấu hình độc lập &amp; An toàn:</strong> Dành riêng một trang "Cài đặt Cấu hình" chứa <strong>Vùng Nguy Danger Zone</strong> báo đỏ để nhanh chóng khôi phục mặc định.</li>
+<li><strong>Tối ưu hiển thị (UI/UX):</strong> Tích hợp tìm kiếm (Search) tốc độ cao và phân nhóm luật theo chuẩn <strong>Pillar</strong> (Security, Performance...) thông qua giao diện Accordion. Việc này giúp quản lý số lượng lớn luật kỹ thuật một cách dễ dàng và đỡ rối mắt.</li>
+</ol>
+<h2 id="huong-dan-thao-tac-rule-manager">Hướng dẫn thao tác Rule Manager</h2>
+<ol>
+<li>Mở trang UI. Nhấp Tab <code>Danh sách Rule</code> để sửa đổi Core Rules và Custom Rules bằng thanh trượt điểm phạt (Mouse wheel).</li>
+<li>Nhấp Tab <code>Tạo Rule AI</code> để mở Sandbox. Chọn Template mồi hoặc gõ mô tả Tiếng Việt. </li>
+<li>Nhấn <strong>Biên dịch AI</strong> để sinh ra JSON Rule. (Lưu ý: System sẽ check parse JSON rất nghiêm, cấm dư ngoặc).</li>
+<li>Khu vực <strong>Code Test</strong> sẽ tự động scale chiều cao giúp bạn gõ thử mã độc, bấm <em>Run Test</em> xác nhận độ chuẩn.</li>
+<li>Cuối cùng, phải ấn "Lưu Tất Cả" thì luật mới chính thức đưa vào dự án chặn lõi.</li>
+<li>Khi cần làm mới toàn bộ luật của Dự án đang chấm, vào mục <em>Cài đặt Cấu hình</em> ở góc dưới cùng &gt; <em>Reset (Danger Zone)</em>.</li>
+</ol>
+<hr />
+<h2 id="ui-overhaul-phase-7-2026-04-10">UI Overhaul — Phase 7 (2026-04-10)</h2>
+<p>Nâng cấp toàn diện giao diện 2 trang <code>/rules</code> và <code>/sandbox</code> lên tiêu chuẩn premium.</p>
+<h3 id="rule-manager-thay-oi">Rule Manager — Thay đổi</h3>
+<table>
+<thead>
+<tr>
+<th>Thành phần</th>
+<th>Trước</th>
+<th>Sau</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>KPI Strip</strong></td>
+<td>4 div màu đơn giản</td>
+<td>4 <code>KpiCard</code> có icon lớn, glow orb, accent color, animated entrance</td>
+</tr>
+<tr>
+<td><strong>Tab selector</strong></td>
+<td>2 button phẳng</td>
+<td>Gradient active tab (<code>emerald→teal</code> / <code>violet→purple</code>) + badge count</td>
+</tr>
+<tr>
+<td><strong>Filter bar</strong></td>
+<td>3 <code>&lt;select&gt;</code> native</td>
+<td><code>PillGroup</code> component — pill buttons với dot màu severity inline</td>
+</tr>
+<tr>
+<td><strong>Pillar filter</strong></td>
+<td><code>&lt;select&gt;</code> dropdown</td>
+<td>Pill buttons kèm icon pillar (Lock / Gauge / Wrench / FlaskConical)</td>
+</tr>
+<tr>
+<td><strong>Category accordion</strong></td>
+<td>Chevron + tên text</td>
+<td>Pillar icon màu + badge <code>active/total</code> + icon bulk-toggle</td>
+</tr>
+<tr>
+<td><strong>Rule card</strong></td>
+<td>Layout flat đơn giản</td>
+<td>3-row: <code>[ID+Severity]</code> → <code>[Description]</code> → <code>[Footer Weight+Toggle]</code> + severity accent top-line</td>
+</tr>
+<tr>
+<td><strong>Toggle switch</strong></td>
+<td>Switch nhỏ không nhãn</td>
+<td>Switch + label <code>ON</code> / <code>OFF</code> màu emerald/slate + glow shadow</td>
+</tr>
+<tr>
+<td><strong>WeightInput</strong></td>
+<td>Border trắng thường</td>
+<td>Border tím + glow khi đang override; dim khi không override</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Pillar colors mapping:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Pillar</th>
+<th>Icon</th>
+<th>Color</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Security</td>
+<td>Lock</td>
+<td>Red</td>
+</tr>
+<tr>
+<td>Performance</td>
+<td>Gauge</td>
+<td>Amber</td>
+</tr>
+<tr>
+<td>Maintainability</td>
+<td>Wrench</td>
+<td>Blue</td>
+</tr>
+<tr>
+<td>Reliability</td>
+<td>FlaskConical</td>
+<td>Violet</td>
+</tr>
+</tbody>
+</table>
+<h3 id="rule-builder-thay-oi">Rule Builder — Thay đổi</h3>
+<table>
+<thead>
+<tr>
+<th>Thành phần</th>
+<th>Trước</th>
+<th>Sau</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Stepper</strong></td>
+<td>Vòng tròn số nhỏ</td>
+<td>48px gradient circle + sub-label + progress line fill animation</td>
+</tr>
+<tr>
+<td><strong>Step 1 Prompt area</strong></td>
+<td>Textarea + placeholder đơn giản</td>
+<td>Char counter + placeholder multi-line có ví dụ thực tế</td>
+</tr>
+<tr>
+<td><strong>Template gallery</strong></td>
+<td>4 button đồng nhất</td>
+<td>Phân category separator + icon pillar + selected ring effect (violet glow)</td>
+</tr>
+<tr>
+<td><strong>Step 2 Terminal</strong></td>
+<td>Plain text scroll</td>
+<td><code>StreamingTerminal</code> component: blink cursor + elapsed time counter + status indicator</td>
+</tr>
+<tr>
+<td><strong>JSON editor</strong></td>
+<td>Textarea tím thuần</td>
+<td>Border glow emerald khi compile xong; textarea ánh sáng responsive</td>
+</tr>
+<tr>
+<td><strong>Step 3 Split pane</strong></td>
+<td>2 panel đơn giản</td>
+<td>Gutter visual dots + violation cards có <code>border-l</code> rose + badge Line number</td>
+</tr>
+<tr>
+<td><strong>Save button</strong></td>
+<td>Button bình thường</td>
+<td>Gradient <code>emerald→teal</code> với glow khi ready, pulse animation</td>
+</tr>
+</tbody>
+</table>
+<h3 id="bugfix-step-3-sandbox-crash-2026-04-14">Bugfix: Step 3 Sandbox Crash (2026-04-14)</h3>
+<table>
+<thead>
+<tr>
+<th>Triệu chứng</th>
+<th>Nguyên nhân</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Click "Tiến Vào Sandbox" → React crash trắng màn hình</td>
+<td><code>Box</code> icon (lucide-react) được sử dụng ở Step 3 panel "Kết Quả Phân Tích" (dòng 686) nhưng <strong>không được import</strong> trong <code>RuleBuilder.jsx</code></td>
+<td>Thêm <code>Box</code> vào danh sách import từ <code>lucide-react</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>File:</strong> <code>dashboard/src/components/nlre/RuleBuilder.jsx</code> — dòng 3-19 (import block)</p>
+<h3 id="files-thay-oi">Files thay đổi</h3>
+<ul>
+<li><code>dashboard/src/components/nlre/RuleManager.jsx</code> — Viết lại toàn bộ</li>
+<li><code>dashboard/src/components/nlre/RuleBuilder.jsx</code> — Viết lại toàn bộ (+ bugfix import <code>Box</code>)</li>
+<li><code>dashboard/src/index.css</code> — Bổ sung: <code>json-highlight</code>, <code>terminal-cursor</code>, <code>font-display</code>, <code>animate-spin-slow</code>, utility classes</li>
+</ul>
+<h3 id="new-css-classes">New CSS classes</h3>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>Mô tả</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.json-highlight .json-key/str/bool/num</code></td>
+<td>Fake syntax highlight cho JSON viewer</td>
+</tr>
+<tr>
+<td><code>.terminal-cursor</code></td>
+<td>Blinking cursor animation trong streaming log</td>
+</tr>
+<tr>
+<td><code>.font-display</code></td>
+<td>Shorthand <code>font-family: 'Outfit'</code></td>
+</tr>
+<tr>
+<td><code>.bg-white/3/8/12/18</code></td>
+<td>Workaround Tailwind JIT opacity utilities</td>
+</tr>
+<tr>
+<td><code>.animate-spin-slow</code></td>
+<td>Slow 3s rotation</td>
+</tr>
+<tr>
+<td><code>.template-card-selected</code></td>
+<td>Selected ring violet trên template button</td>
+</tr>
+<tr>
+<td><code>.stepper-line-done</code></td>
+<td>Gradient fill line cho progress tracker</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-tier-rule-architecture-override-manager-phien-ban-v3">3-Tier Rule Architecture &amp; Override Manager (Phiên bản V3)</h2>
+<p>Kiến trúc Rule Manager hiện tại đã được nâng cấp lên mô hình 3 tầng (3-Tier Architecture) giúp quản lý phức tạp và cô lập rủi ro qua từng mức cấu hình.</p>
+<h3 id="1-kien-truc-3-cap-o-3-tier">1. Kiến trúc 3 Cấp Độ (3-Tier)</h3>
+<ul>
+<li><strong>Tầng 1: Global Rules (Mặc định Hệ thống):</strong> Toàn bộ nền tảng áp dụng chung một bộ luật (core rules). Quản trị viên (Global Admin) có quyền định dạng các thuộc tính như Trạng Thái (Bật/Tắt) hoặc Điểm phạt (<code>weight</code>) cho mục tiêu <code>target_id='GLOBAL'</code>.</li>
+<li><strong>Tầng 2: Project Overrides (Ngoại lệ Dự án):</strong> Các dự án cụ thể sẽ kế thừa quy tắc của Global, nhưng có thể "Ghi Đè" (Override) một trạng thái cụ thể. Ví dụ: Global Tắt rule "A", nhưng Dự Án 1 thiết lập Bật rule "A". Điểm đặc biệt là nếu Global cập nhật các rule "B", Dự Án 1 vẫn tự động được hưởng sái thay đổi đó do tính cô lập.</li>
+<li><strong>Tầng 3: Custom AI Rules (Luật AI Cá thể):</strong> Cơ chế JSON Độc Lập cho mỗi <code>target_id</code> do AI tự tạo, không bị ảnh hưởng và không ảnh hưởng chéo dự án khác.</li>
+</ul>
+<p><strong>Data Flow của Engine CodeAuditor:</strong>
+<pre class="mermaid"><code>graph TD
+    A[Core System `rules.json`] --&gt; B(Hợp nhất)
+    G[AuditDatabase - `target_id='GLOBAL'`] --&gt; B
+    B --&gt;|Base Rules| C{Xác định Target ID}
+    C --&gt;|Project Target| D[AuditDatabase - `target_id='PROJECT_X'`]
+    D --&gt;|Enabled/Disabled Core Rules &amp; Weights| E((Effective Rules Merge))
+    B --&gt; E
+    E --&gt; F[Verification Step &amp; Auditor Engine]</code></pre></p>
+<h3 id="2-giao-dien-4-tabs-override-manager">2. Giao diện 4 Tabs &amp; Override Manager</h3>
+<ul>
+<li>RuleManager UI áp dụng 4 thanh tab độc lập, mỗi tab đều có <strong>icon ℹ️ tooltip</strong> mô tả mục đích khi hover:</li>
+<li><strong>Tab 1 - Global Rules:</strong> Chỉnh sửa luật trực tiếp trên Global (Ảnh hưởng đa dự án). Mỗi rule đã bị thay đổi (disable hoặc custom weight) sẽ hiển thị badge <strong>✎ Modified</strong> màu cyan và nút <strong>↺ Default</strong> để reset từng rule riêng lẻ về trạng thái mặc định gốc.</li>
+<li><strong>Tab 2 - Project Overrides:</strong> Chỉnh sửa trên dự án hiện tại. Giao diện sẽ hiển thị Badge \"Override Active\" cảnh báo luật này đang đè lên Global.</li>
+<li><strong>Tab 3 - Custom AI Rules:</strong> Quản lý JSON Custom.</li>
+<li><strong>Tab 4 - Override Manager:</strong> Thống kê siêu cấp (Diff View) mô tả sự khác biệt giữa Dự án và Hệ Thống, kèm nút <code>Reset to Global</code> để xóa bỏ nhanh các sai lệch. Không có info box chiếm diện tích — thông tin giải thích chỉ hiển thị qua tooltip icon ℹ️ trên tab.</li>
+</ul>
+<h3 id="3-database-schema-project_rules">3. Database Schema <code>project_rules</code></h3>
+<ul>
+<li><code>disabled_core_rules</code> (JSON Array): Các rules bị tắt bởi Project.</li>
+<li><code>enabled_core_rules</code> (JSON Array): Các rules được bật ép buộc bởi Project nhằm thoát khỏi sự cấm cản từ Global.</li>
+<li><code>custom_weights</code> (JSON Object): Các điểm phạt bị ghi đè riêng của Project.</li>
+</ul>
+<h3 id="4-logic-tinh-kpi-active-count-bugfix-2026-04-14">4. Logic Tính KPI Active Count (Bugfix 2026-04-14)</h3>
+<p><strong>Công thức chính xác</strong> cho KPI cards trên dashboard (<code>RuleManager.jsx</code> — <code>dbStats</code> useMemo):</p>
+<ul>
+<li><strong>Active Global Rules</strong> = <code>totalRules - globalDisabled.filter(r =&gt; existsInDefaultRules(r)).length</code></li>
+<li><strong>Active Project Rules</strong> = <code>totalRules - effectiveDisabledCount</code>, trong đó:</li>
+<li><code>mergedDisabled = (global.disabled ∪ project.disabled) \ project.enabled</code> (phép set operation)</li>
+<li><code>effectiveDisabledCount</code> chỉ đếm các rule <strong>tồn tại</strong> trong <code>defaultRules</code> (bỏ qua rule đã bị xóa khỏi <code>rules.json</code>)</li>
+</ul>
+<p><strong>Backend <code>toggle_core_rule()</code></strong> (<code>src/engine/database.py</code>):</p>
+<ul>
+<li>Khi bật rule (<code>is_disabled=False</code>) ở scope <strong>GLOBAL</strong>: chỉ xóa khỏi <code>disabled_core_rules</code>, <strong>KHÔNG</strong> thêm vào <code>enabled_core_rules</code> (vì global không có khái niệm override).</li>
+<li>Khi bật rule ở scope <strong>Project</strong>: xóa khỏi <code>disabled_core_rules</code> VÀ thêm vào <code>enabled_core_rules</code> (để override global disable nếu có).</li>
+</ul>
+<h3 id="5-edge-cases-gotchas">5. Edge Cases &amp; Gotchas</h3>
+<table>
+<thead>
+<tr>
+<th>Case</th>
+<th>Mô tả</th>
+<th>Cách xử lý</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Rule bị xóa khỏi <code>rules.json</code> nhưng vẫn nằm trong <code>disabled_core_rules</code> DB</td>
+<td>Có thể gây sai số KPI nếu đếm thô</td>
+<td>Frontend filter bằng <code>allRuleIds.has(r)</code> trước khi đếm</td>
+</tr>
+<tr>
+<td><code>enabled_core_rules</code> chứa rule không nằm trong <code>disabled</code> set</td>
+<td>Có thể xảy ra do data cũ (trước bugfix)</td>
+<td><code>Set.delete()</code> là no-op an toàn; KPI dùng set operation nên không bị ảnh hưởng</td>
+</tr>
+<tr>
+<td>Toggle rule ở Global tab → <code>enabled_core_rules</code> của GLOBAL bị phình</td>
+<td>Đã fix backend: không thêm vào <code>enabled_core_rules</code> khi <code>target_id == 'GLOBAL'</code></td>
+<td>Backend guard tại <code>toggle_core_rule()</code></td>
+</tr>
+<tr>
+<td>Override Manager hiển thị stale ENABLED entries</td>
+<td><code>enabled_core_rules</code> chứa rule không bị global disable → override vô nghĩa</td>
+<td>Frontend chỉ hiện ENABLED override khi rule <strong>thực sự</strong> nằm trong <code>globalOverrides.disabled_core_rules</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="6-performance-optimization-tabeffectivedisabled-set-2026-04-14">6. Performance Optimization — <code>tabEffectiveDisabled</code> Set (2026-04-14)</h3>
+<p><code>tabEffectiveDisabled</code> sử dụng kiểu <code>Set</code> thay vì <code>Array</code> để tra cứu O(1) thay vì O(n):</p>
+<ul>
+<li><strong>3 callsites</strong> dùng <code>.has()</code> thay vì <code>.includes()</code>: filter rules, accordion active count, RuleCard disabled prop</li>
+<li>Override Manager badge count chỉ đếm <code>enabled_core_rules</code> entries <strong>thực sự override</strong> global disable</li>
+<li>Empty state "Đồng bộ với Global" chỉ hiện khi không có override thực sự (bỏ qua stale entries)</li>
+</ul>
+<h3 id="7-bugfix-rulebuilder-fetchrules-sai-api-path-2026-04-15">7. Bugfix: RuleBuilder fetchRules sai API path (2026-04-15)</h3>
+<table>
+<thead>
+<tr>
+<th>Triệu chứng</th>
+<th>Nguyên nhân</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lưu Rule ở bước 3 thành công nhưng custom weights bị xóa sạch</td>
+<td><code>RuleBuilder.fetchRules()</code> đọc <code>result.data.custom_weights</code> thay vì <code>result.data.project_rules.custom_weights</code>. Kết quả: <code>customWeights</code> luôn = <code>{}</code>, khi save → <code>save_custom_weights({})</code> → xóa sạch weights cũ.</td>
+<td>Sửa path: <code>const pr = result.data.project_rules</code> rồi đọc <code>pr.custom_weights</code>, <code>pr.compiled_json</code>, <code>pr.natural_text</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>File:</strong> <code>dashboard/src/components/nlre/RuleBuilder.jsx</code> — dòng 62-66 (fetchRules)</p>
+<h3 id="8-per-rule-reset-cho-global-tab-2026-04-15">8. Per-Rule Reset cho Global Tab (2026-04-15)</h3>
+<ul>
+<li><strong>RuleCard</strong> nhận thêm props: <code>isGlobalCustomized</code> và <code>onResetToDefault</code>.</li>
+<li>Tab <strong>Global</strong>: rule có trong <code>disabled_core_rules</code> hoặc <code>custom_weights</code> → badge <strong>✎ Modified</strong> (cyan) + nút <strong>↺ Default</strong>.</li>
+<li>Nút <strong>Default</strong> gọi <code>handleToggleRule(ruleKey, false, true)</code> → backend xóa rule khỏi cả 3 list của <code>GLOBAL</code>.</li>
+<li>Badge <strong>✦ Custom Penalty</strong> ẩn khi <code>isGlobalCustomized=true</code> để tránh trùng lặp.</li>
+</ul>
+<h3 id="9-bugfix-rulebuilder-save-ghi-e-compiled_json-cu-2026-04-15">9. Bugfix: RuleBuilder Save Ghi Đè compiled_json Cũ (2026-04-15)</h3>
+<table>
+<thead>
+<tr>
+<th>Triệu chứng</th>
+<th>Nguyên nhân</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Lưu rule mới ở Rule Builder → rules cũ biến mất</td>
+<td><code>handleCompile()</code> reset <code>compiledJson=null</code>. AI trả về chỉ rule mới. <code>handleSave()</code> ghi đè toàn bộ DB.</td>
+<td>Thêm <code>existingCompiledJson</code> state. <code>handleSave()</code> merge regex/ast/ai rules — deduplicate bằng Set.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="10-bugfix-tab-custom-khong-hien-thi-ai_rules-2026-04-15">10. Bugfix: Tab Custom Không Hiển Thị ai_rules (2026-04-15)</h3>
+<table>
+<thead>
+<tr>
+<th>Triệu chứng</th>
+<th>Nguyên nhân</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AI-only rule lưu OK nhưng tab Custom hiện "Chưa có"</td>
+<td>Tab chỉ render <code>regex_rules</code> + <code>ast_rules</code>, bỏ sót <code>ai_rules</code></td>
+<td>Thêm render ai_rules cards (cyan) + empty state check + delete/weight handler cho type <code>"ai"</code></td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

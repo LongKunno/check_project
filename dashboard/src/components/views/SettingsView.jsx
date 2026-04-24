@@ -27,6 +27,7 @@ import {
   FileSearch,
   Lock,
   LockOpen,
+  TrendingUp,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "../ui/Toast";
@@ -87,6 +88,11 @@ const SettingsView = ({ selectedRepoId, cn }) => {
     clear_openai_batch_api_key: false,
     member_recent_months: 3,
     auth_required: true,
+    regression_gate_enabled: true,
+    regression_score_drop_threshold: 2.0,
+    regression_violations_increase_threshold: 5,
+    regression_pillar_drop_threshold: 0.5,
+    regression_new_critical_threshold: 1,
   });
   const [engineSaving, setEngineSaving] = useState(false);
   const [engineDirty, setEngineDirty] = useState(false);
@@ -580,6 +586,147 @@ const SettingsView = ({ selectedRepoId, cn }) => {
             </div>
           </div>
 
+          {/* Regression Gate */}
+          <div className="mt-6 pt-6 border-t border-slate-200">
+            <div className="flex items-center gap-3 mb-4">
+              <div className={`p-2 rounded-xl border ${engineConfig.regression_gate_enabled
+                ? "bg-rose-500/10 border-rose-500/25 text-rose-600"
+                : "bg-slate-500/10 border-slate-500/20 text-slate-500"
+                }`}>
+                <TrendingUp size={16} />
+              </div>
+              <div className="flex-1">
+                <div className="text-sm font-bold text-slate-800">Regression Gate</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">
+                  Cảnh báo mềm khi lần scan mới xấu đi so với scan liền trước của cùng repository
+                </div>
+              </div>
+              <button
+                onClick={() => handleEngineConfigChange("regression_gate_enabled", !engineConfig.regression_gate_enabled)}
+                className="relative shrink-0 group"
+                title={engineConfig.regression_gate_enabled ? "Click to disable regression gate" : "Click to enable regression gate"}
+              >
+                {engineConfig.regression_gate_enabled ? (
+                  <ToggleRight size={36} className="text-rose-600 transition-colors" />
+                ) : (
+                  <ToggleLeft size={36} className="text-slate-600 group-hover:text-slate-500 transition-colors" />
+                )}
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-bold text-slate-800">Score Drop Threshold</div>
+                    <div className="text-[11px] text-slate-500 mt-0.5">
+                      Cảnh báo khi score giảm ít nhất N điểm
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.1"
+                      value={engineConfig.regression_score_drop_threshold}
+                      onChange={(e) =>
+                        handleEngineConfigChange(
+                          "regression_score_drop_threshold",
+                          Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)),
+                        )
+                      }
+                      className="w-24 px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-800 text-sm font-mono text-center focus:outline-none focus:border-rose-500/50 focus:ring-1 focus:ring-rose-500/20 transition-all"
+                    />
+                    <span className="text-[10px] text-slate-600 font-bold">pts</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-bold text-slate-800">Violations Increase</div>
+                    <div className="text-[11px] text-slate-500 mt-0.5">
+                      Cảnh báo khi số finding tăng thêm ít nhất N
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100000"
+                      value={engineConfig.regression_violations_increase_threshold}
+                      onChange={(e) =>
+                        handleEngineConfigChange(
+                          "regression_violations_increase_threshold",
+                          Math.min(100000, Math.max(0, parseInt(e.target.value, 10) || 0)),
+                        )
+                      }
+                      className="w-24 px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-800 text-sm font-mono text-center focus:outline-none focus:border-rose-500/50 focus:ring-1 focus:ring-rose-500/20 transition-all"
+                    />
+                    <span className="text-[10px] text-slate-600 font-bold">issues</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-bold text-slate-800">Pillar Drop Threshold</div>
+                    <div className="text-[11px] text-slate-500 mt-0.5">
+                      Cảnh báo khi bất kỳ pillar nào giảm ít nhất N điểm
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <input
+                      type="number"
+                      min="0"
+                      max="10"
+                      step="0.1"
+                      value={engineConfig.regression_pillar_drop_threshold}
+                      onChange={(e) =>
+                        handleEngineConfigChange(
+                          "regression_pillar_drop_threshold",
+                          Math.min(10, Math.max(0, parseFloat(e.target.value) || 0)),
+                        )
+                      }
+                      className="w-24 px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-800 text-sm font-mono text-center focus:outline-none focus:border-rose-500/50 focus:ring-1 focus:ring-rose-500/20 transition-all"
+                    />
+                    <span className="text-[10px] text-slate-600 font-bold">pillar</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-bold text-slate-800">New High Severity</div>
+                    <div className="text-[11px] text-slate-500 mt-0.5">
+                      Cảnh báo khi có thêm ít nhất N finding Critical/Blocker
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <input
+                      type="number"
+                      min="0"
+                      max="100000"
+                      value={engineConfig.regression_new_critical_threshold}
+                      onChange={(e) =>
+                        handleEngineConfigChange(
+                          "regression_new_critical_threshold",
+                          Math.min(100000, Math.max(0, parseInt(e.target.value, 10) || 0)),
+                        )
+                      }
+                      className="w-24 px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-800 text-sm font-mono text-center focus:outline-none focus:border-rose-500/50 focus:ring-1 focus:ring-rose-500/20 transition-all"
+                    />
+                    <span className="text-[10px] text-slate-600 font-bold">findings</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Actions Row */}
           <div className="flex items-center gap-3 pt-1">
             <button
@@ -645,7 +792,7 @@ const SettingsView = ({ selectedRepoId, cn }) => {
             <InfoCard
               icon={<Clock size={16} />}
               label="AI Model"
-              value={systemInfo?.model || "cx/gpt-5.4"}
+              value={systemInfo?.model || "cx/gpt-5.4-mini"}
               iconClass="bg-cyan-500/10 border-cyan-500/20 text-cyan-600"
               accent="border-cyan-500/25 shadow-[0_0_15px_-5px_rgba(6,182,212,0.15)]"
             />

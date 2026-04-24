@@ -192,6 +192,43 @@ def test_member_recent_months_falls_back_to_3_when_db_invalid(monkeypatch):
     assert config.get_member_recent_months() == 3
 
 
+def test_regression_gate_defaults_when_env_missing(monkeypatch):
+    monkeypatch.delenv("REGRESSION_GATE_ENABLED", raising=False)
+    monkeypatch.delenv("REGRESSION_SCORE_DROP_THRESHOLD", raising=False)
+    config = _reload_config()
+    monkeypatch.setattr(
+        AuditDatabase,
+        "get_config",
+        staticmethod(lambda key, default=None: None),
+    )
+
+    assert config.get_regression_gate_enabled() is True
+    assert config.get_regression_score_drop_threshold() == 2.0
+
+
+def test_regression_thresholds_prefer_db_override(monkeypatch):
+    config = _reload_config()
+    monkeypatch.setattr(
+        AuditDatabase,
+        "get_config",
+        staticmethod(
+            lambda key, default=None: {
+                "regression_gate_enabled": "false",
+                "regression_score_drop_threshold": "3.5",
+                "regression_violations_increase_threshold": "9",
+                "regression_pillar_drop_threshold": "0.8",
+                "regression_new_critical_threshold": "2",
+            }.get(key, default)
+        ),
+    )
+
+    assert config.get_regression_gate_enabled() is False
+    assert config.get_regression_score_drop_threshold() == 3.5
+    assert config.get_regression_violations_increase_threshold() == 9
+    assert config.get_regression_pillar_drop_threshold() == 0.8
+    assert config.get_regression_new_critical_threshold() == 2
+
+
 def test_openai_batch_api_key_falls_back_to_env_when_db_decrypt_fails(monkeypatch):
     monkeypatch.setenv("OPENAI_BATCH_API_KEY", "env-key")
     config = _reload_config()

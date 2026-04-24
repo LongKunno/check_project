@@ -50,6 +50,66 @@ Kiểm tra logic tự động lựa chọn dự án thông minh để tối ưu 
 
 ---
 
+## 5. AI Cache Console
+Kiểm tra khả năng quan sát, đổi policy và clear cache từ màn hình vận hành.
+
+| ID | Tên Test Case | Các bước thực hiện | Kết quả mong đợi |
+| :--- | :--- | :--- | :--- |
+| **TC-CACHE-01** | Tải trạng thái cache | 1. Mở `/ai-cache`. | 1. UI gọi `GET /api/ai/cache` thành công. <br> 2. Hiển thị đúng `enabled`, `retention_days`, `entries_count`, `last_hit_at`. |
+| **TC-CACHE-02** | Cập nhật toggle từng stage | 1. Tắt `deep_audit_enabled`. <br> 2. Lưu policy. | 1. UI gọi `PUT /api/ai/cache`. <br> 2. Reload màn hình vẫn giữ đúng state mới. |
+| **TC-CACHE-03** | Thay đổi retention days | 1. Đặt `retention_days = 14`. <br> 2. Lưu policy. | 1. Backend chấp nhận giá trị hợp lệ `1..3650`. <br> 2. `last_cleanup_at` được cập nhật sau khi lưu. |
+| **TC-CACHE-04** | Xoá toàn bộ cache | 1. Bấm nút clear cache. <br> 2. Xác nhận thao tác xoá. | 1. UI gọi `DELETE /api/ai/cache`. <br> 2. `entries_count` về `0`. <br> 3. Các run/entry cache cũ không còn trên màn hình. |
+
+---
+
+## 6. AI Ops Explorer & Pricing Research
+Kiểm tra phần mở rộng của AI Ops để đảm bảo slice observability khớp với docs mới.
+
+| ID | Tên Test Case | Các bước thực hiện | Kết quả mong đợi |
+| :--- | :--- | :--- | :--- |
+| **TC-AIOPS-01** | Nạp filter metadata | 1. Mở `/ai-ops`. <br> 2. Chọn date range có dữ liệu. | 1. UI gọi `GET /api/ai/filters/meta`. <br> 2. Bộ lọc project/source/provider/model được populate đúng. |
+| **TC-AIOPS-02** | Pricing research | 1. Mở form research pricing. <br> 2. Nhập `provider`, `mode`, `model`. | 1. UI gọi `POST /api/ai/pricing/research`. <br> 2. Trả về suggestion, source label và source URL. |
+| **TC-AIOPS-03** | Cost = 0 khi thiếu pricing row | 1. Xoá pricing của model đang dùng. <br> 2. Chạy một luồng AI mới. | 1. Request vẫn được log bình thường. <br> 2. Cost hiển thị `0` thay vì làm hỏng dashboard. |
+
+---
+
+## 7. No-DB Fallback & Persistence Boundaries
+Khóa rõ hành vi khi `DATABASE_URL` không tồn tại hoặc Postgres tạm thời không reachable.
+
+| ID | Tên Test Case | Các bước thực hiện | Kết quả mong đợi |
+| :--- | :--- | :--- | :--- |
+| **TC-NODB-01** | Danh sách repo vẫn hoạt động | 1. Gỡ `DATABASE_URL`. <br> 2. Mở `/repositories`. | 1. UI vẫn tải được danh sách repo từ fallback in-memory. <br> 2. Không có audit history giả lập. |
+| **TC-NODB-02** | Repository scores không giả lập audit | 1. Gỡ `DATABASE_URL`. <br> 2. Mở `/project-scores`. | 1. `GET /api/repositories/scores` vẫn trả repo list. <br> 2. Các trường `latest_score`, `latest_rating`, `latest_timestamp`, `pillar_scores` là `null` nếu không có dữ liệu persist. |
+| **TC-NODB-03** | Engine settings update trả lỗi rõ ràng | 1. Gỡ `DATABASE_URL`. <br> 2. Từ Settings UI thử đổi `AI Enabled`. | 1. `GET /api/settings/engine` vẫn đọc effective config từ `.env`/default. <br> 2. `PUT /api/settings/engine` trả `503` với thông điệp rõ rằng persistence không khả dụng. |
+
+---
+
+## 8. Baseline + Regression Gate
+Xác nhận cơ chế so sánh với scan liền trước và hiển thị cảnh báo mềm hoạt động đúng.
+
+| ID | Tên Test Case | Các bước thực hiện | Kết quả mong đợi |
+| :--- | :--- | :--- | :--- |
+| **TC-REG-01** | Baseline = scan liền trước | 1. Chạy scan A. <br> 2. Chạy scan B. <br> 3. Chạy scan C cùng repository. | 1. Scan B so với A. <br> 2. Scan C so với B. <br> 3. Không dùng scan cũ hơn làm baseline. |
+| **TC-REG-02** | Score drop trigger warning | 1. Giảm score vượt `regression_score_drop_threshold`. <br> 2. Mở `/project-scores` hoặc `/history`. | 1. `regression_status = warning`. <br> 2. Summary line hiển thị delta score âm. |
+| **TC-REG-03** | Multi-signal warning | 1. Tạo scan mới vừa giảm score vừa tăng violations. | 1. `regression_summary.triggered_signals` chứa nhiều tín hiệu. <br> 2. UI vẫn chỉ hiện một badge `Warning`, không duplicate trạng thái. |
+| **TC-REG-04** | Gate off vẫn không mất baseline metadata | 1. Tắt `regression_gate_enabled` trong Settings. <br> 2. Chạy scan mới. | 1. Hệ thống vẫn tính delta baseline. <br> 2. UI hiển thị trạng thái `Gate Off` hoặc tương đương `pass` không cảnh báo cứng. |
+| **TC-REG-05** | Chưa có baseline | 1. Scan repository lần đầu. | 1. `regression_status = unavailable`. <br> 2. UI hiển thị `No Baseline` thay vì lỗi hoặc cảnh báo giả. |
+
+---
+
+## 9. Trend Dashboard
+Kiểm tra dữ liệu trend ở cả mức portfolio và repository.
+
+| ID | Tên Test Case | Các bước thực hiện | Kết quả mong đợi |
+| :--- | :--- | :--- | :--- |
+| **TC-TREND-01** | Portfolio trends load | 1. Mở `/trends`. | 1. UI gọi `GET /api/trends/portfolio`. <br> 2. KPI tổng hợp và chart average score hiển thị đúng. |
+| **TC-TREND-02** | Chuyển range 7/30/90 ngày | 1. Đổi bộ lọc range. | 1. UI refetch cả portfolio và repository trends với `days` tương ứng. <br> 2. Chỉ chấp nhận `7`, `30`, `90`. |
+| **TC-TREND-03** | Top regressing repos | 1. Có ít nhất 2 repo đang `warning`. <br> 2. Mở card `Top regressing repositories`. | 1. Danh sách sắp theo mức regress nặng hơn lên trước. <br> 2. Có repo name và summary line rõ ràng. |
+| **TC-TREND-04** | Repository empty state | 1. Không chọn repository ở sidebar. <br> 2. Mở `/trends`. | 1. Khối portfolio vẫn hoạt động. <br> 2. Khối repository hiển thị empty state hướng dẫn chọn repo. |
+| **TC-TREND-05** | Regression events timeline | 1. Chọn repository có warning history. | 1. UI gọi `GET /api/trends/repository`. <br> 2. Phần `regression_events` liệt kê đúng timestamp, signals và badge trạng thái. |
+
+---
+
 ## Ghi chú cho Pentest/Security
 > [!CAUTION]
 > Luôn kiểm tra tính an toàn của đường dẫn (`target_id`) để tránh lỗ hổng Directory Traversal khi gọi API History/Audit bằng các payload như `../../etc/passwd`. Hệ thống đã được cấu hình middleware chặn các ký tự này.

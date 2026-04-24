@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import dotenv
 
 
-def test_ai_service_defaults_to_gpt_5_4(monkeypatch):
+def test_ai_service_defaults_to_gpt_5_4_mini(monkeypatch):
     monkeypatch.delenv("AI_MODEL", raising=False)
     monkeypatch.setattr(dotenv, "load_dotenv", lambda *args, **kwargs: None)
 
@@ -14,7 +14,7 @@ def test_ai_service_defaults_to_gpt_5_4(monkeypatch):
     importlib.reload(ai_service_module)
     service = ai_service_module.AiService()
 
-    assert service.model == "gpt-5.4"
+    assert service.model == "gpt-5.4-mini"
 
 
 def test_ai_service_prefers_ai_model_env(monkeypatch):
@@ -26,7 +26,6 @@ def test_ai_service_prefers_ai_model_env(monkeypatch):
     service = ai_service_module.AiService()
 
     assert service.model == "test-model"
-
 
 def test_call_llm_json_skips_new_request_when_job_is_cancelled(monkeypatch):
     import src.engine.ai_service as ai_service_module
@@ -220,6 +219,45 @@ def test_build_chat_completion_body_omits_temperature_for_batch_requests():
     assert body["model"] == "gpt-4.1-nano"
     assert "temperature" not in body
     assert body["response_format"] == {"type": "json_object"}
+
+
+def test_resolve_flagged_issues_returns_indexed_results(monkeypatch):
+    import src.engine.ai_service as ai_service_module
+
+    service = ai_service_module.AiService()
+
+    async def fake_call(*args, **kwargs):
+        return ai_service_module.ValidationResponse.model_validate(
+            {
+                "results": [
+                    {
+                        "index": 0,
+                        "is_false_positive": False,
+                        "explanation": "Confirmed with context",
+                        "confidence": 0.93,
+                    }
+                ]
+            }
+        )
+
+    monkeypatch.setattr(service, "_call_llm_json", fake_call)
+
+    results = asyncio.run(
+        service.resolve_flagged_issues(
+            [
+                {
+                    "file": "src/demo.py",
+                    "reason": "Potential issue",
+                    "type": "Reliability",
+                    "verify_target": "load_demo",
+                }
+            ],
+            {"load_demo": "def load_demo(): pass"},
+        )
+    )
+
+    assert results[0]["is_false_positive"] is False
+    assert results[0]["explanation"] == "Confirmed with context"
 
 
 def test_parse_error_lines_prefers_nested_openai_error_message():

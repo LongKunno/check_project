@@ -3,720 +3,469 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Audit Engine Overview - Core Architecture & Scoring</title>
+  <title>Audit Engine - Core Architecture Review</title>
 
-  <!-- Reveal.js core -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css" />
-
-  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/presentations/review-pack.css" />
 
   <style>
-    /* ═══════════════════════════════════════════════════════════
-       CUSTOM DARK PREMIUM THEME — "Midnight Aurora"
-       ═══════════════════════════════════════════════════════════ */
     :root {
-      --bg-deep: #060a12;
-      --bg-card: rgba(13, 17, 28, 0.7);
-      --glass-border: rgba(139, 92, 246, 0.15);
-      --violet: #8b5cf6;
-      --blue: #3b82f6;
-      --emerald: #10b981;
-      --cyan: #06b6d4;
-      --rose: #f43f5e;
-      --amber: #f59e0b;
-      --pink: #ec4899;
-      --text-main: #e2e8f0;
-      --text-muted: #94a3b8;
+      --canvas: #08111f;
+      --panel: rgba(8, 15, 29, 0.9);
+      --panel-raised: rgba(255, 255, 255, 0.038);
+      --panel-muted: rgba(255, 255, 255, 0.02);
+      --text: #edf3ff;
+      --muted: #99aaca;
+      --border: rgba(196, 205, 255, 0.14);
+      --soft-border: rgba(196, 205, 255, 0.08);
+      --accent: #7c3aed;
+      --accent-2: #38bdf8;
+      --accent-rgb: 124, 58, 237;
+      --accent2-rgb: 56, 189, 248;
+      --glow-a: rgba(124, 58, 237, 0.22);
+      --glow-b: rgba(56, 189, 248, 0.16);
     }
-
-    .reveal {
-      font-family: 'Inter', sans-serif;
-      font-size: 22px;
-      color: var(--text-main);
-    }
-
-    .reveal .slides { text-align: left; }
-
-    .reveal .slide-background { background: var(--bg-deep) !important; }
-
-    /* Ambient blobs — inject via pseudo on wrapper */
-    .reveal .slides::before,
-    .reveal .slides::after {
-      content: '';
-      position: fixed;
-      border-radius: 50%;
-      pointer-events: none;
-      z-index: -1;
-      filter: blur(140px);
-    }
-    .reveal .slides::before {
-      width: 60vw; height: 60vw;
-      top: -20%; right: -10%;
-      background: radial-gradient(circle, rgba(139,92,246,0.25), transparent 65%);
-      animation: blobFloat1 22s ease-in-out infinite alternate;
-    }
-    .reveal .slides::after {
-      width: 50vw; height: 50vw;
-      bottom: -15%; left: -10%;
-      background: radial-gradient(circle, rgba(16,185,129,0.2), transparent 60%);
-      animation: blobFloat2 26s ease-in-out infinite alternate;
-    }
-
-    @keyframes blobFloat1 {
-      0% { transform: translate(0,0) scale(1); }
-      100% { transform: translate(-40px,50px) scale(1.08); }
-    }
-    @keyframes blobFloat2 {
-      0% { transform: translate(0,0) scale(1); }
-      100% { transform: translate(30px,-40px) scale(0.92); }
-    }
-
-    /* ─── Headings ─── */
-    .reveal h1, .reveal h2, .reveal h3 {
-      font-family: 'Outfit', sans-serif;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: -0.03em;
-    }
-    .reveal h1 { font-size: 3rem; line-height: 1.1; }
-    .reveal h2 { font-size: 1.8rem; line-height: 1.2; margin-bottom: 0.6em; }
-    .reveal h3 { font-size: 1.15rem; font-weight: 700; text-transform: none; }
-
-    .gradient-text {
-      background: linear-gradient(135deg, #fff 0%, #a78bfa 40%, #8b5cf6 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .gradient-blue {
-      background: linear-gradient(135deg, #fff 0%, #93c5fd 40%, #3b82f6 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .gradient-emerald {
-      background: linear-gradient(135deg, #fff 0%, #6ee7b7 40%, #10b981 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .gradient-rose {
-      background: linear-gradient(135deg, #fff 0%, #fda4af 40%, #f43f5e 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .gradient-amber {
-      background: linear-gradient(135deg, #fff 0%, #fcd34d 40%, #f59e0b 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    /* ─── Subtitle / Tagline ─── */
-    .tagline {
-      font-size: 0.85rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.15em;
-      margin-bottom: 0.5rem;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.3rem 0.8rem;
-      border-radius: 999px;
-      border: 1px solid;
-    }
-    .tagline-violet { color: var(--violet); border-color: rgba(139,92,246,0.3); background: rgba(139,92,246,0.08); }
-    .tagline-blue   { color: var(--blue);   border-color: rgba(59,130,246,0.3); background: rgba(59,130,246,0.08); }
-    .tagline-emerald { color: var(--emerald); border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.08); }
-    .tagline-rose    { color: var(--rose);    border-color: rgba(244,63,94,0.3);  background: rgba(244,63,94,0.08); }
-    .tagline-amber   { color: var(--amber);   border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.08); }
-
-    /* ─── Glass Cards ─── */
-    .glass-card {
-      background: var(--bg-card);
-      backdrop-filter: blur(20px) saturate(180%);
-      border: 1px solid var(--glass-border);
-      border-radius: 16px;
-      padding: 1.25rem 1.5rem;
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 4px 24px -2px rgba(0,0,0,0.6),
-                  inset 0 1px 1px 0 rgba(255,255,255,0.03);
-    }
-    .glass-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 2px;
-      border-radius: 2px 2px 0 0;
-    }
-    .glass-card.accent-violet::before { background: linear-gradient(90deg, var(--violet), var(--blue)); }
-    .glass-card.accent-blue::before   { background: linear-gradient(90deg, var(--blue), var(--cyan)); }
-    .glass-card.accent-emerald::before { background: linear-gradient(90deg, var(--emerald), var(--cyan)); }
-    .glass-card.accent-rose::before    { background: linear-gradient(90deg, var(--rose), var(--pink)); }
-    .glass-card.accent-amber::before   { background: linear-gradient(90deg, var(--amber), #ef4444); }
-
-    /* ─── Grid Layouts ─── */
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.8rem; }
-    .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 0.8rem; }
-    .grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; }
-    .grid-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: 1rem; }
-
-    /* ─── Badges / Pills ─── */
-    .pill {
-      display: inline-flex; align-items: center; gap: 0.35rem;
-      padding: 0.2rem 0.6rem; border-radius: 999px;
-      font-size: 0.7rem; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.05em;
-    }
-    .pill-violet  { color: var(--violet);  background: rgba(139,92,246,0.12); }
-    .pill-blue    { color: var(--blue);    background: rgba(59,130,246,0.12); }
-    .pill-emerald { color: var(--emerald); background: rgba(16,185,129,0.12); }
-    .pill-amber   { color: var(--amber);   background: rgba(245,158,11,0.12); }
-    .pill-rose    { color: var(--rose);    background: rgba(244,63,94,0.12); }
-    .pill-cyan    { color: var(--cyan);    background: rgba(6,182,212,0.12); }
-
-    /* ─── Pipeline Step Card ─── */
-    .step-card {
-      text-align: center;
-      padding: 1rem 0.5rem;
-    }
-    .step-num {
-      width: 40px; height: 40px;
-      border-radius: 12px;
-      display: inline-flex; align-items: center; justify-content: center;
-      font-family: 'Outfit', sans-serif;
-      font-weight: 900; font-size: 1.1rem;
-      color: #fff; margin-bottom: 0.5rem;
-    }
-    .step-card h3 { font-size: 0.85rem; margin: 0 0 0.3rem 0; color: #fff; }
-    .step-card p  { font-size: 0.65rem; color: var(--text-muted); margin: 0; line-height: 1.4; }
-
-    /* ─── Flow Arrow ─── */
-    .flow-row {
-      display: flex; align-items: stretch; gap: 0;
-      justify-content: center;
-    }
-    .flow-arrow {
-      display: flex; align-items: center; color: rgba(255,255,255,0.15);
-      font-size: 1.5rem; padding: 0 0.1rem; flex-shrink: 0;
-    }
-
-    /* ─── Two-column feature list ─── */
-    .feature-list {
-      list-style: none; padding: 0; margin: 0;
-      display: flex; flex-direction: column; gap: 0.6rem;
-    }
-    .feature-list li {
-      display: flex; align-items: flex-start; gap: 0.6rem;
-      font-size: 0.75rem; color: var(--text-muted); line-height: 1.5;
-    }
-    .feature-list li .icon-dot {
-      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px;
-    }
-
-    /* ─── Formula block ─── */
-    .formula-block {
-      background: rgba(0,0,0,0.4);
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 12px;
-      padding: 1rem 1.5rem;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.85rem;
-      color: var(--cyan);
-      text-align: center;
-      margin: 0.8rem 0;
-      letter-spacing: 0.02em;
-    }
-
-    /* ─── Misc ─── */
-    .text-muted { color: var(--text-muted); }
-    .text-sm { font-size: 0.75rem; }
-    .text-xs { font-size: 0.65rem; }
-    .text-center { text-align: center; }
-    .mt-1 { margin-top: 0.5rem; }
-    .mt-2 { margin-top: 1rem; }
-    .mb-1 { margin-bottom: 0.5rem; }
-    .flex-center { display: flex; align-items: center; justify-content: center; }
-
-    /* ─── Slide-specific tweaks ─── */
-    .reveal section { padding: 1.5rem 2.5rem; }
-
-    /* ─── Tech icon circle ─── */
-    .tech-icon {
-      width: 52px; height: 52px;
-      border-radius: 14px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.65rem; font-weight: 800;
-      color: #fff; margin: 0 auto 0.5rem;
-      text-transform: uppercase; letter-spacing: 0.05em;
-      border: 1px solid rgba(255,255,255,0.08);
-    }
-
-    /* ─── Pillar card ─── */
-    .pillar-card {
-      text-align: center;
-      padding: 0.8rem 0.5rem;
-    }
-    .pillar-card .pillar-icon {
-      width: 44px; height: 44px;
-      border-radius: 12px;
-      display: inline-flex; align-items: center; justify-content: center;
-      font-size: 1.3rem; margin-bottom: 0.4rem;
-    }
-    .pillar-card h3 { font-size: 0.8rem; margin: 0 0 0.15rem; }
-    .pillar-card p  { font-size: 0.6rem; color: var(--text-muted); margin: 0; line-height: 1.3; }
-    .pillar-card .k-val {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.7rem; font-weight: 600;
-      margin-top: 0.3rem; display: inline-block;
-      padding: 0.15rem 0.5rem; border-radius: 6px;
-    }
-
-    /* ─── Slide progress bar ─── */
-    .reveal .progress { height: 4px; }
-    .reveal .progress span { background: linear-gradient(90deg, var(--violet), var(--blue)); }
-
-    /* ─── Controls ─── */
-    .reveal .controls .controls-arrow { color: var(--violet); }
-
-    /* ─── Override Reveal.js backgrounds ─── */
-    .reveal .slide-background-content {
-      background: var(--bg-deep) !important;
-    }
-
-    /* ─── Three-stage visual ─── */
-    .stage-card {
-      padding: 0.8rem;
-      border-radius: 14px;
-      background: var(--bg-card);
-      border: 1px solid var(--glass-border);
-      position: relative;
-    }
-    .stage-card .stage-num {
-      font-family: 'Outfit'; font-weight: 900; font-size: 2rem;
-      position: absolute; top: 0.4rem; right: 0.8rem; opacity: 0.08;
-    }
-    .stage-card h3 { font-size: 0.82rem; margin: 0 0 0.3rem; }
-    .stage-card p { font-size: 0.62rem; color: var(--text-muted); margin: 0; line-height: 1.4; }
-
-    .kf-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.72rem;
-    }
-    .kf-table th {
-      text-align: left;
-      padding: 0.4rem 0.6rem;
-      font-size: 0.6rem;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--text-muted);
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-    }
-    .kf-table td {
-      padding: 0.4rem 0.6rem;
-      border-bottom: 1px solid rgba(255,255,255,0.03);
-    }
-    .kf-table tr:last-child td { border-bottom: none; }
   </style>
 </head>
 <body>
-<div class="reveal">
-  <div class="slides">
-
-    <!-- ══════════════════════════════════════════════════════
-         SLIDE 1 — TITLE
-         ══════════════════════════════════════════════════════ -->
-    <section style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-      <div style="margin-bottom: 1.5rem;">
-        <div style="display:inline-flex; align-items:center; gap:0.75rem; background:linear-gradient(135deg,var(--violet),var(--blue)); padding:0.8rem 1.2rem; border-radius:16px; box-shadow:0 8px 30px -6px rgba(139,92,246,0.4);">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
-          <span style="color:#fff; font-family:Outfit; font-weight:900; font-size:1.4rem; letter-spacing:-0.02em;">AUDIT ENGINE</span>
-        </div>
-      </div>
-      <h1 class="gradient-text" style="font-size: 3.5rem; margin: 0 0 0.5rem;">
-        AI-Powered<br>Code Quality
-      </h1>
-      <p style="color: var(--text-muted); font-size: 1rem; max-width: 600px; line-height: 1.6; margin: 0 auto 2rem;">
-        Hệ thống kiểm toán chất lượng mã nguồn tự động, kết hợp Phân tích tĩnh (AST/Regex) với trí tuệ nhân tạo (LLM) để đánh giá, chấm điểm và tạo báo cáo chi tiết.
-      </p>
-      <div style="display: flex; gap: 0.8rem; flex-wrap: wrap; justify-content: center;">
-        <span class="pill pill-violet">FastAPI</span>
-        <span class="pill pill-blue">React</span>
-        <span class="pill pill-emerald">PostgreSQL</span>
-        <span class="pill pill-cyan">Docker</span>
-        <span class="pill pill-amber">AI / LLM</span>
-        <span class="pill pill-rose">Real-time SSE</span>
-      </div>
-    </section>
-
-    <!-- ══════════════════════════════════════════════════════
-         SLIDE 2 — ARCHITECTURE & TECH STACK
-         ══════════════════════════════════════════════════════ -->
-    <section>
-      <div class="tagline tagline-blue">⚙ System Architecture</div>
-      <h2 class="gradient-blue">Kiến trúc Hệ thống & Tech Stack</h2>
-
-      <div class="grid-2" style="gap: 1.2rem;">
-        <!-- Left: tech stack cards -->
-        <div>
-          <div class="grid-2" style="gap: 0.7rem;">
-            <div class="glass-card accent-violet" style="text-align:center; padding:1rem;">
-              <div class="tech-icon" style="background: linear-gradient(135deg, #8b5cf6, #6366f1);">API</div>
-              <h3 style="margin:0; font-size:0.85rem;">FastAPI</h3>
-              <p class="text-xs text-muted" style="margin:0.2rem 0 0;">Python 3.12 — Backend & Engine</p>
+  <div class="reveal">
+    <div class="slides">
+      <section>
+        <div class="slide-shell">
+          <div class="topbar">
+            <div class="topline">
+              <span class="deck-pill">Release Review Pack</span>
+              <span class="deck-kicker">Deck 01 · Architecture Spine</span>
             </div>
-            <div class="glass-card accent-blue" style="text-align:center; padding:1rem;">
-              <div class="tech-icon" style="background: linear-gradient(135deg, #3b82f6, #06b6d4);">UI</div>
-              <h3 style="margin:0; font-size:0.85rem;">React + Vite</h3>
-              <p class="text-xs text-muted" style="margin:0.2rem 0 0;">Interactive Dashboard</p>
+            <span class="slide-count">01 / 06</span>
+          </div>
+
+          <div class="hero-grid">
+            <div class="stack-lg">
+              <span class="eyebrow">Foundation Deck</span>
+              <h1 class="display-title title-gradient">Audit Engine<br />Core Architecture</h1>
+              <p class="lede">
+                Deck nền tảng cho toàn bộ buổi review kỹ thuật. Mục tiêu là chốt
+                một baseline chung về topology hệ thống, nhịp vận hành của
+                5-step audit pipeline, logic scoring và ranh giới dữ liệu trước
+                khi đi sâu sang NLRE hoặc AI Ops.
+              </p>
+
+              <div class="chip-row">
+                <span class="chip">FastAPI</span>
+                <span class="chip">React + Vite</span>
+                <span class="chip">PostgreSQL</span>
+                <span class="chip">Docker Compose</span>
+                <span class="chip">SSE Streaming</span>
+                <span class="chip">MkDocs</span>
+              </div>
+
+              <div class="metric-band">
+                <div class="panel panel-focus">
+                  <div class="overline">Audit Surface</div>
+                  <div class="hero-number">5</div>
+                  <div class="body-copy">discrete stages từ discovery tới reporting</div>
+                </div>
+                <div class="panel">
+                  <div class="overline">Scoring Model</div>
+                  <div class="hero-number">4</div>
+                  <div class="body-copy">quality pillars dùng để quy đổi penalty</div>
+                </div>
+                <div class="panel">
+                  <div class="overline">Shared Goal</div>
+                  <div class="hero-number">1</div>
+                  <div class="body-copy">baseline thống nhất cho mọi deck còn lại</div>
+                </div>
+              </div>
             </div>
-            <div class="glass-card accent-emerald" style="text-align:center; padding:1rem;">
-              <div class="tech-icon" style="background: linear-gradient(135deg, #10b981, #14b8a6);">DB</div>
-              <h3 style="margin:0; font-size:0.85rem;">PostgreSQL</h3>
-              <p class="text-xs text-muted" style="margin:0.2rem 0 0;">Audit History & Rules</p>
-            </div>
-            <div class="glass-card accent-rose" style="text-align:center; padding:1rem;">
-              <div class="tech-icon" style="background: linear-gradient(135deg, #f43f5e, #ec4899);">AI</div>
-              <h3 style="margin:0; font-size:0.85rem;">LLM Integration</h3>
-              <p class="text-xs text-muted" style="margin:0.2rem 0 0;">Two-Pass Verification</p>
+
+            <div class="stat-grid">
+              <div class="stat-card">
+                <div class="stat-value">Static First</div>
+                <div class="stat-label">Execution Bias</div>
+                <div class="stat-copy">Scanner nội bộ chạy trước, AI chỉ chen vào chỗ cần reasoning để giữ nhịp chi phí hợp lý.</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">Tiered Views</div>
+                <div class="stat-label">Output Model</div>
+                <div class="stat-copy">Project view, member view, history và docs cùng nhìn trên một audit contract thay vì tách chuẩn đánh giá.</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">No-DB Aware</div>
+                <div class="stat-label">Runtime Boundary</div>
+                <div class="stat-copy">Repository list còn boot được khi thiếu DB, nhưng persistence cho history, rules và settings phải được nói rõ.</div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- Right: container diagram -->
-        <div class="glass-card accent-blue" style="padding: 1.2rem;">
-          <h3 style="margin:0 0 0.8rem; font-size:0.8rem; color: var(--cyan);">
-            🐳 Docker Compose — 4 Services
-          </h3>
-          <div style="display:flex; flex-direction:column; gap:0.5rem;">
-            <div style="display:flex; align-items:center; gap:0.6rem; padding:0.4rem 0.6rem; background:rgba(59,130,246,0.08); border-radius:8px; border:1px solid rgba(59,130,246,0.15);">
-              <span class="pill pill-blue" style="min-width:65px; justify-content:center;">:3000</span>
-              <span class="text-sm" style="color:#fff;">Frontend</span>
-              <span class="text-xs text-muted" style="margin-left:auto;">node:20-slim</span>
-            </div>
-            <div style="display:flex; align-items:center; gap:0.6rem; padding:0.4rem 0.6rem; background:rgba(139,92,246,0.08); border-radius:8px; border:1px solid rgba(139,92,246,0.15);">
-              <span class="pill pill-violet" style="min-width:65px; justify-content:center;">:8000</span>
-              <span class="text-sm" style="color:#fff;">Backend</span>
-              <span class="text-xs text-muted" style="margin-left:auto;">FastAPI + Engine</span>
-            </div>
-            <div style="display:flex; align-items:center; gap:0.6rem; padding:0.4rem 0.6rem; background:rgba(16,185,129,0.08); border-radius:8px; border:1px solid rgba(16,185,129,0.15);">
-              <span class="pill pill-emerald" style="min-width:65px; justify-content:center;">:5432</span>
-              <span class="text-sm" style="color:#fff;">PostgreSQL</span>
-              <span class="text-xs text-muted" style="margin-left:auto;">postgres:15-alpine</span>
-            </div>
-            <div style="display:flex; align-items:center; gap:0.6rem; padding:0.4rem 0.6rem; background:rgba(245,158,11,0.08); border-radius:8px; border:1px solid rgba(245,158,11,0.15);">
-              <span class="pill pill-amber" style="min-width:65px; justify-content:center;">:8001</span>
-              <span class="text-sm" style="color:#fff;">MkDocs</span>
-              <span class="text-xs text-muted" style="margin-left:auto;">Living Documentation</span>
-            </div>
-          </div>
-          <div class="mt-1" style="padding:0.5rem; background:rgba(0,0,0,0.3); border-radius:8px; text-align:center;">
-            <span class="text-xs text-muted">Client → <span style="color:var(--blue);">React :3000</span> → <span style="color:var(--violet);">API :8000</span> → <span style="color:var(--emerald);">DB :5432</span></span>
+          <div class="footer-bar">
+            <span>Audit Engine v1</span>
+            <span class="footer-strong">Core baseline before control-plane and telemetry decks</span>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div class="mt-1" style="text-align:center;">
-        <span class="text-xs text-muted">Communication: RESTful API + Server-Sent Events (SSE) for real-time streaming</span>
-      </div>
-    </section>
+      <section>
+        <div class="slide-shell">
+          <div class="topbar">
+            <div class="topline">
+              <span class="deck-pill">Runtime Layout</span>
+              <span class="deck-kicker">System topology and ownership</span>
+            </div>
+            <span class="slide-count">02 / 06</span>
+          </div>
 
-    <!-- ══════════════════════════════════════════════════════
-         SLIDE 3 — 5-STEP AUDIT PIPELINE
-         ══════════════════════════════════════════════════════ -->
-    <section>
-      <div class="tagline tagline-emerald">▶ Audit Pipeline</div>
-      <h2 class="gradient-emerald">5-Step Audit Pipeline</h2>
-
-      <div class="flow-row">
-        <!-- Step 1 -->
-        <div class="glass-card accent-violet step-card" style="flex:1;">
-          <div class="step-num" style="background:linear-gradient(135deg,var(--violet),#6366f1);">1</div>
-          <h3>Discovery</h3>
-          <p>Auto-detect thư mục source.<br>Phân loại file theo Feature/Module.<br>Đếm LOC để chuẩn hóa điểm phạt.</p>
-        </div>
-        <div class="flow-arrow">→</div>
-
-        <!-- Step 2 -->
-        <div class="glass-card accent-blue step-card" style="flex:1;">
-          <div class="step-num" style="background:linear-gradient(135deg,var(--blue),var(--cyan));">2</div>
-          <h3>Static Scan</h3>
-          <p>Quét AST (Python):<br>Cyclomatic Complexity,<br>N+1 Query, Bare Except.<br>Regex: Hardcode, SQL Inj.</p>
-        </div>
-        <div class="flow-arrow">→</div>
-
-        <!-- Step 3 -->
-        <div class="glass-card accent-rose step-card" style="flex:1;">
-          <div class="step-num" style="background:linear-gradient(135deg,var(--rose),var(--pink));">3</div>
-          <h3>AI Gatekeeper</h3>
-          <p>LLM sàng lọc lỗi ảo.<br>Loại bỏ False Positives<br>dựa trên ngữ cảnh thực.</p>
-        </div>
-        <div class="flow-arrow">→</div>
-
-        <!-- Step 4 -->
-        <div class="glass-card accent-amber step-card" style="flex:1;">
-          <div class="step-num" style="background:linear-gradient(135deg,var(--amber),#ef4444);">4</div>
-          <h3>Aggregation</h3>
-          <p>Tính điểm phân cấp<br>theo 4 trụ cột.<br>K-Factor normalization.</p>
-        </div>
-        <div class="flow-arrow">→</div>
-
-        <!-- Step 5 -->
-        <div class="glass-card accent-emerald step-card" style="flex:1;">
-          <div class="step-num" style="background:linear-gradient(135deg,var(--emerald),var(--cyan));">5</div>
-          <h3>Reporting</h3>
-          <p>Lưu DB PostgreSQL.<br>Xuất Markdown Report.<br>Dashboard real-time.</p>
-        </div>
-      </div>
-
-      <div class="mt-2 glass-card accent-blue" style="padding:0.8rem 1.2rem;">
-        <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
-          <span class="pill pill-cyan">Real-time</span>
-          <span class="text-sm" style="color:var(--text-muted);">
-            Trong quá trình quét, <strong style="color:#fff;">Server-Sent Events (SSE)</strong> stream log trực tiếp tới Dashboard mỗi <strong style="color:var(--cyan);">0.5 giây</strong>. Kết quả được tự động hiển thị ngay khi hoàn tất.
-          </span>
-        </div>
-      </div>
-    </section>
-
-    <!-- ══════════════════════════════════════════════════════
-         SLIDE 4 — AI GATEKEEPER & NLRE
-         ══════════════════════════════════════════════════════ -->
-    <section>
-      <div class="tagline tagline-rose">🤖 AI Integration</div>
-      <h2 class="gradient-rose">AI Gatekeeper & Rule Engine</h2>
-
-      <div class="grid-2" style="gap:1.2rem; align-items:start;">
-        <!-- Left: 3-Stage -->
-        <div>
-          <h3 style="margin:0 0 0.7rem; font-size:0.9rem;">Three-Stage AI Pipeline</h3>
-          <div style="display: flex; flex-direction:column; gap:0.7rem;">
-            <div class="stage-card" style="border-left:3px solid var(--blue);">
-              <div class="stage-num" style="color:var(--blue);">01</div>
-              <div class="pill pill-blue mb-1">Stage 1 — Static Check</div>
-              <h3 style="color:#fff;">Regex + AST Scan</h3>
-              <p>Quét siêu nhanh bằng Pattern Matching và Cây cú pháp Python. Phát hiện Hardcoded Secrets, Circular Imports, Code Smells.</p>
+          <div class="grid-2">
+            <div class="panel panel-focus stack-md">
+              <div>
+                <div class="overline">Execution Spine</div>
+                <h2 class="section-title">One flow, four surfaces</h2>
+              </div>
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Surface</th>
+                    <th>Role</th>
+                    <th>Primary concern</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Dashboard</td>
+                    <td>React UI tại `:3000` cho leaderboard, audit view, settings và ops tools.</td>
+                    <td>Human-facing review experience.</td>
+                  </tr>
+                  <tr>
+                    <td>API Server</td>
+                    <td>FastAPI tại `:8000` giữ routers, orchestration và engine entrypoints.</td>
+                    <td>Stable contracts and task coordination.</td>
+                  </tr>
+                  <tr>
+                    <td>Persistence</td>
+                    <td>PostgreSQL lưu audit history, overrides, engine settings và telemetry.</td>
+                    <td>Operational memory over time.</td>
+                  </tr>
+                  <tr>
+                    <td>Documentation</td>
+                    <td>MkDocs tại `:8001` chứa ADR, API specs, feature notes và rules.</td>
+                    <td>Institutional knowledge, not runtime state.</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
-            <div class="stage-card" style="border-left:3px solid var(--rose);">
-              <div class="stage-num" style="color:var(--rose);">02</div>
-              <div class="pill pill-rose mb-1">Stage 2 — AI Gatekeeper</div>
-              <h3 style="color:#fff;">False Positive Filter</h3>
-              <p>AI rà soát kết quả Stage 1. Nếu code context cho thấy an toàn → xóa bỏ cảnh báo giả. Giảm nhiễu triệt để.</p>
-            </div>
+            <div class="stack-md">
+              <div class="panel">
+                <div class="overline">Deployment Notes</div>
+                <ul class="list">
+                  <li><span class="list-dot"></span><span>`./manage.sh` boot toàn bộ stack theo Docker Compose, giúp dev environment bám sát production contract.</span></li>
+                  <li><span class="list-dot"></span><span>Nginx proxy ` /api/* ` về backend, nên dashboard giữ URL shape ổn định mà không lộ topology ra ngoài.</span></li>
+                  <li><span class="list-dot"></span><span>SSE được dùng cho realtime logs thay vì polling nặng tay trong lúc audit chạy.</span></li>
+                </ul>
+              </div>
 
-            <div class="stage-card" style="border-left:3px solid var(--amber);">
-              <div class="stage-num" style="color:var(--amber);">03</div>
-              <div class="pill pill-amber mb-1">Stage 3 — Deep Audit</div>
-              <h3 style="color:#fff;">Two-Pass Cross Verification</h3>
-              <p>AI dò lỗi logic sâu. Nếu cần context cross-file → <strong>cắm cờ nghi vấn</strong> → Engine tìm source code hàm được gọi → AI xác nhận lần 2 (Pass 2).</p>
+              <div class="panel panel-muted">
+                <div class="overline">Review Lens</div>
+                <p class="body-copy">
+                  Slide này không đi sâu vào feature cụ thể. Điều cần khóa ở đây
+                  là ai sở hữu state nào, hệ nào chịu trách nhiệm hiển thị, và
+                  tầng nào chỉ nên đóng vai trò documentation thay vì runtime source
+                  of truth.
+                </p>
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- Right: Rule System -->
-        <div>
-          <h3 style="margin:0 0 0.7rem; font-size:0.9rem;">Hệ thống Quy tắc (Rule System)</h3>
-          <div style="display: flex; flex-direction:column; gap:0.7rem;">
-            <div class="glass-card accent-violet" style="padding:1rem;">
-              <div class="pill pill-violet mb-1">Core Rules</div>
-              <p class="text-sm" style="margin:0; color: var(--text-muted); line-height:1.5;">
-                Luật mặc định phát hiện bằng <strong style="color:#fff;">Regex + AST</strong>.<br>
-                SQL Injection, Code Smells, N+1 Query...<br>
-                Có thể <span style="color:var(--violet);">Bật/Tắt</span> và <span style="color:var(--violet);">chỉnh điểm phạt</span> từng luật.
+          <div class="footer-bar">
+            <span>Topology matters because UI, API, DB and Docs each solve a different failure mode.</span>
+            <span class="footer-strong">No single layer should silently own everything.</span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="slide-shell">
+          <div class="topbar">
+            <div class="topline">
+              <span class="deck-pill">Pipeline Flow</span>
+              <span class="deck-kicker">Fast first, expensive later</span>
+            </div>
+            <span class="slide-count">03 / 06</span>
+          </div>
+
+          <div class="stack-lg">
+            <div>
+              <div class="overline">5-Step Audit Pipeline</div>
+              <h2 class="section-title">A deliberate progression, not one giant AI call</h2>
+            </div>
+
+            <div class="route-grid">
+              <div class="route-card">
+                <div class="route-number">01</div>
+                <div class="route-title">Discovery</div>
+                <div class="route-copy">Detect source directories, classify files by module and compute effective LOC.</div>
+              </div>
+              <div class="route-card">
+                <div class="route-number">02</div>
+                <div class="route-title">Static Scan</div>
+                <div class="route-copy">AST + Regex catch deterministic issues before any AI budget is consumed.</div>
+              </div>
+              <div class="route-card">
+                <div class="route-number">03</div>
+                <div class="route-title">AI Gatekeeper</div>
+                <div class="route-copy">Context-aware filter to remove false positives and reduce noisy ledger rows.</div>
+              </div>
+              <div class="route-card">
+                <div class="route-number">04</div>
+                <div class="route-title">Aggregation</div>
+                <div class="route-copy">Penalty rolls into pillars, K-factor normalization and weighted project score.</div>
+              </div>
+              <div class="route-card">
+                <div class="route-number">05</div>
+                <div class="route-title">Reporting</div>
+                <div class="route-copy">Dashboard, history, member ranking and streaming logs expose the result surface.</div>
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="panel panel-focus">
+                <div class="overline">Architectural Intent</div>
+                <ul class="list">
+                  <li><span class="list-dot"></span><span>Đắt tiền nhất trong pipeline không được chạy trước. AI phải vào sau khi hệ tĩnh đã rút gọn bề mặt nghi ngờ.</span></li>
+                  <li><span class="list-dot"></span><span>Mỗi bước có output rõ ràng, nên việc điều tra regression hoặc cost spike không bị mù.</span></li>
+                </ul>
+              </div>
+              <div class="panel">
+                <div class="overline">Reviewer Questions</div>
+                <ul class="list">
+                  <li><span class="list-dot"></span><span>Stage boundaries có đủ rõ để thêm feature mới mà không làm pipeline monolithic hơn không?</span></li>
+                  <li><span class="list-dot"></span><span>Realtime experience hiện tại có phản ánh đúng tiến độ backend, hay chỉ là UI animation đẹp mắt?</span></li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="footer-bar">
+            <span>Static scanner sets the floor; AI refines, not replaces.</span>
+            <span class="footer-strong">That separation is the cost-control mechanism.</span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="slide-shell">
+          <div class="topbar">
+            <div class="topline">
+              <span class="deck-pill">Scoring Logic</span>
+              <span class="deck-kicker">Comparable results across uneven codebases</span>
+            </div>
+            <span class="slide-count">04 / 06</span>
+          </div>
+
+          <div class="grid-2">
+            <div class="stack-md">
+              <div>
+                <div class="overline">Pillar Model</div>
+                <h2 class="section-title">Penalty becomes a business-readable score</h2>
+              </div>
+
+              <div class="grid-2">
+                <div class="panel panel-focus">
+                  <div class="overline">Security</div>
+                  <div class="hero-number">K = 0.5</div>
+                  <div class="body-copy">Cực nhạy với lỗi nghiêm trọng, phù hợp cho secrets hoặc security violations.</div>
+                </div>
+                <div class="panel">
+                  <div class="overline">Performance</div>
+                  <div class="hero-number">K = 2.0</div>
+                  <div class="body-copy">Dùng cho inefficiency patterns, hot loops và vấn đề query hiệu năng.</div>
+                </div>
+                <div class="panel">
+                  <div class="overline">Reliability</div>
+                  <div class="hero-number">K = 2.0</div>
+                  <div class="body-copy">Tập trung vào error handling, crash risk và unstable flows.</div>
+                </div>
+                <div class="panel">
+                  <div class="overline">Maintainability</div>
+                  <div class="hero-number">K = 4.0</div>
+                  <div class="body-copy">Chấp nhận dung sai lớn hơn nhưng vẫn phản ánh debt tích lũy.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="stack-md">
+              <div class="formula-box">pillar_score = 10 / (1 + penalty / K_FACTOR)</div>
+
+              <div class="panel">
+                <div class="overline">Normalization Rules</div>
+                <ul class="list">
+                  <li><span class="list-dot"></span><span>Penalty được chuẩn hóa theo effective LOC / 1000 để project lớn không bị đối xử như project nhỏ.</span></li>
+                  <li><span class="list-dot"></span><span>Final score dùng weighted average theo LOC của module, nên phần code lớn có ảnh hưởng tương xứng.</span></li>
+                  <li><span class="list-dot"></span><span>Member scoring dựa trên git blame trong cửa sổ thời gian cấu hình, tránh đánh đồng toàn đội.</span></li>
+                </ul>
+              </div>
+
+              <div class="panel panel-muted">
+                <div class="overline">Why Tech Leads Care</div>
+                <p class="body-copy">
+                  Hệ điểm chỉ hữu ích nếu nó so sánh được giữa các project có quy
+                  mô khác nhau. Nếu normalization yếu, dashboard sẽ biến thành
+                  bảng trang trí thay vì công cụ ra quyết định.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="footer-bar">
+            <span>Scoring is not just math; it is the contract between findings and action.</span>
+            <span class="footer-strong">Normalization protects that contract.</span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="slide-shell">
+          <div class="topbar">
+            <div class="topline">
+              <span class="deck-pill">State Boundaries</span>
+              <span class="deck-kicker">Persistence versus fallback</span>
+            </div>
+            <span class="slide-count">05 / 06</span>
+          </div>
+
+          <div class="grid-3">
+            <div class="panel panel-focus">
+              <div class="overline">Config / Fallback</div>
+              <h3 class="panel-title">In-memory is a convenience, not durable state</h3>
+              <p class="body-copy">
+                Khi thiếu `DATABASE_URL`, app vẫn có thể boot repository list từ
+                `config.py`, nhưng đó là fallback để dev flow sống tiếp chứ không
+                phải đường vận hành đầy đủ.
               </p>
             </div>
 
-            <div class="glass-card accent-amber" style="padding:1rem;">
-              <div class="pill pill-amber mb-1">AI-Only Rules</div>
-              <p class="text-sm" style="margin:0; color: var(--text-muted); line-height:1.5;">
-                6 luật chỉ AI mới phát hiện được.<br>
-                <span style="color:var(--amber);">Unchecked None Return</span>, <span style="color:var(--amber);">Silent Data Corruption</span>, <span style="color:var(--amber);">Redundant DB Query</span>...
+            <div class="panel">
+              <div class="overline">Persistent State</div>
+              <h3 class="panel-title">History, overrides and settings need Postgres</h3>
+              <p class="body-copy">
+                Audit history, rule overrides, engine settings và các lớp state
+                vận hành chỉ có ý nghĩa nếu dữ liệu được giữ xuyên phiên làm việc.
               </p>
             </div>
 
-            <div class="glass-card accent-emerald" style="padding:1rem;">
-              <div class="pill pill-emerald mb-1">NLRE — Custom Rules</div>
-              <p class="text-sm" style="margin:0; color: var(--text-muted); line-height:1.5;">
-                Tính năng đột phá: mô tả mong muốn<br>
-                bằng <strong style="color:var(--emerald);">Tiếng Việt</strong> → AI Agent tự sinh<br>
-                AST & Regex Rule tự động.
+            <div class="panel">
+              <div class="overline">Documentation Layer</div>
+              <h3 class="panel-title">MkDocs is institutional memory</h3>
+              <p class="body-copy">
+                Tài liệu phải giúp team hiểu hệ thống, nhưng không được ngầm trở
+                thành nơi lưu runtime truth thay cho DB hoặc API.
               </p>
             </div>
           </div>
-        </div>
-      </div>
-    </section>
 
-    <!-- ══════════════════════════════════════════════════════
-         SLIDE 5 — SCORING MECHANISM
-         ══════════════════════════════════════════════════════ -->
-    <section>
-      <div class="tagline tagline-amber">📊 Scoring System</div>
-      <h2 class="gradient-amber">Hierarchical Scoring Mechanism</h2>
-
-      <div class="grid-2" style="gap:1.2rem; align-items:start;">
-        <!-- Left: 4 Pillars -->
-        <div>
-          <h3 style="margin:0 0 0.6rem; font-size:0.9rem;">4 Quality Pillars — Thang điểm 10</h3>
-          <div class="grid-2" style="gap:0.6rem;">
-            <div class="glass-card accent-rose pillar-card">
-              <div class="pillar-icon" style="background:rgba(244,63,94,0.12);">🔒</div>
-              <h3 style="color:var(--rose);">Security</h3>
-              <p>Hổng bảo mật, Secrets</p>
-              <span class="k-val" style="color:var(--rose); background:rgba(244,63,94,0.1);">K = 0.5</span>
+          <div class="grid-2">
+            <div class="panel">
+              <div class="overline">Boundary Checklist</div>
+              <ul class="list">
+                <li><span class="list-dot"></span><span>UI có nói rõ chỗ nào chỉ là snapshot, chỗ nào là persisted record chưa?</span></li>
+                <li><span class="list-dot"></span><span>Fallback no-DB có đủ rõ để tránh người dùng tưởng history vẫn đang được lưu không?</span></li>
+              </ul>
             </div>
-            <div class="glass-card accent-blue pillar-card">
-              <div class="pillar-icon" style="background:rgba(59,130,246,0.12);">⚡</div>
-              <h3 style="color:var(--blue);">Performance</h3>
-              <p>Tối ưu thực thi</p>
-              <span class="k-val" style="color:var(--blue); background:rgba(59,130,246,0.1);">K = 2.0</span>
-            </div>
-            <div class="glass-card accent-emerald pillar-card">
-              <div class="pillar-icon" style="background:rgba(16,185,129,0.12);">🛡️</div>
-              <h3 style="color:var(--emerald);">Reliability</h3>
-              <p>Xử lý lỗi, Ổn định</p>
-              <span class="k-val" style="color:var(--emerald); background:rgba(16,185,129,0.1);">K = 2.0</span>
-            </div>
-            <div class="glass-card accent-violet pillar-card">
-              <div class="pillar-icon" style="background:rgba(139,92,246,0.12);">🧹</div>
-              <h3 style="color:var(--violet);">Maintainability</h3>
-              <p>Clean code, Structure</p>
-              <span class="k-val" style="color:var(--violet); background:rgba(139,92,246,0.1);">K = 4.0</span>
+            <div class="code-box">
+              config.py -> repository bootstrap<br />
+              postgres -> audit history / rules / settings<br />
+              mkdocs -> contracts / ADR / feature knowledge
             </div>
           </div>
 
-          <div class="formula-block mt-1">
-            Pillar Score = 10 / (1 + penalty / K_FACTOR)
-          </div>
-          <p class="text-xs text-muted text-center" style="margin:0.3rem 0 0;">
-            Penalty được chuẩn hóa theo Effective LOC/1000 (Laplace Smoothing)
-          </p>
-        </div>
-
-        <!-- Right: final score + K-Factor table -->
-        <div>
-          <h3 style="margin:0 0 0.6rem; font-size:0.9rem;">Cơ chế K-Factor & Tổng hợp</h3>
-
-          <div class="glass-card accent-amber" style="padding:1rem;">
-            <table class="kf-table">
-              <thead>
-                <tr><th>Trụ cột</th><th>K-Factor</th><th>Ý nghĩa</th></tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td style="color:var(--rose);">Security</td>
-                  <td><strong>0.5</strong></td>
-                  <td class="text-muted">Cực nhạy — 1 lỗi trừ rất nặng</td>
-                </tr>
-                <tr>
-                  <td style="color:var(--blue);">Performance</td>
-                  <td><strong>2.0</strong></td>
-                  <td class="text-muted">Tiêu chuẩn</td>
-                </tr>
-                <tr>
-                  <td style="color:var(--emerald);">Reliability</td>
-                  <td><strong>2.0</strong></td>
-                  <td class="text-muted">Tiêu chuẩn</td>
-                </tr>
-                <tr>
-                  <td style="color:var(--violet);">Maintainability</td>
-                  <td><strong>4.0</strong></td>
-                  <td class="text-muted">Dung sai lớn hơn</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="glass-card accent-blue mt-1" style="padding: 1rem;">
-            <h3 style="margin:0 0 0.4rem; color:var(--cyan); font-size:0.82rem;">🏆 Final Project Score</h3>
-            <ul class="feature-list">
-              <li>
-                <span class="icon-dot" style="background:var(--cyan);"></span>
-                <span><strong style="color:#fff;">Weighted Average by LOC</strong> — Module 10K dòng ảnh hưởng gấp 100× module 100 dòng.</span>
-              </li>
-              <li>
-                <span class="icon-dot" style="background:var(--amber);"></span>
-                <span><strong style="color:#fff;">Pillars Normalization</strong> — 4 trọng số luôn auto-chuẩn hóa tổng = 1.0.</span>
-              </li>
-              <li>
-                <span class="icon-dot" style="background:var(--emerald);"></span>
-                <span><strong style="color:#fff;">Member Scoring</strong> — Đánh giá cá nhân qua git blame trong cửa sổ thời gian được cấu hình.</span>
-              </li>
-            </ul>
+          <div class="footer-bar">
+            <span>Confusing fallback with persistence creates operational debt fast.</span>
+            <span class="footer-strong">This boundary must stay explicit in both UI and docs.</span>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <!-- ══════════════════════════════════════════════════════
-         SLIDE 6 — THANK YOU / SUMMARY
-         ══════════════════════════════════════════════════════ -->
-    <section style="text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-      <div style="margin-bottom:1rem;">
-        <div style="display:inline-flex; padding:0.5rem 1rem; border-radius:999px; background:rgba(139,92,246,0.1); border:1px solid rgba(139,92,246,0.2);">
-          <span style="color:var(--violet); font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em;">Summary</span>
+      <section>
+        <div class="slide-shell">
+          <div class="topbar">
+            <div class="topline">
+              <span class="deck-pill">Takeaways</span>
+              <span class="deck-kicker">What this baseline buys us</span>
+            </div>
+            <span class="slide-count">06 / 06</span>
+          </div>
+
+          <div class="stack-lg">
+            <div>
+              <div class="overline">Summary</div>
+              <h2 class="section-title">The architecture is legible because responsibilities are separated</h2>
+            </div>
+
+            <div class="metric-band">
+              <div class="panel panel-focus">
+                <div class="overline">Stable Spine</div>
+                <div class="hero-number">Runtime roles are distinct</div>
+                <div class="body-copy">Frontend, API, DB và docs không còn tranh nhau làm source of truth.</div>
+              </div>
+              <div class="panel">
+                <div class="overline">Layered Pipeline</div>
+                <div class="hero-number">Cost follows certainty</div>
+                <div class="body-copy">Static signal xuất hiện trước, AI reasoning chỉ được dùng khi cần.</div>
+              </div>
+              <div class="panel">
+                <div class="overline">Comparable Scores</div>
+                <div class="hero-number">Normalization keeps trust</div>
+                <div class="body-copy">LOC weighting và K-factor giúp số điểm có giá trị theo thời gian.</div>
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="panel">
+                <div class="overline">Next Deck</div>
+                <p class="body-copy">
+                  Sau baseline này, deck tiếp theo đi vào `NLRE & Rule Manager`
+                  để giải thích control plane của rules: compile, overrides,
+                  reset, save flow và guardrails.
+                </p>
+              </div>
+              <div class="panel panel-muted">
+                <div class="overline">Review Prompt</div>
+                <p class="body-copy">
+                  Nếu architecture baseline này được chấp nhận, mọi thảo luận
+                  chuyên sâu ở các deck sau sẽ dễ quy chiếu về đúng layer thay vì
+                  tranh luận trên mặt bằng mơ hồ.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="footer-bar">
+            <span>Audit Engine · Updated 2026-04-23</span>
+            <span class="footer-strong">Deck 02: NLRE & Rule Manager</span>
+          </div>
         </div>
-      </div>
-
-      <h1 class="gradient-text" style="font-size: 2.8rem; margin: 0 0 1rem;">
-        Thank You
-      </h1>
-
-      <div style="max-width: 700px; margin: 0 auto;">
-        <div class="grid-3" style="gap: 0.8rem; margin-bottom: 1.5rem;">
-          <div class="glass-card accent-violet" style="text-align:center; padding: 1rem;">
-            <div style="font-family:Outfit; font-size:2rem; font-weight:900; color:var(--violet);">5</div>
-            <div class="text-xs text-muted">Step Pipeline</div>
-          </div>
-          <div class="glass-card accent-rose" style="text-align:center; padding: 1rem;">
-            <div style="font-family:Outfit; font-size:2rem; font-weight:900; color:var(--rose);">3</div>
-            <div class="text-xs text-muted">AI Stages</div>
-          </div>
-          <div class="glass-card accent-amber" style="text-align:center; padding: 1rem;">
-            <div style="font-family:Outfit; font-size:2rem; font-weight:900; color:var(--amber);">4</div>
-            <div class="text-xs text-muted">Quality Pillars</div>
-          </div>
-        </div>
-
-        <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.7; max-width: 550px; margin: 0 auto;">
-          Hệ thống tự động phân tích, lọc nhiễu bằng AI, và chấm điểm theo tiêu chuẩn khắt khe — giúp đội ngũ phát triển cải thiện chất lượng code một cách chủ động và đo lường được.
-        </p>
-      </div>
-
-      <div class="mt-2">
-        <span class="text-xs text-muted">Powered by <strong style="color:var(--violet);">Audit Engine V1</strong> • Built with FastAPI, React & AI</span>
-      </div>
-    </section>
-
+      </section>
+    </div>
   </div>
-</div>
 
-<!-- Reveal.js -->
-<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
-<script>
-  Reveal.initialize({
-    hash: true,
-    controls: true,
-    progress: true,
-    center: true,
-    transition: 'slide',
-    transitionSpeed: 'default',
-    backgroundTransition: 'fade',
-    width: 1280,
-    height: 720,
-    margin: 0.04,
-    minScale: 0.2,
-    maxScale: 2.0,
-  });
-</script>
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true,
+      controls: true,
+      progress: true,
+      center: true,
+      transition: "slide",
+      backgroundTransition: "fade",
+      width: 1280,
+      height: 720,
+      margin: 0.035,
+      minScale: 0.2,
+      maxScale: 2
+    });
+  </script>
 </body>
 </html>

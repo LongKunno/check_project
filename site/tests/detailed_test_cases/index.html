@@ -1,0 +1,2331 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../../tech_stack/rule_customization/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Test Cases Chi tiết - AI Static Analysis Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#tai-lieu-ac-ta-test-cases-chi-tiet-v21" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="AI Static Analysis Documentation" class="md-header__button md-logo" aria-label="AI Static Analysis Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AI Static Analysis Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Test Cases Chi tiết
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Trang chủ
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../features/discovery/" class="md-tabs__link">
+          
+  
+  
+  Tính năng Hệ thống
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../architecture/overview/" class="md-tabs__link">
+          
+  
+  
+  Kiến trúc hệ thống
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../database/overview/" class="md-tabs__link">
+          
+  
+  
+  Database
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../api_specs/stream/" class="md-tabs__link">
+          
+  
+  
+  API Specifications
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../tech_stack/python_rules/" class="md-tabs__link">
+          
+  
+  
+  Quy chuẩn Tech Stack
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+  
+  Kiểm thử (Quality Assurance)
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="AI Static Analysis Documentation" class="md-nav__button md-logo" aria-label="AI Static Analysis Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    AI Static Analysis Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trang chủ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tính năng Hệ thống
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tính năng Hệ thống
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/discovery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code Discovery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/core_auditor_engine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core Audit Engine
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/real_time_audit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Real-time Streaming
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/scoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scoring System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/dashboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interactive Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/nlre/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Natural Language Rules (NLRE)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/ui_performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    High-Performance UI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/ui_text_selection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Text Selection Fix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/member_overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Member Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/ui_language_english/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Language (English)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/ui_overhaul/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Overhaul V1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/presentation_static_page/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Presentations Static Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kiến trúc hệ thống
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Kiến trúc hệ thống
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tổng quan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/module_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kiến trúc Module
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/design_decisions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quyết định thiết kế (ADR)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/nlre_engine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NLRE Engine
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/docker_setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Database
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../database/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tổng quan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../database/audit_history/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lịch sử kiểm toán
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Specifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Specifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/stream/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Real-time Stream
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/audit_jobs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background Jobs (V6)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/upload/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upload Project
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/ai_health/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Health Checks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/ai_cache/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Cache
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/fix_suggestion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fix Suggestion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/history/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    History Retrieval
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/repositories/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Repositories & Scores
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/git/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Git Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rules Compiler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/members/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Members & Leaderboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/engine_settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engine Settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quy chuẩn Tech Stack
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Quy chuẩn Tech Stack
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tech_stack/python_rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python Rules
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tech_stack/frontend_rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Frontend Rules
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tech_stack/rule_customization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tùy chỉnh Quy tắc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kiểm thử (Quality Assurance)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Kiểm thử (Quality Assurance)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Cases Chi tiết
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Cases Chi tiết
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-batch-audit-scan-all-quet-hang-loat-du-an" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Batch Audit (Scan All) - Quét hàng loạt dự án
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-real-time-logs-terminal-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Real-time Logs &amp; Terminal UI
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-persistence-state-recovery-reload-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Persistence &amp; State Recovery (Reload Support)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-smart-initial-selection-dashboard-default" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Smart Initial Selection (Dashboard Default)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-ai-cache-console" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. AI Cache Console
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-ai-ops-explorer-pricing-research" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. AI Ops Explorer &amp; Pricing Research
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-no-db-fallback-persistence-boundaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. No-DB Fallback &amp; Persistence Boundaries
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ghi-chu-cho-pentestsecurity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ghi chú cho Pentest/Security
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#1-batch-audit-scan-all-quet-hang-loat-du-an" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Batch Audit (Scan All) - Quét hàng loạt dự án
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-real-time-logs-terminal-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Real-time Logs &amp; Terminal UI
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-persistence-state-recovery-reload-support" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Persistence &amp; State Recovery (Reload Support)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-smart-initial-selection-dashboard-default" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Smart Initial Selection (Dashboard Default)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-ai-cache-console" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. AI Cache Console
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-ai-ops-explorer-pricing-research" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. AI Ops Explorer &amp; Pricing Research
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-no-db-fallback-persistence-boundaries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. No-DB Fallback &amp; Persistence Boundaries
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ghi-chu-cho-pentestsecurity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Ghi chú cho Pentest/Security
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="tai-lieu-ac-ta-test-cases-chi-tiet-v21">Tài liệu Đặc tả Test Cases Chi tiết (V2.1)</h1>
+<p>Tài liệu này cung cấp các kịch bản kiểm thử (Test Cases) chi tiết cho các tính năng cốt lõi vừa được cập nhật, giúp đảm bảo hệ thống hoạt động ổn định và chính xác theo thiết kế.</p>
+<hr />
+<h2 id="1-batch-audit-scan-all-quet-hang-loat-du-an">1. Batch Audit (Scan All) - Quét hàng loạt dự án</h2>
+<p>Tính năng này cho phép quét tuần tự toàn bộ các dự án đã cấu hình từ màn hình Portfolio.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">ID</th>
+<th style="text-align: left;">Tên Test Case</th>
+<th style="text-align: left;">Các bước thực hiện (Pre-conditions)</th>
+<th style="text-align: left;">Kết quả mong đợi (Expected Results)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>TC-BA-01</strong></td>
+<td style="text-align: left;">Kích hoạt Scan All</td>
+<td style="text-align: left;">1. Mở <code>/project-scores</code>. <br> 2. Nhấn nút <strong>Scan All</strong>.</td>
+<td style="text-align: left;">1. Nút chuyển sang trạng thái "Dừng" (X màu đỏ). <br> 2. Xuất hiện thanh trạng thái Audit tuần tự phía trên. <br> 3. Badge "Đang phân tích" xuất hiện trên thẻ (Card) của dự án đầu tiên.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-BA-02</strong></td>
+<td style="text-align: left;">Quét tuần tự (Queue)</td>
+<td style="text-align: left;">1. Chờ dự án đầu tiên hoàn thành.</td>
+<td style="text-align: left;">1. Dự án 1 chuyển sang trạng thái "Hoàn tất" (Badge xanh). <br> 2. Dự án 2 tự động chuyển sang "Đang phân tích" mà không cần can thiệp.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-BA-03</strong></td>
+<td style="text-align: left;">Dừng quét (Cancel Batch)</td>
+<td style="text-align: left;">1. Khi đang quét Package 2/N, nhấn nút <strong>Dừng</strong>.</td>
+<td style="text-align: left;">1. Backend nhận tín hiệu cancel. <br> 2. Loading spinner dừng lại. <br> 3. Các dự án chưa quét vẫn giữ nguyên trạng thái cũ.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-BA-04</strong></td>
+<td style="text-align: left;">Xử lý lỗi trong Batch</td>
+<td style="text-align: left;">1. Cấu hình 1 dự án có repo URL sai. <br> 2. Chạy Scan All.</td>
+<td style="text-align: left;">1. Dự án lỗi hiển thị Badge "Lỗi" (màu đỏ) kèm tooltip thông báo. <br> 2. Hệ thống KHÔNG dừng lại mà tiếp tục quét dự án kế tiếp trong danh sách.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2-real-time-logs-terminal-ui">2. Real-time Logs &amp; Terminal UI</h2>
+<p>Kiểm tra khả năng hiển thị log thời gian thực qua SSE và các tính năng tương tác của Terminal.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">ID</th>
+<th style="text-align: left;">Tên Test Case</th>
+<th style="text-align: left;">Các bước thực hiện</th>
+<th style="text-align: left;">Kết quả mong đợi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>TC-LOG-01</strong></td>
+<td style="text-align: left;">Kết nối SSE khi quét</td>
+<td style="text-align: left;">1. Bắt đầu quét một dự án. <br> 2. Quan sát khung Terminal.</td>
+<td style="text-align: left;">1. Log bắt đầu chảy xuống liên tục ngay khi backend bắt đầu clone. <br> 2. Trạng thái kết nối (đèn tín hiệu) báo xanh.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-LOG-02</strong></td>
+<td style="text-align: left;">Gom nhóm Accordion</td>
+<td style="text-align: left;">1. Quan sát cách hiển thị log các bước <code>[1/5]</code>, <code>[2/5]</code>.</td>
+<td style="text-align: left;">1. Các bước đã xong tự động đóng (Collapse). <br> 2. Bước hiện tại tự động mở (Expand) và cuộn xuống dưới cùng.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-LOG-03</strong></td>
+<td style="text-align: left;">Màu sắc &amp; Định dạng</td>
+<td style="text-align: left;">——</td>
+<td style="text-align: left;">1. <strong>Cyan</strong>: Tên tệp tin. <br> 2. <strong>Rose/Red</strong>: Lỗi vi phạm. <br> 3. <strong>Emerald/Green</strong>: False Positive bị AI gạt bỏ.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-LOG-04</strong></td>
+<td style="text-align: left;">Thanh trạng thái log</td>
+<td style="text-align: left;">1. Quan sát dòng text phía trên terminal.</td>
+<td style="text-align: left;">1. Hiển thị đúng tên tệp đang xử lý (không bị trôi bởi log body). <br> 2. Hiệu ứng nhấp nháy/vòng lặp khi đang xử lý AI Deep Audit.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-persistence-state-recovery-reload-support">3. Persistence &amp; State Recovery (Reload Support)</h2>
+<p>Kiểm tra khả năng "sống sót" của dữ liệu và tiến trình sau khi tải lại trang hoặc mất kết nối.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">ID</th>
+<th style="text-align: left;">Tên Test Case</th>
+<th style="text-align: left;">Các bước thực hiện</th>
+<th style="text-align: left;">Kết quả mong đợi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>TC-RES-01</strong></td>
+<td style="text-align: left;">F5 khi đang Scan All</td>
+<td style="text-align: left;">1. Chạy Scan All. <br> 2. Khi đang quét dở, nhấn F5 (Reload) trình duyệt.</td>
+<td style="text-align: left;">1. Dashboard nạp lại nhưng ngay lập tức bắt lại tiến trình cũ (Polling/SSE nối tiếp). <br> 2. Tiến trình quét không bị reset về 0 mà tiếp tục từ dự án hiện tại.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-RES-02</strong></td>
+<td style="text-align: left;">Persistence dự án gần nhất</td>
+<td style="text-align: left;">1. Quét hoàn tất dự án "A". <br> 2. Tắt trình duyệt, mở lại trang Dashboard (<code>/</code>).</td>
+<td style="text-align: left;">1. Trang <code>/</code> tự động chuyển hướng về <code>/project-scores</code>. <br> 2. Hệ thống tự động chọn dự án "A" (do mới nhất) và nạp kết quả của nó vào Dashboard mặc định.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-RES-03</strong></td>
+<td style="text-align: left;">Khôi phục Terminal Log</td>
+<td style="text-align: left;">1. Reload trang khi terminal đang chạy.</td>
+<td style="text-align: left;">1. Terminal nạp lại các dòng log cũ (buffer 500 dòng) từ backend để người dùng nắm bắt ngữ cảnh đã qua.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="4-smart-initial-selection-dashboard-default">4. Smart Initial Selection (Dashboard Default)</h2>
+<p>Kiểm tra logic tự động lựa chọn dự án thông minh để tối ưu UX.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">ID</th>
+<th style="text-align: left;">Tên Test Case</th>
+<th style="text-align: left;">Các bước thực hiện</th>
+<th style="text-align: left;">Kết quả mong đợi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>TC-SEL-01</strong></td>
+<td style="text-align: left;">Chọn dự án theo History</td>
+<td style="text-align: left;">1. Dự án "X" có lần đánh giá lúc 10:00. <br> 2. Dự án "Y" có lần đánh giá lúc 10:30. <br> 3. Mở Dashboard.</td>
+<td style="text-align: left;">1. Sidebar Project Selector tự động chọn "Y". <br> 2. Màn hình Audit hiển thị toàn bộ chỉ số của dự án "Y".</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-SEL-02</strong></td>
+<td style="text-align: left;">Fallback khi chưa có History</td>
+<td style="text-align: left;">1. (Xóa sạch DB) <br> 2. Mở Dashboard.</td>
+<td style="text-align: left;">1. Hệ thống tự động chọn dự án đầu tiên trong danh sách <code>CONFIGURED_REPOSITORIES</code>. <br> 2. Dashboard hiển thị trạng thái "Chưa có dữ liệu/Cần quét".</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-SEL-03</strong></td>
+<td style="text-align: left;">Điều hướng từ Project Card</td>
+<td style="text-align: left;">1. Tại <code>/project-scores</code>, click vào card dự án "Z".</td>
+<td style="text-align: left;">1. Màn hình chuyển sang <code>/audit</code>. <br> 2. Sidebar update selection thành dự án "Z".</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="5-ai-cache-console">5. AI Cache Console</h2>
+<p>Kiểm tra khả năng quan sát, đổi policy và clear cache từ màn hình vận hành.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">ID</th>
+<th style="text-align: left;">Tên Test Case</th>
+<th style="text-align: left;">Các bước thực hiện</th>
+<th style="text-align: left;">Kết quả mong đợi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>TC-CACHE-01</strong></td>
+<td style="text-align: left;">Tải trạng thái cache</td>
+<td style="text-align: left;">1. Mở <code>/ai-cache</code>.</td>
+<td style="text-align: left;">1. UI gọi <code>GET /api/ai/cache</code> thành công. <br> 2. Hiển thị đúng <code>enabled</code>, <code>retention_days</code>, <code>entries_count</code>, <code>last_hit_at</code>.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-CACHE-02</strong></td>
+<td style="text-align: left;">Cập nhật toggle từng stage</td>
+<td style="text-align: left;">1. Tắt <code>deep_audit_enabled</code>. <br> 2. Lưu policy.</td>
+<td style="text-align: left;">1. UI gọi <code>PUT /api/ai/cache</code>. <br> 2. Reload màn hình vẫn giữ đúng state mới.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-CACHE-03</strong></td>
+<td style="text-align: left;">Thay đổi retention days</td>
+<td style="text-align: left;">1. Đặt <code>retention_days = 14</code>. <br> 2. Lưu policy.</td>
+<td style="text-align: left;">1. Backend chấp nhận giá trị hợp lệ <code>1..3650</code>. <br> 2. <code>last_cleanup_at</code> được cập nhật sau khi lưu.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-CACHE-04</strong></td>
+<td style="text-align: left;">Xoá toàn bộ cache</td>
+<td style="text-align: left;">1. Bấm nút clear cache. <br> 2. Xác nhận thao tác xoá.</td>
+<td style="text-align: left;">1. UI gọi <code>DELETE /api/ai/cache</code>. <br> 2. <code>entries_count</code> về <code>0</code>. <br> 3. Các run/entry cache cũ không còn trên màn hình.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="6-ai-ops-explorer-pricing-research">6. AI Ops Explorer &amp; Pricing Research</h2>
+<p>Kiểm tra phần mở rộng của AI Ops để đảm bảo slice observability khớp với docs mới.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">ID</th>
+<th style="text-align: left;">Tên Test Case</th>
+<th style="text-align: left;">Các bước thực hiện</th>
+<th style="text-align: left;">Kết quả mong đợi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>TC-AIOPS-01</strong></td>
+<td style="text-align: left;">Nạp filter metadata</td>
+<td style="text-align: left;">1. Mở <code>/ai-ops</code>. <br> 2. Chọn date range có dữ liệu.</td>
+<td style="text-align: left;">1. UI gọi <code>GET /api/ai/filters/meta</code>. <br> 2. Bộ lọc project/source/provider/model được populate đúng.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-AIOPS-02</strong></td>
+<td style="text-align: left;">Pricing research</td>
+<td style="text-align: left;">1. Mở form research pricing. <br> 2. Nhập <code>provider</code>, <code>mode</code>, <code>model</code>.</td>
+<td style="text-align: left;">1. UI gọi <code>POST /api/ai/pricing/research</code>. <br> 2. Trả về suggestion, source label và source URL.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-AIOPS-03</strong></td>
+<td style="text-align: left;">Cost = 0 khi thiếu pricing row</td>
+<td style="text-align: left;">1. Xoá pricing của model đang dùng. <br> 2. Chạy một luồng AI mới.</td>
+<td style="text-align: left;">1. Request vẫn được log bình thường. <br> 2. Cost hiển thị <code>0</code> thay vì làm hỏng dashboard.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="7-no-db-fallback-persistence-boundaries">7. No-DB Fallback &amp; Persistence Boundaries</h2>
+<p>Khóa rõ hành vi khi <code>DATABASE_URL</code> không tồn tại hoặc Postgres tạm thời không reachable.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">ID</th>
+<th style="text-align: left;">Tên Test Case</th>
+<th style="text-align: left;">Các bước thực hiện</th>
+<th style="text-align: left;">Kết quả mong đợi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><strong>TC-NODB-01</strong></td>
+<td style="text-align: left;">Danh sách repo vẫn hoạt động</td>
+<td style="text-align: left;">1. Gỡ <code>DATABASE_URL</code>. <br> 2. Mở <code>/repositories</code>.</td>
+<td style="text-align: left;">1. UI vẫn tải được danh sách repo từ fallback in-memory. <br> 2. Không có audit history giả lập.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-NODB-02</strong></td>
+<td style="text-align: left;">Repository scores không giả lập audit</td>
+<td style="text-align: left;">1. Gỡ <code>DATABASE_URL</code>. <br> 2. Mở <code>/project-scores</code>.</td>
+<td style="text-align: left;">1. <code>GET /api/repositories/scores</code> vẫn trả repo list. <br> 2. Các trường <code>latest_score</code>, <code>latest_rating</code>, <code>latest_timestamp</code>, <code>pillar_scores</code> là <code>null</code> nếu không có dữ liệu persist.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><strong>TC-NODB-03</strong></td>
+<td style="text-align: left;">Engine settings update trả lỗi rõ ràng</td>
+<td style="text-align: left;">1. Gỡ <code>DATABASE_URL</code>. <br> 2. Từ Settings UI thử đổi <code>AI Enabled</code>.</td>
+<td style="text-align: left;">1. <code>GET /api/settings/engine</code> vẫn đọc effective config từ <code>.env</code>/default. <br> 2. <code>PUT /api/settings/engine</code> trả <code>503</code> với thông điệp rõ rằng persistence không khả dụng.</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="ghi-chu-cho-pentestsecurity">Ghi chú cho Pentest/Security</h2>
+<blockquote>
+<p>[!CAUTION]
+Luôn kiểm tra tính an toàn của đường dẫn (<code>target_id</code>) để tránh lỗ hổng Directory Traversal khi gọi API History/Audit bằng các payload như <code>../../etc/passwd</code>. Hệ thống đã được cấu hình middleware chặn các ký tự này.</p>
+</blockquote>
+<hr />
+<p><em>Duy trì bởi Antigravity AI.</em></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

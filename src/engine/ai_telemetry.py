@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 
 from psycopg2.extras import RealDictCursor, execute_values
 
+from src.engine.ai_cache import ai_audit_cache
 from src.engine.database import AuditDatabase
 
 logger = logging.getLogger(__name__)
@@ -1528,6 +1529,11 @@ class AiTelemetry:
         date_to: Optional[str] = None,
     ) -> Dict[str, Any]:
         rows = self._fetch_aggregate_rows(date_from=date_from, date_to=date_to)
+        cache_state = ai_audit_cache.get_cache_state(cleanup=False)
+        cache_summary = ai_audit_cache.get_overview_summary(
+            date_from=date_from,
+            date_to=date_to,
+        )
         now = _utc_now()
         today_start = datetime(now.year, now.month, now.day)
         month_start = datetime(now.year, now.month, 1)
@@ -1657,6 +1663,37 @@ class AiTelemetry:
                 key=lambda item: item["cost_usd"],
                 reverse=True,
             )[:5],
+            "cache": {
+                "enabled": bool(cache_state.get("enabled", True)),
+                "validation_enabled": bool(
+                    cache_state.get("validation_enabled", True)
+                ),
+                "deep_audit_enabled": bool(
+                    cache_state.get("deep_audit_enabled", True)
+                ),
+                "cross_check_enabled": bool(
+                    cache_state.get("cross_check_enabled", True)
+                ),
+                "retention_days": int(cache_state.get("retention_days") or 30),
+                "entries_count": int(cache_state.get("entries_count") or 0),
+                "last_hit_at": cache_state.get("last_hit_at"),
+                "last_cleanup_at": cache_state.get("last_cleanup_at"),
+                "hits": int(cache_summary.get("hits") or 0),
+                "misses": int(cache_summary.get("misses") or 0),
+                "writes": int(cache_summary.get("writes") or 0),
+                "hit_rate": float(cache_summary.get("hit_rate") or 0.0),
+                "saved_input_tokens": int(
+                    cache_summary.get("saved_input_tokens") or 0
+                ),
+                "saved_output_tokens": int(
+                    cache_summary.get("saved_output_tokens") or 0
+                ),
+                "saved_cost_usd": round(
+                    float(cache_summary.get("saved_cost_usd") or 0.0),
+                    8,
+                ),
+                "by_stage": dict(cache_summary.get("by_stage") or {}),
+            },
         }
 
     def get_usage_series(
@@ -1667,6 +1704,11 @@ class AiTelemetry:
         date_to: Optional[str] = None,
     ) -> List[Dict[str, Any]]:
         rows = self._fetch_aggregate_rows(date_from=date_from, date_to=date_to)
+        cache_rows = ai_audit_cache.get_usage_series(
+            granularity=granularity,
+            date_from=date_from,
+            date_to=date_to,
+        )
         buckets: Dict[str, Dict[str, Any]] = {}
         for row in rows:
             created_at = row.get("created_at")
@@ -1687,6 +1729,13 @@ class AiTelemetry:
                     "reported_requests": 0,
                     "estimated_requests": 0,
                     "blocked_requests": 0,
+                    "cache_hits": 0,
+                    "cache_misses": 0,
+                    "cache_writes": 0,
+                    "cache_hit_rate": 0.0,
+                    "saved_input_tokens": 0,
+                    "saved_output_tokens": 0,
+                    "saved_cost_usd": 0.0,
                 },
             )
             entry["request_count"] += 1
@@ -1702,6 +1751,47 @@ class AiTelemetry:
                 entry["estimated_requests"] += 1
             if row.get("status") == "blocked_budget":
                 entry["blocked_requests"] += 1
+        for cache_row in cache_rows:
+            bucket = cache_row.get("bucket")
+            if not bucket:
+                continue
+            entry = buckets.setdefault(
+                bucket,
+                {
+                    "bucket": bucket,
+                    "request_count": 0,
+                    "cost_usd": 0.0,
+                    "input_tokens": 0,
+                    "output_tokens": 0,
+                    "reported_requests": 0,
+                    "estimated_requests": 0,
+                    "blocked_requests": 0,
+                    "cache_hits": 0,
+                    "cache_misses": 0,
+                    "cache_writes": 0,
+                    "cache_hit_rate": 0.0,
+                    "saved_input_tokens": 0,
+                    "saved_output_tokens": 0,
+                    "saved_cost_usd": 0.0,
+                },
+            )
+            entry["cache_hits"] += int(cache_row.get("cache_hits") or 0)
+            entry["cache_misses"] += int(cache_row.get("cache_misses") or 0)
+            entry["cache_writes"] += int(cache_row.get("cache_writes") or 0)
+            entry["saved_input_tokens"] += int(
+                cache_row.get("saved_input_tokens") or 0
+            )
+            entry["saved_output_tokens"] += int(
+                cache_row.get("saved_output_tokens") or 0
+            )
+            entry["saved_cost_usd"] = round(
+                entry["saved_cost_usd"] + float(cache_row.get("saved_cost_usd") or 0),
+                8,
+            )
+            total_cache = entry["cache_hits"] + entry["cache_misses"]
+            entry["cache_hit_rate"] = (
+                round(entry["cache_hits"] / total_cache, 4) if total_cache else 0.0
+            )
         return [buckets[key] for key in sorted(buckets.keys())]
 
     def summarize_scope(

@@ -87,6 +87,36 @@ GOOGLE_HTML = """
 </table></section>
 """
 
+GOOGLE_HTML_WITH_HEADER = """
+<h2 id="gemini-2.5-flash" data-text="Gemini 2.5 Flash" tabindex="-1">Gemini 2.5 Flash</h2>
+<section><h3 id="standard_7" data-text="Standard" tabindex="-1">Standard</h3><table class="pricing-table">
+  <thead>
+    <tr>
+      <th>Feature</th>
+      <th>Free tier</th>
+      <th>Paid tier, per 1M tokens in USD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Input price</td>
+      <td>Free of charge</td>
+      <td>$0.30</td>
+    </tr>
+    <tr>
+      <td>Output price (including thinking tokens)</td>
+      <td>Free of charge</td>
+      <td>$2.50</td>
+    </tr>
+    <tr>
+      <td>Context caching price</td>
+      <td>Not available</td>
+      <td>$0.03</td>
+    </tr>
+  </tbody>
+</table></section>
+"""
+
 OPENAI_HTML = """
 <div>Text tokens</div>
 <div class="flex flex-row"><div class="flex flex-1 flex-col gap-1 rounded-lg border border-solid border-default bg-surface-secondary px-3 py-4"><div>Input</div><div class="text-2xl font-semibold">$0.75</div></div><div class="flex flex-1 flex-col gap-1 rounded-lg border border-solid border-default bg-surface-secondary px-3 py-4"><div>Cached input</div><div class="text-2xl font-semibold">$0.075</div></div><div class="flex flex-1 flex-col gap-1 rounded-lg border border-solid border-default bg-surface-secondary px-3 py-4"><div>Output</div><div class="text-2xl font-semibold">$4.50</div></div></div>
@@ -129,6 +159,21 @@ def test_research_google_uses_first_paid_tier_for_catalog_shape():
     assert suggestion["output_cost_per_million"] == 5.0
     assert suggestion["cached_input_cost_per_million"] == 0.125
     assert suggestion["source_note_code"] == "tiered_prompt_rate_first_tier"
+
+
+def test_research_google_ignores_optional_header_rows():
+    service = AiPricingResearchService(fetcher=lambda _url: GOOGLE_HTML_WITH_HEADER)
+
+    payload = service.research(
+        provider="google",
+        model="gemini-2.5-flash",
+        mode="realtime",
+    )
+
+    suggestion = payload["suggestions"][0]
+    assert suggestion["input_cost_per_million"] == 0.30
+    assert suggestion["output_cost_per_million"] == 2.50
+    assert suggestion["cached_input_cost_per_million"] == 0.03
 
 
 def test_research_openai_infers_batch_discount_from_official_guidance():

@@ -19,6 +19,7 @@ import Pagination from "../ui/Pagination";
 import { useToast } from "../ui/Toast";
 import TopProgressBar from "../ui/TopProgressBar";
 import { usePaginationState } from "../../hooks/usePaginationState";
+import { getRegressionMeta, getRegressionSummaryLine } from "../../utils/regressionHelpers";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -326,6 +327,7 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
                       "Scale (LOC)",
                       "Violations",
                       "AI Summary",
+                      "Regression Gate",
                       "Action",
                     ].map((h) => (
                       <th
@@ -440,6 +442,33 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
                             ) : (
                               <span className="text-xs text-slate-400">No AI usage</span>
                             )}
+                          </td>
+                          <td className="px-5 py-4">
+                            {(() => {
+                              const regressionMeta = getRegressionMeta(
+                                h.regression_status,
+                                h.regression_summary,
+                              );
+                              const regressionLine = getRegressionSummaryLine(
+                                h.regression_summary,
+                                h.regression_status,
+                              );
+                              return (
+                                <div className="flex flex-col items-start gap-1">
+                                  <span
+                                    className={`inline-flex px-2.5 py-1 rounded-full border text-[11px] font-bold ${regressionMeta.classes}`}
+                                  >
+                                    {regressionMeta.label}
+                                  </span>
+                                  <span
+                                    className="text-[11px] text-slate-500 max-w-[180px] truncate"
+                                    title={regressionLine}
+                                  >
+                                    {regressionLine}
+                                  </span>
+                                </div>
+                              );
+                            })()}
                           </td>
                           <td className="px-5 py-4">
                             <button

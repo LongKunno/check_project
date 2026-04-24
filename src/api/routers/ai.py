@@ -7,6 +7,7 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
+from src.engine.ai_cache import ai_audit_cache
 from src.engine.ai_pricing_research import ai_pricing_research
 from src.engine.ai_telemetry import ai_telemetry
 
@@ -40,6 +41,14 @@ class BudgetPolicyRequest(BaseModel):
     hard_stop_enabled: Optional[bool] = None
     retention_days: Optional[int] = Field(default=None, ge=1, le=3650)
     raw_payload_retention_enabled: Optional[bool] = None
+
+
+class CachePolicyRequest(BaseModel):
+    enabled: Optional[bool] = None
+    validation_enabled: Optional[bool] = None
+    deep_audit_enabled: Optional[bool] = None
+    cross_check_enabled: Optional[bool] = None
+    retention_days: Optional[int] = Field(default=None, ge=1, le=3650)
 
 
 @router.get("/ai/overview")
@@ -185,4 +194,29 @@ async def update_ai_budget(request: BudgetPolicyRequest):
             **ai_telemetry.save_budget_policy(request.model_dump(exclude_none=True)),
             **ai_telemetry.get_budget_usage(),
         },
+    }
+
+
+@router.get("/ai/cache")
+async def get_ai_cache_state():
+    return {
+        "status": "success",
+        "data": ai_audit_cache.get_cache_state(),
+    }
+
+
+@router.put("/ai/cache")
+async def update_ai_cache_policy(request: CachePolicyRequest):
+    ai_audit_cache.save_policy(request.model_dump(exclude_none=True))
+    return {
+        "status": "success",
+        "data": ai_audit_cache.get_cache_state(cleanup=False),
+    }
+
+
+@router.delete("/ai/cache")
+async def clear_ai_cache():
+    return {
+        "status": "success",
+        "data": ai_audit_cache.clear_cache(),
     }

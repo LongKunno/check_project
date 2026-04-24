@@ -51,6 +51,8 @@ const PresentationsStaticView = React.lazy(
   () => import("./components/views/PresentationsStaticView"),
 );
 const AiOpsView = React.lazy(() => import("./components/views/AiOpsView"));
+const AiCacheView = React.lazy(() => import("./components/views/AiCacheView"));
+const TrendsView = React.lazy(() => import("./components/views/TrendsView"));
 import { Sidebar } from "./components/layout/Sidebar";
 import PageTransition from "./components/ui/PageTransition";
 import { CardSkeleton, TableSkeleton } from "./components/ui/SkeletonLoader";
@@ -197,7 +199,7 @@ function App() {
           cn={cn}
         />
         {/* MAIN CONTENT AREA */}
-        <div className="flex-1 overflow-y-auto relative no-scrollbar bg-gradient-to-br from-slate-100 via-sky-50/40 to-violet-50/30">
+        <div className="relative min-w-0 flex-1 overflow-y-auto no-scrollbar bg-gradient-to-br from-slate-100 via-sky-50/40 to-violet-50/30">
           {/* Dynamic Mouse Spotlight overlay (Optimized with Ref) */}
           <div
             ref={glowRef}
@@ -241,14 +243,16 @@ function App() {
             }}
           />
 
-          <div className="dashboard-container relative z-10 w-full min-h-screen flex flex-col pb-8">
+          <div className="dashboard-container relative z-10 flex min-h-screen w-full min-w-0 flex-col pb-8">
             <header
               className={cn(
                 "flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 pb-6 border-b border-slate-200 shrink-0 mb-6",
                 (location.pathname.startsWith("/project-scores") ||
+                  location.pathname.startsWith("/trends") ||
                   location.pathname.startsWith("/member-scores") ||
                   location.pathname.startsWith("/history") ||
                   location.pathname.startsWith("/ai-ops") ||
+                  location.pathname.startsWith("/ai-cache") ||
                   location.pathname.startsWith("/settings") ||
                   location.pathname.startsWith("/rules") ||
                   location.pathname.startsWith("/sandbox") ||
@@ -534,6 +538,53 @@ function App() {
                         }
                       >
                         <AiOpsView selectedRepoId={selectedRepoId} />
+                      </Suspense>
+                    </div>
+                  }
+                />
+                <Route
+                  path="/ai-cache"
+                  element={
+                    <div
+                      className="flex-1 flex flex-col w-full"
+                      style={{ minHeight: "calc(100vh - 100px)" }}
+                    >
+                      <Suspense
+                        fallback={
+                          <div className="p-8 space-y-6">
+                            <CardSkeleton count={4} />
+                            <TableSkeleton rows={4} cols={4} />
+                          </div>
+                        }
+                      >
+                        <AiCacheView />
+                      </Suspense>
+                    </div>
+                  }
+                />
+                <Route
+                  path="/trends"
+                  element={
+                    <div
+                      className="flex-1 flex flex-col w-full"
+                      style={{ minHeight: "calc(100vh - 100px)" }}
+                    >
+                      <Suspense
+                        fallback={
+                          <div className="p-8 space-y-6">
+                            <CardSkeleton count={4} />
+                            <TableSkeleton rows={5} cols={4} />
+                          </div>
+                        }
+                      >
+                        <TrendsView
+                          selectedRepoId={selectedRepoId}
+                          targetUrl={
+                            configuredRepos.find((r) => r.id === selectedRepoId)
+                              ?.url
+                          }
+                          configuredRepos={configuredRepos}
+                        />
                       </Suspense>
                     </div>
                   }

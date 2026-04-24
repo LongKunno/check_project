@@ -19,6 +19,12 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
+def _rethrow_runtime_error(exc: Exception):
+    if isinstance(exc, RuntimeError):
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
 def _get_rules_path():
     # routers/rules.py -> routers/ -> api/ -> src/ + engine/rules.json
     return os.path.join(
@@ -190,10 +196,7 @@ async def save_rules(request: SaveRulesRequest):
         )
         return {"status": "success", "message": "Rules saved successfully."}
     except Exception as e:
-        import traceback
-
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        _rethrow_runtime_error(e)
 
 
 @router.delete("/rules")
@@ -205,7 +208,7 @@ async def delete_rules(
         AuditDatabase.delete_project_rules(target)
         return {"status": "success", "message": "Rules deleted successfully."}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        _rethrow_runtime_error(e)
 
 
 class ResetRulesRequest(BaseModel):
@@ -244,7 +247,7 @@ async def reset_rules(request: ResetRulesRequest):
             "target": request.target,
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        _rethrow_runtime_error(e)
 
 
 class ToggleRuleRequest(BaseModel):
@@ -263,7 +266,7 @@ async def toggle_rule(request: ToggleRuleRequest):
         )
         return {"status": "success", "message": f"Rule {request.rule_id} toggled."}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        _rethrow_runtime_error(e)
 
 
 class CompileRulesRequest(BaseModel):

@@ -12,6 +12,7 @@ import { useState, useEffect } from "react";
 export function useRepositories() {
   const [configuredRepos, setConfiguredRepos] = useState([]);
   const [selectedRepoId, setSelectedRepoId] = useState("");
+  const [repositoriesLoaded, setRepositoriesLoaded] = useState(false);
 
   useEffect(() => {
     const fetchRepos = async () => {
@@ -48,6 +49,8 @@ export function useRepositories() {
         }
       } catch (err) {
         console.error("Failed to fetch configured repositories:", err);
+      } finally {
+        setRepositoriesLoaded(true);
       }
     };
     fetchRepos();
@@ -58,5 +61,6 @@ export function useRepositories() {
     setConfiguredRepos,
     selectedRepoId,
     setSelectedRepoId,
+    repositoriesLoaded,
   };
 }

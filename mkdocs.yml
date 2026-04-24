@@ -69,9 +69,11 @@ nav:
     - Background Jobs (V6): api_specs/audit_jobs.md
     - Upload Project: api_specs/upload.md
     - Health Checks: api_specs/ai_health.md
+    - AI Cache: api_specs/ai_cache.md
     - Fix Suggestion: api_specs/fix_suggestion.md
     - History Retrieval: api_specs/history.md
     - Repositories & Scores: api_specs/repositories.md
+    - Trends: api_specs/trends.md
     - Git Configuration: api_specs/git.md
     - Rules Compiler: api_specs/rules.md
     - Members & Leaderboard: api_specs/members.md

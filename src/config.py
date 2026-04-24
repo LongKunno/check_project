@@ -48,6 +48,25 @@ def _parse_int_setting(value, default: int, minimum: int | None = None, maximum:
     return parsed
 
 
+def _parse_float_setting(
+    value,
+    default: float,
+    minimum: float | None = None,
+    maximum: float | None = None,
+) -> float:
+    """Parse float setting với range guard; lỗi thì fallback về default."""
+    try:
+        parsed = float(value)
+    except (ValueError, TypeError):
+        return default
+
+    if minimum is not None and parsed < minimum:
+        return default
+    if maximum is not None and parsed > maximum:
+        return default
+    return parsed
+
+
 # TEST MODE: Giới hạn số file được phân tích để tiết kiệm Token (chỉ phân tích tối đa N file)
 # Đặt thành 0 hoặc xóa khỏi .env để tắt Test Mode và quét toàn bộ dự án
 TEST_MODE_LIMIT_FILES = _parse_int_setting(
@@ -104,6 +123,35 @@ MEMBER_RECENT_MONTHS = _parse_int_setting(
 # true  = Bắt buộc đăng nhập để truy cập Dashboard
 # false = Bỏ qua xác thực, mọi người đều truy cập được (dùng cho local dev / demo)
 AUTH_REQUIRED = os.getenv("AUTH_REQUIRED", "true").lower() in ("true", "1", "yes")
+
+# REGRESSION GATE: cảnh báo mềm khi scan mới xấu đi so với scan liền trước.
+REGRESSION_GATE_ENABLED = os.getenv(
+    "REGRESSION_GATE_ENABLED", "true"
+).lower() in ("true", "1", "yes")
+REGRESSION_SCORE_DROP_THRESHOLD = _parse_float_setting(
+    os.getenv("REGRESSION_SCORE_DROP_THRESHOLD", 2.0),
+    default=2.0,
+    minimum=0.0,
+    maximum=100.0,
+)
+REGRESSION_VIOLATIONS_INCREASE_THRESHOLD = _parse_int_setting(
+    os.getenv("REGRESSION_VIOLATIONS_INCREASE_THRESHOLD", 5),
+    default=5,
+    minimum=0,
+    maximum=100000,
+)
+REGRESSION_PILLAR_DROP_THRESHOLD = _parse_float_setting(
+    os.getenv("REGRESSION_PILLAR_DROP_THRESHOLD", 0.5),
+    default=0.5,
+    minimum=0.0,
+    maximum=10.0,
+)
+REGRESSION_NEW_CRITICAL_THRESHOLD = _parse_int_setting(
+    os.getenv("REGRESSION_NEW_CRITICAL_THRESHOLD", 1),
+    default=1,
+    minimum=0,
+    maximum=100000,
+)
 
 
 def _get_db_config_value(key: str):
@@ -215,6 +263,66 @@ def get_auth_required() -> bool:
     if val is not None:
         return str(val).lower() in ("true", "1", "yes")
     return AUTH_REQUIRED
+
+
+def get_regression_gate_enabled() -> bool:
+    """Đọc REGRESSION_GATE_ENABLED từ DB (ưu tiên) hoặc .env (fallback)."""
+    val = _get_db_config_value("regression_gate_enabled")
+    if val is not None:
+        return str(val).lower() in ("true", "1", "yes")
+    return REGRESSION_GATE_ENABLED
+
+
+def get_regression_score_drop_threshold() -> float:
+    """Ngưỡng cảnh báo khi score giảm so với scan trước."""
+    val = _get_db_config_value("regression_score_drop_threshold")
+    if val is not None:
+        return _parse_float_setting(
+            val,
+            default=REGRESSION_SCORE_DROP_THRESHOLD,
+            minimum=0.0,
+            maximum=100.0,
+        )
+    return REGRESSION_SCORE_DROP_THRESHOLD
+
+
+def get_regression_violations_increase_threshold() -> int:
+    """Ngưỡng cảnh báo khi số violations tăng so với scan trước."""
+    val = _get_db_config_value("regression_violations_increase_threshold")
+    if val is not None:
+        return _parse_int_setting(
+            val,
+            default=REGRESSION_VIOLATIONS_INCREASE_THRESHOLD,
+            minimum=0,
+            maximum=100000,
+        )
+    return REGRESSION_VIOLATIONS_INCREASE_THRESHOLD
+
+
+def get_regression_pillar_drop_threshold() -> float:
+    """Ngưỡng cảnh báo khi pillar score giảm so với scan trước."""
+    val = _get_db_config_value("regression_pillar_drop_threshold")
+    if val is not None:
+        return _parse_float_setting(
+            val,
+            default=REGRESSION_PILLAR_DROP_THRESHOLD,
+            minimum=0.0,
+            maximum=10.0,
+        )
+    return REGRESSION_PILLAR_DROP_THRESHOLD
+
+
+def get_regression_new_critical_threshold() -> int:
+    """Ngưỡng cảnh báo khi có finding mới severity cao."""
+    val = _get_db_config_value("regression_new_critical_threshold")
+    if val is not None:
+        return _parse_int_setting(
+            val,
+            default=REGRESSION_NEW_CRITICAL_THRESHOLD,
+            minimum=0,
+            maximum=100000,
+        )
+    return REGRESSION_NEW_CRITICAL_THRESHOLD
 
 # [DEPRECATED] RULES_METADATA & SEVERITY have been moved to: src/engine/rules.json
 

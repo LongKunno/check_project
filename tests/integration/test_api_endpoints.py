@@ -38,6 +38,10 @@ class TestRootEndpoint:
         data = response.json()
         assert "engine" in data or "status" in data
 
+    def test_removed_change_review_endpoints_return_404(self, client):
+        assert client.get("/change-reviews/inbox").status_code == 404
+        assert client.get("/pr-reviews/inbox").status_code == 404
+
 
 class TestRepositoriesEndpoint:
     """GET /repositories — Danh sách repository."""
@@ -80,7 +84,14 @@ class TestRepositoriesScores:
         data = response.json()
         if data["data"]:
             repo = data["data"][0]
-            for field in ["id", "name", "url", "latest_score"]:
+            for field in [
+                "id",
+                "name",
+                "url",
+                "latest_score",
+                "regression_status",
+                "regression_summary",
+            ]:
                 assert field in repo, f"Missing field '{field}'"
 
     def test_scores_use_latest_audit_lookup_instead_of_history_loop(self, client, monkeypatch):
@@ -107,6 +118,11 @@ class TestRepositoriesScores:
                         "timestamp": "2026-04-21T10:00:00",
                         "violations_count": 2,
                         "pillar_scores": {"Security": 9.0},
+                        "regression_status": "warning",
+                        "regression_summary": {
+                            "score_delta": -3.5,
+                            "triggered_signals": ["score_drop"],
+                        },
                     }
                 }
             ),
@@ -123,7 +139,37 @@ class TestRepositoriesScores:
         payload = response.json()["data"]
         assert payload[0]["latest_score"] == 91.5
         assert payload[0]["violations_count"] == 2
+        assert payload[0]["regression_status"] == "warning"
         assert payload[1]["latest_score"] is None
+
+
+class TestEngineSettings:
+    """PUT /settings/engine — lỗi rõ ràng khi persistence unavailable."""
+
+    def test_update_returns_503_when_database_persistence_is_unavailable(
+        self, client, monkeypatch
+    ):
+        from src.engine.database import AuditDatabase
+
+        monkeypatch.setattr(
+            AuditDatabase,
+            "set_config",
+            staticmethod(
+                lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                    RuntimeError(
+                        "Database-backed persistence is unavailable because DATABASE_URL is not configured or Postgres could not be reached."
+                    )
+                )
+            ),
+        )
+
+        response = client.put(
+            "/settings/engine",
+            json={"ai_enabled": True},
+        )
+
+        assert response.status_code == 503, response.text
+        assert "Database-backed persistence is unavailable" in response.json()["detail"]
 
 
 class TestMembersScores:
@@ -227,6 +273,142 @@ class TestHistoryEndpoint:
         assert isinstance(data, list)
 
 
+class TestTrendsEndpoints:
+    """GET /trends/* — Portfolio và repository trends."""
+
+    def test_portfolio_trends_returns_enriched_top_regressing_repos(
+        self, client, monkeypatch
+    ):
+        from src.engine.database import AuditDatabase
+
+        monkeypatch.setattr(
+            AuditDatabase,
+            "get_all_repositories",
+            staticmethod(
+                lambda include_credentials=False: [
+                    {
+                        "id": "repo-1",
+                        "name": "Repo 1",
+                        "url": "https://example.com/repo-1.git",
+                    }
+                ]
+            ),
+        )
+        monkeypatch.setattr(
+            AuditDatabase,
+            "get_portfolio_trends",
+            staticmethod(
+                lambda days=30: {
+                    "range_days": days,
+                    "summary": {
+                        "scanned_repos": 1,
+                        "avg_latest_score": 88.4,
+                        "regressing_repos": 1,
+                        "scans_in_range": 3,
+                    },
+                    "score_series": [{"date": "2026-04-23", "avg_score": 88.4}],
+                    "scan_volume_series": [{"date": "2026-04-23", "scans": 3}],
+                    "regression_series": [{"date": "2026-04-23", "warnings": 1}],
+                    "latest_portfolio_pillars": {"Security": 8.2},
+                    "top_regressing_repos": [
+                        {
+                            "id": 42,
+                            "target": "https://example.com/repo-1.git",
+                            "score": 88.4,
+                            "regression_status": "warning",
+                            "regression_summary": {
+                                "triggered_signals": ["score_drop"],
+                            },
+                        }
+                    ],
+                }
+            ),
+        )
+
+        response = client.get("/trends/portfolio?days=30")
+
+        assert response.status_code == 200, response.text
+        data = response.json()["data"]
+        assert data["summary"]["regressing_repos"] == 1
+        assert data["top_regressing_repos"][0]["repo_name"] == "Repo 1"
+
+    def test_repository_trends_requires_target(self, client):
+        response = client.get("/trends/repository?days=30")
+        assert response.status_code == 400, response.text
+
+    def test_repository_trends_returns_payload(self, client, monkeypatch):
+        from src.engine.database import AuditDatabase
+
+        monkeypatch.setattr(
+            AuditDatabase,
+            "get_all_repositories",
+            staticmethod(
+                lambda include_credentials=False: [
+                    {
+                        "id": "repo-1",
+                        "name": "Repo 1",
+                        "url": "https://example.com/repo-1.git",
+                    }
+                ]
+            ),
+        )
+        monkeypatch.setattr(
+            AuditDatabase,
+            "get_repository_trends",
+            staticmethod(
+                lambda target, days=30: {
+                    "target": target,
+                    "range_days": days,
+                    "summary": {
+                        "total_scans": 2,
+                        "latest_score": 88.4,
+                        "latest_rating": "B",
+                        "latest_timestamp": "2026-04-23T10:00:00",
+                        "warnings_count": 1,
+                    },
+                    "audit_points": [
+                        {
+                            "id": 7,
+                            "timestamp": "2026-04-23T10:00:00",
+                            "score": 88.4,
+                            "violations_count": 4,
+                            "regression_status": "warning",
+                            "regression_summary": {"score_delta": -2.6},
+                        }
+                    ],
+                    "score_series": [{"timestamp": "2026-04-23T10:00:00", "score": 88.4}],
+                    "violations_series": [
+                        {"timestamp": "2026-04-23T10:00:00", "violations_count": 4}
+                    ],
+                    "pillar_series": [
+                        {
+                            "timestamp": "2026-04-23T10:00:00",
+                            "Security": 8.4,
+                            "Maintainability": 8.0,
+                        }
+                    ],
+                    "regression_events": [
+                        {
+                            "id": 7,
+                            "timestamp": "2026-04-23T10:00:00",
+                            "regression_status": "warning",
+                            "regression_summary": {"score_delta": -2.6},
+                        }
+                    ],
+                }
+            ),
+        )
+
+        response = client.get(
+            "/trends/repository?target=https%3A%2F%2Fexample.com%2Frepo-1.git&days=30"
+        )
+
+        assert response.status_code == 200, response.text
+        data = response.json()["data"]
+        assert data["repo_name"] == "Repo 1"
+        assert data["summary"]["warnings_count"] == 1
+
+
 class TestAuditStatus:
     """GET /audit/status — Trạng thái audit."""
 
@@ -279,6 +461,8 @@ class TestEngineSettings:
         monkeypatch.setattr(src.config, "AI_MODE", "realtime")
         monkeypatch.setattr(src.config, "OPENAI_BATCH_MODEL", "gpt-4.1-nano")
         monkeypatch.setattr(src.config, "MEMBER_RECENT_MONTHS", 3)
+        monkeypatch.setattr(src.config, "REGRESSION_GATE_ENABLED", True)
+        monkeypatch.setattr(src.config, "REGRESSION_SCORE_DROP_THRESHOLD", 2.0)
         monkeypatch.setattr(
             AuditDatabase,
             "get_config",
@@ -294,6 +478,41 @@ class TestEngineSettings:
         assert data["data"]["ai_mode"] == "realtime"
         assert data["data"]["openai_batch_model"] == "gpt-4.1-nano"
         assert data["data"]["member_recent_months"] == 3
+        assert data["data"]["regression_gate_enabled"] is True
+        assert data["data"]["regression_score_drop_threshold"] == 2.0
+
+    def test_put_engine_settings_updates_regression_thresholds(self, client, monkeypatch):
+        store = {}
+        from src.engine.database import AuditDatabase
+
+        monkeypatch.setattr(
+            AuditDatabase,
+            "get_config",
+            staticmethod(lambda key, default=None: store.get(key, default)),
+        )
+        monkeypatch.setattr(
+            AuditDatabase,
+            "set_config",
+            staticmethod(lambda key, value: store.__setitem__(key, value)),
+        )
+
+        response = client.put(
+            "/settings/engine",
+            json={
+                "regression_gate_enabled": False,
+                "regression_score_drop_threshold": 3.5,
+                "regression_violations_increase_threshold": 8,
+                "regression_pillar_drop_threshold": 0.9,
+                "regression_new_critical_threshold": 2,
+            },
+        )
+
+        assert response.status_code == 200, response.text
+        assert store["regression_gate_enabled"] == "false"
+        assert store["regression_score_drop_threshold"] == "3.5"
+        assert store["regression_violations_increase_threshold"] == "8"
+        assert store["regression_pillar_drop_threshold"] == "0.9"
+        assert store["regression_new_critical_threshold"] == "2"
 
     def test_put_engine_settings_updates_ai_mode_and_batch_model(self, client, monkeypatch):
         store = {}

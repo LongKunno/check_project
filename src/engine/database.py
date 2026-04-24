@@ -9,18 +9,26 @@ from psycopg2.extras import RealDictCursor
 import os
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+
+from src.config import (
+    REGRESSION_GATE_ENABLED,
+    REGRESSION_NEW_CRITICAL_THRESHOLD,
+    REGRESSION_PILLAR_DROP_THRESHOLD,
+    REGRESSION_SCORE_DROP_THRESHOLD,
+    REGRESSION_VIOLATIONS_INCREASE_THRESHOLD,
+)
 
 logger = logging.getLogger(__name__)
 
 # Database URL: PHẢI được cấu hình qua biến môi trường DATABASE_URL hoặc docker-compose.yml
-# Fallback chỉ dùng cho local development (yêu cầu cấu hình riêng)
-DB_URL = os.environ.get("DATABASE_URL")
+# Không còn hardcoded DSN fallback; nếu thiếu DB thì hệ thống chạy ở chế độ non-persistent.
+DB_URL = (os.environ.get("DATABASE_URL") or "").strip()
+DB_URL_FROM_ENV = bool(DB_URL)
 if not DB_URL:
     logger.warning(
-        "DATABASE_URL not set! Database operations will fail. Set it in .env or docker-compose.yml."
+        "DATABASE_URL not set. Running without DB-backed persistence; repository management falls back to in-memory config and audit/history/settings persistence are disabled."
     )
-    DB_URL = "postgresql://localhost:5432/auditor_v2"  # Sẽ fail-fast nếu chưa cấu hình
 
 
 class AuditDatabase:
@@ -29,12 +37,526 @@ class AuditDatabase:
     """
 
     _pool = None
+    _memory_repositories = None
+    _memory_repo_mode_logged = False
+    PILLAR_KEYS = ("Performance", "Maintainability", "Reliability", "Security")
+    REGRESSION_STATUSES = {"pass", "warning", "unavailable"}
+
+    @staticmethod
+    def _log_memory_repo_mode():
+        if AuditDatabase._memory_repo_mode_logged:
+            return
+        logger.warning(
+            "Database persistence is unavailable. Using in-memory repositories only; history, review snapshots, rules, and runtime settings are not persisted."
+        )
+        AuditDatabase._memory_repo_mode_logged = True
+
+    @staticmethod
+    def _memory_timestamp():
+        return datetime.now(timezone.utc).isoformat()
+
+    @staticmethod
+    def _ensure_memory_repositories():
+        AuditDatabase._log_memory_repo_mode()
+        if AuditDatabase._memory_repositories is not None:
+            return AuditDatabase._memory_repositories
+
+        from src.config import CONFIGURED_REPOSITORIES
+
+        now = AuditDatabase._memory_timestamp()
+        AuditDatabase._memory_repositories = {}
+        for repo in CONFIGURED_REPOSITORIES:
+            repo_id = str(repo.get("id") or "").strip()
+            if not repo_id:
+                continue
+            AuditDatabase._memory_repositories[repo_id] = {
+                "id": repo_id,
+                "name": str(repo.get("name") or "").strip(),
+                "url": str(repo.get("url") or "").strip(),
+                "username": str(repo.get("username") or ""),
+                "token": str(repo.get("token") or ""),
+                "branch": str(repo.get("branch") or "main"),
+                "is_active": bool(repo.get("is_active", True)),
+                "created_at": now,
+                "updated_at": now,
+            }
+        return AuditDatabase._memory_repositories
+
+    @staticmethod
+    def _list_memory_repositories(include_credentials=False):
+        repositories = sorted(
+            AuditDatabase._ensure_memory_repositories().values(),
+            key=lambda item: item.get("name") or "",
+        )
+        results = []
+        for row in repositories:
+            if not row.get("is_active", True):
+                continue
+            item = dict(row)
+            if not include_credentials:
+                item.pop("token", None)
+                item.pop("username", None)
+            results.append(item)
+        return results
+
+    @staticmethod
+    def _coerce_bool(value, default=False):
+        if value is None:
+            return default
+        if isinstance(value, bool):
+            return value
+        return str(value).strip().lower() in {"true", "1", "yes", "on"}
+
+    @staticmethod
+    def _coerce_int(value, default=0, minimum=None, maximum=None):
+        try:
+            parsed = int(value)
+        except (TypeError, ValueError):
+            return default
+        if minimum is not None and parsed < minimum:
+            return default
+        if maximum is not None and parsed > maximum:
+            return default
+        return parsed
+
+    @staticmethod
+    def _coerce_float(value, default=0.0, minimum=None, maximum=None):
+        try:
+            parsed = float(value)
+        except (TypeError, ValueError):
+            return default
+        if minimum is not None and parsed < minimum:
+            return default
+        if maximum is not None and parsed > maximum:
+            return default
+        return parsed
+
+    @staticmethod
+    def _parse_json_blob(raw_value, default=None):
+        if raw_value is None:
+            return default
+        if isinstance(raw_value, (dict, list)):
+            return raw_value
+        try:
+            return json.loads(raw_value)
+        except Exception:
+            return default
+
+    @staticmethod
+    def _normalize_timestamp(value):
+        if isinstance(value, datetime):
+            return value.isoformat()
+        return value
+
+    @staticmethod
+    def _empty_regression_summary():
+        return {
+            "baseline_audit_id": None,
+            "baseline_timestamp": None,
+            "baseline_score": None,
+            "baseline_violations_count": None,
+            "current_score": None,
+            "current_violations_count": None,
+            "score_delta": None,
+            "violations_delta": None,
+            "new_violation_count": 0,
+            "resolved_violation_count": 0,
+            "new_high_severity_count": 0,
+            "pillar_deltas": {},
+            "triggered_signals": [],
+            "is_partial": False,
+            "gate_enabled": REGRESSION_GATE_ENABLED,
+        }
+
+    @staticmethod
+    def get_regression_settings():
+        return {
+            "gate_enabled": AuditDatabase._coerce_bool(
+                AuditDatabase.get_config(
+                    "regression_gate_enabled", str(REGRESSION_GATE_ENABLED).lower()
+                ),
+                default=REGRESSION_GATE_ENABLED,
+            ),
+            "score_drop_threshold": AuditDatabase._coerce_float(
+                AuditDatabase.get_config(
+                    "regression_score_drop_threshold",
+                    REGRESSION_SCORE_DROP_THRESHOLD,
+                ),
+                default=REGRESSION_SCORE_DROP_THRESHOLD,
+                minimum=0.0,
+                maximum=100.0,
+            ),
+            "violations_increase_threshold": AuditDatabase._coerce_int(
+                AuditDatabase.get_config(
+                    "regression_violations_increase_threshold",
+                    REGRESSION_VIOLATIONS_INCREASE_THRESHOLD,
+                ),
+                default=REGRESSION_VIOLATIONS_INCREASE_THRESHOLD,
+                minimum=0,
+                maximum=100000,
+            ),
+            "pillar_drop_threshold": AuditDatabase._coerce_float(
+                AuditDatabase.get_config(
+                    "regression_pillar_drop_threshold",
+                    REGRESSION_PILLAR_DROP_THRESHOLD,
+                ),
+                default=REGRESSION_PILLAR_DROP_THRESHOLD,
+                minimum=0.0,
+                maximum=10.0,
+            ),
+            "new_critical_threshold": AuditDatabase._coerce_int(
+                AuditDatabase.get_config(
+                    "regression_new_critical_threshold",
+                    REGRESSION_NEW_CRITICAL_THRESHOLD,
+                ),
+                default=REGRESSION_NEW_CRITICAL_THRESHOLD,
+                minimum=0,
+                maximum=100000,
+            ),
+        }
+
+    @staticmethod
+    def _normalize_violation_reason_for_signature(reason):
+        normalized = str(reason or "").strip()
+        if ". AI Note:" in normalized:
+            normalized = normalized.split(". AI Note:", 1)[0].strip()
+        if ". AI " in normalized:
+            normalized = normalized.split(". AI ", 1)[0].strip()
+        return normalized
+
+    @staticmethod
+    def _build_violation_signature(violation):
+        return (
+            str((violation or {}).get("file") or ""),
+            str((violation or {}).get("rule_id") or ""),
+            AuditDatabase._coerce_int((violation or {}).get("line"), default=0),
+            AuditDatabase._normalize_violation_reason_for_signature(
+                (violation or {}).get("reason", "")
+            ),
+        )
+
+    @staticmethod
+    def _infer_violation_severity(violation):
+        severity = str((violation or {}).get("severity") or "").strip()
+        if severity in {"Blocker", "Critical", "Major", "Minor", "Info"}:
+            return severity
+        weight = abs(AuditDatabase._coerce_float((violation or {}).get("weight"), 0.0))
+        if weight >= 8:
+            return "Critical"
+        if weight >= 4:
+            return "Major"
+        if weight >= 1:
+            return "Minor"
+        return "Info"
+
+    @staticmethod
+    def compute_regression_snapshot(current_audit, baseline_audit=None, settings=None):
+        settings = settings or AuditDatabase.get_regression_settings()
+        summary = AuditDatabase._empty_regression_summary()
+        summary["gate_enabled"] = bool(settings.get("gate_enabled", True))
+
+        if not baseline_audit:
+            summary["is_partial"] = True
+            return {
+                "baseline_audit_id": None,
+                "regression_status": "unavailable",
+                "regression_summary": summary,
+            }
+
+        current_full_json = AuditDatabase._parse_json_blob(
+            (current_audit or {}).get("full_json"), default=None
+        )
+        baseline_full_json = AuditDatabase._parse_json_blob(
+            (baseline_audit or {}).get("full_json"), default=None
+        )
+
+        baseline_id = (baseline_audit or {}).get("id")
+        baseline_timestamp = AuditDatabase._normalize_timestamp(
+            (baseline_audit or {}).get("timestamp")
+        )
+        current_score = AuditDatabase._coerce_float(
+            (current_audit or {}).get("score"), default=None
+        )
+        baseline_score = AuditDatabase._coerce_float(
+            (baseline_audit or {}).get("score"), default=None
+        )
+        current_violations_count = AuditDatabase._coerce_int(
+            (current_audit or {}).get("violations_count"), default=0
+        )
+        baseline_violations_count = AuditDatabase._coerce_int(
+            (baseline_audit or {}).get("violations_count"), default=0
+        )
+
+        summary.update(
+            {
+                "baseline_audit_id": baseline_id,
+                "baseline_timestamp": baseline_timestamp,
+                "baseline_score": baseline_score,
+                "baseline_violations_count": baseline_violations_count,
+                "current_score": current_score,
+                "current_violations_count": current_violations_count,
+            }
+        )
+
+        if not isinstance(current_full_json, dict) or not isinstance(baseline_full_json, dict):
+            summary["is_partial"] = True
+            return {
+                "baseline_audit_id": baseline_id,
+                "regression_status": "unavailable",
+                "regression_summary": summary,
+            }
+
+        score_delta = None
+        if current_score is not None and baseline_score is not None:
+            score_delta = round(current_score - baseline_score, 2)
+
+        violations_delta = current_violations_count - baseline_violations_count
+
+        current_pillars = AuditDatabase._parse_json_blob(
+            (current_audit or {}).get("pillar_scores"), default=None
+        ) or (
+            ((current_full_json.get("scores") or {}).get("project_pillars")) or {}
+        )
+        baseline_pillars = AuditDatabase._parse_json_blob(
+            (baseline_audit or {}).get("pillar_scores"), default=None
+        ) or (
+            ((baseline_full_json.get("scores") or {}).get("project_pillars")) or {}
+        )
+
+        pillar_deltas = {}
+        for pillar in AuditDatabase.PILLAR_KEYS:
+            current_value = current_pillars.get(pillar)
+            baseline_value = baseline_pillars.get(pillar)
+            if current_value is None or baseline_value is None:
+                continue
+            pillar_deltas[pillar] = round(float(current_value) - float(baseline_value), 2)
+
+        current_violations = current_full_json.get("violations") or []
+        baseline_violations = baseline_full_json.get("violations") or []
+        current_signatures = {
+            AuditDatabase._build_violation_signature(violation): violation
+            for violation in current_violations
+            if isinstance(violation, dict)
+        }
+        baseline_signatures = {
+            AuditDatabase._build_violation_signature(violation): violation
+            for violation in baseline_violations
+            if isinstance(violation, dict)
+        }
+
+        new_signatures = set(current_signatures) - set(baseline_signatures)
+        resolved_signatures = set(baseline_signatures) - set(current_signatures)
+        new_high_severity_count = sum(
+            1
+            for signature in new_signatures
+            if AuditDatabase._infer_violation_severity(current_signatures[signature])
+            in {"Critical", "Blocker"}
+        )
+
+        triggered_signals = []
+        if settings.get("gate_enabled", True):
+            if (
+                score_delta is not None
+                and score_delta < 0
+                and abs(score_delta) >= abs(settings.get("score_drop_threshold", 0.0))
+            ):
+                triggered_signals.append("score_drop")
+            if (
+                violations_delta > 0
+                and violations_delta >= settings.get("violations_increase_threshold", 0)
+            ):
+                triggered_signals.append("violations_increase")
+            if any(
+                delta < 0
+                and abs(delta) >= abs(settings.get("pillar_drop_threshold", 0.0))
+                for delta in pillar_deltas.values()
+            ):
+                triggered_signals.append("pillar_drop")
+            if (
+                new_high_severity_count > 0
+                and new_high_severity_count >= settings.get("new_critical_threshold", 0)
+            ):
+                triggered_signals.append("new_high_severity")
+
+        summary.update(
+            {
+                "score_delta": score_delta,
+                "violations_delta": violations_delta,
+                "new_violation_count": len(new_signatures),
+                "resolved_violation_count": len(resolved_signatures),
+                "new_high_severity_count": new_high_severity_count,
+                "pillar_deltas": pillar_deltas,
+                "triggered_signals": triggered_signals,
+                "is_partial": False,
+            }
+        )
+
+        return {
+            "baseline_audit_id": baseline_id,
+            "regression_status": "warning" if triggered_signals else "pass",
+            "regression_summary": summary,
+        }
+
+    @staticmethod
+    def _attach_regression_metadata(full_json, regression_status, regression_summary):
+        if not isinstance(full_json, dict):
+            return
+        metadata = dict(full_json.get("metadata") or {})
+        metadata["regression"] = {
+            "status": regression_status,
+            **(regression_summary or {}),
+        }
+        full_json["metadata"] = metadata
+
+    @staticmethod
+    def _load_previous_audit_row(conn, target, before_timestamp=None, before_id=None):
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        try:
+            if before_timestamp is not None and before_id is not None:
+                cursor.execute(
+                    """
+                    SELECT
+                        id, timestamp, target, score, rating, total_loc,
+                        violations_count, pillar_scores, full_json,
+                        baseline_audit_id, regression_status, regression_summary, scan_mode
+                    FROM audit_history
+                    WHERE target = %s
+                      AND (
+                        timestamp < %s
+                        OR (timestamp = %s AND id < %s)
+                      )
+                    ORDER BY timestamp DESC, id DESC
+                    LIMIT 1
+                    """,
+                    (target, before_timestamp, before_timestamp, before_id),
+                )
+            else:
+                cursor.execute(
+                    """
+                    SELECT
+                        id, timestamp, target, score, rating, total_loc,
+                        violations_count, pillar_scores, full_json,
+                        baseline_audit_id, regression_status, regression_summary, scan_mode
+                    FROM audit_history
+                    WHERE target = %s
+                    ORDER BY timestamp DESC, id DESC
+                    LIMIT 1
+                    """,
+                    (target,),
+                )
+            row = cursor.fetchone()
+        finally:
+            cursor.close()
+
+        if not row:
+            return None
+
+        parsed = dict(row)
+        parsed["timestamp"] = AuditDatabase._normalize_timestamp(parsed.get("timestamp"))
+        parsed["pillar_scores"] = AuditDatabase._parse_json_blob(
+            parsed.get("pillar_scores"), default={}
+        ) or {}
+        parsed["full_json"] = AuditDatabase._parse_json_blob(
+            parsed.get("full_json"), default=None
+        )
+        parsed["regression_summary"] = AuditDatabase._parse_json_blob(
+            parsed.get("regression_summary"), default=None
+        )
+        return parsed
+
+    @staticmethod
+    def _apply_regression_payload(data, full_json=None, fallback_baseline=None, settings=None):
+        settings = settings or AuditDatabase.get_regression_settings()
+        summary = AuditDatabase._parse_json_blob(
+            data.get("regression_summary"), default=None
+        )
+        if not isinstance(summary, dict) and isinstance(full_json, dict):
+            summary = AuditDatabase._parse_json_blob(
+                ((full_json.get("metadata") or {}).get("regression")),
+                default=None,
+            )
+
+        baseline_audit_id = data.get("baseline_audit_id")
+        regression_status = data.get("regression_status")
+        if isinstance(summary, dict):
+            baseline_audit_id = baseline_audit_id or summary.get("baseline_audit_id")
+            if regression_status not in AuditDatabase.REGRESSION_STATUSES:
+                regression_status = summary.get("status")
+            summary = {
+                **AuditDatabase._empty_regression_summary(),
+                **{k: v for k, v in summary.items() if k != "status"},
+            }
+
+        if regression_status not in AuditDatabase.REGRESSION_STATUSES or not isinstance(summary, dict):
+            if isinstance(full_json, dict) and fallback_baseline:
+                computed = AuditDatabase.compute_regression_snapshot(
+                    {
+                        "id": data.get("id"),
+                        "score": data.get("score"),
+                        "violations_count": data.get("violations_count"),
+                        "pillar_scores": data.get("pillar_scores"),
+                        "full_json": full_json,
+                    },
+                    baseline_audit=fallback_baseline,
+                    settings=settings,
+                )
+                baseline_audit_id = computed["baseline_audit_id"]
+                regression_status = computed["regression_status"]
+                summary = computed["regression_summary"]
+            else:
+                regression_status = "unavailable"
+                summary = AuditDatabase._empty_regression_summary()
+                summary["gate_enabled"] = bool(settings.get("gate_enabled", True))
+                summary["baseline_audit_id"] = baseline_audit_id
+                if fallback_baseline:
+                    summary["baseline_audit_id"] = fallback_baseline.get("id")
+                    summary["baseline_timestamp"] = fallback_baseline.get("timestamp")
+                summary["is_partial"] = True
+
+        data["baseline_audit_id"] = baseline_audit_id
+        data["regression_status"] = regression_status
+        data["regression_summary"] = summary
+        return data
+
+    @staticmethod
+    def _parse_history_row(row, include_full_json=False, fallback_baseline=None, settings=None):
+        if not row:
+            return None
+
+        data = dict(row)
+        data["timestamp"] = AuditDatabase._normalize_timestamp(data.get("timestamp"))
+        try:
+            data["pillar_scores"] = AuditDatabase._parse_json_blob(
+                data.get("pillar_scores"), default={}
+            ) or {}
+        except Exception as exc:
+            logger.warning("Error parsing pillar_scores: %s", exc)
+            data["pillar_scores"] = {}
+
+        full_json = AuditDatabase._parse_json_blob(data.get("full_json"), default=None)
+        data["ai_summary"] = AuditDatabase._extract_ai_summary(full_json)
+        data = AuditDatabase._apply_regression_payload(
+            data,
+            full_json=full_json,
+            fallback_baseline=fallback_baseline,
+            settings=settings,
+        )
+
+        if include_full_json:
+            data["full_json"] = full_json
+        else:
+            data.pop("full_json", None)
+        return data
 
     @staticmethod
     def get_connection():
         # Lazy initialization
         if not AuditDatabase._pool:
             AuditDatabase.initialize()
+        if not AuditDatabase._pool:
+            raise RuntimeError(
+                "Database-backed persistence is unavailable because DATABASE_URL is not configured or Postgres could not be reached."
+            )
         return AuditDatabase._pool.getconn()
 
     @staticmethod
@@ -46,6 +568,10 @@ class AuditDatabase:
     def initialize():
         """Creates the necessary tables if they don't exist, retries connection on startup."""
         import time
+
+        if not DB_URL_FROM_ENV:
+            AuditDatabase._log_memory_repo_mode()
+            return
 
         max_retries = 10
         conn = None
@@ -65,8 +591,9 @@ class AuditDatabase:
 
         if not conn:
             logger.error(
-                "Failed to connect to Postgres after multiple retries. Database not initialized."
+                "Failed to connect to Postgres after multiple retries. Running without DB-backed persistence."
             )
+            AuditDatabase._log_memory_repo_mode()
             return
 
         try:
@@ -84,9 +611,18 @@ class AuditDatabase:
                     violations_count INTEGER NOT NULL,
                     pillar_scores TEXT NOT NULL,
                     full_json TEXT,
-                    scan_mode TEXT DEFAULT 'full_ai'
+                    scan_mode TEXT DEFAULT 'full_ai',
+                    baseline_audit_id INTEGER,
+                    regression_status TEXT DEFAULT 'unavailable',
+                    regression_summary TEXT DEFAULT '{}'
                 )
             """)
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_audit_history_target_timestamp ON audit_history(target, timestamp DESC, id DESC)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_audit_history_timestamp ON audit_history(timestamp DESC, id DESC)"
+            )
 
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS project_rules (
@@ -112,6 +648,18 @@ class AuditDatabase:
             if "scan_mode" not in columns_history:
                 cursor.execute(
                     "ALTER TABLE audit_history ADD COLUMN scan_mode TEXT DEFAULT 'full_ai'"
+                )
+            if "baseline_audit_id" not in columns_history:
+                cursor.execute(
+                    "ALTER TABLE audit_history ADD COLUMN baseline_audit_id INTEGER"
+                )
+            if "regression_status" not in columns_history:
+                cursor.execute(
+                    "ALTER TABLE audit_history ADD COLUMN regression_status TEXT DEFAULT 'unavailable'"
+                )
+            if "regression_summary" not in columns_history:
+                cursor.execute(
+                    "ALTER TABLE audit_history ADD COLUMN regression_summary TEXT DEFAULT '{}'"
                 )
 
             cursor.execute("""
@@ -183,6 +731,25 @@ class AuditDatabase:
                     UNIQUE(job_id, line_number)
                 )
             """)
+
+            cursor.execute(
+                """
+                DELETE FROM runtime_job_logs
+                WHERE job_id IN (
+                    SELECT job_id
+                    FROM runtime_jobs
+                    WHERE job_type IN ('change_review', 'pr_review')
+                )
+                """
+            )
+            cursor.execute(
+                """
+                DELETE FROM runtime_jobs
+                WHERE job_type IN ('change_review', 'pr_review')
+                """
+            )
+            cursor.execute("DROP TABLE IF EXISTS change_reviews CASCADE")
+            cursor.execute("DROP TABLE IF EXISTS pr_reviews CASCADE")
 
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS ai_request_logs (
@@ -280,6 +847,59 @@ class AuditDatabase:
                 VALUES ('global', NULL, NULL, FALSE, 30, FALSE, CURRENT_TIMESTAMP)
                 ON CONFLICT (policy_key) DO NOTHING
                 """
+            )
+
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS ai_cache_entries (
+                    cache_key_hash TEXT PRIMARY KEY,
+                    entry_type TEXT NOT NULL,
+                    target_id TEXT,
+                    mode TEXT NOT NULL,
+                    model TEXT NOT NULL,
+                    prompt_version TEXT NOT NULL,
+                    rules_version TEXT NOT NULL,
+                    custom_rules_hash TEXT NOT NULL,
+                    input_meta JSONB NOT NULL,
+                    result_json JSONB NOT NULL,
+                    source_input_tokens INTEGER DEFAULT 0,
+                    source_output_tokens INTEGER DEFAULT 0,
+                    source_estimated_cost DOUBLE PRECISION DEFAULT 0,
+                    hit_count INTEGER DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    last_hit_at TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ai_cache_entries_target_id ON ai_cache_entries(target_id)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ai_cache_entries_entry_type ON ai_cache_entries(entry_type)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ai_cache_entries_last_hit_at ON ai_cache_entries(last_hit_at DESC)"
+            )
+
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS ai_cache_runs (
+                    job_id TEXT PRIMARY KEY,
+                    target_id TEXT,
+                    hits INTEGER DEFAULT 0,
+                    misses INTEGER DEFAULT 0,
+                    writes INTEGER DEFAULT 0,
+                    saved_input_tokens INTEGER DEFAULT 0,
+                    saved_output_tokens INTEGER DEFAULT 0,
+                    saved_cost_usd DOUBLE PRECISION DEFAULT 0,
+                    by_stage JSONB NOT NULL DEFAULT '{}'::jsonb,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ai_cache_runs_created_at ON ai_cache_runs(created_at DESC)"
+            )
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_ai_cache_runs_target_id ON ai_cache_runs(target_id)"
             )
             schema_ready = True
         except Exception as e:
@@ -519,14 +1139,50 @@ class AuditDatabase:
         scan_mode="full_ai",
     ):
         """Saves a new audit session to the database."""
+        if not AuditDatabase._pool:
+            AuditDatabase._log_memory_repo_mode()
+            logger.warning(
+                "Skipping audit persistence for target '%s' because database-backed storage is unavailable.",
+                target,
+            )
+            return None
         conn = AuditDatabase.get_connection()
         cursor = conn.cursor()
         try:
+            regression_settings = AuditDatabase.get_regression_settings()
+            previous_audit = AuditDatabase._load_previous_audit_row(conn, target)
+            regression_snapshot = AuditDatabase.compute_regression_snapshot(
+                {
+                    "score": score,
+                    "violations_count": violations_count,
+                    "pillar_scores": pillar_scores,
+                    "full_json": full_json,
+                },
+                baseline_audit=previous_audit,
+                settings=regression_settings,
+            )
+
+            baseline_audit_id = regression_snapshot["baseline_audit_id"]
+            regression_status = regression_snapshot["regression_status"]
+            regression_summary = regression_snapshot["regression_summary"]
+
+            if isinstance(full_json, dict):
+                AuditDatabase._attach_regression_metadata(
+                    full_json, regression_status, regression_summary
+                )
+                metadata = dict(full_json.get("metadata") or {})
+                metadata["audit_id"] = None
+                full_json["metadata"] = metadata
+
             serialized_full_json = json.dumps(full_json) if full_json else None
             cursor.execute(
                 """
-                INSERT INTO audit_history (target, score, rating, total_loc, violations_count, pillar_scores, full_json, scan_mode)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO audit_history (
+                    target, score, rating, total_loc, violations_count,
+                    pillar_scores, full_json, scan_mode, baseline_audit_id,
+                    regression_status, regression_summary
+                )
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
             """,
                 (
@@ -538,17 +1194,19 @@ class AuditDatabase:
                     json.dumps(pillar_scores),
                     serialized_full_json,
                     scan_mode,
+                    baseline_audit_id,
+                    regression_status,
+                    json.dumps(regression_summary),
                 ),
             )
             audit_id = cursor.fetchone()[0]
             if isinstance(full_json, dict):
-                enriched = dict(full_json)
-                metadata = dict(enriched.get("metadata") or {})
+                metadata = dict(full_json.get("metadata") or {})
                 metadata["audit_id"] = audit_id
-                enriched["metadata"] = metadata
+                full_json["metadata"] = metadata
                 cursor.execute(
                     "UPDATE audit_history SET full_json = %s WHERE id = %s",
-                    (json.dumps(enriched), audit_id),
+                    (json.dumps(full_json), audit_id),
                 )
             conn.commit()
             return audit_id
@@ -587,44 +1245,66 @@ class AuditDatabase:
     @staticmethod
     def get_history(target_path=None):
         """Retrieves lightweight history, optionally filtered by target path."""
+        if not AuditDatabase._pool:
+            return []
         conn = AuditDatabase.get_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
+        regression_settings = AuditDatabase.get_regression_settings()
 
         if target_path:
             cursor.execute(
-                "SELECT id, timestamp, target, score, rating, total_loc, violations_count, pillar_scores, full_json, scan_mode FROM audit_history WHERE target = %s ORDER BY timestamp DESC",
+                """
+                SELECT
+                    id, timestamp, target, score, rating, total_loc,
+                    violations_count, pillar_scores, full_json, scan_mode,
+                    baseline_audit_id, regression_status, regression_summary
+                FROM audit_history
+                WHERE target = %s
+                ORDER BY timestamp DESC, id DESC
+                """,
                 (target_path,),
             )
         else:
             cursor.execute(
-                "SELECT id, timestamp, target, score, rating, total_loc, violations_count, pillar_scores, full_json, scan_mode FROM audit_history ORDER BY timestamp DESC LIMIT 50"
+                """
+                SELECT
+                    id, timestamp, target, score, rating, total_loc,
+                    violations_count, pillar_scores, full_json, scan_mode,
+                    baseline_audit_id, regression_status, regression_summary
+                FROM audit_history
+                ORDER BY timestamp DESC, id DESC
+                LIMIT 50
+                """
             )
 
         rows = cursor.fetchall()
         cursor.close()
         AuditDatabase.release_connection(conn)
 
-        results = []
-        for row in rows:
-            d = dict(row)
-            # Chuyển đổi datetime sang ISO string để tương thích với Frontend
-            if "timestamp" in d and isinstance(d["timestamp"], datetime):
-                d["timestamp"] = d["timestamp"].isoformat()
-            try:
-                d["pillar_scores"] = json.loads(d.get("pillar_scores", "{}"))
-            except Exception as e:
-                logger.warning(f"Error parsing pillar_scores: {e}")
-                d["pillar_scores"] = {}
-            full_json = None
-            if row.get("full_json"):
-                try:
-                    full_json = json.loads(row["full_json"])
-                except Exception as e:
-                    logger.warning(f"Error parsing history full_json: {e}")
-            d["ai_summary"] = AuditDatabase._extract_ai_summary(full_json)
-            d.pop("full_json", None)
-            results.append(d)
-        return results
+        if target_path:
+            hydrated_rows = []
+            previous_row = None
+            for row in reversed(rows):
+                parsed_row = AuditDatabase._parse_history_row(
+                    row,
+                    include_full_json=True,
+                    fallback_baseline=previous_row,
+                    settings=regression_settings,
+                )
+                previous_row = parsed_row
+                public_row = dict(parsed_row)
+                public_row.pop("full_json", None)
+                hydrated_rows.append(public_row)
+            return list(reversed(hydrated_rows))
+
+        return [
+            AuditDatabase._parse_history_row(
+                row,
+                include_full_json=False,
+                settings=regression_settings,
+            )
+            for row in rows
+        ]
 
     @staticmethod
     def get_latest_audits_for_targets(targets, include_full_json=False):
@@ -632,87 +1312,376 @@ class AuditDatabase:
         cleaned_targets = [str(target).strip() for target in (targets or []) if str(target).strip()]
         if not cleaned_targets:
             return {}
+        if not AuditDatabase._pool:
+            return {}
 
         conn = AuditDatabase.get_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
         columns = (
             "id, timestamp, target, score, rating, total_loc, violations_count, "
-            "pillar_scores, scan_mode"
+            "pillar_scores, scan_mode, baseline_audit_id, regression_status, "
+            "regression_summary, full_json"
         )
-        if include_full_json:
-            columns += ", full_json"
+        regression_settings = AuditDatabase.get_regression_settings()
 
         cursor.execute(
             f"""
             SELECT DISTINCT ON (target) {columns}
             FROM audit_history
             WHERE target = ANY(%s)
-            ORDER BY target, timestamp DESC
+            ORDER BY target, timestamp DESC, id DESC
             """,
             (cleaned_targets,),
         )
         rows = cursor.fetchall()
         cursor.close()
-        AuditDatabase.release_connection(conn)
 
         results = {}
-        for row in rows:
-            d = dict(row)
-            if "timestamp" in d and isinstance(d["timestamp"], datetime):
-                d["timestamp"] = d["timestamp"].isoformat()
-            try:
-                d["pillar_scores"] = json.loads(d.get("pillar_scores", "{}"))
-            except Exception as e:
-                logger.warning(
-                    f"Error parsing pillar_scores in get_latest_audits_for_targets: {e}"
+        try:
+            for row in rows:
+                fallback_baseline = AuditDatabase._load_previous_audit_row(
+                    conn,
+                    row["target"],
+                    before_timestamp=row["timestamp"],
+                    before_id=row["id"],
                 )
-                d["pillar_scores"] = {}
-            if include_full_json and d.get("full_json"):
-                try:
-                    d["full_json"] = json.loads(d["full_json"])
-                except Exception as e:
-                    logger.warning(
-                        f"Error parsing full_json in get_latest_audits_for_targets: {e}"
-                    )
-                    d["full_json"] = None
-            results[d["target"]] = d
+                parsed_row = AuditDatabase._parse_history_row(
+                    row,
+                    include_full_json=include_full_json,
+                    fallback_baseline=fallback_baseline,
+                    settings=regression_settings,
+                )
+                results[parsed_row["target"]] = parsed_row
+        finally:
+            AuditDatabase.release_connection(conn)
         return results
 
     @staticmethod
     def get_audit_by_id(audit_id):
         """Retrieves details of a single audit including the full JSON payload by ID."""
+        if not AuditDatabase._pool:
+            return None
         conn = AuditDatabase.get_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
 
         cursor.execute(
-            "SELECT id, timestamp, target, score, rating, total_loc, violations_count, pillar_scores, full_json, scan_mode FROM audit_history WHERE id = %s",
+            """
+            SELECT
+                id, timestamp, target, score, rating, total_loc,
+                violations_count, pillar_scores, full_json, scan_mode,
+                baseline_audit_id, regression_status, regression_summary
+            FROM audit_history
+            WHERE id = %s
+            """,
             (audit_id,),
         )
         row = cursor.fetchone()
         cursor.close()
-        AuditDatabase.release_connection(conn)
 
         if not row:
+            AuditDatabase.release_connection(conn)
             return None
 
-        d = dict(row)
-        if "timestamp" in d and isinstance(d["timestamp"], datetime):
-            d["timestamp"] = d["timestamp"].isoformat()
+        regression_settings = AuditDatabase.get_regression_settings()
+        fallback_baseline = AuditDatabase._load_previous_audit_row(
+            conn,
+            row["target"],
+            before_timestamp=row["timestamp"],
+            before_id=row["id"],
+        )
+        parsed_row = AuditDatabase._parse_history_row(
+            row,
+            include_full_json=True,
+            fallback_baseline=fallback_baseline,
+            settings=regression_settings,
+        )
+        AuditDatabase.release_connection(conn)
+        return parsed_row
 
+    @staticmethod
+    def _empty_repository_trends(target, days):
+        return {
+            "target": target,
+            "range_days": days,
+            "summary": {
+                "total_scans": 0,
+                "latest_score": None,
+                "latest_rating": None,
+                "latest_timestamp": None,
+                "warnings_count": 0,
+            },
+            "audit_points": [],
+            "score_series": [],
+            "violations_series": [],
+            "pillar_series": [],
+            "regression_events": [],
+        }
+
+    @staticmethod
+    def _empty_portfolio_trends(days):
+        return {
+            "range_days": days,
+            "summary": {
+                "scanned_repos": 0,
+                "avg_latest_score": None,
+                "regressing_repos": 0,
+                "scans_in_range": 0,
+            },
+            "score_series": [],
+            "scan_volume_series": [],
+            "regression_series": [],
+            "latest_portfolio_pillars": {},
+            "top_regressing_repos": [],
+        }
+
+    @staticmethod
+    def get_repository_trends(target, days=30):
+        target = str(target or "").strip()
+        range_days = AuditDatabase._coerce_int(days, default=30, minimum=1, maximum=365)
+        if not target:
+            return AuditDatabase._empty_repository_trends(target, range_days)
+        if not AuditDatabase._pool:
+            return AuditDatabase._empty_repository_trends(target, range_days)
+
+        conn = AuditDatabase.get_connection()
         try:
-            d["pillar_scores"] = json.loads(d.get("pillar_scores", "{}"))
-        except Exception as e:
-            logger.warning(f"Error parsing pillar_scores in get_audit_by_id: {e}")
-            d["pillar_scores"] = {}
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            cursor.execute(
+                """
+                SELECT
+                    id, timestamp, target, score, rating, total_loc,
+                    violations_count, pillar_scores, full_json, scan_mode,
+                    baseline_audit_id, regression_status, regression_summary
+                FROM audit_history
+                WHERE target = %s
+                ORDER BY timestamp ASC, id ASC
+                """,
+                (target,),
+            )
+            rows = cursor.fetchall()
+            cursor.close()
+        finally:
+            AuditDatabase.release_connection(conn)
 
-        if d.get("full_json"):
-            try:
-                d["full_json"] = json.loads(d["full_json"])
-            except Exception as e:
-                logger.warning(f"Error parsing full_json: {e}")
-                d["full_json"] = None
-        d["ai_summary"] = AuditDatabase._extract_ai_summary(d.get("full_json"))
-        return d
+        if not rows:
+            return AuditDatabase._empty_repository_trends(target, range_days)
+
+        regression_settings = AuditDatabase.get_regression_settings()
+        previous_row = None
+        hydrated_rows = []
+        for row in rows:
+            parsed_row = AuditDatabase._parse_history_row(
+                row,
+                include_full_json=True,
+                fallback_baseline=previous_row,
+                settings=regression_settings,
+            )
+            parsed_row["_timestamp_dt"] = row["timestamp"]
+            hydrated_rows.append(parsed_row)
+            previous_row = parsed_row
+
+        since = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=range_days)
+        filtered_rows = [
+            row for row in hydrated_rows if row["_timestamp_dt"] >= since
+        ]
+        if not filtered_rows:
+            return AuditDatabase._empty_repository_trends(target, range_days)
+
+        latest_row = filtered_rows[-1]
+        score_series = [
+            {"timestamp": row["timestamp"], "score": row["score"]}
+            for row in filtered_rows
+        ]
+        violations_series = [
+            {
+                "timestamp": row["timestamp"],
+                "violations_count": row["violations_count"],
+            }
+            for row in filtered_rows
+        ]
+        pillar_series = [
+            {
+                "timestamp": row["timestamp"],
+                **{
+                    pillar: row["pillar_scores"].get(pillar)
+                    for pillar in AuditDatabase.PILLAR_KEYS
+                },
+            }
+            for row in filtered_rows
+        ]
+
+        audit_points = []
+        regression_events = []
+        warnings_count = 0
+        for row in filtered_rows:
+            public_row = dict(row)
+            public_row.pop("full_json", None)
+            public_row.pop("_timestamp_dt", None)
+            audit_points.append(public_row)
+            if row["regression_status"] == "warning":
+                warnings_count += 1
+                regression_events.append(
+                    {
+                        "id": row["id"],
+                        "timestamp": row["timestamp"],
+                        "regression_status": row["regression_status"],
+                        "regression_summary": row["regression_summary"],
+                    }
+                )
+
+        return {
+            "target": target,
+            "range_days": range_days,
+            "summary": {
+                "total_scans": len(filtered_rows),
+                "latest_score": latest_row["score"],
+                "latest_rating": latest_row["rating"],
+                "latest_timestamp": latest_row["timestamp"],
+                "warnings_count": warnings_count,
+            },
+            "audit_points": audit_points,
+            "score_series": score_series,
+            "violations_series": violations_series,
+            "pillar_series": pillar_series,
+            "regression_events": regression_events,
+        }
+
+    @staticmethod
+    def get_portfolio_trends(days=30):
+        range_days = AuditDatabase._coerce_int(days, default=30, minimum=1, maximum=365)
+        if not AuditDatabase._pool:
+            return AuditDatabase._empty_portfolio_trends(range_days)
+
+        since = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=range_days)
+        conn = AuditDatabase.get_connection()
+        try:
+            cursor = conn.cursor(cursor_factory=RealDictCursor)
+            cursor.execute(
+                """
+                SELECT
+                    id, timestamp, target, score, rating, total_loc,
+                    violations_count, pillar_scores, full_json, scan_mode,
+                    baseline_audit_id, regression_status, regression_summary
+                FROM audit_history
+                WHERE timestamp >= %s
+                ORDER BY timestamp ASC, id ASC
+                """,
+                (since,),
+            )
+            rows = cursor.fetchall()
+            cursor.close()
+        finally:
+            AuditDatabase.release_connection(conn)
+
+        if not rows:
+            return AuditDatabase._empty_portfolio_trends(range_days)
+
+        regression_settings = AuditDatabase.get_regression_settings()
+        previous_by_target = {}
+        hydrated_rows = []
+        for row in rows:
+            target = row["target"]
+            parsed_row = AuditDatabase._parse_history_row(
+                row,
+                include_full_json=True,
+                fallback_baseline=previous_by_target.get(target),
+                settings=regression_settings,
+            )
+            parsed_row["_timestamp_dt"] = row["timestamp"]
+            hydrated_rows.append(parsed_row)
+            previous_by_target[target] = parsed_row
+
+        latest_by_target = {}
+        per_day_latest = {}
+        scan_counts = {}
+        warning_counts = {}
+
+        for row in hydrated_rows:
+            latest_by_target[row["target"]] = row
+            day_key = row["_timestamp_dt"].date().isoformat()
+            per_day_latest.setdefault(day_key, {})
+            per_day_latest[day_key][row["target"]] = row
+            scan_counts[day_key] = scan_counts.get(day_key, 0) + 1
+            if row["regression_status"] == "warning":
+                warning_counts[day_key] = warning_counts.get(day_key, 0) + 1
+
+        score_series = []
+        scan_volume_series = []
+        regression_series = []
+        for day_key in sorted(per_day_latest):
+            day_rows = list(per_day_latest[day_key].values())
+            avg_score = round(
+                sum(float(row["score"]) for row in day_rows) / len(day_rows),
+                2,
+            )
+            score_series.append({"date": day_key, "avg_score": avg_score})
+            scan_volume_series.append(
+                {"date": day_key, "scans": scan_counts.get(day_key, 0)}
+            )
+            regression_series.append(
+                {"date": day_key, "warnings": warning_counts.get(day_key, 0)}
+            )
+
+        latest_scores = [row["score"] for row in latest_by_target.values()]
+        avg_latest_score = round(sum(float(score) for score in latest_scores) / len(latest_scores), 2)
+
+        pillar_buckets = {pillar: [] for pillar in AuditDatabase.PILLAR_KEYS}
+        for row in latest_by_target.values():
+            for pillar in AuditDatabase.PILLAR_KEYS:
+                value = row["pillar_scores"].get(pillar)
+                if value is not None:
+                    pillar_buckets[pillar].append(float(value))
+        latest_portfolio_pillars = {
+            pillar: round(sum(values) / len(values), 2)
+            for pillar, values in pillar_buckets.items()
+            if values
+        }
+
+        top_regressing_repos = []
+        for row in latest_by_target.values():
+            if row["regression_status"] != "warning":
+                continue
+            public_row = dict(row)
+            public_row.pop("full_json", None)
+            public_row.pop("_timestamp_dt", None)
+            top_regressing_repos.append(public_row)
+
+        top_regressing_repos.sort(
+            key=lambda row: (
+                -len((row["regression_summary"] or {}).get("triggered_signals") or []),
+                -AuditDatabase._coerce_int(
+                    (row["regression_summary"] or {}).get("new_high_severity_count"),
+                    default=0,
+                ),
+                AuditDatabase._coerce_float(
+                    (row["regression_summary"] or {}).get("score_delta"),
+                    default=0.0,
+                ),
+                -AuditDatabase._coerce_int(
+                    (row["regression_summary"] or {}).get("violations_delta"),
+                    default=0,
+                ),
+            )
+        )
+
+        return {
+            "range_days": range_days,
+            "summary": {
+                "scanned_repos": len(latest_by_target),
+                "avg_latest_score": avg_latest_score,
+                "regressing_repos": sum(
+                    1
+                    for row in latest_by_target.values()
+                    if row["regression_status"] == "warning"
+                ),
+                "scans_in_range": len(hydrated_rows),
+            },
+            "score_series": score_series,
+            "scan_volume_series": scan_volume_series,
+            "regression_series": regression_series,
+            "latest_portfolio_pillars": latest_portfolio_pillars,
+            "top_regressing_repos": top_regressing_repos[:5],
+        }
 
     @staticmethod
     def save_project_rules(
@@ -884,6 +1853,8 @@ class AuditDatabase:
     @staticmethod
     def get_project_rules(target_id):
         """Retrieves saved rules for a target."""
+        if not AuditDatabase._pool:
+            return None
         conn = AuditDatabase.get_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
         cursor.execute(
@@ -1043,6 +2014,10 @@ class AuditDatabase:
     @staticmethod
     def get_all_repositories(include_credentials=False):
         """Lấy danh sách tất cả repositories đang active."""
+        if not AuditDatabase._pool:
+            return AuditDatabase._list_memory_repositories(
+                include_credentials=include_credentials
+            )
         conn = AuditDatabase.get_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
         cursor.execute(
@@ -1068,6 +2043,11 @@ class AuditDatabase:
     @staticmethod
     def get_repository(repo_id):
         """Lấy thông tin 1 repository (bao gồm credentials) để dùng cho clone."""
+        if not AuditDatabase._pool:
+            row = AuditDatabase._ensure_memory_repositories().get(repo_id)
+            if not row or not row.get("is_active", True):
+                return None
+            return dict(row)
         conn = AuditDatabase.get_connection()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
         cursor.execute(
@@ -1082,6 +2062,22 @@ class AuditDatabase:
     @staticmethod
     def save_repository(repo_id, name, url, username="", token="", branch="main"):
         """Thêm mới hoặc cập nhật repository."""
+        if not AuditDatabase._pool:
+            repositories = AuditDatabase._ensure_memory_repositories()
+            existing = repositories.get(repo_id) or {}
+            now = AuditDatabase._memory_timestamp()
+            repositories[repo_id] = {
+                "id": repo_id,
+                "name": name,
+                "url": url,
+                "username": username,
+                "token": token,
+                "branch": branch,
+                "is_active": True,
+                "created_at": existing.get("created_at") or now,
+                "updated_at": now,
+            }
+            return
         conn = AuditDatabase.get_connection()
         cursor = conn.cursor()
         cursor.execute(
@@ -1106,6 +2102,13 @@ class AuditDatabase:
     @staticmethod
     def delete_repository(repo_id):
         """Soft-delete repository (set is_active=FALSE)."""
+        if not AuditDatabase._pool:
+            repositories = AuditDatabase._ensure_memory_repositories()
+            existing = repositories.get(repo_id)
+            if existing:
+                existing["is_active"] = False
+                existing["updated_at"] = AuditDatabase._memory_timestamp()
+            return
         conn = AuditDatabase.get_connection()
         cursor = conn.cursor()
         cursor.execute(

@@ -36,7 +36,11 @@ def test_ai_overview_endpoint(ai_client, monkeypatch):
     monkeypatch.setattr(
         ai_router_module.ai_telemetry,
         "get_overview",
-        lambda **kwargs: {"spend_today_usd": 1.25, "total_requests": 4},
+        lambda **kwargs: {
+            "spend_today_usd": 1.25,
+            "total_requests": 4,
+            "cache": {"entries_count": 3, "hit_rate": 0.75},
+        },
     )
 
     response = ai_client.get("/ai/overview")
@@ -44,6 +48,7 @@ def test_ai_overview_endpoint(ai_client, monkeypatch):
     assert response.status_code == 200
     assert response.json()["data"]["spend_today_usd"] == 1.25
     assert response.json()["data"]["total_requests"] == 4
+    assert response.json()["data"]["cache"]["entries_count"] == 3
 
 
 def test_ai_requests_endpoint_returns_paginated_payload(ai_client, monkeypatch):
@@ -66,7 +71,7 @@ def test_ai_requests_endpoint_returns_paginated_payload(ai_client, monkeypatch):
     )
 
     response = ai_client.get(
-        "/ai/requests?page=2&page_size=10&project=demo&date_from=2026-04-01&date_to=2026-04-21&source=audit.validation&status=completed&provider=openai&model=gpt-5.4&mode=realtime"
+        "/ai/requests?page=2&page_size=10&project=demo&date_from=2026-04-01&date_to=2026-04-21&source=audit.validation&status=completed&provider=openai&model=gpt-5.4-mini&mode=realtime"
     )
 
     assert response.status_code == 200
@@ -80,7 +85,7 @@ def test_ai_requests_endpoint_returns_paginated_payload(ai_client, monkeypatch):
     assert captured["source"] == "audit.validation"
     assert captured["status"] == "completed"
     assert captured["provider"] == "openai"
-    assert captured["model"] == "gpt-5.4"
+    assert captured["model"] == "gpt-5.4-mini"
     assert captured["mode"] == "realtime"
 
 
@@ -98,10 +103,10 @@ def test_ai_filters_meta_endpoint(ai_client, monkeypatch):
                 "projects": ["demo"],
                 "sources": ["audit.validation"],
                 "providers": ["openai", "google"],
-                "models": ["gpt-5.4"],
+                "models": ["gpt-5.4-mini"],
                 "statuses": ["completed"],
                 "modes": ["realtime"],
-                "models_by_provider": {"openai": ["gpt-5.4"]},
+                "models_by_provider": {"openai": ["gpt-5.4-mini"]},
             }
         ),
     )
@@ -113,7 +118,7 @@ def test_ai_filters_meta_endpoint(ai_client, monkeypatch):
     assert response.status_code == 200
     payload = response.json()["data"]
     assert payload["projects"] == ["demo"]
-    assert payload["models_by_provider"]["openai"] == ["gpt-5.4"]
+    assert payload["models_by_provider"]["openai"] == ["gpt-5.4-mini"]
     assert captured["project"] == "demo"
     assert captured["date_from"] == "2026-04-01"
     assert captured["date_to"] == "2026-04-21"
@@ -268,3 +273,50 @@ def test_ai_budget_update_endpoint(ai_client, monkeypatch):
     payload = response.json()["data"]
     assert payload["daily_budget_usd"] == 4
     assert payload["today_spend"] == 0.2
+
+
+def test_ai_cache_endpoints(ai_client, monkeypatch):
+    import src.api.routers.ai as ai_router_module
+
+    captured = {}
+
+    monkeypatch.setattr(
+        ai_router_module.ai_audit_cache,
+        "get_cache_state",
+        lambda cleanup=True: {
+            "enabled": True,
+            "entries_count": 5,
+            "all_time_summary": {"hits": 12},
+        },
+    )
+    monkeypatch.setattr(
+        ai_router_module.ai_audit_cache,
+        "save_policy",
+        lambda payload: captured.setdefault("save_payload", payload),
+    )
+    monkeypatch.setattr(
+        ai_router_module.ai_audit_cache,
+        "clear_cache",
+        lambda: {"enabled": True, "entries_count": 0, "all_time_summary": {"hits": 0}},
+    )
+
+    get_response = ai_client.get("/ai/cache")
+    assert get_response.status_code == 200
+    assert get_response.json()["data"]["entries_count"] == 5
+
+    put_response = ai_client.put(
+        "/ai/cache",
+        json={
+            "enabled": True,
+            "validation_enabled": True,
+            "deep_audit_enabled": False,
+            "cross_check_enabled": True,
+            "retention_days": 14,
+        },
+    )
+    assert put_response.status_code == 200
+    assert captured["save_payload"]["deep_audit_enabled"] is False
+
+    delete_response = ai_client.delete("/ai/cache")
+    assert delete_response.status_code == 200
+    assert delete_response.json()["data"]["entries_count"] == 0

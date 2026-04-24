@@ -21,6 +21,8 @@ import {
   Globe,
   LogOut,
   Bot,
+  Database,
+  TrendingUp,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
@@ -128,6 +130,22 @@ export const Sidebar = ({
       activeClass:
         "bg-violet-500/15 text-violet-300 border border-violet-500/25",
       iconClass: "text-violet-400",
+    },
+    {
+      path: "/ai-cache",
+      label: "AI Cache",
+      icon: Database,
+      activeClass:
+        "bg-indigo-500/15 text-indigo-300 border border-indigo-500/25",
+      iconClass: "text-indigo-400",
+    },
+    {
+      path: "/trends",
+      label: "Trends",
+      icon: TrendingUp,
+      activeClass:
+        "bg-rose-500/15 text-rose-300 border border-rose-500/25",
+      iconClass: "text-rose-400",
     },
   ];
 

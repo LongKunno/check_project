@@ -9,9 +9,20 @@ from typing import Optional
 from src.engine.database import AuditDatabase
 from src.engine.settings_crypto import encrypt_setting
 from src.engine.ai_telemetry import AiBudgetExceededError
-from src.config import normalize_openai_batch_model
+from src.config import (
+    get_regression_gate_enabled,
+    get_regression_new_critical_threshold,
+    get_regression_pillar_drop_threshold,
+    get_regression_score_drop_threshold,
+    get_regression_violations_increase_threshold,
+    normalize_openai_batch_model,
+)
 
 router = APIRouter()
+
+
+def _raise_persistence_unavailable(exc: RuntimeError):
+    raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 class RepositoryRequest(BaseModel):
@@ -56,6 +67,12 @@ async def get_projects_scores():
                     "latest_timestamp": latest["timestamp"] if latest else None,
                     "violations_count": latest["violations_count"] if latest else None,
                     "pillar_scores": latest["pillar_scores"] if latest else None,
+                    "regression_status": (
+                        latest.get("regression_status") if latest else "unavailable"
+                    ),
+                    "regression_summary": (
+                        latest.get("regression_summary") if latest else None
+                    ),
                 }
             )
         except Exception as e:
@@ -69,6 +86,8 @@ async def get_projects_scores():
                     "latest_timestamp": None,
                     "violations_count": None,
                     "pillar_scores": None,
+                    "regression_status": "unavailable",
+                    "regression_summary": None,
                 }
             )
 
@@ -142,6 +161,11 @@ class EngineSettingsRequest(BaseModel):
     clear_openai_batch_api_key: Optional[bool] = None
     member_recent_months: Optional[int] = None
     auth_required: Optional[bool] = None
+    regression_gate_enabled: Optional[bool] = None
+    regression_score_drop_threshold: Optional[float] = None
+    regression_violations_increase_threshold: Optional[int] = None
+    regression_pillar_drop_threshold: Optional[float] = None
+    regression_new_critical_threshold: Optional[int] = None
 
 
 def _build_engine_settings_payload():
@@ -165,6 +189,11 @@ def _build_engine_settings_payload():
         "openai_batch_api_key_configured": has_openai_batch_api_key(),
         "member_recent_months": get_member_recent_months(),
         "auth_required": get_auth_required(),
+        "regression_gate_enabled": get_regression_gate_enabled(),
+        "regression_score_drop_threshold": get_regression_score_drop_threshold(),
+        "regression_violations_increase_threshold": get_regression_violations_increase_threshold(),
+        "regression_pillar_drop_threshold": get_regression_pillar_drop_threshold(),
+        "regression_new_critical_threshold": get_regression_new_critical_threshold(),
     }
 
 
@@ -180,62 +209,113 @@ async def get_engine_settings():
 @router.put("/settings/engine")
 async def update_engine_settings(request: EngineSettingsRequest):
     """Cập nhật cấu hình engine (lưu vào DB, áp dụng runtime)."""
-    if request.ai_enabled is not None:
-        AuditDatabase.set_config("ai_enabled", str(request.ai_enabled).lower())
-    if request.ai_mode is not None:
-        if request.ai_mode not in {"realtime", "openai_batch"}:
-            raise HTTPException(
-                status_code=400,
-                detail="ai_mode chỉ hỗ trợ 'realtime' hoặc 'openai_batch'",
-            )
-        AuditDatabase.set_config("ai_mode", request.ai_mode)
-    if request.test_mode_limit_files is not None:
-        if request.test_mode_limit_files < 0:
-            raise HTTPException(status_code=400, detail="test_mode_limit_files phải >= 0")
-        AuditDatabase.set_config("test_mode_limit_files", str(request.test_mode_limit_files))
-    if request.ai_max_concurrency is not None:
-        if not 1 <= request.ai_max_concurrency <= 100:
-            raise HTTPException(
-                status_code=400,
-                detail="ai_max_concurrency phải nằm trong khoảng 1..100",
-            )
-        AuditDatabase.set_config(
-            "ai_max_concurrency", str(request.ai_max_concurrency)
-        )
-    if request.openai_batch_model is not None:
-        raw_model = request.openai_batch_model.strip()
-        if not raw_model:
-            raise HTTPException(
-                status_code=400,
-                detail="openai_batch_model không được để trống",
-            )
-        model = normalize_openai_batch_model(raw_model)
-        AuditDatabase.set_config("openai_batch_model", model)
-    if request.clear_openai_batch_api_key:
-        AuditDatabase.set_config("openai_batch_api_key_encrypted", "")
-    elif request.openai_batch_api_key is not None:
-        sanitized = request.openai_batch_api_key.strip()
-        if sanitized:
+    try:
+        if request.ai_enabled is not None:
+            AuditDatabase.set_config("ai_enabled", str(request.ai_enabled).lower())
+        if request.ai_mode is not None:
+            if request.ai_mode not in {"realtime", "openai_batch"}:
+                raise HTTPException(
+                    status_code=400,
+                    detail="ai_mode chỉ hỗ trợ 'realtime' hoặc 'openai_batch'",
+                )
+            AuditDatabase.set_config("ai_mode", request.ai_mode)
+        if request.test_mode_limit_files is not None:
+            if request.test_mode_limit_files < 0:
+                raise HTTPException(
+                    status_code=400, detail="test_mode_limit_files phải >= 0"
+                )
             AuditDatabase.set_config(
-                "openai_batch_api_key_encrypted",
-                encrypt_setting(sanitized),
+                "test_mode_limit_files", str(request.test_mode_limit_files)
             )
-    if request.member_recent_months is not None:
-        if not 1 <= request.member_recent_months <= 24:
-            raise HTTPException(
-                status_code=400,
-                detail="member_recent_months phải nằm trong khoảng 1..24",
+        if request.ai_max_concurrency is not None:
+            if not 1 <= request.ai_max_concurrency <= 100:
+                raise HTTPException(
+                    status_code=400,
+                    detail="ai_max_concurrency phải nằm trong khoảng 1..100",
+                )
+            AuditDatabase.set_config(
+                "ai_max_concurrency", str(request.ai_max_concurrency)
             )
-        AuditDatabase.set_config(
-            "member_recent_months", str(request.member_recent_months)
-        )
-    if request.auth_required is not None:
-        AuditDatabase.set_config("auth_required", str(request.auth_required).lower())
+        if request.openai_batch_model is not None:
+            raw_model = request.openai_batch_model.strip()
+            if not raw_model:
+                raise HTTPException(
+                    status_code=400,
+                    detail="openai_batch_model không được để trống",
+                )
+            model = normalize_openai_batch_model(raw_model)
+            AuditDatabase.set_config("openai_batch_model", model)
+        if request.clear_openai_batch_api_key:
+            AuditDatabase.set_config("openai_batch_api_key_encrypted", "")
+        elif request.openai_batch_api_key is not None:
+            sanitized = request.openai_batch_api_key.strip()
+            if sanitized:
+                AuditDatabase.set_config(
+                    "openai_batch_api_key_encrypted",
+                    encrypt_setting(sanitized),
+                )
+        if request.member_recent_months is not None:
+            if not 1 <= request.member_recent_months <= 24:
+                raise HTTPException(
+                    status_code=400,
+                    detail="member_recent_months phải nằm trong khoảng 1..24",
+                )
+            AuditDatabase.set_config(
+                "member_recent_months", str(request.member_recent_months)
+            )
+        if request.auth_required is not None:
+            AuditDatabase.set_config(
+                "auth_required", str(request.auth_required).lower()
+            )
+        if request.regression_gate_enabled is not None:
+            AuditDatabase.set_config(
+                "regression_gate_enabled",
+                str(request.regression_gate_enabled).lower(),
+            )
+        if request.regression_score_drop_threshold is not None:
+            if not 0 <= request.regression_score_drop_threshold <= 100:
+                raise HTTPException(
+                    status_code=400,
+                    detail="regression_score_drop_threshold phải nằm trong khoảng 0..100",
+                )
+            AuditDatabase.set_config(
+                "regression_score_drop_threshold",
+                str(request.regression_score_drop_threshold),
+            )
+        if request.regression_violations_increase_threshold is not None:
+            if not 0 <= request.regression_violations_increase_threshold <= 100000:
+                raise HTTPException(
+                    status_code=400,
+                    detail="regression_violations_increase_threshold phải nằm trong khoảng 0..100000",
+                )
+            AuditDatabase.set_config(
+                "regression_violations_increase_threshold",
+                str(request.regression_violations_increase_threshold),
+            )
+        if request.regression_pillar_drop_threshold is not None:
+            if not 0 <= request.regression_pillar_drop_threshold <= 10:
+                raise HTTPException(
+                    status_code=400,
+                    detail="regression_pillar_drop_threshold phải nằm trong khoảng 0..10",
+                )
+            AuditDatabase.set_config(
+                "regression_pillar_drop_threshold",
+                str(request.regression_pillar_drop_threshold),
+            )
+        if request.regression_new_critical_threshold is not None:
+            if not 0 <= request.regression_new_critical_threshold <= 100000:
+                raise HTTPException(
+                    status_code=400,
+                    detail="regression_new_critical_threshold phải nằm trong khoảng 0..100000",
+                )
+            AuditDatabase.set_config(
+                "regression_new_critical_threshold",
+                str(request.regression_new_critical_threshold),
+            )
+    except RuntimeError as exc:
+        _raise_persistence_unavailable(exc)
 
-    return {
-        "status": "success",
-        "data": _build_engine_settings_payload(),
-    }
+    return {"status": "success", "data": _build_engine_settings_payload()}
 
 
 # ── HEALTH CHECK ──────────────────────────────────────────────────────────────

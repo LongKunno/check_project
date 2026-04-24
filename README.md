@@ -27,5 +27,12 @@ Dự án được quản lý hoàn toàn qua Docker Compose:
 - **API Server**: [http://localhost:8000](http://localhost:8000)
 - **Hệ thống Tài liệu**: [http://localhost:8001](http://localhost:8001)
 
+## Lưu ý cấu hình hiện tại
+
+- `AI_MODEL` mặc định trong `.env.example` đang là `cx/gpt-5.4-mini`.
+- Dashboard gọi API qua prefix `/api/*`; nginx sẽ proxy về backend FastAPI tại `:8000`.
+- Nếu thiếu `DATABASE_URL`, hệ thống chỉ fallback in-memory cho danh sách repository; audit history, rules và engine settings sẽ không được persist.
+- Nếu muốn AI Ops hiển thị cost chính xác và áp budget hard-stop, cần cấu hình pricing catalog và budget policy sau khi deploy.
+
 ---
 *Duy trì bởi LongDD.*

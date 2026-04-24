@@ -1,0 +1,4495 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../ui_language_english/">
+      
+      
+        <link rel="next" href="../presentation_static_page/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>UI Overhaul V1 - AI Static Analysis Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#ui-overhaul-design-system-polish" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="AI Static Analysis Documentation" class="md-header__button md-logo" aria-label="AI Static Analysis Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AI Static Analysis Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              UI Overhaul V1
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Trang chủ
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../discovery/" class="md-tabs__link">
+          
+  
+  
+  Tính năng Hệ thống
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../architecture/overview/" class="md-tabs__link">
+          
+  
+  
+  Kiến trúc hệ thống
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../database/overview/" class="md-tabs__link">
+          
+  
+  
+  Database
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../api_specs/stream/" class="md-tabs__link">
+          
+  
+  
+  API Specifications
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../tech_stack/python_rules/" class="md-tabs__link">
+          
+  
+  
+  Quy chuẩn Tech Stack
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../tests/detailed_test_cases/" class="md-tabs__link">
+          
+  
+  
+  Kiểm thử (Quality Assurance)
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="AI Static Analysis Documentation" class="md-nav__button md-logo" aria-label="AI Static Analysis Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    AI Static Analysis Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trang chủ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tính năng Hệ thống
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tính năng Hệ thống
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../discovery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code Discovery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../core_auditor_engine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core Audit Engine
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../real_time_audit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Real-time Streaming
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../scoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scoring System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dashboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interactive Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nlre/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Natural Language Rules (NLRE)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ui_performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    High-Performance UI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ui_text_selection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Text Selection Fix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../member_overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Member Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ui_language_english/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Language (English)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Overhaul V1
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Overhaul V1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#tong-quan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tổng quan
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cac-thay-oi-chi-tiet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Các thay đổi chi tiết
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Các thay đổi chi tiết">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-design-token-system-css-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Design Token System (CSS Variables)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-skeleton-loading-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Skeleton Loading System
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-emptystate-component" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. EmptyState Component
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-page-transitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Page Transitions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-animated-score-ring-auditview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Animated Score Ring (AuditView)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-animated-pillar-bars-auditview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Animated Pillar Bars (AuditView)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-historyview-enrichment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. HistoryView Enrichment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-settingsview-expansion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. SettingsView Expansion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#9-projectscoresview-polish" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. ProjectScoresView Polish
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#10-memberscoresview-polish" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. MemberScoresView Polish
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#11-sidebar-active-glow-responsive-refactor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. Sidebar Active Glow + Responsive Refactor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#15-suspense-fallback-upgrade" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        15. Suspense Fallback Upgrade
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#glow-effect-classes-css-utilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Glow Effect Classes (CSS Utilities)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#severity-indicator-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Severity Indicator Classes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Severity Indicator Classes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#12-toast-notification-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. Toast Notification System
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13-responsive-mobile-sidebar" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        13. Responsive Mobile Sidebar
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#14-responsive-css-media-queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14. Responsive CSS Media Queries
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Flow
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data Flow">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#16-color-visual-enhancement-phase-2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        16. Color &amp; Visual Enhancement (Phase 2)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#17-midnight-aurora-premium-dark-theme-phase-3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        17. Midnight Aurora Premium Dark Theme (Phase 3)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#18-triet-tieu-radar-chart-herocard-component-phase-4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        18. Triệt tiêu Radar Chart — HeroCard Component (Phase 4)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#19-uiux-professional-overhaul-phase-5-2026-04-06" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        19. UI/UX Professional Overhaul (Phase 5 — 2026-04-06)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="19. UI/UX Professional Overhaul (Phase 5 — 2026-04-06)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#191-visual-foundation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        19.1 Visual Foundation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#192-information-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        19.2 Information Architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#193-micro-polish" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        19.3 Micro-polish
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#194-tong-ket-css-classes-moi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        19.4 Tổng kết CSS Classes mới
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#20-header-layout-synchronization-phase-5b-2026-04-06" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        20. Header Layout Synchronization (Phase 5b — 2026-04-06)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#21-table-pagination-phase-5c-2026-04-06" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        21. Table Pagination (Phase 5c — 2026-04-06)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-sidebar-navigation-context-separation-phase-6-2026-04-07" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        22. Sidebar Navigation Context Separation (Phase 6 — 2026-04-07)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="22. Sidebar Navigation Context Separation (Phase 6 — 2026-04-07)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#221-cau-truc-moi-globalnavitems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        22.1 Cấu trúc mới — globalNavItems
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#222-cau-truc-moi-reponavitems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        22.2 Cấu trúc mới — repoNavItems
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#223-layout-sidebar-sau-thay-oi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        22.3 Layout Sidebar sau thay đổi
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#224-chi-tiet-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        22.4 Chi tiết UI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#225-collapsed-sidebar-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        22.5 Collapsed Sidebar Behavior
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-global-brightness-uplift-phase-7-2026-04-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        23. Global Brightness Uplift (Phase 7 — 2026-04-11)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="23. Global Brightness Uplift (Phase 7 — 2026-04-11)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#231-css-variables-indexcss" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        23.1 CSS Variables (index.css)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#232-batch-color-migration-tat-ca-jsx-components" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        23.2 Batch Color Migration (tất cả JSX components)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#233-files-bi-anh-huong" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        23.3 Files bị ảnh hưởng
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#24-rule-manager-color-sync-phase-8-2026-04-13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        24. Rule Manager Color Sync (Phase 8 — 2026-04-13)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="24. Rule Manager Color Sync (Phase 8 — 2026-04-13)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#241-bang-thay-oi-chi-tiet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        24.1 Bảng thay đổi chi tiết
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#242-file-bi-anh-huong" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        24.2 File bị ảnh hưởng
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#243-rulebuilder-bang-thay-oi-bo-sung" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        24.3 RuleBuilder — Bảng thay đổi bổ sung
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#244-nguyen-tac-thiet-ke" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        24.4 Nguyên tắc thiết kế
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#25-rule-builder-step-2-ux-polish-phase-9-2026-04-13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        25. Rule Builder Step 2 UX Polish (Phase 9 — 2026-04-13)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="25. Rule Builder Step 2 UX Polish (Phase 9 — 2026-04-13)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#251-cai-tien-streamingterminal-pending-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        25.1 Cải tiến StreamingTerminal (Pending State)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#252-cai-tien-visualruleconfigurator-form-editor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        25.2 Cải tiến VisualRuleConfigurator (Form Editor)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#26-light-theme-transition-2026-04-15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        26. Light Theme Transition (2026-04-15)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="26. Light Theme Transition (2026-04-15)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#261-palette-moi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        26.1 Palette mới
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#262-files-a-sua-20-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        26.2 Files đã sửa (~20 files)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#263-nguyen-tac" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        26.3 Nguyên tắc
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#264-settings-view-contrast-polish-bugfix-2026-04-16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        26.4 Settings View Contrast Polish (Bugfix 2026-04-16)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#265-auditview-repositoryview-contrast-polish-bugfix-2026-04-16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        26.5 AuditView &amp; RepositoryView Contrast Polish (Bugfix 2026-04-16)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#266-final-contrast-sweep-subagent-audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        26.6 Final Contrast Sweep (Subagent Audit)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#-" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ---
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="---">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#271-premium-global-layout-hierarchy-suggestion-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        27.1 Premium Global Layout Hierarchy (Suggestion #1)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#-_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ---
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="---">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#272-micro-animations-empty-states-polish-suggestion-2-3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        27.2 Micro-Animations &amp; Empty States Polish (Suggestion #2 &amp; #3)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#-_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ---
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="---">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#273-premium-toast-notifications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        27.3 Premium Toast Notifications
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#-_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ---
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="---">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#274-low-contrast-text-gradients-sweeps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        27.4 Low Contrast Text &amp; Gradients Sweeps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#275-audit-report-ledger-light-mode-overhaul" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        27.5 Audit Report &amp; LEDGER Light Mode Overhaul
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#276-gentle-component-badges-micro-aesthetics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        27.6 Gentle Component Badges (Micro-Aesthetics)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#277-dark-ui-remediation-phase-277" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        27.7 Dark UI Remediation (Phase 27.7)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../presentation_static_page/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Presentations Static Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kiến trúc hệ thống
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Kiến trúc hệ thống
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tổng quan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/module_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kiến trúc Module
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/design_decisions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quyết định thiết kế (ADR)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/nlre_engine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NLRE Engine
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../architecture/docker_setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Database
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../database/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tổng quan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../database/audit_history/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lịch sử kiểm toán
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Specifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Specifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/stream/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Real-time Stream
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/audit_jobs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background Jobs (V6)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/upload/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upload Project
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/ai_health/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Health Checks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/ai_cache/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Cache
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/fix_suggestion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fix Suggestion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/history/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    History Retrieval
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/repositories/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Repositories & Scores
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/git/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Git Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rules Compiler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/members/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Members & Leaderboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/engine_settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engine Settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quy chuẩn Tech Stack
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Quy chuẩn Tech Stack
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tech_stack/python_rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python Rules
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tech_stack/frontend_rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Frontend Rules
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tech_stack/rule_customization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tùy chỉnh Quy tắc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kiểm thử (Quality Assurance)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Kiểm thử (Quality Assurance)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tests/detailed_test_cases/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Cases Chi tiết
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#tong-quan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tổng quan
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cac-thay-oi-chi-tiet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Các thay đổi chi tiết
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Các thay đổi chi tiết">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-design-token-system-css-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Design Token System (CSS Variables)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-skeleton-loading-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Skeleton Loading System
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-emptystate-component" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. EmptyState Component
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-page-transitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Page Transitions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-animated-score-ring-auditview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. Animated Score Ring (AuditView)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-animated-pillar-bars-auditview" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. Animated Pillar Bars (AuditView)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#7-historyview-enrichment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. HistoryView Enrichment
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#8-settingsview-expansion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. SettingsView Expansion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#9-projectscoresview-polish" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. ProjectScoresView Polish
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#10-memberscoresview-polish" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        10. MemberScoresView Polish
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#11-sidebar-active-glow-responsive-refactor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        11. Sidebar Active Glow + Responsive Refactor
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#15-suspense-fallback-upgrade" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        15. Suspense Fallback Upgrade
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#glow-effect-classes-css-utilities" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Glow Effect Classes (CSS Utilities)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#severity-indicator-classes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Severity Indicator Classes
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Severity Indicator Classes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#12-toast-notification-system" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        12. Toast Notification System
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#13-responsive-mobile-sidebar" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        13. Responsive Mobile Sidebar
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#14-responsive-css-media-queries" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        14. Responsive CSS Media Queries
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-flow" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Flow
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data Flow">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#16-color-visual-enhancement-phase-2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        16. Color &amp; Visual Enhancement (Phase 2)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#17-midnight-aurora-premium-dark-theme-phase-3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        17. Midnight Aurora Premium Dark Theme (Phase 3)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#18-triet-tieu-radar-chart-herocard-component-phase-4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        18. Triệt tiêu Radar Chart — HeroCard Component (Phase 4)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#19-uiux-professional-overhaul-phase-5-2026-04-06" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        19. UI/UX Professional Overhaul (Phase 5 — 2026-04-06)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="19. UI/UX Professional Overhaul (Phase 5 — 2026-04-06)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#191-visual-foundation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        19.1 Visual Foundation
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#192-information-architecture" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        19.2 Information Architecture
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#193-micro-polish" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        19.3 Micro-polish
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#194-tong-ket-css-classes-moi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        19.4 Tổng kết CSS Classes mới
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#20-header-layout-synchronization-phase-5b-2026-04-06" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        20. Header Layout Synchronization (Phase 5b — 2026-04-06)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#21-table-pagination-phase-5c-2026-04-06" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        21. Table Pagination (Phase 5c — 2026-04-06)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#22-sidebar-navigation-context-separation-phase-6-2026-04-07" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        22. Sidebar Navigation Context Separation (Phase 6 — 2026-04-07)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="22. Sidebar Navigation Context Separation (Phase 6 — 2026-04-07)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#221-cau-truc-moi-globalnavitems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        22.1 Cấu trúc mới — globalNavItems
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#222-cau-truc-moi-reponavitems" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        22.2 Cấu trúc mới — repoNavItems
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#223-layout-sidebar-sau-thay-oi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        22.3 Layout Sidebar sau thay đổi
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#224-chi-tiet-ui" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        22.4 Chi tiết UI
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#225-collapsed-sidebar-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        22.5 Collapsed Sidebar Behavior
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#23-global-brightness-uplift-phase-7-2026-04-11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        23. Global Brightness Uplift (Phase 7 — 2026-04-11)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="23. Global Brightness Uplift (Phase 7 — 2026-04-11)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#231-css-variables-indexcss" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        23.1 CSS Variables (index.css)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#232-batch-color-migration-tat-ca-jsx-components" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        23.2 Batch Color Migration (tất cả JSX components)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#233-files-bi-anh-huong" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        23.3 Files bị ảnh hưởng
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#24-rule-manager-color-sync-phase-8-2026-04-13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        24. Rule Manager Color Sync (Phase 8 — 2026-04-13)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="24. Rule Manager Color Sync (Phase 8 — 2026-04-13)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#241-bang-thay-oi-chi-tiet" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        24.1 Bảng thay đổi chi tiết
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#242-file-bi-anh-huong" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        24.2 File bị ảnh hưởng
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#243-rulebuilder-bang-thay-oi-bo-sung" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        24.3 RuleBuilder — Bảng thay đổi bổ sung
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#244-nguyen-tac-thiet-ke" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        24.4 Nguyên tắc thiết kế
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#25-rule-builder-step-2-ux-polish-phase-9-2026-04-13" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        25. Rule Builder Step 2 UX Polish (Phase 9 — 2026-04-13)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="25. Rule Builder Step 2 UX Polish (Phase 9 — 2026-04-13)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#251-cai-tien-streamingterminal-pending-state" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        25.1 Cải tiến StreamingTerminal (Pending State)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#252-cai-tien-visualruleconfigurator-form-editor" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        25.2 Cải tiến VisualRuleConfigurator (Form Editor)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#26-light-theme-transition-2026-04-15" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        26. Light Theme Transition (2026-04-15)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="26. Light Theme Transition (2026-04-15)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#261-palette-moi" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        26.1 Palette mới
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#262-files-a-sua-20-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        26.2 Files đã sửa (~20 files)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#263-nguyen-tac" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        26.3 Nguyên tắc
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#264-settings-view-contrast-polish-bugfix-2026-04-16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        26.4 Settings View Contrast Polish (Bugfix 2026-04-16)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#265-auditview-repositoryview-contrast-polish-bugfix-2026-04-16" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        26.5 AuditView &amp; RepositoryView Contrast Polish (Bugfix 2026-04-16)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#266-final-contrast-sweep-subagent-audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        26.6 Final Contrast Sweep (Subagent Audit)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#-" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ---
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="---">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#271-premium-global-layout-hierarchy-suggestion-1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        27.1 Premium Global Layout Hierarchy (Suggestion #1)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#-_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ---
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="---">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#272-micro-animations-empty-states-polish-suggestion-2-3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        27.2 Micro-Animations &amp; Empty States Polish (Suggestion #2 &amp; #3)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#-_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ---
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="---">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#273-premium-toast-notifications" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        27.3 Premium Toast Notifications
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#-_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ---
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="---">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#274-low-contrast-text-gradients-sweeps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        27.4 Low Contrast Text &amp; Gradients Sweeps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#275-audit-report-ledger-light-mode-overhaul" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        27.5 Audit Report &amp; LEDGER Light Mode Overhaul
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#276-gentle-component-badges-micro-aesthetics" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        27.6 Gentle Component Badges (Micro-Aesthetics)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#277-dark-ui-remediation-phase-277" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        27.7 Dark UI Remediation (Phase 27.7)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="ui-overhaul-design-system-polish">UI Overhaul — Design System &amp; Polish</h1>
+<h2 id="tong-quan">Tổng quan</h2>
+<p>Phiên nâng cấp UI/UX toàn diện được triển khai ngày 2026-04-06, tập trung vào: Design token system, skeleton loading, animated components, page transitions, và enriched settings/history views.</p>
+<h2 id="cac-thay-oi-chi-tiet">Các thay đổi chi tiết</h2>
+<h3 id="1-design-token-system-css-variables">1. Design Token System (CSS Variables)</h3>
+<ul>
+<li><strong>File</strong>: <code>dashboard/src/index.css</code></li>
+<li>Bổ sung tokens: <code>--accent-green</code>, <code>--accent-cyan</code>, <code>--accent-pink</code>, <code>--accent-amber</code></li>
+<li>Spacing scale: <code>--space-xs</code> → <code>--space-2xl</code></li>
+<li>Border radius scale: <code>--radius-sm</code> → <code>--radius-full</code></li>
+<li>Transition easing: <code>--ease-spring</code>, <code>--ease-smooth</code>, <code>--duration-fast/normal/slow</code></li>
+</ul>
+<h3 id="2-skeleton-loading-system">2. Skeleton Loading System</h3>
+<ul>
+<li><strong>File</strong>: <code>dashboard/src/components/ui/SkeletonLoader.jsx</code></li>
+<li>Exported components: <code>TableSkeleton</code>, <code>CardSkeleton</code>, <code>HeaderSkeleton</code>, <code>ScoreRingSkeleton</code></li>
+<li>CSS shimmer animation: gradient sweep 1.8s infinite</li>
+<li>Được áp dụng cho: ProjectScoresView, MemberScoresView, HistoryView</li>
+</ul>
+<h3 id="3-emptystate-component">3. EmptyState Component</h3>
+<ul>
+<li><strong>File</strong>: <code>dashboard/src/components/ui/EmptyState.jsx</code></li>
+<li>Variants: <code>empty</code>, <code>noData</code>, <code>error</code>, <code>noResults</code></li>
+<li>Animated floating dots, spring icon entrance</li>
+<li>Glassmorphism background blur</li>
+<li>Được áp dụng cho: HistoryView, ProjectScoresView, MemberScoresView, AuditView</li>
+</ul>
+<h3 id="4-page-transitions">4. Page Transitions</h3>
+<ul>
+<li><strong>File</strong>: <code>dashboard/src/components/ui/PageTransition.jsx</code></li>
+<li>Framer Motion <code>AnimatePresence mode="wait"</code> wrapper</li>
+<li>Fade + slide + blur effect: <code>opacity: 0, y: 14, blur(4px)</code> → <code>opacity: 1, y: 0, blur(0px)</code></li>
+<li>Wrapped around <code>&lt;Routes&gt;</code> in <code>App.jsx</code></li>
+</ul>
+<h3 id="5-animated-score-ring-auditview">5. Animated Score Ring (AuditView)</h3>
+<ul>
+<li><strong>File</strong>: <code>dashboard/src/components/views/AuditView.jsx</code></li>
+<li>SVG circle animation thay thế hiển thị text thuần</li>
+<li><code>motion.circle</code> với <code>strokeDasharray/strokeDashoffset</code> animation (1.4s ease)</li>
+<li>Color-coded glow filter: <code>drop-shadow(0 0 8px &lt;color&gt;66)</code></li>
+<li>Score number: spring entrance animation (delay 0.5s)</li>
+</ul>
+<h3 id="6-animated-pillar-bars-auditview">6. Animated Pillar Bars (AuditView)</h3>
+<ul>
+<li>Motion.div staggered entrance: <code>delay: 0.3 + idx * 0.1</code></li>
+<li>Motion.div width animation: <code>0% → target%</code> (0.8s ease)</li>
+<li>Glow effect: <code>box-shadow: 0 0 12px &lt;color&gt;44</code></li>
+</ul>
+<h3 id="7-historyview-enrichment">7. HistoryView Enrichment</h3>
+<ul>
+<li><strong>File</strong>: <code>dashboard/src/components/views/HistoryView.jsx</code></li>
+<li>4 KPI stat cards: Total scans, Avg score, Best score, Last audit</li>
+<li>Relative time formatting: "33m ago", "7h ago", "2d ago"</li>
+<li>Score mini-bar: animated gradient fill</li>
+<li>Color-coded violation badges: ≤100 green, ≤500 amber, &gt;500 rose</li>
+<li>Skeleton loading thay spinner thuần</li>
+</ul>
+<h3 id="8-settingsview-expansion">8. SettingsView Expansion</h3>
+<ul>
+<li><strong>File</strong>: <code>dashboard/src/components/views/SettingsView.jsx</code></li>
+<li><strong>System Information</strong>: AI Health status, Engine version, Framework, AI Model</li>
+<li><strong>Engine Configuration</strong>: Core rules count, Custom AI rules, Disabled rules (fetched from API)</li>
+<li><strong>Quick Links</strong>: Documentation</li>
+<li>Giữ nguyên Danger Zone section</li>
+</ul>
+<h3 id="9-projectscoresview-polish">9. ProjectScoresView Polish</h3>
+<ul>
+<li><strong>File</strong>: <code>dashboard/src/components/views/ProjectScoresView.jsx</code></li>
+<li>Relative time (<code>7h ago</code>) thay vì date format Việt</li>
+<li>Animated score bar: <code>motion.div width 0→pct%</code> với glow shadow</li>
+<li>Skeleton + EmptyState thay spinner + div tĩnh</li>
+</ul>
+<h3 id="10-memberscoresview-polish">10. MemberScoresView Polish</h3>
+<ul>
+<li><strong>File</strong>: <code>dashboard/src/components/views/MemberScoresView.jsx</code></li>
+<li>Skeleton + EmptyState thay spinner + div tĩnh</li>
+</ul>
+<h3 id="11-sidebar-active-glow-responsive-refactor">11. Sidebar Active Glow + Responsive Refactor</h3>
+<ul>
+<li><strong>File</strong>: <code>dashboard/src/components/layout/Sidebar.jsx</code></li>
+<li>Thêm CSS class <code>glow-pink</code>, <code>glow-cyan</code>, <code>glow-violet</code>, <code>glow-emerald</code>, <code>glow-blue</code>, <code>glow-amber</code> cho active state</li>
+<li>Hiệu ứng: <code>box-shadow: 0 0 20px -4px rgba(&lt;color&gt;, 0.3)</code></li>
+<li><strong>Data-driven nav items</strong>: Refactor từ 6 button blocks → config array, giảm ~50% boilerplate</li>
+<li><strong>Tailwind JIT Fix</strong>: KHÔNG dùng template literal <code>bg-${color}-500/10</code> — phải dùng full class string, vì Tailwind JIT scanner không detect dynamic class names</li>
+</ul>
+<h3 id="15-suspense-fallback-upgrade">15. Suspense Fallback Upgrade</h3>
+<ul>
+<li><strong>File</strong>: <code>dashboard/src/App.jsx</code></li>
+<li>7 <code>&lt;Suspense&gt;</code> fallback thay từ plain text "Loading..." → <code>&lt;CardSkeleton&gt;</code> + <code>&lt;TableSkeleton&gt;</code></li>
+<li>Nhất quán loading experience trên toàn bộ lazy-loaded routes</li>
+</ul>
+<h2 id="glow-effect-classes-css-utilities">Glow Effect Classes (CSS Utilities)</h2>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>Color</th>
+<th>Dùng cho</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>glow-pink</code></td>
+<td>Pink</td>
+<td>Project Leaderboard active</td>
+</tr>
+<tr>
+<td><code>glow-cyan</code></td>
+<td>Cyan</td>
+<td>Member Leaderboard active</td>
+</tr>
+<tr>
+<td><code>glow-violet</code></td>
+<td>Violet</td>
+<td>Dashboard active</td>
+</tr>
+<tr>
+<td><code>glow-emerald</code></td>
+<td>Emerald</td>
+<td>Rule Manager active</td>
+</tr>
+<tr>
+<td><code>glow-blue</code></td>
+<td>Blue</td>
+<td>Rule Builder active</td>
+</tr>
+<tr>
+<td><code>glow-amber</code></td>
+<td>Amber</td>
+<td>Audit History active</td>
+</tr>
+</tbody>
+</table>
+<h2 id="severity-indicator-classes">Severity Indicator Classes</h2>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>Color</th>
+<th>Usage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>severity-blocker</code></td>
+<td>Red + 0.6 glow</td>
+<td>Critical violations</td>
+</tr>
+<tr>
+<td><code>severity-critical</code></td>
+<td>Orange + 0.5 glow</td>
+<td>Critical violations</td>
+</tr>
+<tr>
+<td><code>severity-major</code></td>
+<td>Yellow + 0.4 glow</td>
+<td>Major violations</td>
+</tr>
+<tr>
+<td><code>severity-minor</code></td>
+<td>Blue + 0.4 glow</td>
+<td>Minor violations</td>
+</tr>
+<tr>
+<td><code>severity-info</code></td>
+<td>Gray</td>
+<td>Informational</td>
+</tr>
+</tbody>
+</table>
+<h3 id="12-toast-notification-system">12. Toast Notification System</h3>
+<ul>
+<li><strong>File</strong>: <code>dashboard/src/components/ui/Toast.jsx</code></li>
+<li>Context-based: <code>ToastProvider</code> wraps App trong <code>main.jsx</code></li>
+<li><code>useToast()</code> hook returns: <code>toast.success()</code>, <code>toast.error()</code>, <code>toast.warning()</code>, <code>toast.info()</code></li>
+<li>Spring animation (stiffness: 400, damping: 25), slide-in từ phải</li>
+<li>4 variants: success (emerald), error (rose), warning (amber), info (blue)</li>
+<li>Auto-dismiss: success/warning/info → 4s, error → 6s</li>
+<li>Glassmorphism + glow effect per variant</li>
+<li>Thay thế toàn bộ <code>alert()</code> natives trong SettingsView và HistoryView</li>
+</ul>
+<h3 id="13-responsive-mobile-sidebar">13. Responsive Mobile Sidebar</h3>
+<ul>
+<li><strong>File</strong>: <code>dashboard/src/components/layout/Sidebar.jsx</code></li>
+<li>Desktop (<code>lg:</code> ≥1024px): sidebar cố định, collapse button</li>
+<li>Mobile (<code>&lt; 1024px</code>): Sidebar ẩn, hiển thị hamburger button (<code>Menu</code> icon) fixed top-left</li>
+<li>Khi tap hamburger → sidebar drawer slide-in từ trái (<code>spring stiffness: 300, damping: 30</code>)</li>
+<li>Backdrop overlay: <code>bg-black/60 backdrop-blur-sm</code> — tap để đóng</li>
+<li>Close button (<code>X</code>) bên trong sidebar header</li>
+<li>Auto-close khi tap nav item</li>
+</ul>
+<h3 id="14-responsive-css-media-queries">14. Responsive CSS Media Queries</h3>
+<ul>
+<li><strong>File</strong>: <code>dashboard/src/index.css</code></li>
+<li><code>@media (max-width: 1023px)</code>: 2-column stats grid, stacked hero card, hamburger padding</li>
+<li><code>@media (max-width: 640px)</code>: 1-column stats grid, stacked header</li>
+</ul>
+<h2 id="data-flow">Data Flow</h2>
+<pre class="mermaid"><code>graph TD
+    A[main.jsx] --&gt;|"ToastProvider"| B[App.jsx]
+    B --&gt;|"PageTransition wrapper"| C[Routes]
+    C --&gt;|"/project-scores"| D[ProjectScoresView]
+    C --&gt;|"/member-scores"| E[MemberScoresView]
+    C --&gt;|"/audit"| F[AuditView]
+    C --&gt;|"/history"| G[HistoryView]
+    C --&gt;|"/settings"| H[SettingsView]
+
+    D --&gt;|"loading state"| I["TableSkeleton + CardSkeleton"]
+    D --&gt;|"empty state"| J[EmptyState variant=noData]
+    E --&gt;|"loading state"| I
+    G --&gt;|"loading state"| I
+    F --&gt;|"empty state"| J
+    H --&gt;|"fetch"| K["/api/ai/health + /api/rules"]
+
+    G --&gt;|"useToast"| L["Toast.success/error/warning"]
+    H --&gt;|"useToast"| L</code></pre>
+<h3 id="16-color-visual-enhancement-phase-2">16. Color &amp; Visual Enhancement (Phase 2)</h3>
+<ul>
+<li><strong>KPI Stat Cards</strong> (Project/Member/History views):</li>
+<li>Border accent colors per metric: <code>border-pink-500/25</code>, <code>border-amber-500/25</code>, <code>border-emerald-500/25</code>, etc.</li>
+<li>Subtle glow shadows: <code>shadow-[0_0_15px_-5px_rgba(...)]</code></li>
+<li>Icon wrapped in rounded container: <code>w-9 h-9 rounded-xl bg-white/5</code></li>
+<li>Hover: <code>hover:bg-white/[0.06]</code></li>
+<li><strong>Settings InfoCard</strong> fix: Tailwind JIT dynamic <code>bg-${color}-500/10</code> → full class strings</li>
+<li><strong>Settings Rules Fetch</strong> fix: parse <code>resp.data.default_rules</code> instead of <code>d.rules</code> (API schema mismatch)</li>
+<li><strong>Score Bars</strong>: Solid color → gradient:</li>
+<li>≥90: <code>from-emerald-500 to-teal-400</code></li>
+<li>≥80: <code>from-blue-500 to-cyan-400</code></li>
+<li>≥65: <code>from-amber-500 to-yellow-400</code></li>
+<li>&lt;65: <code>from-rose-500 to-pink-400</code></li>
+<li>Height: <code>h-1.5</code> → <code>h-2</code></li>
+<li><strong>Table Headers</strong>: <code>bg-white/2 border-white/5</code> → <code>bg-white/[0.04] border-white/[0.08]</code></li>
+<li><strong>Table Row Hover</strong>: <code>hover:bg-white/3</code> → <code>hover:bg-white/[0.05]</code> + accent left border:</li>
+<li>Project: <code>hover:border-l-pink-500/50</code></li>
+<li>Member: <code>hover:border-l-cyan-500/50</code></li>
+<li>History: <code>hover:border-l-amber-500/50</code></li>
+<li><strong>Table Footer</strong>: Added <code>bg-white/[0.02]</code> background for subtle separation</li>
+</ul>
+<h3 id="17-midnight-aurora-premium-dark-theme-phase-3">17. Midnight Aurora Premium Dark Theme (Phase 3)</h3>
+<ul>
+<li><strong>File</strong>: <code>dashboard/src/index.css</code>, <code>dashboard/src/App.jsx</code></li>
+<li>Quyết định: Huỷ bỏ chuyển đổi sang Light Theme (do gây chói/mỏi mắt khi đọc log/code), chuyển sang làm sâu và tối ưu Dark Theme hiện tại.</li>
+<li><strong>Base Color (<code>index.css</code>)</strong>: Tổi màu nền gốc từ <code>--bg-color: #020617</code> sang <code>#080c14</code> sâu hơn, loại bỏ hoàn toàn khối override <code>.light</code> dính chặt vào tailwind class cũ.</li>
+<li><strong>Glassmorphism Enhancement</strong>:</li>
+<li><code>backdrop-filter: blur(16px) saturate(160%)</code> thay vì 12px.</li>
+<li>Tăng độ sáng viền: <code>--glass-border: rgba(139, 92, 246, 0.15)</code>.</li>
+<li><strong>Glowing Orbs (App.jsx &amp; index.css)</strong>:</li>
+<li>Cập nhật 3 radial-gradient chìm ở Body với các mã màu <code>rgba(139, 92, 246, 0.15)</code>, <code>rgba(16, 185, 129, 0.1)</code>. Không dùng <code>opacity: 0.1</code> CSS thuần mà ép màu RGBa với alpha gốc để tăng mức độ rực rỡ dưới lớp kính.</li>
+</ul>
+<h3 id="18-triet-tieu-radar-chart-herocard-component-phase-4">18. Triệt tiêu Radar Chart — HeroCard Component (Phase 4)</h3>
+<ul>
+<li><strong>File mới</strong>: <code>dashboard/src/components/ui/HeroCard.jsx</code></li>
+<li><strong>File sửa</strong>: <code>dashboard/src/components/views/AuditView.jsx</code></li>
+<li><strong>Vấn đề</strong>: Radar Chart bản chất hình tròn, đặt trong khung hình chữ nhật nằm ngang luôn tạo ra khoảng trống lớn 2 bên lề. Thử nghiệm 3-Column Layout cũng không hợp mắt vì 3 cột rời rạc, thiếu liên kết thị giác.</li>
+<li><strong>Giải pháp cuối cùng — 2-Row Layout</strong>:</li>
+<li>Tách toàn bộ Hero Card ra thành component riêng <code>HeroCard.jsx</code> để giảm độ phức tạp của <code>AuditView.jsx</code>.</li>
+<li><strong>Hàng 1</strong>: Score Ring (bên trái) + 4 Pillar Progress Bars kéo full-width (bên phải), ngăn cách bằng divider dọc mỏng. Các thanh progress bar trải đều toàn bộ chiều ngang còn lại, không còn khoảng trống.</li>
+<li><strong>Hàng 2</strong>: 4 KPI mini-cards (Lines of Code, Features, Violations, Weakest Module) dạng grid 4 cột, có hover effect và icon accent riêng biệt.</li>
+<li>Loại bỏ hoàn toàn Radar Chart và panel "Attention Required" tách rời ra khỏi Hero Card.</li>
+</ul>
+<h3 id="19-uiux-professional-overhaul-phase-5-2026-04-06">19. UI/UX Professional Overhaul (Phase 5 — 2026-04-06)</h3>
+<h4 id="191-visual-foundation">19.1 Visual Foundation</h4>
+<ul>
+<li><strong>Rank Badges</strong> (thay thế emoji 🥇🥈🥉):</li>
+<li>Gold: <code>linear-gradient(135deg, #fbbf24, #f59e0b)</code> + <code>box-shadow: 0 0 12px rgba(251,191,36,0.4)</code></li>
+<li>Silver: <code>linear-gradient(135deg, #d1d5db, #9ca3af)</code> + glow</li>
+<li>Bronze: <code>linear-gradient(135deg, #d97706, #b45309)</code> + glow</li>
+<li>Default (#4+): <code>bg-white/6</code> circle với số thưởng tự</li>
+<li>
+<p><strong>Files</strong>: <code>ProjectScoresView.jsx</code>, <code>MemberScoresView.jsx</code>, <code>index.css</code> (<code>.rank-badge-*</code> classes)</p>
+</li>
+<li>
+<p><strong>Score Dot Indicators</strong>: Chấm tròn 6px phát sáng cạnh score number</p>
+</li>
+<li>CSS classes: <code>.score-dot-emerald/blue/amber/orange/rose</code></li>
+<li>
+<p>Áp dụng tại: ProjectScoresView, MemberScoresView (table score column)</p>
+</li>
+<li>
+<p><strong>Premium Table Styling</strong> (<code>.premium-table</code> class):</p>
+</li>
+<li>Zebra striping: odd rows <code>rgba(255,255,255,0.015)</code></li>
+<li>Left accent border hover: <code>border-left: 2px solid var(--table-accent)</code></li>
+<li>Compact header: <code>font-size: 9px</code>, <code>letter-spacing: 0.15em</code></li>
+<li><strong>Files</strong>: <code>index.css</code>, <code>ProjectScoresView.jsx</code>, <code>MemberScoresView.jsx</code>, <code>AuditView.jsx</code></li>
+</ul>
+<h4 id="192-information-architecture">19.2 Information Architecture</h4>
+<ul>
+<li><strong>KPI Accent Cards</strong> (<code>.kpi-accent-card</code> class):</li>
+<li>Top accent line gradient 2px per metric: pink, amber, emerald, orange, cyan, violet</li>
+<li>Áp dụng tại: <code>ProjectScoresView</code>, <code>MemberScoresView</code>, <code>HeroCard</code> KPI strip</li>
+<li>
+<p><strong>Files</strong>: <code>index.css</code> (<code>.kpi-accent-*::before</code> pseudo-elements)</p>
+</li>
+<li>
+<p><strong>Feature Cards → Collapsible Table</strong> (<code>FeatureTable</code> component):</p>
+</li>
+<li><strong>File</strong>: <code>AuditView.jsx</code></li>
+<li>Thay thế 22 feature glass cards → 1 table <code>MODULE BREAKDOWN</code></li>
+<li>Click row → ~~expand hiện 4-pillar breakdown~~ → <strong>Thay đổi</strong>: 4 pillar hiển thị trực tiếp inline trong mỗi row</li>
+<li>Cột: <code>Module | Score | Perf. | Maint. | Relia. | Secur. | LOC | Debt</code></li>
+<li>Mỗi pillar cell: score number + animated mini progress bar</li>
+<li>Component <code>PillarCell</code>: score color-coded + <code>motion.div</code> width animation</li>
+<li>
+<p>Sorted ascending by score (weakest first)</p>
+</li>
+<li>
+<p><strong>Compact Page Headers</strong>:</p>
+</li>
+<li>Badge + subtitle inline cùng dòng (thay vì subtitle dưới title)</li>
+<li><code>mb-8 → mb-5</code>, <code>gap-6 → gap-4</code></li>
+<li>Title giữ gradient nhưng mô tả chuyển sang inline</li>
+<li>
+<p><strong>Files</strong>: <code>ProjectScoresView.jsx</code>, <code>MemberScoresView.jsx</code></p>
+</li>
+<li>
+<p><strong>View Toggle Buttons</strong> (AuditView):</p>
+</li>
+<li>Chuyển từ inline style → Tailwind classes</li>
+<li>Compact hơn: <code>px-4 py-2</code> thay <code>0.8rem 1.75rem</code></li>
+</ul>
+<h4 id="193-micro-polish">19.3 Micro-polish</h4>
+<ul>
+<li><strong>Gradient Avatars</strong> per member (<code>.avatar-gradient</code> class):</li>
+<li>Hash-based gradient: <code>hsl(hash%360, 65%, 50%) → hsl((hash+40)%360, 65%, 40%)</code></li>
+<li>Hover: <code>scale(1.08)</code> + border brighten + shadow</li>
+<li>Thay thế avatar generic <code>bg-cyan-500/20</code> giống nhau</li>
+<li>
+<p><strong>File</strong>: <code>MemberScoresView.jsx</code>, <code>index.css</code></p>
+</li>
+<li>
+<p><strong>Debt Format</strong> human-readable:</p>
+</li>
+<li>Hàm <code>formatDebt(mins)</code>: <code>1715 → "1d 4h"</code>, <code>110 → "1h 50m"</code>, <code>2 → "2m"</code></li>
+<li>Color coding: <code>≤60m → debt-low (slate)</code>, <code>≤480m → debt-medium (amber)</code>, <code>&gt;480m → debt-high (rose)</code></li>
+<li>Tooltip hover hiện giá trị phút gốc</li>
+<li><strong>File</strong>: <code>MemberScoresView.jsx</code></li>
+</ul>
+<h4 id="194-tong-ket-css-classes-moi">19.4 Tổng kết CSS Classes mới</h4>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>Mô tả</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>.rank-badge</code></td>
+<td>Base rank badge circle 28px</td>
+</tr>
+<tr>
+<td><code>.rank-badge-gold/silver/bronze/default</code></td>
+<td>Variant gradient colors</td>
+</tr>
+<tr>
+<td><code>.kpi-accent-card</code></td>
+<td>Card with top accent line</td>
+</tr>
+<tr>
+<td><code>.kpi-accent-pink/amber/emerald/orange/cyan/violet</code></td>
+<td>Accent line colors</td>
+</tr>
+<tr>
+<td><code>.premium-table</code></td>
+<td>Table với zebra + accent hover</td>
+</tr>
+<tr>
+<td><code>.score-dot</code></td>
+<td>Dot indicator 6px base</td>
+</tr>
+<tr>
+<td><code>.score-dot-emerald/blue/amber/orange/rose</code></td>
+<td>Dot colors + glow</td>
+</tr>
+<tr>
+<td><code>.avatar-gradient</code></td>
+<td>Gradient member avatar 36px</td>
+</tr>
+<tr>
+<td><code>.page-header-compact</code></td>
+<td>Compact header sizing</td>
+</tr>
+<tr>
+<td><code>.debt-low/medium/high</code></td>
+<td>Debt color coding</td>
+</tr>
+</tbody>
+</table>
+<h3 id="20-header-layout-synchronization-phase-5b-2026-04-06">20. Header Layout Synchronization (Phase 5b — 2026-04-06)</h3>
+<ul>
+<li><strong>Vấn đề</strong>: Header layout không đồng nhất — một số trang dùng badge + subtitle trên 2 dòng riêng biệt, một số lại inline.</li>
+<li><strong>Giải pháp</strong>: Chuẩn hóa toàn bộ 7 trang theo layout thống nhất:</li>
+<li><strong>Dòng 1</strong>: <code>[Badge pill]</code> + subtitle text inline cùng hàng</li>
+<li><strong>Dòng 2</strong>: Big gradient title bên dưới</li>
+<li>Badge: <code>text-xs</code>, icon <code>14px</code>, padding <code>px-3 py-1.5</code></li>
+<li>Subtitle: <code>text-slate-600 text-xs font-medium</code>, hidden on mobile (<code>hidden sm:block</code>)</li>
+<li><strong>Files thay đổi</strong>:</li>
+<li><code>App.jsx</code>: Audit Dashboard, Rule Manager, Rule Builder headers</li>
+<li><code>HistoryView.jsx</code>: Audit History header</li>
+<li><code>SettingsView.jsx</code>: System Settings header</li>
+<li>(ProjectScoresView, MemberScoresView đã sửa ở Phase 5 trước đó)</li>
+</ul>
+<h3 id="21-table-pagination-phase-5c-2026-04-06">21. Table Pagination (Phase 5c — 2026-04-06)</h3>
+<ul>
+<li><strong>Component mới</strong>: <code>components/ui/Pagination.jsx</code></li>
+<li>Reusable, dark theme, page numbers + ellipsis</li>
+<li>First/Last/Prev/Next navigation</li>
+<li>Optional page-size selector (<code>5 / 10 / 20 / 50</code>)</li>
+<li>Auto-hide khi tổng items &lt;= pageSize (1 page)</li>
+<li>Props: <code>currentPage</code>, <code>totalItems</code>, <code>pageSize</code>, <code>onPageChange</code>, <code>onPageSizeChange</code>, <code>label</code></li>
+<li><strong>Tích hợp</strong>:</li>
+<li><code>ProjectScoresView.jsx</code>: 10 items/page, "Showing 1–10 of N projects"</li>
+<li><code>MemberScoresView.jsx</code>: 10 items/page, "Showing 1–10 of N members"</li>
+<li><code>AuditView.jsx</code> (FeatureTable): 10 items/page, "Showing 1–10 of N modules"</li>
+<li><code>HistoryView.jsx</code>: 10 items/page, "Showing 1–10 of N records"</li>
+<li><strong>Rank số thứ tự</strong>: Cập nhật rank = <code>(page - 1) * pageSize + idx + 1</code> để rank chính xác across pages</li>
+</ul>
+<hr />
+<h3 id="22-sidebar-navigation-context-separation-phase-6-2026-04-07">22. Sidebar Navigation Context Separation (Phase 6 — 2026-04-07)</h3>
+<ul>
+<li><strong>File</strong>: <code>dashboard/src/components/layout/Sidebar.jsx</code></li>
+<li><strong>Vấn đề</strong>: Toàn bộ nav items (bao gồm Project Leaderboard, Member Leaderboard, Presentations) được render bên dưới dropdown "Current repository", tạo ra sự hiểu nhầm rằng các tính năng toàn cục này phụ thuộc vào repo đang được chọn.</li>
+<li><strong>Giải pháp</strong>: Chia nav items thành 2 arrays riêng biệt và render chúng trong 2 section độc lập:</li>
+</ul>
+<h4 id="221-cau-truc-moi-globalnavitems">22.1 Cấu trúc mới — <code>globalNavItems</code></h4>
+<p>Các tính năng <strong>không phụ thuộc</strong> vào repository (dữ liệu toàn hệ thống):</p>
+<table>
+<thead>
+<tr>
+<th>Label</th>
+<th>Path</th>
+<th>Icon</th>
+<th>Color</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Project Leaderboard</td>
+<td><code>/project-scores</code></td>
+<td>BarChart3</td>
+<td>Pink</td>
+</tr>
+<tr>
+<td>Member Leaderboard</td>
+<td><code>/member-scores</code></td>
+<td>Users</td>
+<td>Cyan</td>
+</tr>
+<tr>
+<td>Presentations</td>
+<td><code>/presentations</code></td>
+<td>MonitorPlay</td>
+<td>Rose</td>
+</tr>
+</tbody>
+</table>
+<h4 id="222-cau-truc-moi-reponavitems">22.2 Cấu trúc mới — <code>repoNavItems</code></h4>
+<p>Các tính năng <strong>phụ thuộc</strong> vào repository đang được chọn. Nhóm này được đặt bên dưới dropdown chọn repo:</p>
+<table>
+<thead>
+<tr>
+<th>Label</th>
+<th>Path</th>
+<th>Icon</th>
+<th>Color</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Audit Dashboard</td>
+<td><code>/audit</code></td>
+<td>Activity</td>
+<td>Violet</td>
+</tr>
+<tr>
+<td>Rule Manager</td>
+<td><code>/rules</code></td>
+<td>ShieldCheck</td>
+<td>Emerald</td>
+</tr>
+<tr>
+<td>Rule Builder</td>
+<td><code>/sandbox</code></td>
+<td>Wand2</td>
+<td>Blue</td>
+</tr>
+<tr>
+<td>Audit History</td>
+<td><code>/history</code></td>
+<td>FileSearch</td>
+<td>Amber</td>
+</tr>
+</tbody>
+</table>
+<h4 id="223-layout-sidebar-sau-thay-oi">22.3 Layout Sidebar sau thay đổi</h4>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>┌──────────────────────────────┐
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>│  AUDIT ENGINE  [Framework V4]│  ← Logo Header
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>├──────────────────────────────┤
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>│  🌐 GLOBAL VIEWS             │  ← Section header mới
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>│    [Project Leaderboard]     │
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>│    [Member Leaderboard]      │
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>│    [Presentations]           │
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>├──────────────────────────────┤  ← Divider (border-t border-white/5)
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>│  📁 REPOSITORY WORKSPACE     │  ← Section header mới
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>│    [select repo dropdown]    │  ← Dropdown được nhóm vào đây
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>│    [Audit Dashboard]         │
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>│    [Rule Manager]            │
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>│    [Rule Builder]            │
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>│    [Audit History]           │
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>├──────────────────────────────┤
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>│  ● AI healthy   [Settings]   │  ← Footer
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>└──────────────────────────────┘
+</code></pre></div>
+<h4 id="224-chi-tiet-ui">22.4 Chi tiết UI</h4>
+<ul>
+<li><strong>Section headers</strong>: <code>text-[10px] font-bold text-slate-500 uppercase tracking-widest opacity-70</code></li>
+<li><strong>Global Views header icon</strong>: <code>Globe</code> (10px, text-slate-500)</li>
+<li><strong>Repository Workspace header icon</strong>: <code>FolderOpen</code> (10px, text-slate-500)</li>
+<li><strong>Repo dropdown</strong> kế thừa <code>border-violet-500/20</code> thay vì <code>border-slate-700</code> để nhất quán với theme violet của Workspace section</li>
+<li><strong>Repo icon (collapsed mode)</strong>: <code>bg-violet-500/10 border-violet-500/20</code> thay vì <code>bg-slate-800/50 border-slate-700</code> — phân biệt rõ hơn khi sidebar thu nhỏ</li>
+<li><strong>renderNavItems</strong> helper: Abstract hóa render logic thành 1 function tái sử dụng cho cả 2 nhóm</li>
+</ul>
+<h4 id="225-collapsed-sidebar-behavior">22.5 Collapsed Sidebar Behavior</h4>
+<p>Khi sidebar ở chế độ thu nhỏ (80px wide):
+- Section header hiển thị <code>•••</code> thay vì text đầy đủ
+- Dropdown repo thu lại thành icon <code>FolderOpen</code> violet
+- Nav items chỉ hiển thị icon (tooltip <code>title</code> vẫn hoạt động)</p>
+<hr />
+<p><em>Cập nhật: 2026-04-07 — Sidebar Context Separation Phase 6</em></p>
+<h3 id="23-global-brightness-uplift-phase-7-2026-04-11">23. Global Brightness Uplift (Phase 7 — 2026-04-11)</h3>
+<p><strong>Mục tiêu:</strong> Nâng sáng toàn bộ giao diện dashboard để tăng khả năng đọc và giảm cảm giác nặng nề.</p>
+<h4 id="231-css-variables-indexcss">23.1 CSS Variables (index.css)</h4>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Trước</th>
+<th>Sau</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--bg-color</code></td>
+<td><code>#080c14</code></td>
+<td><code>#0c1222</code></td>
+</tr>
+<tr>
+<td><code>--card-bg</code></td>
+<td><code>rgba(13,17,28, 0.7)</code></td>
+<td><code>rgba(16,22,38, 0.65)</code></td>
+</tr>
+<tr>
+<td><code>--glass-border</code></td>
+<td><code>rgba(violet, 0.15)</code></td>
+<td><code>rgba(violet, 0.2)</code></td>
+</tr>
+<tr>
+<td><code>--glass-shine</code></td>
+<td><code>rgba(white, 0.03)</code></td>
+<td><code>rgba(white, 0.06)</code></td>
+</tr>
+<tr>
+<td><code>--primary-glow</code></td>
+<td><code>rgba(blue, 0.2)</code></td>
+<td><code>rgba(blue, 0.25)</code></td>
+</tr>
+<tr>
+<td><code>--secondary-glow</code></td>
+<td><code>rgba(violet, 0.2)</code></td>
+<td><code>rgba(violet, 0.25)</code></td>
+</tr>
+</tbody>
+</table>
+<h4 id="232-batch-color-migration-tat-ca-jsx-components">23.2 Batch Color Migration (tất cả JSX components)</h4>
+<table>
+<thead>
+<tr>
+<th>Pattern cũ</th>
+<th>Pattern mới</th>
+<th>Lý do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>bg-[#080c14]/40</code></td>
+<td><code>bg-[#0f1629]/50</code></td>
+<td>Nền card panel sáng hơn</td>
+</tr>
+<tr>
+<td><code>bg-[#080c14]/80</code></td>
+<td><code>bg-[#0f1629]/60</code></td>
+<td>Sidebar, modal overlay</td>
+</tr>
+<tr>
+<td><code>bg-[#060a10]</code></td>
+<td><code>bg-[#0c1222]</code></td>
+<td>Terminal/editor backgrounds</td>
+</tr>
+<tr>
+<td><code>bg-[#0d1117]</code></td>
+<td><code>bg-[#101828]</code></td>
+<td>Warning/error modals</td>
+</tr>
+<tr>
+<td><code>bg-black/40</code></td>
+<td><code>bg-white/[0.06]</code></td>
+<td>Inner element backgrounds</td>
+</tr>
+<tr>
+<td><code>bg-black/30</code></td>
+<td><code>bg-white/[0.05]</code></td>
+<td>Secondary backgrounds</td>
+</tr>
+<tr>
+<td><code>bg-black/20</code></td>
+<td><code>bg-white/[0.03]</code></td>
+<td>Subtle tinting</td>
+</tr>
+<tr>
+<td><code>bg-black/10</code></td>
+<td><code>bg-white/[0.02]</code></td>
+<td>Very subtle tinting</td>
+</tr>
+<tr>
+<td><code>#0f172a</code></td>
+<td><code>#131b2e</code> (index.css)</td>
+<td>Explorer modal, select options</td>
+</tr>
+</tbody>
+</table>
+<h4 id="233-files-bi-anh-huong">23.3 Files bị ảnh hưởng</h4>
+<ul>
+<li><code>dashboard/src/index.css</code> (global variables + body gradient)</li>
+<li><code>dashboard/src/App.jsx</code> (header controls)</li>
+<li><code>dashboard/src/components/layout/Sidebar.jsx</code> (sidebar bg)</li>
+<li><code>dashboard/src/components/views/ProjectScoresView.jsx</code></li>
+<li><code>dashboard/src/components/views/MemberScoresView.jsx</code></li>
+<li><code>dashboard/src/components/views/HistoryView.jsx</code></li>
+<li><code>dashboard/src/components/views/SettingsView.jsx</code></li>
+<li><code>dashboard/src/components/nlre/RuleManager.jsx</code></li>
+<li><code>dashboard/src/components/nlre/RuleBuilder.jsx</code></li>
+<li><code>dashboard/src/components/ui/TerminalLogs.jsx</code></li>
+<li><code>dashboard/src/components/ui/SkeletonLoader.jsx</code></li>
+</ul>
+<hr />
+<p><em>Cập nhật: 2026-04-11 — Global Brightness Uplift Phase 7</em></p>
+<h3 id="24-rule-manager-color-sync-phase-8-2026-04-13">24. Rule Manager Color Sync (Phase 8 — 2026-04-13)</h3>
+<p><strong>Vấn đề:</strong> Màn hình Rule Manager (<code>/rules</code>) có tone màu sáng hơn đáng kể so với các trang còn lại (Audit Dashboard, Project Leaderboard, etc.) do sử dụng <code>bg-white/[0.025]</code>, <code>bg-white/[0.04]</code> — tạo nền sáng trắng đục, trong khi các trang khác dùng <code>var(--card-bg): rgba(16, 22, 38, 0.65)</code> tối navy.</p>
+<p><strong>Giải pháp:</strong> Thay thế toàn bộ background Tailwind <code>bg-white/[...]</code> bằng rgba tối navy tương đồng với <code>var(--card-bg)</code>.</p>
+<h4 id="241-bang-thay-oi-chi-tiet">24.1 Bảng thay đổi chi tiết</h4>
+<table>
+<thead>
+<tr>
+<th>Thành phần</th>
+<th>Pattern cũ (sáng)</th>
+<th>Pattern mới (tối)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>KPI Card background</strong></td>
+<td><code>linear-gradient(135deg, ${accent}10, ${accent}05)</code></td>
+<td><code>linear-gradient(135deg, rgba(16,22,38,0.8), rgba(12,18,34,0.9))</code></td>
+</tr>
+<tr>
+<td><strong>KPI Card border/shadow</strong></td>
+<td><code>${accent}40</code> / <code>${accent}35</code></td>
+<td><code>${accent}30</code> / <code>${accent}25</code></td>
+</tr>
+<tr>
+<td><strong>Main Panel</strong></td>
+<td><code>bg-white/[0.025]</code></td>
+<td><code>bg-[rgba(16,22,38,0.55)]</code></td>
+</tr>
+<tr>
+<td><strong>Tab bar</strong></td>
+<td><code>bg-white/[0.02]</code></td>
+<td><code>bg-[rgba(10,15,28,0.4)]</code></td>
+</tr>
+<tr>
+<td><strong>Filter area</strong></td>
+<td><code>bg-white/[0.02]</code></td>
+<td><code>bg-[rgba(10,15,28,0.3)]</code></td>
+</tr>
+<tr>
+<td><strong>Search input</strong></td>
+<td><code>bg-white/[0.06]</code></td>
+<td><code>bg-[rgba(10,15,28,0.5)]</code></td>
+</tr>
+<tr>
+<td><strong>PillGroup container</strong></td>
+<td><code>bg-white/[0.05]</code></td>
+<td><code>bg-[rgba(16,22,38,0.5)]</code></td>
+</tr>
+<tr>
+<td><strong>Pillar filter container</strong></td>
+<td><code>bg-white/[0.04]</code></td>
+<td><code>bg-[rgba(16,22,38,0.5)]</code></td>
+</tr>
+<tr>
+<td><strong>Rule card (normal)</strong></td>
+<td><code>bg-white/[0.04]</code></td>
+<td><code>bg-[rgba(16,22,38,0.55)]</code></td>
+</tr>
+<tr>
+<td><strong>Rule card (disabled)</strong></td>
+<td><code>bg-white/[0.015]</code></td>
+<td><code>bg-[rgba(10,15,28,0.5)]</code></td>
+</tr>
+<tr>
+<td><strong>Rule card (override)</strong></td>
+<td><code>rgba(139,92,246,0.12), transparent</code></td>
+<td><code>rgba(139,92,246,0.1), rgba(12,18,34,0.85)</code></td>
+</tr>
+<tr>
+<td><strong>Category accordion</strong></td>
+<td><code>bg-white/[0.03]</code></td>
+<td><code>bg-[rgba(16,22,38,0.45)]</code></td>
+</tr>
+<tr>
+<td><strong>Custom rule card (regex/ast)</strong></td>
+<td><code>bg-violet-900/8</code></td>
+<td><code>bg-[rgba(16,18,38,0.6)]</code></td>
+</tr>
+<tr>
+<td><strong>Expandable detail panels</strong></td>
+<td><code>bg-white/[0.06]</code></td>
+<td><code>bg-[rgba(10,15,28,0.5)]</code></td>
+</tr>
+</tbody>
+</table>
+<h4 id="242-file-bi-anh-huong">24.2 File bị ảnh hưởng</h4>
+<ul>
+<li><code>dashboard/src/components/nlre/RuleManager.jsx</code> — 12 đoạn background class thay đổi</li>
+<li><code>dashboard/src/components/nlre/RuleBuilder.jsx</code> — 15 đoạn background class thay đổi</li>
+</ul>
+<h4 id="243-rulebuilder-bang-thay-oi-bo-sung">24.3 RuleBuilder — Bảng thay đổi bổ sung</h4>
+<table>
+<thead>
+<tr>
+<th>Thành phần</th>
+<th>Pattern cũ (sáng)</th>
+<th>Pattern mới (tối)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Stepper container</strong></td>
+<td><code>bg-[#0f1629]/60</code></td>
+<td><code>bg-[rgba(16,22,38,0.55)]</code></td>
+</tr>
+<tr>
+<td><strong>Main panel</strong></td>
+<td><code>bg-[#0f1629]/60</code></td>
+<td><code>bg-[rgba(16,22,38,0.55)]</code></td>
+</tr>
+<tr>
+<td><strong>Textarea prompt (empty)</strong></td>
+<td><code>bg-white/[0.06]</code></td>
+<td><code>bg-[rgba(10,15,28,0.5)]</code></td>
+</tr>
+<tr>
+<td><strong>Textarea prompt (focused)</strong></td>
+<td><code>bg-violet-900/8</code></td>
+<td><code>bg-[rgba(16,18,38,0.5)]</code></td>
+</tr>
+<tr>
+<td><strong>Template gallery</strong></td>
+<td><code>bg-white/[0.03]</code></td>
+<td><code>bg-[rgba(16,22,38,0.4)]</code></td>
+</tr>
+<tr>
+<td><strong>Template item (selected)</strong></td>
+<td><code>bg-violet-900/20</code></td>
+<td><code>bg-[rgba(16,18,38,0.6)]</code></td>
+</tr>
+<tr>
+<td><strong>Template item (default)</strong></td>
+<td><code>bg-white/[0.05]</code></td>
+<td><code>bg-[rgba(16,22,38,0.45)]</code></td>
+</tr>
+<tr>
+<td><strong>Back buttons</strong></td>
+<td><code>bg-white/[0.06]</code></td>
+<td><code>bg-[rgba(10,15,28,0.5)]</code></td>
+</tr>
+<tr>
+<td><strong>JSON config header</strong></td>
+<td><code>bg-white/[0.04]</code></td>
+<td><code>bg-[rgba(10,15,28,0.4)]</code></td>
+</tr>
+<tr>
+<td><strong>Empty state</strong></td>
+<td><code>bg-white/[0.03]</code></td>
+<td><code>bg-[rgba(16,22,38,0.4)]</code></td>
+</tr>
+<tr>
+<td><strong>Sandbox panel headers</strong></td>
+<td><code>bg-white/[0.04]</code></td>
+<td><code>bg-[rgba(10,15,28,0.4)]</code></td>
+</tr>
+<tr>
+<td><strong>Results panel content</strong></td>
+<td><code>bg-white/[0.02]</code></td>
+<td><code>bg-[rgba(10,15,28,0.25)]</code></td>
+</tr>
+</tbody>
+</table>
+<h4 id="244-nguyen-tac-thiet-ke">24.4 Nguyên tắc thiết kế</h4>
+<ul>
+<li>Giữ nguyên cấu trúc component, chỉ thay đổi giá trị background</li>
+<li>Sử dụng palette <code>rgba(16, 22, 38, ...)</code> và <code>rgba(10, 15, 28, ...)</code> nhất quán với <code>var(--card-bg)</code> global</li>
+<li>Border opacity giảm nhẹ (<code>/[0.08]</code> → <code>/[0.06]</code>) để không nổi bật quá trên nền tối hơn</li>
+</ul>
+<hr />
+<p><em>Cập nhật: 2026-04-13 — Rule Manager &amp; Rule Builder Color Sync Phase 8</em></p>
+<h3 id="25-rule-builder-step-2-ux-polish-phase-9-2026-04-13">25. Rule Builder Step 2 UX Polish (Phase 9 — 2026-04-13)</h3>
+<p><strong>Vấn đề:</strong> Màn hình Step 2 (Biên dịch AI) hiển thị terminal có độ tương phản quá thấp (<code>text-slate-600</code> trên nền tối) trong lúc chờ AI phản hồi, không có báo hiệu rõ ràng khiến người dùng cảm giác bị treo. Tương tự, sau khi biên dịch xong, Form chỉnh sửa hiển thị các input ẩn dưới nền <code>bg-transparent</code>, không có labels nhận diện gây khó khăn cho việc cấu hình.</p>
+<p><strong>Giải pháp:</strong> Tối ưu hóa UI/UX với micro-animations và Glassmorphism form inputs.</p>
+<h4 id="251-cai-tien-streamingterminal-pending-state">25.1 Cải tiến StreamingTerminal (Pending State)</h4>
+<ul>
+<li>Đổi placeholder text thành "Đang kết nối tới mô hình AI..." nổi bật (<code>text-violet-300 font-bold animate-pulse</code>).</li>
+<li>Bổ sung hiệu ứng văn bản log chạy ngẫu nhiên (vd: "Parsing language features...", "Building AST syntax trees...") theo chu kỳ 2s.</li>
+<li>Cải tiến aesthetic với glowing shadow pulse <code>shadow-[0_0_8px_rgba(...)]</code> và gradient overlay.</li>
+</ul>
+<h4 id="252-cai-tien-visualruleconfigurator-form-editor">25.2 Cải tiến VisualRuleConfigurator (Form Editor)</h4>
+<ul>
+<li><strong>Labels &amp; Focus Cues:</strong> Bổ sung <code>label</code> uppercase rõ ràng cho mỗi trường. </li>
+<li>Biến các input/textarea tàng hình thành dạng form <code>bg-[rgba(0,0,0,0.2)] border-white/10 rounded-xl</code>.</li>
+<li>Bổ sung state <code>focus:ring-2</code> với màu sắc theme định danh theo loại luật: AI (Emerald), Regex (Blue), AST (Teal).</li>
+</ul>
+<hr />
+<p><em>Cập nhật: 2026-04-13 — Rule Builder Step 2 UX Polish Phase 9</em></p>
+<hr />
+<h3 id="26-light-theme-transition-2026-04-15">26. Light Theme Transition (2026-04-15)</h3>
+<p><strong>Mục tiêu:</strong> Chuyển đổi toàn bộ dashboard từ dark theme (navy/glassmorphism) sang light theme (white/slate) chuyên nghiệp, giữ nguyên animations và functionality.</p>
+<h4 id="261-palette-moi">26.1 Palette mới</h4>
+<table>
+<thead>
+<tr>
+<th>Element</th>
+<th>Trước (Dark)</th>
+<th>Sau (Light)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Background</td>
+<td><code>rgba(16,22,38,0.55)</code>, <code>#0c1222</code></td>
+<td><code>#f8fafc</code>, <code>#ffffff</code></td>
+</tr>
+<tr>
+<td>Text chính</td>
+<td><code>text-slate-200/300</code></td>
+<td><code>text-slate-700/800</code></td>
+</tr>
+<tr>
+<td>Borders</td>
+<td><code>border-white/[0.08]</code></td>
+<td><code>border-slate-200</code></td>
+</tr>
+<tr>
+<td>Accent badges</td>
+<td><code>bg-color-500/10 text-color-400</code></td>
+<td><code>bg-color-50 text-color-600</code></td>
+</tr>
+<tr>
+<td>Shadows</td>
+<td><code>shadow-2xl</code>, glow effects</td>
+<td><code>shadow-sm</code>, <code>shadow-md</code></td>
+</tr>
+</tbody>
+</table>
+<h4 id="262-files-a-sua-20-files">26.2 Files đã sửa (~20 files)</h4>
+<ul>
+<li><strong>Core:</strong> <code>index.css</code>, <code>App.jsx</code>, <code>Sidebar.jsx</code></li>
+<li><strong>Auth:</strong> <code>LoginPage.jsx</code></li>
+<li><strong>UI:</strong> <code>EmptyState.jsx</code>, <code>Pagination.jsx</code>, <code>Toast.jsx</code>, <code>TerminalLogs.jsx</code>, <code>HeroCard.jsx</code>, <code>SkeletonLoader.jsx</code></li>
+<li><strong>Rule Engine:</strong> <code>RuleManager.jsx</code>, <code>RuleManagerParts.jsx</code>, <code>RuleBuilder.jsx</code>, <code>RuleBuilderParts.jsx</code></li>
+<li><strong>Views:</strong> <code>ProjectScoresView.jsx</code>, <code>MemberScoresView.jsx</code>, <code>HistoryView.jsx</code>, <code>SettingsView.jsx</code>, <code>RepositoryView.jsx</code>, <code>PresentationsStaticView.jsx</code></li>
+</ul>
+<h4 id="263-nguyen-tac">26.3 Nguyên tắc</h4>
+<ul>
+<li>Giữ nguyên tất cả Framer Motion animations</li>
+<li><code>text-white</code> chỉ giữ trên gradient buttons, còn lại → <code>text-slate-800</code></li>
+<li><code>backdrop-blur</code> bị loại bỏ toàn bộ</li>
+<li>Aurora blobs giảm opacity từ <code>0.3-0.4</code> → <code>0.03-0.08</code></li>
+<li>
+<p>Score colors tăng saturation: <code>-400</code> → <code>-600</code> cho contrast trên nền sáng</p>
+</li>
+<li>
+<p>Nhất quán loading experience trên toàn bộ lazy-loaded routes</p>
+</li>
+</ul>
+<h4 id="264-settings-view-contrast-polish-bugfix-2026-04-16">26.4 Settings View Contrast Polish (Bugfix 2026-04-16)</h4>
+<ul>
+<li>Xóa bỏ các màu bị kẹt ở chế độ Dark Mode cũ trong component <code>SettingsView.jsx</code> gây hiển thị cực kì khó đọc chữ trắng trên nền trắng/sáng:</li>
+<li>Header: <code>bg-gradient-to-r from-white via-slate-300</code> -&gt; <code>from-slate-800 via-slate-600 to-slate-500</code>.</li>
+<li>SectionTitle: Loại bỏ <code>.text-white</code> bị kẹp chung với <code>.text-slate-800</code>.</li>
+<li>Quick Links: Đổi nền link items từ <code>bg-white/3 font-white</code> sang <code>bg-slate-50 text-slate-800 hover:text-violet-600</code>.</li>
+<li>Danger Zone: Chuyển nền đỏ thẫm <code>bg-red-900/10</code> sang màu dịu hơn <code>bg-red-50</code>. Nền các nút bấm đổi từ mờ đen <code>bg-black/20 text-slate-100</code> thành <code>bg-white border-slate-200 text-slate-800</code>.</li>
+</ul>
+<hr />
+<p><em>Cập nhật: 2026-04-16 — Settings View Light Theme Polish Phase 26.4</em></p>
+<h4 id="265-auditview-repositoryview-contrast-polish-bugfix-2026-04-16">26.5 AuditView &amp; RepositoryView Contrast Polish (Bugfix 2026-04-16)</h4>
+<ul>
+<li>Đặc biệt xử lý các components thuộc AuditDashboard (<code>FeatureTable</code>, <code>ChartsRow</code>, <code>TeamLeaderboard</code>, <code>RuleBreakdownTable</code>, <code>ViolationLedger</code>) đang bị mắc màu tàn dư của Dark Theme cũ (nền xạm tối <code>rgba(15,23,42,0.6)</code> và chữ trắng nổi <code>text-white</code>), gây mù màu và thiếu đồng bộ với Light Mode:</li>
+<li>Tất cả background card (Glass-card, KPI Card, Metric Labels) được tẩy nền thành trắng tinh (<code>bg-white</code> hoặc <code>#ffffff</code>).</li>
+<li>Đường viền (<code>border</code>) đổi từ viền kính nhẹ (<code>border-white/5</code>) sang viền thép (<code>border-slate-200 / #e2e8f0</code>).</li>
+<li>Text chính được phủ lại mã màu <code>text-slate-800 / #334155 / #475569</code> cho độ sắc nét tối ưu.</li>
+<li>Hover states ở <code>ViolationLedger</code> (các dòng báo cáo vi phạm) được vi chỉnh từ lớp mờ trắng sang overlay bóng đen nhạt (<code>rgba(0,0,0,0.06)</code>).</li>
+<li>Tại RepositoryView:</li>
+<li>KpiRow cards: Đổi nền mờ đen <code>linear-gradient(135deg, rgba(16...,0.7))</code> -&gt; trắng hoàn toàn.</li>
+<li>Form Thêm mới Repo (<code>RepoFormModal</code>): Đổi background container từ nền tối <code>#0f1629</code> qua nền trắng. Tiêu đề và ô input điều chỉnh lại thành chữ đen thân thiện với Light UI.</li>
+</ul>
+<hr />
+<p><em>Cập nhật: 2026-04-16 — Audit &amp; Repo Config Light Theme Polish Phase 26.5</em></p>
+<h4 id="266-final-contrast-sweep-subagent-audit">26.6 Final Contrast Sweep (Subagent Audit)</h4>
+<ul>
+<li>Sửa lỗi tương phản văn bản rất khó đọc và sai cấu trúc giao diện Light Mode trên một số màn hình:</li>
+<li><code>RuleBuilder.jsx</code>: Thay text-slate-100 thành text-slate-800 để nội dung textarea hiện rõ trên nền slate-50.</li>
+<li><code>SettingsView.jsx</code>: Tăng cường text-slate-800 thay cho text-white ở ô input số để hiện rõ số. Nâng text-red-400 lên text-red-600 của Danger Zone giúp cảnh báo nổi bật, mãnh liệt hơn.</li>
+<li><code>ProjectScoresView.jsx</code>: Cải thiện toàn bộ text-pink-400 của dashboard Leaderboard thành text-pink-600 cho trải nghiệm Light Mode sáng và sâu hơn.</li>
+</ul>
+<h2 id="-">---</h2>
+<p><em>Cập nhật: 2026-04-16 — Final Contrast Sweep Phase 26.6</em></p>
+<h4 id="271-premium-global-layout-hierarchy-suggestion-1">27.1 Premium Global Layout Hierarchy (Suggestion #1)</h4>
+<ul>
+<li>Triển khai kiến trúc phân tầng không gian (Card-based UI / Layout nổi) cho toàn bộ Dashboard bằng cách phân biệt rõ background tổng và background của thẻ:</li>
+<li><strong>Global Background</strong>: Toàn cảnh App (như định nghĩa ở <code>index.css</code>) duy trì lớp nền xám siêu nhạt <code>bg-slate-50</code> (<code>#f8fafc</code>).</li>
+<li><strong>Cards &amp; Widgets (Dập nổi khối)</strong>: Toàn bộ Card (các <code>kpi-accent-card</code>, <code>RepoCard</code>, <code>MemberRow</code> container, v.v...) được thiết lập cứng màu nền trắng <code>bg-white</code>, bo góc mịn màng và được trang bị viền phân cách mỏng <code>border-slate-200</code>.</li>
+<li><strong>Micro-Animations &amp; Shadows</strong>: Nâng cấp hiệu ứng hover cho Repository Cards và toàn bộ Header KPI Cards (ở cả trang Project Leaderboard lẫn Member Leaderboard). Khi di chuột vào, thẻ sẽ nhảy nhẹ lên trên (<code>-translate-y-1</code> hoặc <code>-translate-y-0.5</code>) kèm theo hiệu ứng bung tỏa bóng râm (<code>shadow-md</code>).</li>
+<li><strong>Modal Focus</strong>: Các thành phần trôi nổi như <code>MemberDetailModal</code> được loại bỏ nền mờ tối (<code>bg-[#0f1629]/60</code>), thay vào đó là cấu hình <code>bg-white</code> lơ lửng ở trung tâm cùng bộ bóng đen chiều sâu chuyên nghiệp (<code>shadow-xl shadow-slate-200 / backdrop-blur-sm</code>).</li>
+</ul>
+<h2 id="-_1">---</h2>
+<p><em>Cập nhật: 2026-04-16 — Premium Layout Refactor Phase 27.1</em></p>
+<h4 id="272-micro-animations-empty-states-polish-suggestion-2-3">27.2 Micro-Animations &amp; Empty States Polish (Suggestion #2 &amp; #3)</h4>
+<ul>
+<li>Nâng cấp <code>ViolationLedger.jsx</code>: Tối ưu thuộc tính <code>transition</code> của Framer Motion <code>AnimatePresence</code>. Sử dụng <code>cubic-bezier(0.4, 0, 0.2, 1)</code> và <code>ease</code> array thay vì chuyển động tuyến tính (linear) để xử lý dứt điểm tình trạng giật cục (khựng) khi đóng/mở Accordion dòng code.</li>
+<li>Xử lý triệt để lỗi Tailwind dynamic class (<code>bg-${accentColor}-500/10</code>) trong component <code>EmptyState.jsx</code> bằng định nghĩa <code>COLOR_MAP</code> tường minh. Nhờ đó các hiệu ứng Illustration (orbs, floating dots) lấy được mã màu thực tế (amber, rose, cyan, v.v...) từ quá trình build tĩnh, giúp component hiển thị rực rỡ và cao cấp.</li>
+<li>Áp dụng các thay đổi này xuyên suốt hệ thống theo đề xuất tối ưu.</li>
+</ul>
+<h2 id="-_2">---</h2>
+<p><em>Cập nhật: 2026-04-16 — Animations &amp; Assets Phase 27.2</em></p>
+<h4 id="273-premium-toast-notifications">27.3 Premium Toast Notifications</h4>
+<ul>
+<li>Cải thiện toàn diện Toast Notifications (Thông báo nổi góc màn hình):</li>
+<li><strong>Framer Motion Animations</strong>: Toast nay trượt vào góc phải qua hiệu ứng spring (nảy) mượt mà có kiểm soát (<code>type: "spring", stiffness: 400, damping: 25</code>).</li>
+<li><strong>Countdown Component</strong>: Thêm thanh Progress Bar chạy ngược ở viền đáy của của thông báo giúp User biết còn khoảng bao nhiêu lâu sẽ ẩn thông báo (<code>duration</code> mặc định 3000ms đối với info/success và 5000ms đối với error).</li>
+<li><strong>Swipe-to-Dismiss</strong>: Kéo (Drag / Panx) toast về bên phải màn hình để tự tắt hoặc hất văng (velocity cao) và thông báo sẽ được dismiss theo thao tác vuốt.</li>
+<li><strong>Design Glossy</strong>: Toast kết hợp viền sáng <code>bg-white</code>, <code>backdrop-blur-md</code> cùng màng ánh sáng loang siêu nhẹ từ <code>rgba</code> qua Tailwind, tạo cảm quan Enterprise/SaaS.</li>
+</ul>
+<h2 id="-_3">---</h2>
+<p><em>Cập nhật: 2026-04-16 — Notifications Phase 27.3</em></p>
+<h4 id="274-low-contrast-text-gradients-sweeps">27.4 Low Contrast Text &amp; Gradients Sweeps</h4>
+<ul>
+<li>Khắc phục sự cố tương phản (Contrast Accessibility) ở các Module Header cỡ lớn khi dùng nền sáng (Light Mode):</li>
+<li><strong>Repositoy Manager</strong>: Đỉnh trang dùng text trong suốt (<code>bg-clip-text text-transparent</code>) nhưng giải Gradient trước đó sử dụng <code>from-white</code> khiến chữ bị tàng hình. Đã thay đổi thành gradient <code>from-slate-800 via-slate-600 to-slate-500</code> cho cảm giác sang trọng và chân thực với text đậm.</li>
+<li><strong>Audit History</strong>: Điều chỉnh Gradient từ <code>from-white via-amber-200</code> cứng thành <code>from-amber-600 via-orange-500 to-amber-500</code> - Giữ tông vàng đồng ấm áp theo vibe của History nhưng rõ ràng gấp 3 lần.</li>
+<li><strong>Meeting Materials</strong>:  Điều chỉnh ánh hồng hạt lựu <code>from-rose-600 via-pink-500</code> thay cho màu lợt lạt ban đầu.</li>
+<li><strong>Sửa lỗi hiển thị chữ Invisible ở AI Rule Builder (Feature 2)</strong>: Tiêu đề <code>"Mô Tả Luật Bằng Tiếng Việt"</code>, <code>"Kết Quả Biên Dịch AI"</code>, <code>"Chạy Thử Gỡ Lỗi"</code> bên trong trình tạo luật (Rule Builder) trước đó bị cấu hình cưỡng ép <code>text-white</code> khiến chúng tàng hình trên nền Card trắng mới. Đổi toàn bộ thành <code>text-slate-800</code> để nét chữ hiện lên một cách trong trẻo, quyền lực.</li>
+<li><strong>Titanium Slate Consistency</strong>: Đồng bộ hoá TẤT CẢ các tiêu đề phân hệ (Module Headers) bao gồm <code>PROJECT LEADERBOARD</code>, <code>MEMBER LEADERBOARD</code>, <code>AUDIT HISTORY</code>, <code>MEETING MATERIALS</code> thành dải Titanium Gradient (<code>from-slate-800 via-slate-600 to-slate-500</code>). Từ bỏ các mã màu Neon quá gắt trên nền sáng để nâng cấp lên trải nghiệm Enterprise thuần túy.</li>
+</ul>
+<h4 id="275-audit-report-ledger-light-mode-overhaul">27.5 Audit Report &amp; LEDGER Light Mode Overhaul</h4>
+<ul>
+<li><strong>Violation Ledger</strong>: Chuyển đổi toàn diện ~800 dòng code của component Violation Ledger. Xoá nhổ tận gốc hàng loạt style cứng (inline css) mang âm hưởng Dark Mode như nền Search xám xịt <code>rgba(0,0,0,0.2)</code> và chữ rác màu lạnh <code>#e2e8f0</code>. Thay thế thành cấu trúc Tailwind chuẩn Light Mode: ô tìm kiếm <code>bg-slate-50</code>, viền <code>border-slate-200</code>, Accordion List chuyển từ màu <code>rgba</code> đục ngầu sang hiệu ứng White Card thuần tuý.</li>
+<li><strong>Audit Sidebar</strong>: Loại bỏ hiệu ứng Glasscard tàng hình <code>rgba(255,255,255,0.03)</code>. Giờ đây thẻ hiển thị TOP PROBLEMATIC FILES và AUDIT INFO hiển thị vững chãi dưới dạng khối Card trắng xám nổi bật trên nền <code>bg-slate-50</code>.</li>
+</ul>
+<h4 id="276-gentle-component-badges-micro-aesthetics">27.6 Gentle Component Badges (Micro-Aesthetics)</h4>
+<ul>
+<li><strong>Softening Module Subtitles</strong>: Các thẻ phụ đề đầu trang như <code>Project Leaderboard</code>, <code>Team Leaderboard</code>, <code>Audit History</code>, <code>Presentations</code> vốn dùng dải nền màu sắc quá rực rỡ (<code>bg-pink-100</code>, <code>bg-cyan-100</code>) gây chói mắt. Đã được thay thế đồng loạt bằng dải nền Pastel dịu nhẹ (ví dụ <code>bg-violet-50 text-violet-700</code>) xen kẽ điểm nhấn tông xuyệt tông tại các icons biểu tượng. Đem lại sự chuyên nghiệp, thanh lịch và bảo toàn bản sắc phân hệ.</li>
+<li><strong>Coloring H2 Title Headers</strong>: Khôi phục lại bản sắc màu phân hệ (Module Identity) cho dòng tiêu đề cỡ lớn (<code>H2 text-5xl</code>) từ tông Slate trung tính sang dải Gradient có chiều sâu (Rich Tinted Gradients), giúp văn bản hiển thị sống động nhưng lại hiển thị cực kỳ nét và chuyên nghiệp trên nền sáng:</li>
+<li><strong>Project Leaderboard</strong>: Tím hồng quyền lực <code>from-violet-800 via-fuchsia-700 to-pink-600</code>.</li>
+<li><strong>Member Leaderboard</strong>: Xanh ngọc lục bảo <code>from-teal-800 via-cyan-700 to-blue-700</code>.</li>
+<li><strong>Audit History</strong>: Đỏ cam hổ phách <code>from-amber-700 via-orange-600 to-red-600</code>.</li>
+<li><strong>Presentations</strong>: Hồng đào lai tím <code>from-rose-800 via-pink-700 to-violet-700</code>.</li>
+</ul>
+<hr />
+<p><em>Cập nhật: 2026-04-16 — Final Polish Sweep Phase 27.6</em></p>
+<h4 id="277-dark-ui-remediation-phase-277">27.7 Dark UI Remediation (Phase 27.7)</h4>
+<ul>
+<li>Khắc phục các component tàn dư của Dark Mode cũ (nền <code>bg-slate-800</code> với chữ tối màu) làm hỏng trải nghiệm Light Mode.</li>
+<li><strong>MemberScoresView</strong>: Thay thế bộ icon project list trong member breakdown từ nền đen ngòm thẻ <code>bg-slate-800</code> sang mảng màu trong trẻo lấp lánh <code>bg-cyan-500/15 border-cyan-500/25</code> và <code>text-cyan-600</code>. Tiến hành nâng cấp Inline Project Tag thành <code>bg-cyan-500/10 text-cyan-700</code>. Progress track cũng được thay màu nền sáng <code>bg-slate-100</code>.</li>
+<li><strong>App Rule Builder Header</strong>: Tăng cường gradient chữ to của tiêu đề AI RULE BUILDER từ <code>from-slate-800</code> u tối sang cấu hình <code>from-violet-800 via-fuchsia-700 to-pink-600</code> rực rỡ, theo sát tông màu Pastel Vibrant của Premium Theme.</li>
+<li><strong>RuleBuilder, HistoryView &amp; SettingsView</strong>: Quét và tẩy rửa mọi nút Action Buttons có trạng thái Disabled vốn đang giữ mặc định <code>bg-slate-800 text-slate-500 cursor-not-allowed</code>. Định dạng lại đồng bộ sang <code>bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed</code>.</li>
+</ul>
+<hr />
+<p><em>Cập nhật: 2026-04-16 — Dark UI Remediation Phase 27.7</em></p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

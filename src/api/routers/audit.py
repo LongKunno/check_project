@@ -417,6 +417,7 @@ def _build_and_save_audit_result(auditor, target_str, project_name):
         job_id=getattr(auditor, "ai_scope_id", None),
         source_prefix="audit.",
     )
+    cache_summary = getattr(auditor, "cache_summary", None) or {}
     final_score = ScoringEngine.calculate_final_score_from_features(
         auditor.feature_results
     )
@@ -441,6 +442,7 @@ def _build_and_save_audit_result(auditor, target_str, project_name):
             "ai_scope_id": getattr(auditor, "ai_scope_id", None),
         },
         "ai_summary": ai_summary,
+        "cache_summary": cache_summary,
         "violations": auditor.violations,
     }
     if not get_ai_enabled():

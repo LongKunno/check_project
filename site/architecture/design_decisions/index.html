@@ -1,0 +1,4179 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../module_architecture/">
+      
+      
+        <link rel="next" href="../nlre_engine/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Quyết định thiết kế (ADR) - AI Static Analysis Documentation</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#architecture-decision-records-adr" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="AI Static Analysis Documentation" class="md-header__button md-logo" aria-label="AI Static Analysis Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            AI Static Analysis Documentation
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Quyết định thiết kế (ADR)
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Trang chủ
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../features/discovery/" class="md-tabs__link">
+          
+  
+  
+  Tính năng Hệ thống
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../overview/" class="md-tabs__link">
+          
+  
+  
+  Kiến trúc hệ thống
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../database/overview/" class="md-tabs__link">
+          
+  
+  
+  Database
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../api_specs/stream/" class="md-tabs__link">
+          
+  
+  
+  API Specifications
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../tech_stack/python_rules/" class="md-tabs__link">
+          
+  
+  
+  Quy chuẩn Tech Stack
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../tests/detailed_test_cases/" class="md-tabs__link">
+          
+  
+  
+  Kiểm thử (Quality Assurance)
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="AI Static Analysis Documentation" class="md-nav__button md-logo" aria-label="AI Static Analysis Documentation" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    AI Static Analysis Documentation
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Trang chủ
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tính năng Hệ thống
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Tính năng Hệ thống
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/discovery/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Code Discovery
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/core_auditor_engine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core Audit Engine
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/real_time_audit/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Real-time Streaming
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/scoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Scoring System
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/dashboard/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Interactive Dashboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/nlre/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Natural Language Rules (NLRE)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/ui_performance/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    High-Performance UI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/ui_text_selection/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Text Selection Fix
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/member_overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Member Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/ui_language_english/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Language (English)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/ui_overhaul/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI Overhaul V1
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../features/presentation_static_page/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Presentations Static Page
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kiến trúc hệ thống
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Kiến trúc hệ thống
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tổng quan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../module_architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kiến trúc Module
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quyết định thiết kế (ADR)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quyết định thiết kế (ADR)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#adr-001-chuyen-oi-sang-dynamic-feature-based-scoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-001: Chuyển đổi sang Dynamic Feature-based Scoring
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-001: Chuyển đổi sang Dynamic Feature-based Scoring">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#trang-thai-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trạng thái (Status)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#van-e-problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vấn đề (Problem)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#giai-phap-options-decision-why" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Giải pháp (Options &amp; Decision &amp; Why)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#he-qua-consequences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hệ quả (Consequences)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-002-ho-tro-pna-cho-trinh-duyet-brave" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-002: Hỗ trợ PNA cho trình duyệt Brave
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-002: Hỗ trợ PNA cho trình duyệt Brave">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#trang-thai-status_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trạng thái (Status)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#van-e-problem_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vấn đề (Problem)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#giai-phap-options-decision-why_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Giải pháp (Options &amp; Decision &amp; Why)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-003-phan-vung-anh-gia-qua-thu-muc-source_code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-003: Phân vùng đánh giá qua thư mục source_code
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-003: Phân vùng đánh giá qua thư mục source_code">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#trang-thai-status_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trạng thái (Status)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#van-e-problem_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vấn đề (Problem)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#giai-phap-options-decision-why_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Giải pháp (Options &amp; Decision &amp; Why)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-004-khoi-phuc-mo-hinh-4-tru-cot-va-nang-cao-bo-quy-tac-kiem-tra-case-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-004: Khôi phục Mô hình 4 Trụ cột và Nâng cao bộ Quy tắc kiểm tra (Case Checks)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-004: Khôi phục Mô hình 4 Trụ cột và Nâng cao bộ Quy tắc kiểm tra (Case Checks)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#trang-thai-status_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trạng thái (Status)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#van-e-problem_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vấn đề (Problem)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#giai-phap-options-decision-why_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Giải pháp (Options &amp; Decision &amp; Why)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#he-qua-consequences_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hệ quả (Consequences)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-005-tich-hop-ai-hybrid-on-inh-iem-so-score-stability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-005: Tích hợp AI Hybrid &amp; Ổn định điểm số (Score Stability)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-005: Tích hợp AI Hybrid &amp; Ổn định điểm số (Score Stability)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#trang-thai-status_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trạng thái (Status)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#van-e-problem_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vấn đề (Problem)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#giai-phap-options-decision-why_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Giải pháp (Options &amp; Decision &amp; Why)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#he-qua-consequences_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hệ quả (Consequences)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-006-nang-cap-xu-ly-bat-ong-bo-async-io-cho-ai-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-006: Nâng cấp xử lý Bất đồng bộ (Async I/O) cho AI Service
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-006: Nâng cấp xử lý Bất đồng bộ (Async I/O) cho AI Service">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#trang-thai-status_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trạng thái (Status)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#van-e-problem_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vấn đề (Problem)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#giai-phap-options-decision-why_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Giải pháp (Options &amp; Decision &amp; Why)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#he-qua-consequences_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hệ quả (Consequences)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-007-kien-truc-modular-scanner-cho-buoc-xac-thuc-verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-007: Kiến trúc Modular Scanner cho Bước Xác thực (Verification)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-007: Kiến trúc Modular Scanner cho Bước Xác thực (Verification)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#trang-thai-status_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trạng thái (Status)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#van-e-problem_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vấn đề (Problem)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#giai-phap-options-decision-why_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Giải pháp (Options &amp; Decision &amp; Why)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#he-qua-consequences_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hệ quả (Consequences)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-008-chuyen-oi-sang-kien-truc-two-pass-audit-hypothesize-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-008: Chuyển đổi sang Kiến trúc Two-Pass Audit (Hypothesize &amp; Test)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-008: Chuyển đổi sang Kiến trúc Two-Pass Audit (Hypothesize &amp; Test)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#trang-thai-status_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trạng thái (Status)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#van-e-problem_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vấn đề (Problem)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#giai-phap-options-decision-why_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Giải pháp (Options &amp; Decision &amp; Why)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#he-qua-consequences_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hệ quả (Consequences)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-009-ap-dung-luat-lai-hybrid-regex-ai-cho-cac-cau-truc-ac-thu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-009: Áp dụng Luật Lai (Hybrid Regex + AI) cho các cấu trúc đặc thù
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-009: Áp dụng Luật Lai (Hybrid Regex + AI) cho các cấu trúc đặc thù">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#trang-thai-status_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trạng thái (Status)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#van-e-problem_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vấn đề (Problem)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#giai-phap-options-decision-why_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Giải pháp (Options &amp; Decision &amp; Why)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#he-qua-consequences_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hệ quả (Consequences)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-010-sandboxing-verification-script-va-cau-hinh-prompt-linh-hoat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-010: Sandboxing Verification Script và Cấu hình Prompt Linh hoạt
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-010: Sandboxing Verification Script và Cấu hình Prompt Linh hoạt">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#trang-thai-status_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trạng thái (Status)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#van-e-problem_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vấn đề (Problem)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#giai-phap-options-decision-why_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Giải pháp (Options &amp; Decision &amp; Why)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#he-qua-consequences_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hệ quả (Consequences)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-011-refactoring-kien-truc-toan-dien-god-object-elimination" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-011: Refactoring Kiến Trúc Toàn Diện (God Object Elimination)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-011: Refactoring Kiến Trúc Toàn Diện (God Object Elimination)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#van-e-problem_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vấn đề (Problem)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#giai-phap-decision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Giải pháp (Decision)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tai-sao" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tại sao?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#he-qua-consequences_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hệ quả (Consequences)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-012-self-audit-rule-quality-fix-chien-dich-sua-loi-bo-quy-tac" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-012: Self-Audit Rule Quality Fix (Chiến dịch Sửa Lỗi Bộ Quy Tắc)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-012: Self-Audit Rule Quality Fix (Chiến dịch Sửa Lỗi Bộ Quy Tắc)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#van-e-problem_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vấn đề (Problem)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#giai-phap-decision_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Giải pháp (Decision)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ket-qua-inh-luong" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kết quả định lượng
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tai-sao_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tại sao?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#he-qua-consequences_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hệ quả (Consequences)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-012-refactor-monolithic-components-to-mitigate-technical-debt-phase-6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-012: Refactor Monolithic Components to Mitigate Technical Debt (Phase 6)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-012: Refactor Monolithic Components to Mitigate Technical Debt (Phase 6)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Problem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Options
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-decision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Decision
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-consequences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Consequences
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-013-sua-loi-batch-scan-crash-do-ky-tu-trong-project-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-013: Sửa lỗi Batch Scan — Crash do ký tự / trong Project ID
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-013: Sửa lỗi Batch Scan — Crash do ký tự / trong Project ID">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-van-e-problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Vấn đề (Problem)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-giai-phap-decision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Giải pháp (Decision)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-tai-sao" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Tại sao?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-he-qua-consequences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Hệ quả (Consequences)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-014-tinh-chinh-rule-bare_except-va-grouped-violation-ledger" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-014: Tinh chỉnh Rule BARE_EXCEPT và Grouped Violation Ledger
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-014: Tinh chỉnh Rule BARE_EXCEPT và Grouped Violation Ledger">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-van-e-problem_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Vấn đề (Problem)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-giai-phap-decision_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Giải pháp (Decision)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-tai-sao_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Tại sao?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-he-qua-consequences_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Hệ quả (Consequences)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../nlre_engine/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    NLRE Engine
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../docker_setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Database
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../database/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tổng quan
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../database/audit_history/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Lịch sử kiểm toán
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Specifications
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    API Specifications
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/stream/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Real-time Stream
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/audit_jobs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Background Jobs (V6)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/upload/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Upload Project
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/ai_health/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Health Checks
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/ai_cache/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    AI Cache
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/fix_suggestion/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Fix Suggestion
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/history/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    History Retrieval
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/repositories/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Repositories & Scores
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/git/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Git Configuration
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Rules Compiler
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/members/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Members & Leaderboard
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_specs/engine_settings/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Engine Settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Quy chuẩn Tech Stack
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Quy chuẩn Tech Stack
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tech_stack/python_rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Python Rules
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tech_stack/frontend_rules/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Frontend Rules
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tech_stack/rule_customization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Tùy chỉnh Quy tắc
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kiểm thử (Quality Assurance)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Kiểm thử (Quality Assurance)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../tests/detailed_test_cases/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Cases Chi tiết
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#adr-001-chuyen-oi-sang-dynamic-feature-based-scoring" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-001: Chuyển đổi sang Dynamic Feature-based Scoring
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-001: Chuyển đổi sang Dynamic Feature-based Scoring">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#trang-thai-status" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trạng thái (Status)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#van-e-problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vấn đề (Problem)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#giai-phap-options-decision-why" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Giải pháp (Options &amp; Decision &amp; Why)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#he-qua-consequences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hệ quả (Consequences)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-002-ho-tro-pna-cho-trinh-duyet-brave" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-002: Hỗ trợ PNA cho trình duyệt Brave
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-002: Hỗ trợ PNA cho trình duyệt Brave">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#trang-thai-status_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trạng thái (Status)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#van-e-problem_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vấn đề (Problem)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#giai-phap-options-decision-why_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Giải pháp (Options &amp; Decision &amp; Why)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-003-phan-vung-anh-gia-qua-thu-muc-source_code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-003: Phân vùng đánh giá qua thư mục source_code
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-003: Phân vùng đánh giá qua thư mục source_code">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#trang-thai-status_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trạng thái (Status)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#van-e-problem_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vấn đề (Problem)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#giai-phap-options-decision-why_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Giải pháp (Options &amp; Decision &amp; Why)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-004-khoi-phuc-mo-hinh-4-tru-cot-va-nang-cao-bo-quy-tac-kiem-tra-case-checks" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-004: Khôi phục Mô hình 4 Trụ cột và Nâng cao bộ Quy tắc kiểm tra (Case Checks)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-004: Khôi phục Mô hình 4 Trụ cột và Nâng cao bộ Quy tắc kiểm tra (Case Checks)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#trang-thai-status_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trạng thái (Status)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#van-e-problem_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vấn đề (Problem)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#giai-phap-options-decision-why_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Giải pháp (Options &amp; Decision &amp; Why)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#he-qua-consequences_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hệ quả (Consequences)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-005-tich-hop-ai-hybrid-on-inh-iem-so-score-stability" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-005: Tích hợp AI Hybrid &amp; Ổn định điểm số (Score Stability)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-005: Tích hợp AI Hybrid &amp; Ổn định điểm số (Score Stability)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#trang-thai-status_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trạng thái (Status)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#van-e-problem_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vấn đề (Problem)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#giai-phap-options-decision-why_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Giải pháp (Options &amp; Decision &amp; Why)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#he-qua-consequences_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hệ quả (Consequences)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-006-nang-cap-xu-ly-bat-ong-bo-async-io-cho-ai-service" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-006: Nâng cấp xử lý Bất đồng bộ (Async I/O) cho AI Service
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-006: Nâng cấp xử lý Bất đồng bộ (Async I/O) cho AI Service">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#trang-thai-status_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trạng thái (Status)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#van-e-problem_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vấn đề (Problem)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#giai-phap-options-decision-why_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Giải pháp (Options &amp; Decision &amp; Why)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#he-qua-consequences_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hệ quả (Consequences)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-007-kien-truc-modular-scanner-cho-buoc-xac-thuc-verification" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-007: Kiến trúc Modular Scanner cho Bước Xác thực (Verification)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-007: Kiến trúc Modular Scanner cho Bước Xác thực (Verification)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#trang-thai-status_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trạng thái (Status)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#van-e-problem_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vấn đề (Problem)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#giai-phap-options-decision-why_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Giải pháp (Options &amp; Decision &amp; Why)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#he-qua-consequences_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hệ quả (Consequences)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-008-chuyen-oi-sang-kien-truc-two-pass-audit-hypothesize-test" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-008: Chuyển đổi sang Kiến trúc Two-Pass Audit (Hypothesize &amp; Test)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-008: Chuyển đổi sang Kiến trúc Two-Pass Audit (Hypothesize &amp; Test)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#trang-thai-status_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trạng thái (Status)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#van-e-problem_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vấn đề (Problem)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#giai-phap-options-decision-why_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Giải pháp (Options &amp; Decision &amp; Why)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#he-qua-consequences_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hệ quả (Consequences)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-009-ap-dung-luat-lai-hybrid-regex-ai-cho-cac-cau-truc-ac-thu" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-009: Áp dụng Luật Lai (Hybrid Regex + AI) cho các cấu trúc đặc thù
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-009: Áp dụng Luật Lai (Hybrid Regex + AI) cho các cấu trúc đặc thù">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#trang-thai-status_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trạng thái (Status)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#van-e-problem_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vấn đề (Problem)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#giai-phap-options-decision-why_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Giải pháp (Options &amp; Decision &amp; Why)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#he-qua-consequences_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hệ quả (Consequences)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-010-sandboxing-verification-script-va-cau-hinh-prompt-linh-hoat" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-010: Sandboxing Verification Script và Cấu hình Prompt Linh hoạt
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-010: Sandboxing Verification Script và Cấu hình Prompt Linh hoạt">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#trang-thai-status_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Trạng thái (Status)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#van-e-problem_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vấn đề (Problem)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#giai-phap-options-decision-why_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Giải pháp (Options &amp; Decision &amp; Why)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#he-qua-consequences_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hệ quả (Consequences)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-011-refactoring-kien-truc-toan-dien-god-object-elimination" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-011: Refactoring Kiến Trúc Toàn Diện (God Object Elimination)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-011: Refactoring Kiến Trúc Toàn Diện (God Object Elimination)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#van-e-problem_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vấn đề (Problem)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#giai-phap-decision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Giải pháp (Decision)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tai-sao" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tại sao?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#he-qua-consequences_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hệ quả (Consequences)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-012-self-audit-rule-quality-fix-chien-dich-sua-loi-bo-quy-tac" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-012: Self-Audit Rule Quality Fix (Chiến dịch Sửa Lỗi Bộ Quy Tắc)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-012: Self-Audit Rule Quality Fix (Chiến dịch Sửa Lỗi Bộ Quy Tắc)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#van-e-problem_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Vấn đề (Problem)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#giai-phap-decision_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Giải pháp (Decision)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ket-qua-inh-luong" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kết quả định lượng
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tai-sao_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Tại sao?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#he-qua-consequences_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Hệ quả (Consequences)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-012-refactor-monolithic-components-to-mitigate-technical-debt-phase-6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-012: Refactor Monolithic Components to Mitigate Technical Debt (Phase 6)
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-012: Refactor Monolithic Components to Mitigate Technical Debt (Phase 6)">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Problem
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Options
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-decision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Decision
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-consequences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Consequences
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-013-sua-loi-batch-scan-crash-do-ky-tu-trong-project-id" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-013: Sửa lỗi Batch Scan — Crash do ký tự / trong Project ID
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-013: Sửa lỗi Batch Scan — Crash do ký tự / trong Project ID">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-van-e-problem" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Vấn đề (Problem)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-giai-phap-decision" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Giải pháp (Decision)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-tai-sao" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Tại sao?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-he-qua-consequences" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Hệ quả (Consequences)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adr-014-tinh-chinh-rule-bare_except-va-grouped-violation-ledger" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADR-014: Tinh chỉnh Rule BARE_EXCEPT và Grouped Violation Ledger
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ADR-014: Tinh chỉnh Rule BARE_EXCEPT và Grouped Violation Ledger">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-van-e-problem_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Vấn đề (Problem)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-giai-phap-decision_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. Giải pháp (Decision)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-tai-sao_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. Tại sao?
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-he-qua-consequences_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Hệ quả (Consequences)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="architecture-decision-records-adr">Architecture Decision Records (ADR)</h1>
+<p>Tất cả các quyết định thiết kế cốt lõi của hệ thống được ghi nhận tại đây theo quy chuẩn ADR.</p>
+<h2 id="adr-001-chuyen-oi-sang-dynamic-feature-based-scoring">ADR-001: Chuyển đổi sang Dynamic Feature-based Scoring</h2>
+<h3 id="trang-thai-status">Trạng thái (Status)</h3>
+<p><strong>Accepted</strong> (2026-03-20)</p>
+<h3 id="van-e-problem">Vấn đề (Problem)</h3>
+<p>Hệ thống cũ sử dụng mô hình 4 trụ cột (4-pillar) cố định cho toàn bộ dự án. Điều này khiến việc đánh giá các dự án lớn trở nên khó khăn vì điểm số bị loãng, không chỉ rõ được module/tính năng nào đang gặp lỗi nghiêm trọng.</p>
+<h3 id="giai-phap-options-decision-why">Giải pháp (Options &amp; Decision &amp; Why)</h3>
+<p><strong>Giải pháp</strong>: Áp dụng mô hình tính điểm phân cấp (Hierarchical Scoring).
+1. Phân loại file theo thư mục (Features).
+2. Tính điểm 4 trụ cột cho TỪNG Feature.
+3. Tính trung bình cộng điểm các Feature để ra điểm dự án.</p>
+<p><strong>Tại sao?</strong>: Giúp Dashboard hiển thị trực quan module nào "đỏ" (nhiều lỗi/chất lượng kém), thuận tiện cho các Technical Architect và Tech Lead rà soát nhanh.</p>
+<h3 id="he-qua-consequences">Hệ quả (Consequences)</h3>
+<ul>
+<li><strong>Tích cực</strong>: Tăng độ chi tiết của báo cáo lên 400%.</li>
+<li><strong>Thử thách</strong>: Yêu cầu Engine Auditor phải thực hiện bước Aggregation phức tạp hơn (Map file -&gt; Feature).</li>
+</ul>
+<hr />
+<h2 id="adr-002-ho-tro-pna-cho-trinh-duyet-brave">ADR-002: Hỗ trợ PNA cho trình duyệt Brave</h2>
+<h3 id="trang-thai-status_1">Trạng thái (Status)</h3>
+<p><strong>Accepted</strong> (2026-03-20)</p>
+<h3 id="van-e-problem_1">Vấn đề (Problem)</h3>
+<p>Brave Shields và các trình duyệt dựa trên Chromium mới thắt chặt chính sách <strong>Private Network Access (PNA)</strong>, chặn các request từ web public (hoặc localhost 3000) tới API local (8000).</p>
+<h3 id="giai-phap-options-decision-why_1">Giải pháp (Options &amp; Decision &amp; Why)</h3>
+<p>Bổ sung <code>Access-Control-Allow-Private-Network: true</code> vào header của mọi response và xử lý Preflight (OPTIONS) chính xác.</p>
+<hr />
+<h2 id="adr-003-phan-vung-anh-gia-qua-thu-muc-source_code">ADR-003: Phân vùng đánh giá qua thư mục <code>source_code</code></h2>
+<h3 id="trang-thai-status_2">Trạng thái (Status)</h3>
+<p><strong>Accepted</strong> (2026-03-20)</p>
+<h3 id="van-e-problem_2">Vấn đề (Problem)</h3>
+<p>Ở một số dự án, mã nguồn quan trọng (features) nằm sâu trong thư mục <code>source_code</code>, trong khi các thư mục ở root chứa cấu hình, tài liệu hoặc file phụ trợ. Engine Discovery cũ quét toàn bộ root dẫn đến việc nhận diện sai các thư mục không chứa code là "Features".</p>
+<h3 id="giai-phap-options-decision-why_2">Giải pháp (Options &amp; Decision &amp; Why)</h3>
+<p><strong>Quyết định</strong>: Ưu tiên thư mục <code>source_code</code> làm gốc nếu nó tồn tại.
+- Nếu thấy <code>source_code</code>: Chỉ quét bên trong nó. Feature name = subdirs of <code>source_code</code>.
+- Nếu không thấy: Quét như cũ.</p>
+<p><strong>Tại sao?</strong>: Giúp lọc nhiễu tự động và tập trung đánh giá vào đúng khu vực chứa logic nghiệp vụ chính của dự án.</p>
+<hr />
+<h2 id="adr-004-khoi-phuc-mo-hinh-4-tru-cot-va-nang-cao-bo-quy-tac-kiem-tra-case-checks">ADR-004: Khôi phục Mô hình 4 Trụ cột và Nâng cao bộ Quy tắc kiểm tra (Case Checks)</h2>
+<h3 id="trang-thai-status_3">Trạng thái (Status)</h3>
+<p><strong>Accepted</strong> (2026-03-20)</p>
+<h3 id="van-e-problem_3">Vấn đề (Problem)</h3>
+<p>Mô hình rating A-E của SonarQube tuy chuyên nghiệp nhưng có thể gây khó hiểu cho người dùng đã quen với thang điểm 10. Tuy nhiên, kiến thức về Severity và Technical Debt từ SonarQube lại rất hữu ích để làm phong phú thêm bộ quy tắc kiểm tra.</p>
+<h3 id="giai-phap-options-decision-why_3">Giải pháp (Options &amp; Decision &amp; Why)</h3>
+<p><strong>Quyết định</strong>: 
+1. Quay lại sử dụng thang điểm 0-10 cho 4 trụ cột (Performance, Maintainability, Reliability, Security).
+2. Tích hợp Technical Debt và Severity từ SonarQube vào metadata của các quy tắc để làm "Case Checks" chuyên sâu hơn.
+3. Bổ sung các quy tắc kiểm tra mới như CORS, Unused Imports, và Print Statements.</p>
+<p><strong>Tại sao?</strong>: Giữ được sự đơn giản, trực quan của điểm số 0-10 nhưng vẫn tận dụng được chiều sâu phân tích của các công cụ hàng đầu như SonarQube.</p>
+<h3 id="he-qua-consequences_1">Hệ quả (Consequences)</h3>
+<ul>
+<li><strong>Tích cực</strong>: Dashboard dễ hiểu hơn, bộ quy tắc kiểm tra mạnh mẽ và đa dạng hơn.</li>
+<li><strong>Thử thách</strong>: Duy trì sự cân bằng giữa điểm phạt (Punishment) và Nợ kỹ thuật (Debt) để điểm số phản ánh đúng thực tế.</li>
+</ul>
+<hr />
+<h2 id="adr-005-tich-hop-ai-hybrid-on-inh-iem-so-score-stability">ADR-005: Tích hợp AI Hybrid &amp; Ổn định điểm số (Score Stability)</h2>
+<h3 id="trang-thai-status_4">Trạng thái (Status)</h3>
+<p><strong>Accepted</strong> (2026-04-01)</p>
+<h3 id="van-e-problem_4">Vấn đề (Problem)</h3>
+<p>Việc sử dụng trực tiếp AI (LLM) để chấm điểm code (ví dụ: "Cho tôi biết điểm số bảo mật của file này") thường dẫn đến sự thiếu ổn định: cùng một file có thể nhận các điểm số khác nhau trong các lần quét khác nhau. Điều này vi phạm tính tin cậy của một công cụ quản lý chất lượng.</p>
+<h3 id="giai-phap-options-decision-why_4">Giải pháp (Options &amp; Decision &amp; Why)</h3>
+<p><strong>Quyết định</strong>: Áp dụng mô hình <strong>Hybrid AI-Static Analysis</strong>.</p>
+<ol>
+<li><strong>Static Analysis as Primary (Xương sống)</strong>: Các công cụ deterministic (AST, Regex) vẫn là nguồn phát hiện lỗi chính. Mỗi lỗi được gán một "Điểm phạt âm" (Penalty Score) cố định.</li>
+<li><strong>AI as Contextual Validator (Bộ lọc ngữ cảnh)</strong>: AI không trực tiếp đưa ra điểm số. AI chỉ trả lời câu hỏi: <em>"Dựa trên ngữ cảnh này, vi phạm Static Analysis vừa tìm thấy có phải là False Positive không?"</em>.</li>
+<li><strong>Cơ chế ổn định (Stability Mechanism)</strong>:</li>
+<li>Nếu AI xác nhận là lỗi thật: Áp dụng 100% điểm phạt.</li>
+<li>Nếu AI xác định là False Positive: Giảm điểm phạt về 0 hoặc một mức tối thiểu.</li>
+<li><strong>Calibration (Hiệu chuẩn)</strong>: Sử dụng JSON Schema (Instructor/Pydantic) để ép AI phân loại lỗi vào các nhóm Severity (Critical, High, Medium, Low) đã được định nghĩa điểm phạt sẵn trong hệ thống.</li>
+</ol>
+<p><strong>Tại sao?</strong>: Giữ được sự chính xác nhờ AI (giảm nhiễu) nhưng vẫn duy trì tính ổn định tuyệt đối của công thức toán học đằng sau điểm số.</p>
+<h3 id="he-qua-consequences_2">Hệ quả (Consequences)</h3>
+<ul>
+<li><strong>Tích cực</strong>: Điểm số ổn định, giảm tỷ lệ báo cáo sai (False Positive Rate).</li>
+<li><strong>Thử thách</strong>: Tăng độ trễ (Latency) của quá trình quét do phải gọi API AI và tăng chi phí vận hành (Token usage).</li>
+</ul>
+<h2 id="adr-006-nang-cap-xu-ly-bat-ong-bo-async-io-cho-ai-service">ADR-006: Nâng cấp xử lý Bất đồng bộ (Async I/O) cho AI Service</h2>
+<h3 id="trang-thai-status_5">Trạng thái (Status)</h3>
+<p><strong>Accepted</strong> (2026-03-23)</p>
+<h3 id="van-e-problem_5">Vấn đề (Problem)</h3>
+<p>Luồng tích hợp AI trước đây sử dụng <code>ThreadPoolExecutor</code> với OpenAI Client đồng bộ (Synchronous). Cách tiếp cận này phân bổ các thread lãng phí trong khi chờ I/O mạng từ API, tiềm ẩn nguy cơ thắt cổ chai khi quét dự án lớn, và không tối ưu theo triết lý I/O Bound hiện đại.</p>
+<h3 id="giai-phap-options-decision-why_5">Giải pháp (Options &amp; Decision &amp; Why)</h3>
+<p><strong>Quyết định</strong>: Áp dụng khối cơ chế <code>asyncio</code> và thư viện <code>AsyncOpenAI</code> cho các xử lý tại AI Service.
+1. Chuyển đổi các API Wrapper thành <code>async def</code>.
+2. Tạo Local Event Loop qua <code>loop.run_until_complete()</code> bên trong background thread của Auditor.
+<strong>Tại sao?</strong>: Đảm bảo non-blocking tuyệt đối khi giao tiếp với API LLM. Tối thiểu hoá Memory Footprint khi concurrency scale lớn, tránh cấp phát lượng POSIX threads thừa.</p>
+<h3 id="he-qua-consequences_3">Hệ quả (Consequences)</h3>
+<ul>
+<li><strong>Tích cực</strong>: Tiết kiệm RAM, CPU; tăng tốc độ kiểm toán sâu (Deep Audit).</li>
+<li><strong>Thử thách</strong>: Viết Unit Test (như <code>test_overall_pillars</code>) phải chuyển sang dùng <code>AsyncMock</code>.</li>
+</ul>
+<hr />
+<h2 id="adr-007-kien-truc-modular-scanner-cho-buoc-xac-thuc-verification">ADR-007: Kiến trúc Modular Scanner cho Bước Xác thực (Verification)</h2>
+<h3 id="trang-thai-status_6">Trạng thái (Status)</h3>
+<p><strong>Accepted</strong> (2026-03-24)</p>
+<h3 id="van-e-problem_6">Vấn đề (Problem)</h3>
+<p><code>VerificationStep</code> (Bước 3) trước đây chứa logic quét Regex và AST trộn lẫn trong một hàm duy nhất. Điều này gây khó khăn khi muốn mở rộng bộ quy tắc cho các ngôn ngữ khác hoặc thêm các phương pháp quét mới (ví dụ: Dependency check, Secret scanning) mà không làm phình to code logic chính.</p>
+<h3 id="giai-phap-options-decision-why_6">Giải pháp (Options &amp; Decision &amp; Why)</h3>
+<p><strong>Quyết định</strong>: Tách biệt logic quét thành các lớp Scanner chuyên biệt kế thừa từ <code>BaseScanner</code>.
+1. <code>RegexScanner</code>: Xử lý các quy tắc dựa trên biểu thức chính quy.
+2. <code>PythonASTScanner</code>: Xử lý các quy tắc dựa trên cây cú pháp AST của Python (Complexity, Length, Dangerous funcs).
+3. <strong>Modular Rule Loading</strong>: <code>rules.json</code> được cấu trúc lại để phân loại quy tắc cho từng Scanner.</p>
+<p><strong>Tại sao?</strong>: Đảm bảo tính Single Responsibility (SRP) và cho phép dễ dàng "cắm thêm" (plug-in) các bộ quét mới trong tương lai mà không ảnh hưởng đến luồng điều phối chính.</p>
+<h3 id="he-qua-consequences_4">Hệ quả (Consequences)</h3>
+<ul>
+<li><strong>Tích cực</strong>: Code sạch hơn, dễ viết Unit Test cho từng Scanner riêng biệt.</li>
+<li><strong>Thử thách</strong>: Cần quản lý cấu trúc <code>rules.json</code> chặt chẽ hơn để các Scanner nhận diện đúng quy tắc thuộc về mình.</li>
+</ul>
+<hr />
+<h2 id="adr-008-chuyen-oi-sang-kien-truc-two-pass-audit-hypothesize-test">ADR-008: Chuyển đổi sang Kiến trúc Two-Pass Audit (Hypothesize &amp; Test)</h2>
+<h3 id="trang-thai-status_7">Trạng thái (Status)</h3>
+<p><strong>Accepted</strong> (2026-03-30)</p>
+<h3 id="van-e-problem_7">Vấn đề (Problem)</h3>
+<p>Luồng kiểm toán file-by-file bằng AI (Bước 3.6 - Deep Audit) hiện tại gặp hạn chế lớn về "ngữ cảnh toàn cục" (Global Context). AI thường xuyên báo lỗi giả (False Positive) khi quan sát thấy một đoạn code gọi hàm ở file khác nhưng không biết hàm đó xử lý gì. Việc thả cho AI tự do dò tìm (Autonomous Agentic) lại gây ra mức độ đội giá Token lên tới 300%-400% và giảm độ ổn định của hệ thống do phụ thuộc vào tư duy LLM.</p>
+<h3 id="giai-phap-options-decision-why_7">Giải pháp (Options &amp; Decision &amp; Why)</h3>
+<p><strong>Quyết định</strong>: Triển khai thiết kế <strong>Two-Pass Audit (Gắn Cờ &amp; Xác Minh Chéo)</strong>.
+1. <strong>Pass 1 (Hypothesize):</strong> AI quét file như cũ. Mọi lỗi nghi ngờ liên file đều phải được đánh cờ (<code>needs_verification = True</code>) kèm tên hàm tham chiếu (<code>verify_target</code>). Lỗi không được chốt vội vàng.
+2. <strong>Pass 2 (Verification):</strong> Hệ thống dùng AST nội bộ (Symbol Indexer) dò tìm trọn vẹn Body code của <code>verify_target</code> đó trong project. Ném mã nguồn bằng chứng này lại cho AI để chốt hạ cuối cùng.</p>
+<p><strong>Tại sao?</strong>: Đây là điểm cân bằng hoàn hảo ("Sweet Spot"). Nó mang lại độ chính xác gần tuyệt đối (Zero False Positives) của phương pháp LLM Agent, nhưng vẫn duy trì tính Deterministic (Ổn định) của phân tích tĩnh và chỉ tăng thiểu chi phí Token lên tối đa 20%-40%.</p>
+<h3 id="he-qua-consequences_5">Hệ quả (Consequences)</h3>
+<ul>
+<li><strong>Tích cực</strong>: Tiết kiệm chi phí, dễ dàng Audit diện rộng mà không sợ "ảo giác LLM" làm loãng điểm số dự án.</li>
+<li><strong>Thử thách</strong>: Việc trích xuất ngữ cảnh bằng Python AST đôi khi vẫn gặp giới hạn về rẽ nhánh kiểu dữ liệu động (Dynamic Typing) so với việc cấu hình LSP chuyên nghiệp.</li>
+</ul>
+<hr />
+<h2 id="adr-009-ap-dung-luat-lai-hybrid-regex-ai-cho-cac-cau-truc-ac-thu">ADR-009: Áp dụng Luật Lai (Hybrid Regex + AI) cho các cấu trúc đặc thù</h2>
+<h3 id="trang-thai-status_8">Trạng thái (Status)</h3>
+<p><strong>Accepted</strong> (2026-04-01)</p>
+<h3 id="van-e-problem_8">Vấn đề (Problem)</h3>
+<p>Việc bổ sung các luật kiểm toán nhạy cảm về ngữ cảnh như <code>MUTABLE_DEFAULT_ARGS</code>, <code>COMMENTED_OUT_CODE</code>, <code>SLOW_STRING_CONCAT</code> nếu chỉ dùng AST Parser thuần túy (Cây phân tích cú pháp) sẽ đòi hỏi viết thêm rất nhiều Node Visitor phức tạp. Tuy nhiên, nếu chỉ dùng Regex thuần túy thì tỷ lệ báo lỗi giả (False Positive) lại cực kỳ cao do không đọc hiểu được ý định trong docstring hay các chuỗi mô phỏng.</p>
+<h3 id="giai-phap-options-decision-why_8">Giải pháp (Options &amp; Decision &amp; Why)</h3>
+<p><strong>Quyết định</strong>: Sử dụng kiến trúc <strong>Luật Lai (Hybrid Rules)</strong>. Cơ chế khai báo lấy Regex làm bộ lọc mồi (Lớp 1), sau đó đẩy khối code thỏa mãn Regex cho LLM (Lớp 2 - AI Gatekeeper) phân tích ngữ nghĩa.
+1. <strong>MUTABLE_DEFAULT_ARGS</strong>: Quét Regex rẽ nhánh <code>def ...=[]</code> rồi đưa AI chẩn đoán.
+2. <strong>COMMENTED_OUT_CODE</strong>: Regex đếm khối comment lớn (<code>#</code> &gt; 5 dòng) sau đó hỏi AI xem đây là docstring giải thích hay là code rác bị khóa.
+3. <strong>SLOW_STRING_CONCAT</strong>: Regex khoanh vùng phép cộng dồn <code>+=</code> và dùng AI soi chiếu khối code xem nó có nằm trong vòng lặp vòng lặp không.</p>
+<p><strong>Tại sao?</strong>:
+- Bỏ qua rào cản thao tác với AST Trees cứng nhắc.
+- Thời gian triển khai cực nhanh: Chỉ cần nạp cấu hình JSON vào <code>rules.json</code>.
+- Có AI bảo vệ khỏi False Positives theo đúng kiến trúc Two-Pass Audit.</p>
+<h3 id="he-qua-consequences_6">Hệ quả (Consequences)</h3>
+<ul>
+<li><strong>Tích cực</strong>: Nâng cao năng lực đánh giá của Framework. Mở rộng kho luật dễ dàng.</li>
+<li><strong>Thử thách</strong>: Tiêu tốn thêm Token cho LLM khi xác nhận ngữ cảnh. Phải đảm bảo AI Prompt ngắn gọn.</li>
+</ul>
+<hr />
+<h2 id="adr-010-sandboxing-verification-script-va-cau-hinh-prompt-linh-hoat">ADR-010: Sandboxing Verification Script và Cấu hình Prompt Linh hoạt</h2>
+<h3 id="trang-thai-status_9">Trạng thái (Status)</h3>
+<p><strong>Accepted</strong> (2026-04-02)</p>
+<h3 id="van-e-problem_9">Vấn đề (Problem)</h3>
+<ol>
+<li><strong>Thiếu Sandboxing</strong>: Lớp <code>VerificationStep</code> sinh mã tự động <code>ai_double_check.py</code> thẳng vào <code>target_dir</code> (Nơi chứa mã nguồn dự án đang được quét). Điều này rủi ro làm ô nhiễm Repository nếu tiến trình bị treo hoặc OS Kill bất ngờ.</li>
+<li><strong>AI Gatekeeper cứng nhắc</strong>: Tại quá trình kiểm tra lai ghép (Hybrid AI Regex), các thuộc tính <code>ai_prompt</code> định kiến chi tiết (như luật <code>FORGOTTEN_TODO</code> yêu cầu tìm mã Ticket) bị Module <code>ai_service.py</code> bỏ qua, khiến Validator của AI Gatekeeper dùng một prompt review chung chung và gây ra False Positive.</li>
+</ol>
+<h3 id="giai-phap-options-decision-why_9">Giải pháp (Options &amp; Decision &amp; Why)</h3>
+<p><strong>Quyết định</strong>: 
+1. Sử dụng thư viện <code>tempfile.mkdtemp(prefix="auditor_")</code> của Python cho tiến trình sinh mã Bot Xác thực <code>ai_double_check.py</code>. Giới hạn tuyệt đối vòng hoạt động ngoài Repository. Bot sẽ trỏ ngược về project đang quét bằng tham số Absolute Path <code>cwd</code>.
+2. Bổ sung trích đoạn tiêm (prompt injection) biến thiên. Truyền thông tin thuộc tính khai báo trong tuỳ chọn <code>ai_prompt</code> vào chu kỳ đánh giá của cụm <code>verify_violations_batch</code>.</p>
+<p><strong>Tại sao?</strong>: 
+- Các Temporary Folder chứa rủi ro thấp nhất (Level 1) vì HDH tự phân giải. 
+- Giữ AI Gatekeeper phân quyền riêng lẻ đến mức phần tử (Element Level) sẽ gia tăng tính ứng dụng cực độ cho Custom Rules Engine.</p>
+<h3 id="he-qua-consequences_7">Hệ quả (Consequences)</h3>
+<ul>
+<li><strong>Tích cực</strong>: Ngăn ngừa viễn cảnh rác kiến trúc, tối ưu chi phí phân khúc AI. Hệ thống chạy 100% trong sạch.</li>
+</ul>
+<hr />
+<h2 id="adr-011-refactoring-kien-truc-toan-dien-god-object-elimination">ADR-011: Refactoring Kiến Trúc Toàn Diện (God Object Elimination)</h2>
+<ul>
+<li><strong>Ngày</strong>: 2026-04-02</li>
+<li><strong>Trạng thái</strong>: Accepted</li>
+</ul>
+<h3 id="van-e-problem_10">Vấn đề (Problem)</h3>
+<p>Sau nhiều vòng phát triển tính năng, 3 file trở thành <strong>God Object</strong> — ôm quá nhiều trách nhiệm khác nhau, gây khó bảo trì và test:
+- <code>api_server.py</code>: 726 dòng, 23 routes, không phân tách domain
+- <code>verification.py</code>: 535 dòng, 4 class/function độc lập không liên quan
+- <code>App.jsx</code> (Frontend): 1043 dòng, toàn bộ render logic nội tuyến</p>
+<h3 id="giai-phap-decision">Giải pháp (Decision)</h3>
+<p><strong>Backend — Tách <code>api_server.py</code> thành Router modules:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>src/api/
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>├── api_server.py        # Slim app factory, middleware, startup (≈90 dòng)
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>└── routers/
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    ├── audit.py         # Audit pipeline, jobs, upload, SSE
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    ├── rules.py         # CRUD rules, compile, test, toggle
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    ├── history.py       # Audit history queries
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    └── repositories.py  # Config repos + AI health check
+</code></pre></div></p>
+<p><strong>Backend — Tách <code>verification.py</code> thành modules chức năng:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>src/engine/
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>├── scanners.py          # BaseScanner, RegexScanner, PythonASTScanner
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>├── dependency_checker.py # detect_circular_dependencies
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>└── verification.py      # double_check_modular, VerificationStep (chỉ orchestration)
+</code></pre></div></p>
+<p><strong>Frontend — Tách <code>App.jsx</code> → <code>AuditView.jsx</code>:</strong>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>dashboard/src/components/views/
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>├── AuditView.jsx        # Toàn bộ Audit Dashboard UI (≈350 dòng, lazy-loaded)
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>├── HistoryView.jsx      # đã tách trước
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>└── SettingsView.jsx     # đã tách trước
+</code></pre></div></p>
+<p><strong>Bổ sung:</strong>
+- <code>.gitignore</code>: Thêm <code>reports/*.md</code> và <code>reports/*.json</code> — không track runtime output</p>
+<h3 id="tai-sao">Tại sao?</h3>
+<ul>
+<li>Single Responsibility Principle: mỗi file/module làm đúng một việc</li>
+<li>Lazy loading <code>AuditView</code> giảm initial bundle từ 490KB → 343KB (−30%)</li>
+<li>Router modules dễ test độc lập, dễ thêm middleware per-domain</li>
+</ul>
+<h3 id="he-qua-consequences_8">Hệ quả (Consequences)</h3>
+<ul>
+<li><strong>Tích cực</strong>: <code>api_server.py</code> giảm từ 726 → ≈90 dòng. <code>App.jsx</code> giảm từ 1043 → 557 dòng. Frontend bundle index giảm −30%.</li>
+<li><strong>Cần lưu ý</strong>: Khi thêm route mới, phải xác định đúng router file thay vì thêm vào <code>api_server.py</code>.</li>
+</ul>
+<hr />
+<h2 id="adr-012-self-audit-rule-quality-fix-chien-dich-sua-loi-bo-quy-tac">ADR-012: Self-Audit Rule Quality Fix (Chiến dịch Sửa Lỗi Bộ Quy Tắc)</h2>
+<ul>
+<li><strong>Ngày</strong>: 2026-04-03</li>
+<li><strong>Trạng thái</strong>: Accepted</li>
+</ul>
+<h3 id="van-e-problem_11">Vấn đề (Problem)</h3>
+<p>Chạy self-audit cho dự án phát hiện ra <strong>73 violations</strong> ban đầu, nhưng trong đó <strong>17% là False Positive</strong> do 3 bug chính trong engine:
+1. <code>UNUSED_IMPORT</code> không hiểu dotted imports (<code>import urllib.parse</code>, <code>import starlette.formparsers</code>).
+2. <code>MUTATING_COLLECTION_ITERATION</code> Regex <code>for\s+\w+\s+in\s+(\w+):</code> match MỌI vòng for-in.
+3. <code>SLOW_STRING_CONCAT</code> Regex <code>\+=</code> match cả phép cộng số (<code>counter += 1</code>).
+4. <code>SQL_INJECTION</code> Regex match cả parameterized queries (<code>execute(%s, (param,))</code>).
+5. <code>PRINT_STATEMENT</code> không skip test files và <code>__main__</code> guard.</p>
+<h3 id="giai-phap-decision_1">Giải pháp (Decision)</h3>
+<p><strong>Engine Rule Fixes:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Rule</th>
+<th>Before</th>
+<th>After</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>UNUSED_IMPORT</code></td>
+<td>Chỉ track <code>ast.Name</code></td>
+<td>Bổ sung <strong>Attribute chain tracking</strong> cho dotted imports</td>
+</tr>
+<tr>
+<td><code>MUTATING_COLLECTION_ITERATION</code></td>
+<td>Regex match tất cả <code>for-in</code></td>
+<td>Chuyển sang <strong>AI-only</strong> detection</td>
+</tr>
+<tr>
+<td><code>SLOW_STRING_CONCAT</code></td>
+<td>Regex match tất cả <code>+=</code></td>
+<td>Chuyển sang <strong>AI-only</strong> detection</td>
+</tr>
+<tr>
+<td><code>SQL_INJECTION</code></td>
+<td>Regex match cả parameterized</td>
+<td>Regex chỉ match <code>f-string</code> và <code>.format()</code> trong execute</td>
+</tr>
+<tr>
+<td><code>PRINT_STATEMENT</code></td>
+<td>Bắt mọi <code>print()</code></td>
+<td>Skip test files + <code>__main__</code> guard</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Code Quality Fixes:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Bug</th>
+<th>Fix</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Hardcoded <code>DATABASE_URL</code> password</td>
+<td>Xóa fallback chứa credentials, fail-fast nếu thiếu env</td>
+</tr>
+<tr>
+<td><code>int()</code> crash trên env</td>
+<td>Bọc <code>try/except ValueError</code></td>
+</tr>
+<tr>
+<td>Memory leak <code>JobManager</code></td>
+<td>Thêm <code>cleanup_old_jobs()</code> tự động mỗi 1h</td>
+</tr>
+<tr>
+<td><code>toggle_core_rule</code> race condition</td>
+<td><code>SELECT...FOR UPDATE</code> + transaction</td>
+</tr>
+<tr>
+<td><code>res['final']</code> KeyError scoring</td>
+<td>Dùng <code>.get('final', 0)</code></td>
+</tr>
+<tr>
+<td>Swallowed exceptions</td>
+<td>Thêm <code>logger.debug/warning</code> thay <code>pass</code></td>
+</tr>
+<tr>
+<td>DoS multipart 100K</td>
+<td>Giảm xuống 10K</td>
+</tr>
+<tr>
+<td>Hardcoded CORS IPs</td>
+<td>Đọc từ env <code>CORS_ORIGINS</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="ket-qua-inh-luong">Kết quả định lượng</h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Trước</th>
+<th>Sau</th>
+<th>Cải thiện</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Total violations</td>
+<td>73</td>
+<td><strong>15</strong></td>
+<td><strong>-79%</strong></td>
+</tr>
+<tr>
+<td>False Positive Rate</td>
+<td>17%</td>
+<td><strong>~0%</strong></td>
+<td><strong>-100%</strong></td>
+</tr>
+<tr>
+<td>Score</td>
+<td>23.41</td>
+<td><strong>39.89</strong></td>
+<td><strong>+70%</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="tai-sao_1">Tại sao?</h3>
+<p>Khi audit engine tự audit chính mình, False Positive phải gần 0% để đảm bảo uy tín. Mỗi FP sẽ nhân rộng trên MỌI dự án được audit → ảnh hưởng hệ thống.</p>
+<h3 id="he-qua-consequences_9">Hệ quả (Consequences)</h3>
+<ul>
+<li><strong>Tích cực</strong>: Engine chính xác hơn, score phản ánh đúng thực tế, không còn FP cho dotted imports.</li>
+<li><strong>Lưu ý</strong>: 3 rules chuyển sang AI-only (<code>SLOW_STRING_CONCAT</code>, <code>MUTATING_COLLECTION_ITERATION</code>, và <code>PRINT_STATEMENT</code> filter) → cần <code>AI_ENABLED=true</code> để phát hiện.</li>
+</ul>
+<h2 id="adr-012-refactor-monolithic-components-to-mitigate-technical-debt-phase-6">ADR-012: Refactor Monolithic Components to Mitigate Technical Debt (Phase 6)</h2>
+<p><strong>Date:</strong> 2026-04-03
+<strong>Status:</strong> Accepted</p>
+<h3 id="1-problem">1. Problem</h3>
+<p>Trong quá trình Audit lại chính mình định kỳ bằng <code>check_project</code>, hệ thống phát hiện một lượng lớn Technical Debt liên quan đến "God Object" và "High Cyclomatic Complexity" phân tán rộng rãi trên các modules quan trọng của Engine.
+Cụ thể:
+- <code>auditor.py</code>: <code>run()</code> method dài hơn 200 dòng, CC=62. Phương thức định dạng <code>generate_report</code> thực thi mọi render Markdown gây quá tải (CC=22).
+- <code>scanners.py</code>: <code>PythonASTScanner.scan</code> nhồi nhét xử lý hơn 10 syntax pattern trong một single walk loop (dài ~200 dòng).
+- <code>verification.py</code>: <code>load_rules</code> quản lý logic parse, fallbacks, mapping rườm rà.
+- <code>ai_service.py</code>: Các payload call LLM (<code>deep_audit_batch</code>, <code>verify_violations_batch</code>, <code>verify_flagged_issues</code>) gánh luôn retry policies và JSON fallback mechanisms sinh ra code lặp.
+- <code>audit.py</code>: Các job runners (Local/UI/Git) lặp lại việc xử lý Database mapping và Metrics format.</p>
+<h3 id="2-options">2. Options</h3>
+<ul>
+<li><strong>Option 1: Ignore.</strong> Bỏ qua vì các module này thực tế ít khi có bugs và việc thay đổi diện rộng tiềm ẩn rủi ro hồi quy (Regression).</li>
+<li><strong>Option 2: Deep Refactoring (Extract Helper/Private Sub-methods).</strong> Chia các God Object thành các module tư duy nhỏ, Single Responsibility.</li>
+</ul>
+<h3 id="3-decision">3. Decision</h3>
+<p><strong>Chọn Option 2.</strong> Engine mã nguồn của <code>check-project</code> phải đạt điểm Gold Standard (&gt;90) để đảm bảo độ tin cậy của Tool khi Audit mã nguồn hệ thống khác. Bất kể việc chia code sẽ tăng LOC, việc isolate logic là bắt buộc.</p>
+<h3 id="4-consequences">4. Consequences</h3>
+<ul>
+<li>Cyclomatic Complexity của toàn hệ thống được kiểm soát hoàn toàn thông qua Private API Design Pattern.  </li>
+<li><code>auditor.py</code> -&gt; Tách 5 Step logic <code>_step_discovery</code>, <code>_step_scanning</code>, v.v...  </li>
+<li><code>scanners.py</code> -&gt; <code>_check_exceptions</code>, <code>_check_functions</code>, <code>_check_calls</code>, <code>_check_loops</code>.</li>
+<li><code>ai_service.py</code> -&gt; Proxy chung qua <code>_call_llm_json</code>.</li>
+<li>Sự bảo trì dài hạn (Maintainability Pillar) nhảy cực mạnh. Các rules sắp tới sẽ chỉ tập trung vào vi phân cực nhỏ mà không phải chèn code qua nhiều vòng loop phức tạp.</li>
+</ul>
+<hr />
+<h2 id="adr-013-sua-loi-batch-scan-crash-do-ky-tu-trong-project-id">ADR-013: Sửa lỗi Batch Scan — Crash do ký tự <code>/</code> trong Project ID</h2>
+<ul>
+<li><strong>Ngày</strong>: 2026-04-06</li>
+<li><strong>Trạng thái</strong>: Accepted</li>
+</ul>
+<h3 id="1-van-e-problem">1. Vấn đề (Problem)</h3>
+<p>Khi chạy "Scan All" (batch audit), hệ thống bị crash và treo vĩnh viễn ở trạng thái RUNNING khi gặp project ID chứa ký tự <code>/</code> (ví dụ: <code>liftsoftvn/ana-api</code>).</p>
+<p><strong>Root Cause (2 lỗi kết hợp):</strong></p>
+<ol>
+<li>
+<p><strong>Lỗi đường dẫn Temp Directory</strong>: <code>tempfile.mkdtemp(prefix=f"batch_{pid}_")</code> với <code>pid = "liftsoftvn/ana-api"</code> tạo ra đường dẫn <code>/tmp/batch_liftsoftvn/ana-api_xxx</code>. OS coi <code>batch_liftsoftvn</code> là thư mục con không tồn tại → <code>FileNotFoundError</code>.</p>
+</li>
+<li>
+<p><strong>Exception ngoài try block</strong>: Dòng <code>tempfile.mkdtemp(...)</code> nằm <strong>trước</strong> <code>try:</code> block, nên exception không bị bắt bởi <code>except</code>. Kết quả: toàn bộ <code>background_batch()</code> crash, job status mãi ở <code>RUNNING</code>, frontend polling liên tục không dừng.</p>
+</li>
+</ol>
+<p><strong>Lỗi liên quan (file):</strong> <a href="../../src/api/routers/audit.py">src/api/routers/audit.py</a> — hàm <code>background_batch()</code>.</p>
+<h3 id="2-giai-phap-decision">2. Giải pháp (Decision)</h3>
+<table>
+<thead>
+<tr>
+<th>Thay đổi</th>
+<th>Trước</th>
+<th>Sau</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Prefix tempdir</td>
+<td><code>batch_{pid}_</code></td>
+<td><code>batch_{safe_pid}_</code> với <code>safe_pid = pid.replace("/", "_")</code></td>
+</tr>
+<tr>
+<td>Phạm vi try block</td>
+<td>Chỉ bọc clone + audit</td>
+<td>Bọc <strong>toàn bộ</strong> thân loop (config lookup → tempdir → clone → audit)</td>
+</tr>
+<tr>
+<td>finally cleanup</td>
+<td><code>if os.path.exists(temp_dir)</code></td>
+<td><code>if temp_dir and os.path.exists(temp_dir)</code> (null check)</td>
+</tr>
+<tr>
+<td>except handler</td>
+<td>Truy cập <code>batch_result</code> trực tiếp</td>
+<td>Re-fetch <code>job.result</code> từ <code>JobManager</code> để tránh stale reference</td>
+</tr>
+</tbody>
+</table>
+<h3 id="3-tai-sao">3. Tại sao?</h3>
+<ul>
+<li>Sanitize <code>/</code> → <code>_</code> ngăn OS tạo đường dẫn con bất hợp lệ.</li>
+<li>Bọc toàn bộ logic vào try block đảm bảo <strong>bất kỳ exception nào</strong> (kể cả config lookup, permission error) đều được xử lý gracefully — batch tiếp tục chạy dự án kế tiếp thay vì crash toàn bộ.</li>
+</ul>
+<h3 id="4-he-qua-consequences">4. Hệ quả (Consequences)</h3>
+<ul>
+<li><strong>Tích cực</strong>: Batch scan hoạt động ổn định với mọi project ID format. Hệ thống tự phục hồi khi 1 dự án lỗi thay vì treo cả batch.</li>
+<li><strong>Lưu ý</strong>: Nếu config có thêm ký tự đặc biệt khác (ví dụ: <code>\</code>, <code>:</code>) cũng cần sanitize tương tự — hiện đã sanitize cả <code>\</code>.</li>
+</ul>
+<hr />
+<h2 id="adr-014-tinh-chinh-rule-bare_except-va-grouped-violation-ledger">ADR-014: Tinh chỉnh Rule BARE_EXCEPT và Grouped Violation Ledger</h2>
+<ul>
+<li><strong>Ngày</strong>: 2026-04-10</li>
+<li><strong>Trạng thái</strong>: Accepted</li>
+</ul>
+<h3 id="1-van-e-problem_1">1. Vấn đề (Problem)</h3>
+<p><strong>A) Rule <code>BARE_EXCEPT</code> quá gắt:</strong>
+Rule <code>BARE_EXCEPT</code> (AST scanner) đánh đồng 3 tình huống khác nhau thành cùng 1 violation (-2 điểm):
+1. <code>except:</code> (bare — bắt cả SystemExit/KeyboardInterrupt) → nguy hiểm thật
+2. <code>except Exception:</code> + logging/raise → defensive programming hợp lệ
+3. <code>except Exception:</code> + chỉ <code>pass</code> → nuốt exception im lặng</p>
+<p>Kết quả: các pattern hoàn toàn hợp lệ như catch-all sau except cụ thể (ví dụ <code>git_helper.py</code>) hoặc startup error handling có logging (<code>api_server.py</code>) đều bị phạt oan → False Positive.</p>
+<p><strong>B) Violation Ledger hiển thị danh sách phẳng:</strong>
+Dashboard VIOLATION LEDGER hiển thị flat list — mỗi violation một card riêng lẻ. Với dự án lớn có hàng chục/trăm violations, danh sách rất dài, không phân loại, khó scan để biết lỗi nào nghiêm trọng nhất.</p>
+<h3 id="2-giai-phap-decision_1">2. Giải pháp (Decision)</h3>
+<p><strong>A) Rule BARE_EXCEPT — Chỉ phạt khi không xử lý:</strong>
+- Thêm helper method <code>_except_body_has_handling(node)</code> kiểm tra except body có statement thực sự hay chỉ <code>pass</code>/rỗng.
+- <code>BARE_EXCEPT</code> chỉ trigger khi body <strong>KHÔNG</strong> xử lý gì (chỉ <code>pass</code> hoặc rỗng).
+- Logging, raise, hay bất kỳ statement nào đều được coi là "có xử lý" → bỏ qua.
+- Rule <code>SWALLOWED_EXCEPTION</code> (cho <code>except SpecificError: pass</code>) vẫn hoạt động bình thường.</p>
+<p><strong>Các file thay đổi:</strong>
+- <a href="../../src/engine/scanners.py">scanners.py</a>: Thêm <code>_except_body_has_handling()</code>, sửa <code>_check_exceptions()</code>.
+- <a href="../../src/engine/rules.json">rules.json</a>: Cập nhật <code>reason</code> của <code>BARE_EXCEPT</code>.</p>
+<p><strong>B) Grouped Violation Ledger:</strong>
+Refactor VIOLATION LEDGER từ flat list sang <strong>Grouped Accordion by rule_id</strong>:
+- Violations được nhóm theo <code>rule_id</code> bằng <code>useMemo</code>.
+- Mỗi nhóm hiển thị: Rule ID (monospace), count badge, Pillar, tổng penalty.
+- Sắp xếp theo tổng penalty giảm dần (nghiêm trọng nhất lên đầu).
+- Mặc định <strong>collapse toàn bộ</strong> — chỉ cần liếc qua header là biết tình hình.
+- Click expand → hiển thị chi tiết từng file:line, reason, snippet + Fix AI.
+- Nút "Expand All / Collapse All" ở header.
+- Severity color-coded: đỏ (≤ -5), vàng (≤ -3), xanh (còn lại) cho left border.
+- Animation mở/đóng bằng Framer Motion <code>AnimatePresence</code>.</p>
+<p><strong>File thay đổi:</strong> <a href="../../dashboard/src/components/views/AuditView.jsx">AuditView.jsx</a></p>
+<h3 id="3-tai-sao_1">3. Tại sao?</h3>
+<ul>
+<li><strong>BARE_EXCEPT</strong>: Giảm False Positive, tập trung cảnh báo vào những except thực sự nguy hiểm (nuốt im lặng). Pattern <code>except Exception: logger.error(...)</code> là defensive programming chuẩn.</li>
+<li><strong>Grouped Ledger</strong>: Giảm cognitive load 80%+ khi review violations. Từ cuộn 100 cards → scan 15 group headers. Rule nào nhiều violation nhất → nhìn thấy ngay, ưu tiên sửa trước.</li>
+</ul>
+<h3 id="4-he-qua-consequences_1">4. Hệ quả (Consequences)</h3>
+<ul>
+<li><strong>Tích cực</strong>: Điểm số chính xác hơn (bỏ FP). Dashboard dễ dùng hơn cho Tech Lead/Architect khi review.</li>
+<li><strong>Lưu ý</strong>: <code>except Exception: pass</code> sẽ bị phạt bởi CẢ <code>BARE_EXCEPT</code> (-2) VÀ <code>SWALLOWED_EXCEPTION</code> (-5) → double penalty là có chủ đích vì đây là trường hợp tệ nhất (vừa bắt chung vừa nuốt im).</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "search.suggest", "search.highlight", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>

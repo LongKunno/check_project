@@ -29,6 +29,7 @@ import Pagination from "../ui/Pagination";
 import TopProgressBar from "../ui/TopProgressBar";
 import { usePaginationState } from "../../hooks/usePaginationState";
 import { getRatingColor, getScoreColor, getScoreDotClass, getScoreGradient } from "../../utils/scoreHelpers";
+import { getRegressionMeta, getRegressionSummaryLine } from "../../utils/regressionHelpers";
 import { RankBadge } from "../ui/RankBadge";
 
 
@@ -493,6 +494,14 @@ function ProjectRow({ project, rank, scanState, onSelect }) {
   const isRunning = scanState?.status === SCAN_STATUS.RUNNING;
   const hasScore =
     project.latest_score !== null && project.latest_score !== undefined;
+  const regressionMeta = getRegressionMeta(
+    project.regression_status,
+    project.regression_summary,
+  );
+  const regressionLine = getRegressionSummaryLine(
+    project.regression_summary,
+    project.regression_status,
+  );
 
   return (
     <motion.tr
@@ -616,6 +625,23 @@ function ProjectRow({ project, rank, scanState, onSelect }) {
         </div>
       </td>
 
+      {/* Regression Gate */}
+      <td className="px-4 py-4">
+        <div className="flex flex-col items-start gap-1">
+          <span
+            className={`inline-flex px-2.5 py-1 rounded-full border text-[11px] font-bold ${regressionMeta.classes}`}
+          >
+            {regressionMeta.label}
+          </span>
+          <span
+            className="text-[11px] text-slate-500 max-w-[180px] truncate"
+            title={regressionLine}
+          >
+            {regressionLine}
+          </span>
+        </div>
+      </td>
+
       {/* Arrow */}
       <td className="px-4 py-4">
         <div className="opacity-0 group-hover:opacity-100 transition-opacity text-pink-500">
@@ -715,6 +741,9 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
     (s, p) => s + (p.violations_count || 0),
     0,
   );
+  const regressingRepos = projects.filter(
+    (project) => project.regression_status === "warning",
+  ).length;
   const topProject =
     scanned.length > 0
       ? [...scanned].sort((a, b) => b.latest_score - a.latest_score)[0]
@@ -794,7 +823,7 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4"
+              className="mt-6 grid grid-cols-2 md:grid-cols-5 gap-4"
             >
               {[
                 {
@@ -812,6 +841,14 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
                   accent:
                     "border-amber-500/25 shadow-[0_0_15px_-5px_rgba(245,158,11,0.15)]",
                   accentLine: "kpi-accent-amber",
+                },
+                {
+                  label: "Regressing repos",
+                  value: regressingRepos,
+                  icon: <TrendingUp size={16} className="text-rose-500" />,
+                  accent:
+                    "border-rose-500/25 shadow-[0_0_15px_-5px_rgba(244,63,94,0.15)]",
+                  accentLine: "kpi-accent-rose",
                 },
                 {
                   label: "Top project",
@@ -964,6 +1001,11 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
                       onClick={handleSort}
                       align="right"
                     />
+                    <th className="px-4 py-3 text-left">
+                      <span className="text-[10px] uppercase tracking-widest font-bold text-slate-500">
+                        Regression Gate
+                      </span>
+                    </th>
                     <th className="px-4 py-3 w-8" />
                   </tr>
                 </thead>

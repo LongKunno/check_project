@@ -13,7 +13,7 @@ Hệ thống tài liệu bao gồm các phần chính sau:
 1. **[Tính năng Hệ thống](features/discovery.md)**: Chi tiết các module tính năng của Auditor Engine.
 2. **[Kiến trúc Hệ thống](architecture/overview.md)**: Chi tiết luồng dữ liệu và các quyết định thiết kế (ADR).
 3. **[API Specifications](api_specs/audit_jobs.md)**: Tài liệu hướng dẫn sử dụng các endpoint.
-4. **[Database Schema](database/overview.md)**: Cấu trúc cơ sở dữ liệu SQLite của project.
+4. **[Database Schema](database/overview.md)**: Cấu trúc cơ sở dữ liệu PostgreSQL, fallback no-DB và các bảng vận hành của project.
 5. **[Quy chuẩn Tech Stack](tech_stack/python_rules.md)**: Các quy tắc lập trình Python bắt buộc.
 
 ---

@@ -337,7 +337,7 @@ class AiPricingResearchService:
                 cached_price = 0.0
                 note_code = ""
 
-                for cells in table_rows[1:]:
+                for cells in table_rows:
                     if len(cells) < 3:
                         continue
                     label = cells[0].lower()

@@ -4,8 +4,26 @@ import pytest
 import src.config
 from src.engine import ai_service as ai_service_module
 from src.api.audit_state import AuditState, JobManager
+from src.engine.ai_cache import ai_audit_cache
 from src.engine.auditor import AuditCancelledError, CodeAuditor
+from src.engine.database import AuditDatabase
 from src.engine.scoring import ScoringEngine
+
+
+def _reset_ai_cache_state():
+    ai_audit_cache._memory_entries.clear()
+    ai_audit_cache._memory_runs.clear()
+    ai_audit_cache._pending_runs.clear()
+    ai_audit_cache._memory_policy = dict(ai_audit_cache.DEFAULT_POLICY)
+    AuditDatabase._pool = None
+
+
+def setup_function():
+    _reset_ai_cache_state()
+
+
+def teardown_function():
+    _reset_ai_cache_state()
 
 
 def test_step_ai_processing_reads_concurrency_once_and_reuses_it(monkeypatch):
@@ -47,6 +65,118 @@ def test_step_ai_processing_reads_concurrency_once_and_reuses_it(monkeypatch):
     assert captured["validation"]["ai_concurrency"] == 7
     assert captured["reasoning"]["service"] is ai_service
     assert captured["reasoning"]["ai_concurrency"] == 7
+
+
+def test_step_ai_validation_uses_cache_hits_before_calling_ai(monkeypatch, tmp_path):
+    _reset_ai_cache_state()
+
+    class FakeAIService:
+        def _get_realtime_model(self):
+            return "cached-model"
+
+        async def verify_violations_batch(self, chunk):
+            raise AssertionError("Không được gọi AI khi đã có cache hit.")
+
+    file_path = tmp_path / "service.py"
+    file_path.write_text("print('cached')\n", encoding="utf-8")
+
+    auditor = CodeAuditor(str(tmp_path))
+    auditor.discovery_data = {
+        "files": [{"path": str(file_path)}],
+        "total_files": 1,
+        "total_loc": 1,
+    }
+    auditor.merged_rules = {"rules": []}
+
+    violation = {
+        "file": "service.py",
+        "reason": "Cached issue",
+        "type": "Reliability",
+        "snippet": "print('cached')",
+        "rule_id": "RULE_CACHE",
+        "line": 1,
+    }
+    identity = auditor._realtime_cache_identity(FakeAIService(), "validation")
+    ai_audit_cache.store_entry(
+        entry_type="validation",
+        payload=auditor._validation_cache_payload(violation, identity),
+        result_json={
+            "index": 0,
+            "is_false_positive": False,
+            "explanation": "Từ cache",
+            "confidence": 0.94,
+        },
+        source_input_tokens=15,
+        source_output_tokens=6,
+        source_estimated_cost=0.0012,
+    )
+
+    logged = []
+    monkeypatch.setattr(auditor, "log_violation", lambda item: logged.append(item))
+
+    auditor._step_ai_validation([violation], FakeAIService(), asyncio, 1)
+
+    assert len(logged) == 1
+    assert "AI Note: Từ cache" in logged[0]["reason"]
+    assert ai_audit_cache.summarize_run(auditor.ai_scope_id)["hits"] == 1
+
+
+def test_step_ai_reasoning_uses_cached_file_results(monkeypatch, tmp_path):
+    _reset_ai_cache_state()
+
+    class FakeAIService:
+        def _get_realtime_model(self):
+            return "cached-model"
+
+        async def deep_audit_batch(self, chunk_data, custom_rules):
+            raise AssertionError("Không được gọi deep audit khi đã có cache hit.")
+
+        async def verify_flagged_issues(self, flagged, context_cache):
+            raise AssertionError("Không được gọi cross-check khi không có flagged miss.")
+
+    file_path = tmp_path / "logic.py"
+    file_path.write_text("def total(a, b):\n    return a + b\n", encoding="utf-8")
+
+    auditor = CodeAuditor(str(tmp_path))
+    auditor.discovery_data = {
+        "files": [{"path": str(file_path)}],
+        "total_files": 1,
+        "total_loc": 2,
+    }
+    auditor.merged_rules = {"rules": []}
+
+    record = auditor._ensure_cache_index().get_record(str(file_path))
+    identity = auditor._realtime_cache_identity(FakeAIService(), "deep_audit")
+    ai_audit_cache.store_entry(
+        entry_type="deep_audit",
+        payload=auditor._deep_cache_payload(record, identity),
+        result_json=[
+            {
+                "file": "logic.py",
+                "type": "Reliability",
+                "reason": "Cached deep issue",
+                "weight": -1.0,
+                "confidence": 0.91,
+                "line": 1,
+                "rule_id": "AI_REASONING",
+                "is_custom": False,
+                "needs_verification": False,
+                "verify_target": "",
+            }
+        ],
+        source_input_tokens=42,
+        source_output_tokens=12,
+        source_estimated_cost=0.0031,
+    )
+
+    confirmed = []
+    monkeypatch.setattr(auditor, "_log_ai_violations", lambda items: confirmed.extend(items))
+
+    auditor._step_ai_reasoning(FakeAIService(), asyncio, 1)
+
+    assert len(confirmed) == 1
+    assert confirmed[0]["reason"] == "Cached deep issue"
+    assert ai_audit_cache.summarize_run(auditor.ai_scope_id)["hits"] == 1
 
 
 def test_step_ai_validation_updates_structured_job_progress(monkeypatch, tmp_path):
@@ -140,6 +270,58 @@ def test_step_ai_reasoning_keeps_progress_consistent_with_out_of_order_batches(t
     assert progress.completed_batches == 2
     assert progress.active_batches == 0
     assert progress.pending_batches == 0
+
+
+def test_apply_included_paths_scope_keeps_only_selected_files(tmp_path):
+    src_dir = tmp_path / "src"
+    tests_dir = tmp_path / "tests"
+    src_dir.mkdir()
+    tests_dir.mkdir()
+
+    main_file = src_dir / "main.py"
+    helper_file = tests_dir / "test_main.py"
+    main_file.write_text("print('main')\n", encoding="utf-8")
+    helper_file.write_text("print('test')\n", encoding="utf-8")
+
+    auditor = CodeAuditor(
+        str(tmp_path),
+        included_paths=["src/main.py"],
+    )
+    auditor.discovery_data = {
+        "files": [
+            {
+                "path": str(main_file),
+                "feature": "src",
+                "loc": 1,
+            },
+            {
+                "path": str(helper_file),
+                "feature": "tests",
+                "loc": 1,
+            },
+        ],
+        "features": {
+            "src": {"loc": 1, "files_count": 1},
+            "tests": {"loc": 1, "files_count": 1},
+        },
+        "total_files": 2,
+        "total_loc": 2,
+    }
+
+    auditor._apply_included_paths_scope()
+
+    assert auditor.discovery_data["total_files"] == 1
+    assert auditor.discovery_data["total_loc"] == 1
+    assert auditor.discovery_data["files"] == [
+        {
+            "path": str(main_file),
+            "feature": "src",
+            "loc": 1,
+        }
+    ]
+    assert auditor.discovery_data["features"] == {
+        "src": {"loc": 1, "files_count": 1}
+    }
 
 
 def test_run_stops_before_aggregation_when_cancel_requested_after_scanning(monkeypatch):
@@ -275,9 +457,14 @@ def test_step_ai_reasoning_skips_cross_check_after_cancel_request(tmp_path):
             return []
 
     auditor = CodeAuditor(str(tmp_path), cancel_check=lambda: cancel_state["requested"])
-    auditor.discovery_data = {"files": []}
+    file_path = tmp_path / "api.py"
+    file_path.write_text("def run():\n    return True\n", encoding="utf-8")
+    auditor.discovery_data = {
+        "files": [{"path": str(file_path)}],
+        "total_files": 1,
+        "total_loc": 2,
+    }
     auditor.custom_rules = None
-    auditor._build_deep_audit_batches = lambda: [[{"path": "api.py", "content": "x"}]]
     auditor._log_ai_violations = lambda confirmed: None
 
     with pytest.raises(AuditCancelledError):
@@ -329,6 +516,107 @@ def test_step_ai_validation_batch_api_surfaces_openai_batch_error_message(monkey
     assert "Unsupported value: 'temperature' does not support 0 with this model." in str(
         exc.value
     )
+
+
+def test_step_ai_validation_batch_api_only_submits_cache_misses(monkeypatch, tmp_path):
+    _reset_ai_cache_state()
+
+    class FakeAIService:
+        def _get_batch_model(self):
+            return "gpt-4.1-nano"
+
+        def build_validation_batch_requests(self, chunks, telemetry=None):
+            captured["chunks"] = chunks
+            return [
+                {
+                    "custom_id": "validation-0",
+                    "messages": [{"role": "user", "content": "demo"}],
+                }
+            ]
+
+        async def submit_chat_completion_batch(self, requests, metadata=None, telemetry=None):
+            return {"id": "batch-1"}
+
+        def parse_validation_content(self, content):
+            return ai_service_module.ValidationResponse.model_validate(
+                {
+                    "results": [
+                        {
+                            "index": 0,
+                            "is_false_positive": False,
+                            "explanation": "fresh",
+                            "confidence": 0.9,
+                        }
+                    ]
+                }
+            )
+
+    file_path = tmp_path / "demo.py"
+    file_path.write_text("print('demo')\n", encoding="utf-8")
+
+    auditor = CodeAuditor(str(tmp_path))
+    auditor.discovery_data = {
+        "files": [{"path": str(file_path)}],
+        "total_files": 1,
+        "total_loc": 1,
+    }
+    auditor.merged_rules = {"rules": []}
+
+    violations = [
+        {
+            "file": "demo.py",
+            "reason": "Cached issue",
+            "type": "Reliability",
+            "snippet": "print('demo')",
+            "rule_id": "RULE_CACHE",
+            "line": 1,
+        },
+        {
+            "file": "demo.py",
+            "reason": "Fresh issue",
+            "type": "Reliability",
+            "snippet": "print('fresh')",
+            "rule_id": "RULE_FRESH",
+            "line": 2,
+        },
+    ]
+    service = FakeAIService()
+    identity = auditor._batch_cache_identity(service, "validation")
+    ai_audit_cache.store_entry(
+        entry_type="validation",
+        payload=auditor._validation_cache_payload(violations[0], identity),
+        result_json={
+            "index": 0,
+            "is_false_positive": False,
+            "explanation": "cached",
+            "confidence": 0.95,
+        },
+        source_input_tokens=10,
+        source_output_tokens=4,
+        source_estimated_cost=0.001,
+    )
+
+    captured = {}
+    logged = []
+    monkeypatch.setattr(auditor, "_get_orchestration_state", lambda: {"stage": "scanned"})
+    monkeypatch.setattr(auditor, "_start_active_job_progress", lambda *args, **kwargs: None)
+    monkeypatch.setattr(auditor, "_update_orchestration_state", lambda *args, **kwargs: None)
+    monkeypatch.setattr(auditor, "_ai_telemetry_context", lambda source: {})
+    monkeypatch.setattr(
+        auditor,
+        "_resolve_remote_batch_results",
+        lambda *args, **kwargs: {
+            "outputs": {"validation-0": {"content": '{"results":[{"index":0,"is_false_positive":false,"explanation":"fresh","confidence":0.9}]}' }},
+            "errors": {},
+        },
+    )
+    monkeypatch.setattr(auditor, "log_violation", lambda item: logged.append(item))
+
+    auditor._step_ai_validation_batch_api(violations, service)
+
+    assert len(captured["chunks"]) == 1
+    assert captured["chunks"][0] == [violations[1]]
+    assert len(logged) == 2
 
 
 def test_step_aggregation_matches_project_score_for_single_owner_repo(monkeypatch):

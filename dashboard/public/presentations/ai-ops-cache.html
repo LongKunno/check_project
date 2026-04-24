@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Ops & Cache - Telemetry Console Review</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/presentations/review-pack.css" />
+
+  <style>
+    :root {
+      --canvas: #181007;
+      --panel: rgba(28, 18, 7, 0.9);
+      --panel-raised: rgba(255, 255, 255, 0.034);
+      --panel-muted: rgba(255, 255, 255, 0.02);
+      --text: #fff5ea;
+      --muted: #d3b9a2;
+      --border: rgba(255, 214, 153, 0.14);
+      --soft-border: rgba(255, 214, 153, 0.08);
+      --accent: #f59e0b;
+      --accent-2: #fb7185;
+      --accent-rgb: 245, 158, 11;
+      --accent2-rgb: 251, 113, 133;
+      --glow-a: rgba(245, 158, 11, 0.18);
+      --glow-b: rgba(251, 113, 133, 0.12);
+    }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+      <section>
+        <div class="slide-shell">
+          <div class="topbar">
+            <div class="topline">
+              <span class="deck-pill">Release Review Pack</span>
+              <span class="deck-kicker">Deck 03 · Telemetry & Operations</span>
+            </div>
+            <span class="slide-count">01 / 06</span>
+          </div>
+
+          <div class="hero-grid">
+            <div class="stack-lg">
+              <span class="eyebrow">Operational Deck</span>
+              <h1 class="display-title title-gradient">AI Ops & Cache</h1>
+              <p class="lede">
+                Deck vận hành để trả lời những câu hỏi mà một hệ AI thật sự phải
+                đối mặt: tốn bao nhiêu, request nào bị block, model nào đang dùng,
+                cache có đang tiết kiệm được gì, và operator có đủ control để
+                can thiệp khi policy thay đổi hay không.
+              </p>
+
+              <div class="chip-row">
+                <span class="chip">AI Overview</span>
+                <span class="chip">Request Explorer</span>
+                <span class="chip">Pricing</span>
+                <span class="chip">Budget</span>
+                <span class="chip">AI Cache</span>
+              </div>
+
+              <div class="metric-band">
+                <div class="panel panel-focus">
+                  <div class="overline">Telemetry Surfaces</div>
+                  <div class="hero-number">4</div>
+                  <div class="body-copy">overview, series, requests và request detail tạo nên phần quan sát chính.</div>
+                </div>
+                <div class="panel">
+                  <div class="overline">Operator Controls</div>
+                  <div class="hero-number">2</div>
+                  <div class="body-copy">pricing / budget controls và cache console tách riêng theo trách nhiệm.</div>
+                </div>
+                <div class="panel">
+                  <div class="overline">v1 Scope</div>
+                  <div class="hero-number">1</div>
+                  <div class="body-copy">ưu tiên visibility và operability trước khi nghĩ tới historical perfection.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="stat-grid">
+              <div class="stat-card">
+                <div class="stat-value">Spend Visibility</div>
+                <div class="stat-label">Primary Goal</div>
+                <div class="stat-copy">Expose token, request, provider/model mix và cost ở một nơi thay vì rơi rớt khắp nơi.</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">Budget Friction</div>
+                <div class="stat-label">Control Goal</div>
+                <div class="stat-copy">Blocked requests phải nhìn thấy được để team biết khi nào policy đang chặn luồng AI.</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">Cache Discipline</div>
+                <div class="stat-label">Efficiency Goal</div>
+                <div class="stat-copy">Cache chỉ có giá trị nếu operator đo được hit rate, token saved và policy từng stage.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="footer-bar">
+            <span>AI features become a real product surface only after they become observable.</span>
+            <span class="footer-strong">This deck is about that observability contract.</span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="slide-shell">
+          <div class="topbar">
+            <div class="topline">
+              <span class="deck-pill">Why This Surface Exists</span>
+              <span class="deck-kicker">From hidden cost to explicit signals</span>
+            </div>
+            <span class="slide-count">02 / 06</span>
+          </div>
+
+          <div class="grid-2">
+            <div class="panel panel-focus">
+              <div class="overline">Problem Statement</div>
+              <h2 class="section-title">AI usage was previously hard to reason about</h2>
+              <p class="body-copy">
+                Trước AI Ops, câu hỏi như “hôm nay AI dùng model nào”, “tại sao
+                request bị block”, hay “luồng nào đang tiêu tốn nhiều token nhất”
+                không có một surface thống nhất để trả lời.
+              </p>
+            </div>
+
+            <div class="stack-md">
+              <div class="panel">
+                <div class="overline">Primary Screens</div>
+                <div class="chip-row" style="margin-bottom:0.75rem;">
+                  <span class="signal-pill">Overview</span>
+                  <span class="signal-pill">Usage Series</span>
+                  <span class="signal-pill">Requests</span>
+                  <span class="signal-pill">Request Detail</span>
+                </div>
+                <p class="body-copy">
+                  Bốn màn hình này tạo thành narrative từ aggregate -> trend ->
+                  item-level -> deep detail, đủ cho cả manager lẫn tech lead.
+                </p>
+              </div>
+
+              <div class="panel panel-muted">
+                <div class="overline">Embedded Signals</div>
+                <p class="body-copy">
+                  `ai_summary` được nhúng ngược vào audit detail và history để
+                  reviewer không phải rời context mỗi lần muốn biết audit đó đã
+                  dùng AI như thế nào.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="footer-bar">
+            <span>Observability is a product feature when users make operational decisions from it.</span>
+            <span class="footer-strong">That is why overview and detail both matter.</span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="slide-shell">
+          <div class="topbar">
+            <div class="topline">
+              <span class="deck-pill">Telemetry Shape</span>
+              <span class="deck-kicker">How request data becomes usable</span>
+            </div>
+            <span class="slide-count">03 / 06</span>
+          </div>
+
+          <div class="route-grid">
+            <div class="route-card">
+              <div class="route-number">01</div>
+              <div class="route-title">Capture</div>
+              <div class="route-copy">Request metadata được log theo source, provider, model, mode và token usage.</div>
+            </div>
+            <div class="route-card">
+              <div class="route-number">02</div>
+              <div class="route-title">Aggregate</div>
+              <div class="route-copy">Overview / series tổng hợp theo date range để nhìn xu hướng.</div>
+            </div>
+            <div class="route-card">
+              <div class="route-number">03</div>
+              <div class="route-title">Link Back</div>
+              <div class="route-copy">Metadata như `job_id`, `audit_id`, `history_id` giúp truy ngược context.</div>
+            </div>
+            <div class="route-card">
+              <div class="route-number">04</div>
+              <div class="route-title">Surface</div>
+              <div class="route-copy">Dashboard hiển thị spend, blocked requests và cost breakdown có thể đọc ngay.</div>
+            </div>
+            <div class="route-card">
+              <div class="route-number">05</div>
+              <div class="route-title">Act</div>
+              <div class="route-copy">Operator dùng signals này để chỉnh pricing, budget hoặc cache policy.</div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="panel panel-focus">
+              <div class="overline">Primary APIs</div>
+              <div class="chip-row" style="margin-bottom:0.75rem;">
+                <span class="signal-pill">GET /ai/overview</span>
+                <span class="signal-pill">GET /ai/usage/series</span>
+                <span class="signal-pill">GET /ai/requests</span>
+                <span class="signal-pill">GET /ai/requests/{id}</span>
+              </div>
+              <p class="body-copy">
+                Shape của API cố tình đi theo chiều từ aggregate tới record-level
+                để frontend không cần tự phát minh lại các truy vấn khó hiểu.
+              </p>
+            </div>
+            <div class="panel">
+              <div class="overline">Review Lens</div>
+              <ul class="list">
+                <li><span class="list-dot"></span><span>Liệu các surface hiện có đủ để giải thích cost spike mà không cần vào DB không?</span></li>
+                <li><span class="list-dot"></span><span>Request detail có giữ đủ context để reviewer nối từ AI call về audit result thật không?</span></li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="footer-bar">
+            <span>Signals are useful only if they can be followed back to a concrete workflow.</span>
+            <span class="footer-strong">Traceability is the real deliverable here.</span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="slide-shell">
+          <div class="topbar">
+            <div class="topline">
+              <span class="deck-pill">Pricing & Budget</span>
+              <span class="deck-kicker">Cost control without black boxes</span>
+            </div>
+            <span class="slide-count">04 / 06</span>
+          </div>
+
+          <div class="grid-2">
+            <div class="panel panel-focus">
+              <div class="overline">Pricing Catalog</div>
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Field</th>
+                    <th>Reason</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>provider</td>
+                    <td>Xác định vendor để tách logic định giá theo nguồn AI.</td>
+                  </tr>
+                  <tr>
+                    <td>mode</td>
+                    <td>Phân biệt cost profile giữa validation, deep audit hay cross-check.</td>
+                  </tr>
+                  <tr>
+                    <td>model</td>
+                    <td>Lookup key chính khi đổi token usage thành USD estimate.</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p class="muted-note" style="margin-top:0.75rem;">
+                Nếu model chưa có row trong pricing catalog, request vẫn được log
+                nhưng cost sẽ là `0` thay vì bị drop.
+              </p>
+            </div>
+
+            <div class="stack-md">
+              <div class="panel">
+                <div class="overline">Budget Behavior</div>
+                <ul class="list">
+                  <li><span class="list-dot"></span><span>Daily và monthly budget được cấu hình tách biệt, đủ cho hard-stop nếu cần.</span></li>
+                  <li><span class="list-dot"></span><span>Blocked requests phải hiển thị rõ để user biết đó là policy decision, không phải lỗi mơ hồ.</span></li>
+                  <li><span class="list-dot"></span><span>Raw payload retention mặc định off cho tới khi có security sign-off.</span></li>
+                </ul>
+              </div>
+
+              <div class="panel panel-muted">
+                <div class="overline">Control APIs</div>
+                <div class="chip-row">
+                  <span class="signal-pill">GET /ai/pricing</span>
+                  <span class="signal-pill">PUT /ai/pricing</span>
+                  <span class="signal-pill">GET /ai/budget</span>
+                  <span class="signal-pill">PUT /ai/budget</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="footer-bar">
+            <span>Good cost control is explicit policy, not implicit guesswork.</span>
+            <span class="footer-strong">Pricing and budget should be explainable at the UI level.</span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="slide-shell">
+          <div class="topbar">
+            <div class="topline">
+              <span class="deck-pill">AI Cache</span>
+              <span class="deck-kicker">Efficiency as an operator-controlled layer</span>
+            </div>
+            <span class="slide-count">05 / 06</span>
+          </div>
+
+          <div class="grid-3">
+            <div class="panel panel-focus">
+              <div class="overline">Policy Surface</div>
+              <h3 class="panel-title">Per-stage toggles</h3>
+              <p class="body-copy">
+                Operator có thể bật/tắt cache cho `validation`, `deep_audit`,
+                `cross_check` và chỉnh `retention_days` mà không đụng DB.
+              </p>
+            </div>
+            <div class="panel">
+              <div class="overline">Snapshot Signals</div>
+              <h3 class="panel-title">Measure real savings</h3>
+              <p class="body-copy">
+                `entries_count`, `last_hit_at`, hit rate, saved tokens và saved
+                cost cho biết cache đang giúp thật hay chỉ chiếm tài nguyên.
+              </p>
+            </div>
+            <div class="panel">
+              <div class="overline">Maintenance Flow</div>
+              <h3 class="panel-title">Clear with intent</h3>
+              <p class="body-copy">
+                Xóa cache không làm hỏng history đã lưu, nhưng sẽ buộc các request
+                AI sau đó tính lại từ đầu nên confirm phải thật rõ.
+              </p>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="panel">
+              <div class="overline">Cache APIs</div>
+              <div class="chip-row">
+                <span class="signal-pill">GET /api/ai/cache</span>
+                <span class="signal-pill">PUT /api/ai/cache</span>
+                <span class="signal-pill">DELETE /api/ai/cache</span>
+              </div>
+            </div>
+            <div class="panel panel-muted">
+              <div class="overline">Edge Notes</div>
+              <ul class="list">
+                <li><span class="list-dot"></span><span>`saved_cost_usd` phụ thuộc pricing catalog; thiếu price row thì metric có thể là 0.</span></li>
+                <li><span class="list-dot"></span><span>Cache value tăng lên khi prompt/input shape ổn định giữa các lượt audit.</span></li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="footer-bar">
+            <span>Cache becomes an operations feature only when it has controls, limits and proof of savings.</span>
+            <span class="footer-strong">This console exists to provide exactly that.</span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="slide-shell">
+          <div class="topbar">
+            <div class="topline">
+              <span class="deck-pill">Takeaways</span>
+              <span class="deck-kicker">Demo path and v1 limits</span>
+            </div>
+            <span class="slide-count">06 / 06</span>
+          </div>
+
+          <div class="stack-lg">
+            <div>
+              <div class="overline">Summary</div>
+              <h2 class="section-title">AI operations is now visible enough to review, challenge and tune</h2>
+            </div>
+
+            <div class="grid-2">
+              <div class="panel panel-focus">
+                <div class="overline">Suggested Demo</div>
+                <ul class="list">
+                  <li><span class="list-dot"></span><span>Mở AI Ops overview để nhìn spend, request totals, token load và blocked requests.</span></li>
+                  <li><span class="list-dot"></span><span>Drill vào 1 request cụ thể để xem metadata gắn lại với audit/history.</span></li>
+                  <li><span class="list-dot"></span><span>Chuyển qua AI Cache để chứng minh operator có thể đổi policy và maintenance flow ngay trên UI.</span></li>
+                </ul>
+              </div>
+
+              <div class="panel">
+                <div class="overline">Known v1 Limits</div>
+                <ul class="list">
+                  <li><span class="list-dot"></span><span>Không có backfill cho AI activity sinh ra trước khi telemetry rollout.</span></li>
+                  <li><span class="list-dot"></span><span>Pricing catalog vẫn là nguồn cost duy nhất; thiếu row thì cost = 0.</span></li>
+                  <li><span class="list-dot"></span><span>Raw payload retention tiếp tục default-off cho tới khi security sign-off.</span></li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="metric-band">
+              <div class="panel panel-focus">
+                <div class="overline">Visible</div>
+                <div class="hero-number">Spend and request behavior are inspectable</div>
+              </div>
+              <div class="panel">
+                <div class="overline">Controllable</div>
+                <div class="hero-number">Budget and cache policies live in UI</div>
+              </div>
+              <div class="panel">
+                <div class="overline">Honest</div>
+                <div class="hero-number">Limits are explicit, not hidden behind pretty charts</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="footer-bar">
+            <span>AI Ops / AI Cache · Updated 2026-04-23</span>
+            <span class="footer-strong">End of review pack</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true,
+      controls: true,
+      progress: true,
+      center: true,
+      transition: "slide",
+      backgroundTransition: "fade",
+      width: 1280,
+      height: 720,
+      margin: 0.035,
+      minScale: 0.2,
+      maxScale: 2
+    });
+  </script>
+</body>
+</html>

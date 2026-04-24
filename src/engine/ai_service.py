@@ -99,7 +99,7 @@ class AiService:
             "AI_BASE_URL", "https://parents-sail-gig-anti.trycloudflare.com/v1"
         )
         self.api_key = os.getenv("AI_API_KEY", "xxxxxxx")
-        self.model = os.getenv("AI_MODEL", "gpt-5.4")
+        self.model = os.getenv("AI_MODEL", "gpt-5.4-mini")
         self.client = AsyncOpenAI(
             base_url=self.base_url,
             api_key=self.api_key,
@@ -628,25 +628,20 @@ Trả về JSON:
         context_cache: Dict[str, str],
         telemetry: Optional[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
-        if not flagged_violations:
-            return []
-        messages = self._build_cross_check_messages(flagged_violations, context_cache)
-        validated_data = await self._call_llm_json(
-            messages[1]["content"],
-            messages[0]["content"],
-            ValidationResponse,
-            source=(telemetry or {}).get("source", "audit.cross_check"),
+        results = await self.resolve_flagged_issues(
+            flagged_violations,
+            context_cache,
             telemetry=telemetry,
         )
-        if not validated_data:
+        if not results:
             return []
 
         verified_violations = []
-        for result in validated_data.results:
-            idx = result.index
+        for idx, payload in sorted(results.items()):
             if 0 <= idx < len(flagged_violations):
+                result = ValidationResponse.model_validate({"results": [payload]}).results[0]
                 if not result.is_false_positive:
-                    bug = flagged_violations[idx]
+                    bug = dict(flagged_violations[idx])
                     bug["reason"] = (
                         f"{bug['reason']} [Cross-Checked: {result.explanation}]"
                     )
@@ -657,6 +652,28 @@ Trả về JSON:
                         f"{flagged_violations[idx]['reason']} nhờ đối chiếu bằng chứng."
                     )
         return verified_violations
+
+    async def resolve_flagged_issues(
+        self,
+        flagged_violations: List[Dict[str, Any]],
+        context_cache: Dict[str, str],
+        telemetry: Optional[Dict[str, Any]] = None,
+    ) -> Dict[int, Dict[str, Any]]:
+        if not flagged_violations:
+            return {}
+        messages = self._build_cross_check_messages(flagged_violations, context_cache)
+        validated_data = await self._call_llm_json(
+            messages[1]["content"],
+            messages[0]["content"],
+            ValidationResponse,
+            source=(telemetry or {}).get("source", "audit.cross_check"),
+            telemetry=telemetry,
+        )
+        return (
+            {result.index: result.model_dump() for result in validated_data.results}
+            if validated_data
+            else {}
+        )
 
     def parse_validation_content(self, content: str) -> ValidationResponse:
         return self._parse_response_model(content, ValidationResponse)

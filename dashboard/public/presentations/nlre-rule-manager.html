@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NLRE & Rule Manager - Control Plane Review</title>
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/presentations/review-pack.css" />
+
+  <style>
+    :root {
+      --canvas: #051519;
+      --panel: rgba(5, 24, 28, 0.9);
+      --panel-raised: rgba(255, 255, 255, 0.036);
+      --panel-muted: rgba(255, 255, 255, 0.02);
+      --text: #ecfffb;
+      --muted: #99c8c2;
+      --border: rgba(143, 255, 226, 0.14);
+      --soft-border: rgba(143, 255, 226, 0.08);
+      --accent: #10b981;
+      --accent-2: #22d3ee;
+      --accent-rgb: 16, 185, 129;
+      --accent2-rgb: 34, 211, 238;
+      --glow-a: rgba(16, 185, 129, 0.2);
+      --glow-b: rgba(34, 211, 238, 0.14);
+    }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+      <section>
+        <div class="slide-shell">
+          <div class="topbar">
+            <div class="topline">
+              <span class="deck-pill">Release Review Pack</span>
+              <span class="deck-kicker">Deck 02 · Rule Control Plane</span>
+            </div>
+            <span class="slide-count">01 / 06</span>
+          </div>
+
+          <div class="hero-grid">
+            <div class="stack-lg">
+              <span class="eyebrow">Control Plane Deck</span>
+              <h1 class="display-title title-gradient">NLRE & Rule Manager</h1>
+              <p class="lede">
+                Đây là lớp điều khiển rules của hệ thống: nơi baseline rules,
+                AI-only rules và custom rules hội tụ vào một audit contract chung.
+                Mục tiêu của deck là chứng minh khả năng tùy biến mà không đánh
+                đổi determinism hoặc khả năng rollback.
+              </p>
+
+              <div class="chip-row">
+                <span class="chip">Core Rules</span>
+                <span class="chip">AI-Only Rules</span>
+                <span class="chip">NLRE Compile</span>
+                <span class="chip">Rule Builder</span>
+                <span class="chip">Override Manager</span>
+              </div>
+
+              <div class="metric-band">
+                <div class="panel panel-focus">
+                  <div class="overline">Rule Families</div>
+                  <div class="hero-number">3</div>
+                  <div class="body-copy">core, AI-only và custom rules cùng đổ vào một scoring pipeline.</div>
+                </div>
+                <div class="panel">
+                  <div class="overline">Override Levels</div>
+                  <div class="hero-number">2</div>
+                  <div class="body-copy">Global baseline và Project delta, không trộn mơ hồ trong UI state.</div>
+                </div>
+                <div class="panel">
+                  <div class="overline">Safety Goal</div>
+                  <div class="hero-number">1</div>
+                  <div class="body-copy">authoring thuận tiện nhưng runtime phải vẫn giải thích được.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="stat-grid">
+              <div class="stat-card">
+                <div class="stat-value">Prompt to Rule</div>
+                <div class="stat-label">NLRE Promise</div>
+                <div class="stat-copy">Người dùng mô tả intent bằng tiếng Việt, AI compile thành regex, AST hoặc AI rule hợp lệ.</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">Visible Drift</div>
+                <div class="stat-label">Override Discipline</div>
+                <div class="stat-copy">Project nào lệch baseline ở đâu phải nhìn thấy ngay qua badge, diff và reset scopes.</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-value">Recoverable</div>
+                <div class="stat-label">Operational Bias</div>
+                <div class="stat-copy">Các action save, reset, bulk toggle đều cần đường lui rõ để tránh làm hỏng baseline.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="footer-bar">
+            <span>Rule control plane should feel flexible to users and deterministic to maintainers.</span>
+            <span class="footer-strong">That tension defines the design quality.</span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="slide-shell">
+          <div class="topbar">
+            <div class="topline">
+              <span class="deck-pill">Rule Sources</span>
+              <span class="deck-kicker">Three families, one audit contract</span>
+            </div>
+            <span class="slide-count">02 / 06</span>
+          </div>
+
+          <div class="grid-3">
+            <div class="panel panel-focus">
+              <div class="overline">Core Rules</div>
+              <h3 class="panel-title">System-maintained baseline</h3>
+              <p class="body-copy">
+                Regex + AST rules mặc định do hệ thống định nghĩa. Có thể tắt/bật
+                hoặc chỉnh penalty nhưng vẫn là mặt sàn chất lượng dùng chung.
+              </p>
+            </div>
+            <div class="panel">
+              <div class="overline">AI-Only Rules</div>
+              <h3 class="panel-title">Deep-audit-only reasoning</h3>
+              <p class="body-copy">
+                Những rule logic như `SILENT_DATA_CORRUPTION` hay
+                `INSECURE_RANDOM` chỉ AI mới suy luận được, không ép regex hay AST.
+              </p>
+            </div>
+            <div class="panel">
+              <div class="overline">NLRE Custom Rules</div>
+              <h3 class="panel-title">Natural language authoring</h3>
+              <p class="body-copy">
+                Prompt tiếng Việt được compile thành JSON rule. Thành công chỉ
+                được công nhận khi sandbox và save flow đi hết contract.
+              </p>
+            </div>
+          </div>
+
+          <div class="route-grid">
+            <div class="route-card">
+              <div class="route-number">01</div>
+              <div class="route-title">Author</div>
+              <div class="route-copy">Prompt hoặc template mô tả intent của rule.</div>
+            </div>
+            <div class="route-card">
+              <div class="route-number">02</div>
+              <div class="route-title">Compile</div>
+              <div class="route-copy">AI trả JSON cho regex / AST / AI rule.</div>
+            </div>
+            <div class="route-card">
+              <div class="route-number">03</div>
+              <div class="route-title">Sandbox</div>
+              <div class="route-copy">Run test theo 3-phase audit để kiểm tra signal thật.</div>
+            </div>
+            <div class="route-card">
+              <div class="route-number">04</div>
+              <div class="route-title">Merge</div>
+              <div class="route-copy">Custom rule mới phải nhập vào state cũ một cách an toàn.</div>
+            </div>
+            <div class="route-card">
+              <div class="route-number">05</div>
+              <div class="route-title">Score</div>
+              <div class="route-copy">Penalty và enable/disable logic chảy vào audit pipeline chung.</div>
+            </div>
+          </div>
+
+          <div class="footer-bar">
+            <span>Compilation alone is not value; safe integration is.</span>
+            <span class="footer-strong">Rule authoring only counts if runtime behavior stays interpretable.</span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="slide-shell">
+          <div class="topbar">
+            <div class="topline">
+              <span class="deck-pill">Override Model</span>
+              <span class="deck-kicker">Global baseline, project delta</span>
+            </div>
+            <span class="slide-count">03 / 06</span>
+          </div>
+
+          <div class="grid-2">
+            <div class="panel panel-focus stack-md">
+              <div>
+                <div class="overline">Effective State</div>
+                <h2 class="section-title">Override math must beat UI intuition</h2>
+              </div>
+              <div class="formula-box">mergedDisabled = (global.disabled U project.disabled) \ project.enabled</div>
+              <p class="body-copy">
+                Scope project có quyền bật lại rule bị Global disable. Điều này
+                không thể suy ra đáng tin chỉ từ nút toggle trên màn hình; nó
+                phải được định nghĩa bằng set operation rõ ràng.
+              </p>
+            </div>
+
+            <div class="stack-md">
+              <div class="panel">
+                <div class="overline">Stored Fields</div>
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Field</th>
+                      <th>Meaning</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>disabled_core_rules</td>
+                      <td>Danh sách rule bị tắt ở scope hiện tại.</td>
+                    </tr>
+                    <tr>
+                      <td>enabled_core_rules</td>
+                      <td>Chỉ meaningful ở project scope để override global disable.</td>
+                    </tr>
+                    <tr>
+                      <td>custom_weights</td>
+                      <td>Penalty override theo từng rule.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="panel panel-muted">
+                <div class="overline">Review Implication</div>
+                <p class="body-copy">
+                  KPI active count và Override Manager chỉ đúng khi stale rule IDs
+                  bị lọc trước. Nếu không, UI sẽ báo drift giả và làm sai quyết
+                  định của reviewer.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="footer-bar">
+            <span>The real source of truth is merged state, not whichever tab is currently open.</span>
+            <span class="footer-strong">That is why override logic belongs in data shape, not just UI.</span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="slide-shell">
+          <div class="topbar">
+            <div class="topline">
+              <span class="deck-pill">Builder Lifecycle</span>
+              <span class="deck-kicker">Compile, test, save and reset</span>
+            </div>
+            <span class="slide-count">04 / 06</span>
+          </div>
+
+          <div class="grid-2">
+            <div class="panel panel-focus">
+              <div class="overline">Primary APIs</div>
+              <div class="chip-row" style="margin-bottom:0.8rem;">
+                <span class="signal-pill">GET /api/rules</span>
+                <span class="signal-pill">POST /api/rules/compile</span>
+                <span class="signal-pill">POST /api/rules/save</span>
+                <span class="signal-pill">POST /api/rules/reset</span>
+              </div>
+              <ul class="list">
+                <li><span class="list-dot"></span><span>`compile` phải tách khỏi `save` để người dùng kiểm chứng signal trước khi chạm state thật.</span></li>
+                <li><span class="list-dot"></span><span>`save` cần merge compiled JSON mới với phần custom đang tồn tại, không overwrite mù.</span></li>
+                <li><span class="list-dot"></span><span>`reset` theo `target + level` tốt hơn việc xóa nguyên row vì cho phép rollback chính xác hơn.</span></li>
+              </ul>
+            </div>
+
+            <div class="stack-md">
+              <div class="panel">
+                <div class="overline">Builder Flow</div>
+                <div class="route-grid" style="grid-template-columns:repeat(5, minmax(0, 1fr));">
+                  <div class="route-card"><div class="route-number">01</div><div class="route-title">Prompt</div><div class="route-copy">Template hoặc mô tả VI.</div></div>
+                  <div class="route-card"><div class="route-number">02</div><div class="route-title">Compile</div><div class="route-copy">AI tạo JSON rule.</div></div>
+                  <div class="route-card"><div class="route-number">03</div><div class="route-title">Test</div><div class="route-copy">Sandbox xác nhận signal.</div></div>
+                  <div class="route-card"><div class="route-number">04</div><div class="route-title">Merge</div><div class="route-copy">Nhập vào state cũ.</div></div>
+                  <div class="route-card"><div class="route-number">05</div><div class="route-title">Persist</div><div class="route-copy">Lưu đúng scope.</div></div>
+                </div>
+              </div>
+
+              <div class="panel panel-muted">
+                <div class="overline">UX Principle</div>
+                <p class="body-copy">
+                  Authoring phải cho cảm giác nhanh và thông minh, nhưng mọi hành
+                  động write xuống DB đều phải có semantics rõ: đang lưu cái gì,
+                  ở scope nào, và reset mức nào.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="footer-bar">
+            <span>Good rule tooling feels creative on top and conservative underneath.</span>
+            <span class="footer-strong">That split is intentional, not accidental.</span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="slide-shell">
+          <div class="topbar">
+            <div class="topline">
+              <span class="deck-pill">Guardrails</span>
+              <span class="deck-kicker">The fixes that make the system trustworthy</span>
+            </div>
+            <span class="slide-count">05 / 06</span>
+          </div>
+
+          <div class="grid-2">
+            <div class="panel panel-focus">
+              <div class="overline">Recent Correctness Fixes</div>
+              <ul class="list">
+                <li><span class="list-dot"></span><span>Active KPI chỉ đếm rule thật sự còn tồn tại trong `rules.json`, tránh stale IDs làm lệch tổng.</span></li>
+                <li><span class="list-dot"></span><span>`fetchRules()` đọc đúng `project_rules.custom_weights`, ngăn save vô tình xóa penalty overrides cũ.</span></li>
+                <li><span class="list-dot"></span><span>`handleSave()` merge custom rule cũ và mới thay vì overwrite `compiled_json` toàn bộ.</span></li>
+                <li><span class="list-dot"></span><span>Tab Custom render đủ `regex_rules`, `ast_rules`, `ai_rules`, không còn trạng thái lưu thành công nhưng UI báo rỗng.</span></li>
+              </ul>
+            </div>
+
+            <div class="stack-md">
+              <div class="panel">
+                <div class="overline">Reset Strategy</div>
+                <ul class="list">
+                  <li><span class="list-dot"></span><span>Global và Project có level reset khác nhau để tránh “nuclear option” khi không cần.</span></li>
+                  <li><span class="list-dot"></span><span>Double-confirm + timeout làm giảm khả năng thao tác nhầm ở những khu vực nguy hiểm.</span></li>
+                  <li><span class="list-dot"></span><span>Override Manager hiển thị diff thực sự, không chỉ liệt kê raw DB fields.</span></li>
+                </ul>
+              </div>
+
+              <div class="panel panel-muted">
+                <div class="overline">Why This Matters</div>
+                <p class="body-copy">
+                  Với control plane, sai sót nhỏ ở merge hoặc reset logic không
+                  chỉ là bug UI; nó phá vỡ niềm tin vào audit result và khiến team
+                  ngại tùy biến rule trong thực tế.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="footer-bar">
+            <span>Flexibility only becomes an asset after safety nets exist.</span>
+            <span class="footer-strong">Without them, the system becomes impossible to trust.</span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="slide-shell">
+          <div class="topbar">
+            <div class="topline">
+              <span class="deck-pill">Takeaways</span>
+              <span class="deck-kicker">Control plane maturity</span>
+            </div>
+            <span class="slide-count">06 / 06</span>
+          </div>
+
+          <div class="stack-lg">
+            <div>
+              <div class="overline">Summary</div>
+              <h2 class="section-title">The rule system is now configurable without becoming opaque</h2>
+            </div>
+
+            <div class="metric-band">
+              <div class="panel panel-focus">
+                <div class="overline">Composable</div>
+                <div class="hero-number">Multiple rule sources, one contract</div>
+                <div class="body-copy">Core, AI-only và custom rules đều có đường đi rõ vào pipeline.</div>
+              </div>
+              <div class="panel">
+                <div class="overline">Auditable</div>
+                <div class="hero-number">Merged state is visible</div>
+                <div class="body-copy">Drift so với baseline được nhìn thấy thay vì chôn trong DB.</div>
+              </div>
+              <div class="panel">
+                <div class="overline">Recoverable</div>
+                <div class="hero-number">Reset has granularity</div>
+                <div class="body-copy">Save và reset đều có semantics đủ rõ để rollback khi cần.</div>
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="panel">
+                <div class="overline">Reviewer Prompt</div>
+                <p class="body-copy">
+                  Câu hỏi nên chốt ở deck này không phải “AI compile có ngầu không”
+                  mà là “sau khi compile xong, hệ thống có còn deterministic và
+                  recoverable không”.
+                </p>
+              </div>
+              <div class="panel panel-muted">
+                <div class="overline">Next Deck</div>
+                <p class="body-copy">
+                  Deck cuối cùng chuyển sang `AI Ops & Cache` để nhìn lớp vận hành:
+                  telemetry, pricing, budget, request explorer và cache console.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="footer-bar">
+            <span>NLRE / Rule Manager · Updated 2026-04-23</span>
+            <span class="footer-strong">Deck 03: AI Ops & Cache</span>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+  <script>
+    Reveal.initialize({
+      hash: true,
+      controls: true,
+      progress: true,
+      center: true,
+      transition: "slide",
+      backgroundTransition: "fade",
+      width: 1280,
+      height: 720,
+      margin: 0.035,
+      minScale: 0.2,
+      maxScale: 2
+    });
+  </script>
+</body>
+</html>
