@@ -19,6 +19,7 @@ import {
   Star,
   TrendingUp,
   AlertCircle,
+  Package,
   Search,
   X,
 } from "lucide-react";
@@ -29,6 +30,10 @@ import Pagination from "../ui/Pagination";
 import TopProgressBar from "../ui/TopProgressBar";
 import { usePaginationState } from "../../hooks/usePaginationState";
 import { getRatingColor, getScoreColor, getScoreDotClass, getScoreGradient } from "../../utils/scoreHelpers";
+import {
+  getDependencyHealthMeta,
+  getDependencyHealthSummaryLine,
+} from "../../utils/dependencyHealthHelpers";
 import { getRegressionMeta, getRegressionSummaryLine } from "../../utils/regressionHelpers";
 import { RankBadge } from "../ui/RankBadge";
 
@@ -502,6 +507,14 @@ function ProjectRow({ project, rank, scanState, onSelect }) {
     project.regression_summary,
     project.regression_status,
   );
+  const dependencyMeta = getDependencyHealthMeta(
+    project.dependency_health_status,
+    project.dependency_health_summary,
+  );
+  const dependencyLine = getDependencyHealthSummaryLine(
+    project.dependency_health_summary,
+    project.dependency_health_status,
+  );
 
   return (
     <motion.tr
@@ -642,6 +655,23 @@ function ProjectRow({ project, rank, scanState, onSelect }) {
         </div>
       </td>
 
+      {/* Dependency Health */}
+      <td className="px-4 py-4">
+        <div className="flex flex-col items-start gap-1">
+          <span
+            className={`inline-flex px-2.5 py-1 rounded-full border text-[11px] font-bold ${dependencyMeta.classes}`}
+          >
+            {dependencyMeta.label}
+          </span>
+          <span
+            className="text-[11px] text-slate-500 max-w-[240px] xl:max-w-[320px] truncate"
+            title={dependencyLine}
+          >
+            {dependencyLine}
+          </span>
+        </div>
+      </td>
+
       {/* Arrow */}
       <td className="px-4 py-4">
         <div className="opacity-0 group-hover:opacity-100 transition-opacity text-pink-500">
@@ -744,6 +774,9 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
   const regressingRepos = projects.filter(
     (project) => project.regression_status === "warning",
   ).length;
+  const dependencyWarningRepos = projects.filter(
+    (project) => project.dependency_health_status === "warning",
+  ).length;
   const topProject =
     scanned.length > 0
       ? [...scanned].sort((a, b) => b.latest_score - a.latest_score)[0]
@@ -823,7 +856,7 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="mt-6 grid grid-cols-2 md:grid-cols-5 gap-4"
+              className="mt-6 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4"
             >
               {[
                 {
@@ -849,6 +882,14 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
                   accent:
                     "border-rose-500/25 shadow-[0_0_15px_-5px_rgba(244,63,94,0.15)]",
                   accentLine: "kpi-accent-rose",
+                },
+                {
+                  label: "Dependency warnings",
+                  value: dependencyWarningRepos,
+                  icon: <Package size={16} className="text-cyan-600" />,
+                  accent:
+                    "border-cyan-500/25 shadow-[0_0_15px_-5px_rgba(6,182,212,0.15)]",
+                  accentLine: "kpi-accent-cyan",
                 },
                 {
                   label: "Top project",
@@ -1004,6 +1045,11 @@ const ProjectScoresView = ({ cn, onSelectProject }) => {
                     <th className="px-4 py-3 text-left">
                       <span className="text-[10px] uppercase tracking-widest font-bold text-slate-500">
                         Regression Gate
+                      </span>
+                    </th>
+                    <th className="px-4 py-3 text-left">
+                      <span className="text-[10px] uppercase tracking-widest font-bold text-slate-500">
+                        Dependencies
                       </span>
                     </th>
                     <th className="px-4 py-3 w-8" />

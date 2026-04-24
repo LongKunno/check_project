@@ -12,6 +12,8 @@ import logging
 from datetime import datetime, timedelta, timezone
 
 from src.config import (
+    DEPENDENCY_EOL_WARNING_DAYS,
+    DEPENDENCY_HEALTH_ENABLED,
     REGRESSION_GATE_ENABLED,
     REGRESSION_NEW_CRITICAL_THRESHOLD,
     REGRESSION_PILLAR_DROP_THRESHOLD,
@@ -41,6 +43,7 @@ class AuditDatabase:
     _memory_repo_mode_logged = False
     PILLAR_KEYS = ("Performance", "Maintainability", "Reliability", "Security")
     REGRESSION_STATUSES = {"pass", "warning", "unavailable"}
+    DEPENDENCY_HEALTH_STATUSES = {"pass", "warning", "unavailable"}
 
     @staticmethod
     def _log_memory_repo_mode():
@@ -214,6 +217,268 @@ class AuditDatabase:
                 maximum=100000,
             ),
         }
+
+    @staticmethod
+    def _empty_dependency_health_summary():
+        return {
+            "manifests_scanned": [],
+            "dependencies_total": 0,
+            "major_lag_count": 0,
+            "minor_patch_lag_count": 0,
+            "critical_advisories": 0,
+            "high_advisories": 0,
+            "deprecated_count": 0,
+            "near_eol_count": 0,
+            "eol_count": 0,
+            "unknown_eol_count": 0,
+            "release_age_warning_count": 0,
+            "mutable_base_image_count": 0,
+            "hygiene_warning_count": 0,
+            "triggered_signals": [],
+        }
+
+    @staticmethod
+    def get_dependency_health_settings():
+        eol_warning_days = AuditDatabase._coerce_int(
+            AuditDatabase.get_config(
+                "dependency_eol_warning_days",
+                AuditDatabase.get_config(
+                    "dependency_warning_release_age_days",
+                    DEPENDENCY_EOL_WARNING_DAYS,
+                ),
+            ),
+            default=DEPENDENCY_EOL_WARNING_DAYS,
+            minimum=1,
+            maximum=3650,
+        )
+        return {
+            "enabled": AuditDatabase._coerce_bool(
+                AuditDatabase.get_config(
+                    "dependency_health_enabled",
+                    str(DEPENDENCY_HEALTH_ENABLED).lower(),
+                ),
+                default=DEPENDENCY_HEALTH_ENABLED,
+            ),
+            "eol_warning_days": eol_warning_days,
+        }
+
+    @staticmethod
+    def _dependency_warning_signals():
+        return {
+            "critical_advisory",
+            "high_advisory",
+            "deprecated",
+            "near_eol",
+            "eol",
+            "mutable_base_image",
+            "dynamic_base_image",
+        }
+
+    @staticmethod
+    def _dependency_hygiene_signals():
+        return {
+            "missing_lock_resolution",
+            "missing_lockfile",
+            "range_spec",
+            "unpinned_dependency",
+        }
+
+    @staticmethod
+    def _normalize_dependency_health_item(item):
+        if not isinstance(item, dict):
+            return None
+
+        normalized = dict(item)
+        ecosystem = str(normalized.get("ecosystem") or "").strip().lower()
+        advisory_counts = normalized.get("advisory_counts")
+        if not isinstance(advisory_counts, dict):
+            advisory_counts = {}
+        normalized["advisory_counts"] = {
+            "critical": AuditDatabase._coerce_int(
+                advisory_counts.get("critical"), default=0
+            ),
+            "high": AuditDatabase._coerce_int(
+                advisory_counts.get("high"), default=0
+            ),
+        }
+
+        lifecycle_status = str(normalized.get("lifecycle_status") or "").strip().lower()
+        if lifecycle_status not in {
+            "active",
+            "deprecated",
+            "near_eol",
+            "eol",
+            "unknown",
+            "not_applicable",
+        }:
+            lifecycle_status = "not_applicable" if ecosystem == "docker" else "unknown"
+        normalized["lifecycle_status"] = lifecycle_status
+
+        raw_signals = [
+            str(signal).strip().lower()
+            for signal in (normalized.get("signals") or [])
+            if str(signal).strip()
+        ]
+        issue_types = [
+            str(signal).strip().lower()
+            for signal in (normalized.get("issue_types") or [])
+            if str(signal).strip()
+        ]
+        issue_types.extend(
+            signal
+            for signal in raw_signals
+            if signal in AuditDatabase._dependency_warning_signals()
+        )
+        if normalized["advisory_counts"]["critical"] > 0:
+            issue_types.append("critical_advisory")
+        if normalized["advisory_counts"]["high"] > 0:
+            issue_types.append("high_advisory")
+        if lifecycle_status == "deprecated":
+            issue_types.append("deprecated")
+        elif lifecycle_status == "near_eol":
+            issue_types.append("near_eol")
+        elif lifecycle_status == "eol":
+            issue_types.append("eol")
+
+        issue_types = sorted(set(issue_types))
+        signals = sorted(
+            set(
+                signal
+                for signal in raw_signals + issue_types
+                if signal in AuditDatabase._dependency_warning_signals()
+                or signal in AuditDatabase._dependency_hygiene_signals()
+            )
+        )
+
+        if issue_types:
+            status = "warning"
+        elif any(signal in AuditDatabase._dependency_hygiene_signals() for signal in signals):
+            status = "hygiene"
+        elif normalized.get("resolved_version") or normalized.get("current_spec"):
+            status = "pass"
+        else:
+            status = str(normalized.get("status") or "unavailable")
+
+        normalized["issue_types"] = issue_types
+        normalized["signals"] = signals
+        normalized["status"] = status
+        normalized["is_runtime_dependency"] = bool(
+            normalized.get("is_runtime_dependency", ecosystem != "")
+        )
+        normalized.setdefault("eol_date", normalized.get("eol_date"))
+        normalized.setdefault("eol_source", normalized.get("eol_source"))
+        normalized.setdefault("lifecycle_detail", normalized.get("lifecycle_detail"))
+        normalized.setdefault("latest_version", normalized.get("latest_version"))
+        normalized.setdefault("resolved_version", normalized.get("resolved_version"))
+        return normalized
+
+    @staticmethod
+    def _summarize_dependency_health_items(items, raw_summary=None):
+        summary = {
+            **AuditDatabase._empty_dependency_health_summary(),
+            **(raw_summary or {}),
+        }
+        summary["dependencies_total"] = len(items)
+        summary["critical_advisories"] = 0
+        summary["high_advisories"] = 0
+        summary["deprecated_count"] = 0
+        summary["near_eol_count"] = 0
+        summary["eol_count"] = 0
+        summary["unknown_eol_count"] = 0
+        summary["mutable_base_image_count"] = 0
+        summary["hygiene_warning_count"] = 0
+        summary["triggered_signals"] = []
+
+        triggered_signals = set()
+        for item in items:
+            advisory_counts = item.get("advisory_counts") or {}
+            summary["critical_advisories"] += AuditDatabase._coerce_int(
+                advisory_counts.get("critical"), default=0
+            )
+            summary["high_advisories"] += AuditDatabase._coerce_int(
+                advisory_counts.get("high"), default=0
+            )
+            lifecycle_status = item.get("lifecycle_status")
+            if lifecycle_status == "deprecated":
+                summary["deprecated_count"] += 1
+            elif lifecycle_status == "near_eol":
+                summary["near_eol_count"] += 1
+            elif lifecycle_status == "eol":
+                summary["eol_count"] += 1
+            elif lifecycle_status == "unknown" and item.get("ecosystem") in {"python", "node"}:
+                summary["unknown_eol_count"] += 1
+
+            if any(
+                signal in {"mutable_base_image", "dynamic_base_image"}
+                for signal in (item.get("issue_types") or [])
+            ):
+                summary["mutable_base_image_count"] += 1
+            if item.get("status") == "hygiene":
+                summary["hygiene_warning_count"] += 1
+            if item.get("status") == "warning":
+                triggered_signals.update(item.get("issue_types") or [])
+
+        summary["triggered_signals"] = sorted(triggered_signals)
+        return summary
+
+    @staticmethod
+    def _resolve_dependency_health_status(summary, items=None):
+        if items:
+            if any(item.get("status") == "warning" for item in items):
+                return "warning"
+            if any(item.get("status") == "pass" for item in items):
+                return "pass"
+            return "unavailable"
+
+        warning_count = sum(
+            AuditDatabase._coerce_int(summary.get(key), default=0)
+            for key in (
+                "critical_advisories",
+                "high_advisories",
+                "deprecated_count",
+                "near_eol_count",
+                "eol_count",
+                "mutable_base_image_count",
+            )
+        )
+        if warning_count > 0:
+            return "warning"
+
+        total = AuditDatabase._coerce_int(summary.get("dependencies_total"), default=0)
+        hygiene = AuditDatabase._coerce_int(summary.get("hygiene_warning_count"), default=0)
+        if total > 0 and hygiene < total:
+            return "pass"
+        return "unavailable"
+
+    @staticmethod
+    def _normalize_dependency_health_metadata_payload(payload):
+        if not isinstance(payload, dict):
+            return None
+        normalized = dict(payload)
+        raw_items = normalized.get("items") or []
+        items = [
+            item
+            for item in (
+                AuditDatabase._normalize_dependency_health_item(raw_item)
+                for raw_item in raw_items
+            )
+            if item is not None
+        ]
+        summary = AuditDatabase._summarize_dependency_health_items(
+            items,
+            raw_summary=AuditDatabase._parse_json_blob(
+                normalized.get("summary"), default=None
+            )
+            or normalized.get("summary")
+            or {},
+        )
+        normalized["items"] = items
+        normalized["summary"] = summary
+        normalized["status"] = AuditDatabase._resolve_dependency_health_status(summary, items)
+        normalized.setdefault("manifests", normalized.get("manifests") or [])
+        normalized.setdefault("lookup_stats", normalized.get("lookup_stats") or {})
+        normalized.setdefault("note", normalized.get("note") or "")
+        return normalized
 
     @staticmethod
     def _normalize_violation_reason_for_signature(reason):
@@ -409,6 +674,26 @@ class AuditDatabase:
         full_json["metadata"] = metadata
 
     @staticmethod
+    def _attach_dependency_health_metadata(
+        full_json, dependency_health_status, dependency_health_summary
+    ):
+        if not isinstance(full_json, dict):
+            return
+        metadata = dict(full_json.get("metadata") or {})
+        existing = metadata.get("dependency_health")
+        if isinstance(existing, dict):
+            dependency_payload = dict(existing)
+        else:
+            dependency_payload = {}
+        dependency_payload["status"] = dependency_health_status
+        dependency_payload["summary"] = {
+            **AuditDatabase._empty_dependency_health_summary(),
+            **(dependency_health_summary or {}),
+        }
+        metadata["dependency_health"] = dependency_payload
+        full_json["metadata"] = metadata
+
+    @staticmethod
     def _load_previous_audit_row(conn, target, before_timestamp=None, before_id=None):
         cursor = conn.cursor(cursor_factory=RealDictCursor)
         try:
@@ -418,7 +703,8 @@ class AuditDatabase:
                     SELECT
                         id, timestamp, target, score, rating, total_loc,
                         violations_count, pillar_scores, full_json,
-                        baseline_audit_id, regression_status, regression_summary, scan_mode
+                        baseline_audit_id, regression_status, regression_summary,
+                        dependency_health_status, dependency_health_summary, scan_mode
                     FROM audit_history
                     WHERE target = %s
                       AND (
@@ -436,7 +722,8 @@ class AuditDatabase:
                     SELECT
                         id, timestamp, target, score, rating, total_loc,
                         violations_count, pillar_scores, full_json,
-                        baseline_audit_id, regression_status, regression_summary, scan_mode
+                        baseline_audit_id, regression_status, regression_summary,
+                        dependency_health_status, dependency_health_summary, scan_mode
                     FROM audit_history
                     WHERE target = %s
                     ORDER BY timestamp DESC, id DESC
@@ -461,6 +748,9 @@ class AuditDatabase:
         )
         parsed["regression_summary"] = AuditDatabase._parse_json_blob(
             parsed.get("regression_summary"), default=None
+        )
+        parsed["dependency_health_summary"] = AuditDatabase._parse_json_blob(
+            parsed.get("dependency_health_summary"), default=None
         )
         return parsed
 
@@ -519,6 +809,42 @@ class AuditDatabase:
         return data
 
     @staticmethod
+    def _apply_dependency_health_payload(data, full_json=None):
+        summary = AuditDatabase._parse_json_blob(
+            data.get("dependency_health_summary"), default=None
+        )
+        dependency_status = data.get("dependency_health_status")
+        dependency_payload = None
+
+        if isinstance(full_json, dict):
+            metadata = dict(full_json.get("metadata") or {})
+            dependency_payload = AuditDatabase._parse_json_blob(
+                metadata.get("dependency_health"),
+                default=None,
+            )
+            dependency_payload = AuditDatabase._normalize_dependency_health_metadata_payload(
+                dependency_payload
+            )
+            if dependency_payload is not None:
+                metadata["dependency_health"] = dependency_payload
+                full_json["metadata"] = metadata
+                summary = dependency_payload.get("summary") or summary
+                dependency_status = dependency_payload.get("status") or dependency_status
+
+        summary = {
+            **AuditDatabase._empty_dependency_health_summary(),
+            **(summary or {}),
+        }
+        dependency_status = AuditDatabase._resolve_dependency_health_status(
+            summary,
+            (dependency_payload or {}).get("items") or [],
+        )
+
+        data["dependency_health_status"] = dependency_status
+        data["dependency_health_summary"] = summary
+        return data
+
+    @staticmethod
     def _parse_history_row(row, include_full_json=False, fallback_baseline=None, settings=None):
         if not row:
             return None
@@ -540,6 +866,10 @@ class AuditDatabase:
             full_json=full_json,
             fallback_baseline=fallback_baseline,
             settings=settings,
+        )
+        data = AuditDatabase._apply_dependency_health_payload(
+            data,
+            full_json=full_json,
         )
 
         if include_full_json:
@@ -614,7 +944,9 @@ class AuditDatabase:
                     scan_mode TEXT DEFAULT 'full_ai',
                     baseline_audit_id INTEGER,
                     regression_status TEXT DEFAULT 'unavailable',
-                    regression_summary TEXT DEFAULT '{}'
+                    regression_summary TEXT DEFAULT '{}',
+                    dependency_health_status TEXT DEFAULT 'unavailable',
+                    dependency_health_summary TEXT DEFAULT '{}'
                 )
             """)
             cursor.execute(
@@ -660,6 +992,14 @@ class AuditDatabase:
             if "regression_summary" not in columns_history:
                 cursor.execute(
                     "ALTER TABLE audit_history ADD COLUMN regression_summary TEXT DEFAULT '{}'"
+                )
+            if "dependency_health_status" not in columns_history:
+                cursor.execute(
+                    "ALTER TABLE audit_history ADD COLUMN dependency_health_status TEXT DEFAULT 'unavailable'"
+                )
+            if "dependency_health_summary" not in columns_history:
+                cursor.execute(
+                    "ALTER TABLE audit_history ADD COLUMN dependency_health_summary TEXT DEFAULT '{}'"
                 )
 
             cursor.execute("""
@@ -1165,10 +1505,39 @@ class AuditDatabase:
             baseline_audit_id = regression_snapshot["baseline_audit_id"]
             regression_status = regression_snapshot["regression_status"]
             regression_summary = regression_snapshot["regression_summary"]
+            dependency_health_status = "unavailable"
+            dependency_health_summary = AuditDatabase._empty_dependency_health_summary()
 
             if isinstance(full_json, dict):
                 AuditDatabase._attach_regression_metadata(
                     full_json, regression_status, regression_summary
+                )
+                dependency_payload = AuditDatabase._parse_json_blob(
+                    ((full_json.get("metadata") or {}).get("dependency_health")),
+                    default=None,
+                ) or {}
+                dependency_health_status = str(
+                    dependency_payload.get("status") or dependency_health_status
+                )
+                if (
+                    dependency_health_status
+                    not in AuditDatabase.DEPENDENCY_HEALTH_STATUSES
+                ):
+                    dependency_health_status = "unavailable"
+                dependency_health_summary = {
+                    **AuditDatabase._empty_dependency_health_summary(),
+                    **(
+                        AuditDatabase._parse_json_blob(
+                            dependency_payload.get("summary"), default=None
+                        )
+                        or full_json.get("dependency_health_summary")
+                        or {}
+                    ),
+                }
+                AuditDatabase._attach_dependency_health_metadata(
+                    full_json,
+                    dependency_health_status,
+                    dependency_health_summary,
                 )
                 metadata = dict(full_json.get("metadata") or {})
                 metadata["audit_id"] = None
@@ -1180,9 +1549,10 @@ class AuditDatabase:
                 INSERT INTO audit_history (
                     target, score, rating, total_loc, violations_count,
                     pillar_scores, full_json, scan_mode, baseline_audit_id,
-                    regression_status, regression_summary
+                    regression_status, regression_summary,
+                    dependency_health_status, dependency_health_summary
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
             """,
                 (
@@ -1197,6 +1567,8 @@ class AuditDatabase:
                     baseline_audit_id,
                     regression_status,
                     json.dumps(regression_summary),
+                    dependency_health_status,
+                    json.dumps(dependency_health_summary),
                 ),
             )
             audit_id = cursor.fetchone()[0]
@@ -1257,7 +1629,8 @@ class AuditDatabase:
                 SELECT
                     id, timestamp, target, score, rating, total_loc,
                     violations_count, pillar_scores, full_json, scan_mode,
-                    baseline_audit_id, regression_status, regression_summary
+                    baseline_audit_id, regression_status, regression_summary,
+                    dependency_health_status, dependency_health_summary
                 FROM audit_history
                 WHERE target = %s
                 ORDER BY timestamp DESC, id DESC
@@ -1270,7 +1643,8 @@ class AuditDatabase:
                 SELECT
                     id, timestamp, target, score, rating, total_loc,
                     violations_count, pillar_scores, full_json, scan_mode,
-                    baseline_audit_id, regression_status, regression_summary
+                    baseline_audit_id, regression_status, regression_summary,
+                    dependency_health_status, dependency_health_summary
                 FROM audit_history
                 ORDER BY timestamp DESC, id DESC
                 LIMIT 50
@@ -1320,7 +1694,8 @@ class AuditDatabase:
         columns = (
             "id, timestamp, target, score, rating, total_loc, violations_count, "
             "pillar_scores, scan_mode, baseline_audit_id, regression_status, "
-            "regression_summary, full_json"
+            "regression_summary, dependency_health_status, "
+            "dependency_health_summary, full_json"
         )
         regression_settings = AuditDatabase.get_regression_settings()
 
@@ -1369,7 +1744,8 @@ class AuditDatabase:
             SELECT
                 id, timestamp, target, score, rating, total_loc,
                 violations_count, pillar_scores, full_json, scan_mode,
-                baseline_audit_id, regression_status, regression_summary
+                baseline_audit_id, regression_status, regression_summary,
+                dependency_health_status, dependency_health_summary
             FROM audit_history
             WHERE id = %s
             """,
@@ -1451,7 +1827,8 @@ class AuditDatabase:
                 SELECT
                     id, timestamp, target, score, rating, total_loc,
                     violations_count, pillar_scores, full_json, scan_mode,
-                    baseline_audit_id, regression_status, regression_summary
+                    baseline_audit_id, regression_status, regression_summary,
+                    dependency_health_status, dependency_health_summary
                 FROM audit_history
                 WHERE target = %s
                 ORDER BY timestamp ASC, id ASC
@@ -1561,7 +1938,8 @@ class AuditDatabase:
                 SELECT
                     id, timestamp, target, score, rating, total_loc,
                     violations_count, pillar_scores, full_json, scan_mode,
-                    baseline_audit_id, regression_status, regression_summary
+                    baseline_audit_id, regression_status, regression_summary,
+                    dependency_health_status, dependency_health_summary
                 FROM audit_history
                 WHERE timestamp >= %s
                 ORDER BY timestamp ASC, id ASC
@@ -1682,6 +2060,188 @@ class AuditDatabase:
             "latest_portfolio_pillars": latest_portfolio_pillars,
             "top_regressing_repos": top_regressing_repos[:5],
         }
+
+    @staticmethod
+    def _empty_dependency_health_overview():
+        return {
+            "settings": AuditDatabase.get_dependency_health_settings(),
+            "summary": {
+                "configured_repos": 0,
+                "scanned_repos": 0,
+                "warning_repos": 0,
+                "pass_repos": 0,
+                "unavailable_repos": 0,
+                **AuditDatabase._empty_dependency_health_summary(),
+            },
+            "repositories": [],
+        }
+
+    @staticmethod
+    def _empty_dependency_health_repository(target):
+        return {
+            "target": target,
+            "repo_id": None,
+            "repo_name": None,
+            "settings": AuditDatabase.get_dependency_health_settings(),
+            "latest_audit": None,
+            "dependency_health": {
+                "status": "unavailable",
+                "summary": AuditDatabase._empty_dependency_health_summary(),
+                "manifests": [],
+                "items": [],
+            },
+            "recent_audits": [],
+        }
+
+    @staticmethod
+    def get_dependency_health_overview():
+        repos = AuditDatabase.get_all_repositories(include_credentials=False)
+        payload = AuditDatabase._empty_dependency_health_overview()
+        payload["summary"]["configured_repos"] = len(repos)
+        if not repos:
+            return payload
+
+        latest_by_target = AuditDatabase.get_latest_audits_for_targets(
+            [repo.get("url", "") for repo in repos]
+        )
+        repo_rows = []
+        for repo in repos:
+            latest = latest_by_target.get(repo.get("url"))
+            status = (
+                latest.get("dependency_health_status")
+                if latest
+                else "unavailable"
+            )
+            summary = (
+                latest.get("dependency_health_summary")
+                if latest
+                else AuditDatabase._empty_dependency_health_summary()
+            )
+            repo_row = {
+                "id": repo.get("id"),
+                "name": repo.get("name"),
+                "url": repo.get("url"),
+                "latest_timestamp": latest.get("timestamp") if latest else None,
+                "latest_score": latest.get("score") if latest else None,
+                "latest_rating": latest.get("rating") if latest else None,
+                "dependency_health_status": status,
+                "dependency_health_summary": summary,
+                "audit_id": latest.get("id") if latest else None,
+            }
+            repo_rows.append(repo_row)
+            if latest:
+                payload["summary"]["scanned_repos"] += 1
+            if status == "warning":
+                payload["summary"]["warning_repos"] += 1
+            elif status == "pass":
+                payload["summary"]["pass_repos"] += 1
+            else:
+                payload["summary"]["unavailable_repos"] += 1
+            for key in AuditDatabase._empty_dependency_health_summary():
+                if key == "manifests_scanned":
+                    continue
+                if key == "triggered_signals":
+                    continue
+                payload["summary"][key] += AuditDatabase._coerce_int(
+                    summary.get(key),
+                    default=0,
+                )
+            payload["summary"]["manifests_scanned"].extend(
+                summary.get("manifests_scanned") or []
+            )
+            payload["summary"]["triggered_signals"].extend(
+                summary.get("triggered_signals") or []
+            )
+
+        payload["summary"]["manifests_scanned"] = sorted(
+            set(payload["summary"]["manifests_scanned"])
+        )
+        payload["summary"]["triggered_signals"] = sorted(
+            set(payload["summary"]["triggered_signals"])
+        )
+        payload["repositories"] = sorted(
+            repo_rows,
+            key=lambda row: (
+                0
+                if row["dependency_health_status"] == "warning"
+                else 1
+                if row["dependency_health_status"] == "pass"
+                else 2,
+                str(row.get("name") or "").lower(),
+            ),
+        )
+        return payload
+
+    @staticmethod
+    def get_repository_dependency_health(target):
+        target = str(target or "").strip()
+        payload = AuditDatabase._empty_dependency_health_repository(target)
+        if not target:
+            return payload
+
+        repo = next(
+            (
+                item
+                for item in AuditDatabase.get_all_repositories(include_credentials=False)
+                if item.get("url") == target
+            ),
+            None,
+        )
+        if repo:
+            payload["repo_id"] = repo.get("id")
+            payload["repo_name"] = repo.get("name")
+
+        latest = AuditDatabase.get_latest_audits_for_targets(
+            [target],
+            include_full_json=True,
+        ).get(target)
+        if latest:
+            full_json = latest.get("full_json") or {}
+            dependency_payload = AuditDatabase._parse_json_blob(
+                ((full_json.get("metadata") or {}).get("dependency_health")),
+                default=None,
+            ) or {}
+            payload["latest_audit"] = {
+                "id": latest.get("id"),
+                "timestamp": latest.get("timestamp"),
+                "score": latest.get("score"),
+                "rating": latest.get("rating"),
+                "dependency_health_status": latest.get("dependency_health_status"),
+                "dependency_health_summary": latest.get("dependency_health_summary"),
+            }
+            payload["dependency_health"] = {
+                "status": latest.get("dependency_health_status"),
+                "summary": {
+                    **AuditDatabase._empty_dependency_health_summary(),
+                    **(
+                        AuditDatabase._parse_json_blob(
+                            dependency_payload.get("summary"), default=None
+                        )
+                        or latest.get("dependency_health_summary")
+                        or {}
+                    ),
+                },
+                "manifests": dependency_payload.get("manifests") or [],
+                "items": dependency_payload.get("items") or [],
+                "generated_at": dependency_payload.get("generated_at"),
+                "enabled": dependency_payload.get("enabled"),
+                "lookup_stats": dependency_payload.get("lookup_stats") or {},
+                "note": dependency_payload.get("note") or "",
+            }
+
+        history_rows = AuditDatabase.get_history(target)
+        payload["recent_audits"] = [
+            {
+                "id": row.get("id"),
+                "timestamp": row.get("timestamp"),
+                "score": row.get("score"),
+                "rating": row.get("rating"),
+                "dependency_health_status": row.get("dependency_health_status"),
+                "dependency_health_summary": row.get("dependency_health_summary"),
+            }
+            for row in history_rows[:10]
+        ]
+        return payload
 
     @staticmethod
     def save_project_rules(

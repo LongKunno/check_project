@@ -458,3 +458,157 @@ def test_annotate_scope_uses_bulk_update_when_db_ready(monkeypatch):
     assert json.loads(first_row[1])["audit_id"] == 42
     assert calls["commits"] == 1
     assert calls["released"] == 1
+
+
+def test_list_requests_uses_composed_sql_when_db_ready(monkeypatch):
+    calls = {"execute": [], "released": 0}
+
+    class FakeCursor:
+        def __init__(self):
+            self.count = 0
+
+        def execute(self, query, params=None):
+            calls["execute"].append((query, params))
+            self.count += 1
+
+        def fetchone(self):
+            return {"count": 1}
+
+        def fetchall(self):
+            return [
+                {
+                    "request_id": "req-1",
+                    "external_request_id": None,
+                    "batch_envelope_id": None,
+                    "source": "audit.validation",
+                    "feature": "audit",
+                    "provider": "openai",
+                    "mode": "realtime",
+                    "model": "gpt-5.4-mini",
+                    "job_id": "job-1",
+                    "target": "demo",
+                    "project": "demo",
+                    "status": "completed",
+                    "error_reason": None,
+                    "input_chars": 10,
+                    "output_chars": 20,
+                    "input_tokens": 3,
+                    "output_tokens": 7,
+                    "cached_tokens": 0,
+                    "estimated_cost": 0.01,
+                    "usage_source": "reported",
+                    "input_preview": "in",
+                    "output_preview": "out",
+                    "input_hash": "a",
+                    "output_hash": "b",
+                    "metadata": "{}",
+                    "started_at": datetime(2026, 4, 24, 8, 0, 0),
+                    "ended_at": datetime(2026, 4, 24, 8, 1, 0),
+                    "created_at": datetime(2026, 4, 24, 8, 0, 0),
+                }
+            ]
+
+        def close(self):
+            return None
+
+    class FakeConnection:
+        def __init__(self):
+            self.cursor_obj = FakeCursor()
+
+        def cursor(self, *args, **kwargs):
+            return self.cursor_obj
+
+    AuditDatabase._pool = object()
+    monkeypatch.setattr(
+        AuditDatabase,
+        "get_connection",
+        staticmethod(lambda: FakeConnection()),
+    )
+    monkeypatch.setattr(
+        AuditDatabase,
+        "release_connection",
+        staticmethod(lambda conn: calls.__setitem__("released", calls["released"] + 1)),
+    )
+
+    result = ai_telemetry.list_requests(
+        project="demo",
+        source="audit.validation",
+        page=1,
+        page_size=10,
+    )
+
+    assert len(calls["execute"]) == 2
+    assert isinstance(calls["execute"][0][0], ai_telemetry_module.sql.Composable)
+    assert isinstance(calls["execute"][1][0], ai_telemetry_module.sql.Composable)
+    assert calls["execute"][0][1] == ("demo", "audit.validation")
+    assert calls["execute"][1][1] == ("demo", "audit.validation", 10, 0)
+    assert result["total"] == 1
+    assert result["items"][0]["request_id"] == "req-1"
+    assert calls["released"] == 1
+
+
+def test_update_request_log_warns_when_db_write_fails(monkeypatch):
+    warnings = []
+
+    record = ai_telemetry.begin_request(
+        payload="validation",
+        provider="proxy",
+        mode="realtime",
+        model="scope-model",
+        context={"source": "audit.validation", "job_id": "audit-job"},
+    )
+
+    AuditDatabase._pool = object()
+    monkeypatch.setattr(
+        AuditDatabase,
+        "get_connection",
+        staticmethod(lambda: (_ for _ in ()).throw(RuntimeError("db down"))),
+    )
+    monkeypatch.setattr(
+        ai_telemetry_module.logger,
+        "warning",
+        lambda message, *args, **kwargs: warnings.append((message, args, kwargs)),
+    )
+
+    ai_telemetry._update_request_log(record["request_id"], record)
+
+    assert warnings
+    assert warnings[0][0] == "Failed to persist AI request log update for request_id=%s."
+    assert warnings[0][1] == (record["request_id"],)
+    assert warnings[0][2]["exc_info"] is True
+
+
+def test_bind_batch_envelope_warns_when_db_write_fails(monkeypatch):
+    warnings = []
+
+    pending = {
+        "custom-1": ai_telemetry.begin_request(
+            payload="validation",
+            provider="proxy",
+            mode="realtime",
+            model="scope-model",
+            context={"source": "audit.validation", "job_id": "audit-job"},
+            external_request_id="custom-1",
+            status="submitted",
+        )
+    }
+
+    AuditDatabase._pool = object()
+    monkeypatch.setattr(
+        AuditDatabase,
+        "get_connection",
+        staticmethod(lambda: (_ for _ in ()).throw(RuntimeError("db down"))),
+    )
+    monkeypatch.setattr(
+        ai_telemetry_module.logger,
+        "warning",
+        lambda message, *args, **kwargs: warnings.append((message, args, kwargs)),
+    )
+
+    ai_telemetry.bind_batch_envelope("batch-1", pending)
+
+    assert pending["custom-1"]["batch_envelope_id"] == "batch-1"
+    assert warnings
+    assert warnings[0][0] == "Failed to bind AI batch envelope for batch_id=%s."
+    assert warnings[0][1] == ("batch-1",)
+    assert warnings[0][2]["exc_info"] is True

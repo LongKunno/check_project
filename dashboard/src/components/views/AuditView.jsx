@@ -10,7 +10,10 @@ import {
   Check,
   ChevronDown,
   FolderOpen,
+  Package,
   Search,
+  ShieldAlert,
+  ShieldCheck,
   UserRound,
   Users,
 } from "lucide-react";
@@ -32,6 +35,12 @@ import {
   getTopProblematicFiles,
   getRuleBreakdownData,
 } from "../../utils/chartHelpers";
+import {
+  getDependencyHealthMeta,
+  getDependencyIssueSummary,
+  getDependencyLifecycleMeta,
+  getDependencyHealthSummaryLine,
+} from "../../utils/dependencyHealthHelpers";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 // ─── Feature Table (Inline — depends on local helpers) ──────────────────────
@@ -303,6 +312,29 @@ const AuditView = ({
     if (!keyword) return memberOptions;
     return memberOptions.filter((member) => member.toLowerCase().includes(keyword));
   }, [memberOptions, memberSearch]);
+  const dependencyHealth = data?.metadata?.dependency_health || null;
+  const dependencyHealthMeta = getDependencyHealthMeta(
+    dependencyHealth?.status,
+    dependencyHealth?.summary,
+  );
+  const dependencyHealthLine = getDependencyHealthSummaryLine(
+    dependencyHealth?.summary,
+    dependencyHealth?.status,
+  );
+  const dependencyHighlightItems = useMemo(() => {
+    const items = dependencyHealth?.items || [];
+    const order = { warning: 0, hygiene: 1, pass: 2 };
+    return [...items]
+      .sort((left, right) => {
+        const statusDelta = (order[left.status] ?? 9) - (order[right.status] ?? 9);
+        if (statusDelta !== 0) return statusDelta;
+        const issueDelta =
+          (right.issue_types?.length || 0) - (left.issue_types?.length || 0);
+        if (issueDelta !== 0) return issueDelta;
+        return String(left.name || "").localeCompare(String(right.name || ""));
+      })
+      .slice(0, 6);
+  }, [dependencyHealth]);
 
   const memoizedViolationDistData = useMemo(
     () => getViolationDistributionData(chartCurrentViolations),
@@ -582,6 +614,115 @@ const AuditView = ({
                     {data.ai_summary.blocked_requests} blocked by budget
                   </div>
                 ) : null}
+              </div>
+            </div>
+          ) : null}
+
+          {dependencyHealth ? (
+            <div
+              className="glass-card"
+              style={{
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
+                marginBottom: "1.5rem",
+              }}
+            >
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div
+                    className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 font-bold ${dependencyHealthMeta.classes}`}
+                  >
+                    {dependencyHealth.status === "warning" ? (
+                      <ShieldAlert size={15} />
+                    ) : (
+                      <ShieldCheck size={15} />
+                    )}
+                    Dependency Health
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">
+                    {dependencyHealth.summary?.dependencies_total || 0} dependencies/images
+                  </div>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-slate-700">
+                    {dependencyHealthLine}
+                  </div>
+                </div>
+
+                <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                    <div className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-800">
+                      <Package size={15} />
+                      Manifests
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {(dependencyHealth.summary?.manifests_scanned || []).length ? (
+                        dependencyHealth.summary.manifests_scanned.map((manifest) => (
+                          <span
+                            key={manifest}
+                            className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-[11px] font-bold text-sky-700"
+                          >
+                            {manifest}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-sm text-slate-400">No manifest info</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                    <div className="mb-3 text-sm font-bold text-slate-800">
+                      Priority Items
+                    </div>
+                    {!dependencyHighlightItems.length ? (
+                      <span className="text-sm text-slate-400">No dependency items detected.</span>
+                    ) : (
+                      <div className="space-y-3">
+                        {dependencyHighlightItems.map((item) => (
+                          <div
+                            key={`${item.artifact_path}-${item.name}-${item.current_spec}`}
+                            className="rounded-xl border border-slate-200 bg-white px-4 py-3"
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <div>
+                                <div className="text-sm font-bold text-slate-800">
+                                  {item.name}
+                                </div>
+                                <div className="text-[11px] text-slate-500">
+                                  {item.artifact_path} · {item.ecosystem}
+                                </div>
+                              </div>
+                              <span
+                                className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-bold ${
+                                  item.status === "warning"
+                                    ? "border-amber-200 bg-amber-50 text-amber-700"
+                                    : item.status === "pass"
+                                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                      : "border-slate-200 bg-slate-100 text-slate-500"
+                                }`}
+                              >
+                                {item.status}
+                              </span>
+                            </div>
+                            <div className="mt-2 text-sm text-slate-500">
+                              {item.resolved_version || item.current_spec || "—"}
+                              {item.latest_version ? ` -> ${item.latest_version}` : ""}
+                            </div>
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                              <span
+                                className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-bold ${getDependencyLifecycleMeta(item.lifecycle_status).classes}`}
+                              >
+                                {getDependencyLifecycleMeta(item.lifecycle_status).label}
+                              </span>
+                              <span className="text-[11px] text-slate-400">
+                                {getDependencyIssueSummary(item)}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           ) : null}

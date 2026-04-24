@@ -93,6 +93,8 @@ const SettingsView = ({ selectedRepoId, cn }) => {
     regression_violations_increase_threshold: 5,
     regression_pillar_drop_threshold: 0.5,
     regression_new_critical_threshold: 1,
+    dependency_health_enabled: true,
+    dependency_eol_warning_days: 180,
   });
   const [engineSaving, setEngineSaving] = useState(false);
   const [engineDirty, setEngineDirty] = useState(false);
@@ -721,6 +723,64 @@ const SettingsView = ({ selectedRepoId, cn }) => {
                       className="w-24 px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-800 text-sm font-mono text-center focus:outline-none focus:border-rose-500/50 focus:ring-1 focus:ring-rose-500/20 transition-all"
                     />
                     <span className="text-[10px] text-slate-600 font-bold">findings</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Dependency Health Guard */}
+          <div className="mt-6 pt-6 border-t border-slate-200">
+            <div className="flex items-center gap-3 mb-4">
+              <div className={`p-2 rounded-xl border ${engineConfig.dependency_health_enabled
+                ? "bg-cyan-500/10 border-cyan-500/25 text-cyan-600"
+                : "bg-slate-500/10 border-slate-500/20 text-slate-500"
+                }`}>
+                <ShieldAlert size={16} />
+              </div>
+              <div className="flex-1">
+                <div className="text-sm font-bold text-slate-800">Dependency Health Guard</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">
+                  Audit-time check cho Python, Node và Docker base image để phát hiện advisory severity cao, dependency deprecated/gần EOL và mutable image tags
+                </div>
+              </div>
+              <button
+                onClick={() => handleEngineConfigChange("dependency_health_enabled", !engineConfig.dependency_health_enabled)}
+                className="relative shrink-0 group"
+                title={engineConfig.dependency_health_enabled ? "Click to disable dependency health guard" : "Click to enable dependency health guard"}
+              >
+                {engineConfig.dependency_health_enabled ? (
+                  <ToggleRight size={36} className="text-cyan-600 transition-colors" />
+                ) : (
+                  <ToggleLeft size={36} className="text-slate-600 group-hover:text-slate-500 transition-colors" />
+                )}
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-bold text-slate-800">EOL Warning Window</div>
+                    <div className="text-[11px] text-slate-500 mt-0.5">
+                      Cảnh báo khi dependency còn không quá N ngày là tới end-of-life
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <input
+                      type="number"
+                      min="1"
+                      max="3650"
+                      value={engineConfig.dependency_eol_warning_days}
+                      onChange={(e) =>
+                        handleEngineConfigChange(
+                          "dependency_eol_warning_days",
+                          Math.min(3650, Math.max(1, parseInt(e.target.value, 10) || 1)),
+                        )
+                      }
+                      className="w-24 px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-800 text-sm font-mono text-center focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 transition-all"
+                    />
+                    <span className="text-[10px] text-slate-600 font-bold">days</span>
                   </div>
                 </div>
               </div>

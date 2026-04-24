@@ -153,6 +153,26 @@ REGRESSION_NEW_CRITICAL_THRESHOLD = _parse_int_setting(
     maximum=100000,
 )
 
+# DEPENDENCY HEALTH GUARD: audit-time dependency issue/lifecycle checks.
+DEPENDENCY_HEALTH_ENABLED = os.getenv(
+    "DEPENDENCY_HEALTH_ENABLED", "true"
+).lower() in ("true", "1", "yes")
+DEPENDENCY_EOL_WARNING_DAYS = _parse_int_setting(
+    os.getenv(
+        "DEPENDENCY_EOL_WARNING_DAYS",
+        os.getenv("DEPENDENCY_WARNING_RELEASE_AGE_DAYS", 180),
+    ),
+    default=180,
+    minimum=1,
+    maximum=3650,
+)
+DEPENDENCY_WARNING_MAJOR_LAG_THRESHOLD = _parse_int_setting(
+    os.getenv("DEPENDENCY_WARNING_MAJOR_LAG_THRESHOLD", 0),
+    default=0,
+    minimum=0,
+    maximum=50,
+)
+
 
 def _get_db_config_value(key: str):
     try:
@@ -323,6 +343,47 @@ def get_regression_new_critical_threshold() -> int:
             maximum=100000,
         )
     return REGRESSION_NEW_CRITICAL_THRESHOLD
+
+
+def get_dependency_health_enabled() -> bool:
+    """Đọc DEPENDENCY_HEALTH_ENABLED từ DB (ưu tiên) hoặc .env (fallback)."""
+    val = _get_db_config_value("dependency_health_enabled")
+    if val is not None:
+        return str(val).lower() in ("true", "1", "yes")
+    return DEPENDENCY_HEALTH_ENABLED
+
+
+def get_dependency_eol_warning_days() -> int:
+    """Ngưỡng warning khi dependency còn <= N ngày là tới EOL."""
+    val = _get_db_config_value("dependency_eol_warning_days")
+    if val is None:
+        val = _get_db_config_value("dependency_warning_release_age_days")
+    if val is not None:
+        return _parse_int_setting(
+            val,
+            default=DEPENDENCY_EOL_WARNING_DAYS,
+            minimum=1,
+            maximum=3650,
+        )
+    return DEPENDENCY_EOL_WARNING_DAYS
+
+
+def get_dependency_warning_release_age_days() -> int:
+    """Deprecated alias cho dependency EOL warning days."""
+    return get_dependency_eol_warning_days()
+
+
+def get_dependency_warning_major_lag_threshold() -> int:
+    """Deprecated alias. Major lag không còn được dùng để tạo warning."""
+    val = _get_db_config_value("dependency_warning_major_lag_threshold")
+    if val is not None:
+        return _parse_int_setting(
+            val,
+            default=DEPENDENCY_WARNING_MAJOR_LAG_THRESHOLD,
+            minimum=0,
+            maximum=50,
+        )
+    return DEPENDENCY_WARNING_MAJOR_LAG_THRESHOLD
 
 # [DEPRECATED] RULES_METADATA & SEVERITY have been moved to: src/engine/rules.json
 

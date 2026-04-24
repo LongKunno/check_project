@@ -91,6 +91,8 @@ class TestRepositoriesScores:
                 "latest_score",
                 "regression_status",
                 "regression_summary",
+                "dependency_health_status",
+                "dependency_health_summary",
             ]:
                 assert field in repo, f"Missing field '{field}'"
 
@@ -123,6 +125,11 @@ class TestRepositoriesScores:
                             "score_delta": -3.5,
                             "triggered_signals": ["score_drop"],
                         },
+                        "dependency_health_status": "warning",
+                        "dependency_health_summary": {
+                            "near_eol_count": 1,
+                            "triggered_signals": ["near_eol"],
+                        },
                     }
                 }
             ),
@@ -140,6 +147,7 @@ class TestRepositoriesScores:
         assert payload[0]["latest_score"] == 91.5
         assert payload[0]["violations_count"] == 2
         assert payload[0]["regression_status"] == "warning"
+        assert payload[0]["dependency_health_status"] == "warning"
         assert payload[1]["latest_score"] is None
 
 
@@ -409,6 +417,122 @@ class TestTrendsEndpoints:
         assert data["summary"]["warnings_count"] == 1
 
 
+class TestDependencyHealthEndpoints:
+    """GET /dependencies/* — overview và repository drill-down."""
+
+    def test_dependency_overview_returns_payload(self, client, monkeypatch):
+        from src.engine.database import AuditDatabase
+
+        monkeypatch.setattr(
+            AuditDatabase,
+            "get_dependency_health_overview",
+            staticmethod(
+                lambda: {
+                    "summary": {
+                        "configured_repos": 2,
+                        "scanned_repos": 2,
+                        "warning_repos": 1,
+                        "pass_repos": 1,
+                        "unavailable_repos": 0,
+                        "manifests_scanned": ["requirements.txt", "package-lock.json"],
+                        "dependencies_total": 12,
+                        "critical_advisories": 0,
+                        "high_advisories": 1,
+                        "deprecated_count": 1,
+                        "near_eol_count": 2,
+                        "eol_count": 0,
+                        "unknown_eol_count": 5,
+                        "mutable_base_image_count": 1,
+                        "hygiene_warning_count": 2,
+                        "triggered_signals": ["near_eol"],
+                    },
+                    "repositories": [
+                        {
+                            "id": "repo-1",
+                            "name": "Repo 1",
+                            "url": "https://example.com/repo-1.git",
+                            "dependency_health_status": "warning",
+                            "dependency_health_summary": {"near_eol_count": 2},
+                        }
+                    ],
+                }
+            ),
+        )
+
+        response = client.get("/dependencies/overview")
+
+        assert response.status_code == 200, response.text
+        payload = response.json()["data"]
+        assert payload["summary"]["warning_repos"] == 1
+        assert payload["repositories"][0]["dependency_health_status"] == "warning"
+
+    def test_dependency_repository_requires_target(self, client):
+        response = client.get("/dependencies/repository")
+        assert response.status_code == 400, response.text
+
+    def test_dependency_repository_returns_payload(self, client, monkeypatch):
+        from src.engine.database import AuditDatabase
+
+        monkeypatch.setattr(
+            AuditDatabase,
+            "get_repository_dependency_health",
+            staticmethod(
+                lambda target: {
+                    "target": target,
+                    "repo_id": "repo-1",
+                    "repo_name": "Repo 1",
+                    "latest_audit": {
+                        "id": 99,
+                        "timestamp": "2026-04-24T02:00:00",
+                        "dependency_health_status": "warning",
+                        "dependency_health_summary": {"near_eol_count": 1},
+                    },
+                    "dependency_health": {
+                        "status": "warning",
+                        "summary": {
+                            "manifests_scanned": ["requirements.txt"],
+                            "dependencies_total": 3,
+                            "critical_advisories": 0,
+                            "high_advisories": 1,
+                            "deprecated_count": 0,
+                            "near_eol_count": 1,
+                            "eol_count": 0,
+                            "unknown_eol_count": 1,
+                            "mutable_base_image_count": 0,
+                            "hygiene_warning_count": 0,
+                            "triggered_signals": ["near_eol"],
+                        },
+                        "items": [
+                            {
+                                "ecosystem": "python",
+                                "name": "requests",
+                                "status": "warning",
+                            }
+                        ],
+                        "manifests": [{"path": "requirements.txt"}],
+                    },
+                    "recent_audits": [
+                        {
+                            "id": 99,
+                            "dependency_health_status": "warning",
+                            "dependency_health_summary": {"near_eol_count": 1},
+                        }
+                    ],
+                }
+            ),
+        )
+
+        response = client.get(
+            "/dependencies/repository?target=https%3A%2F%2Fexample.com%2Frepo-1.git"
+        )
+
+        assert response.status_code == 200, response.text
+        payload = response.json()["data"]
+        assert payload["repo_name"] == "Repo 1"
+        assert payload["dependency_health"]["status"] == "warning"
+        assert payload["recent_audits"][0]["dependency_health_status"] == "warning"
+
+
 class TestAuditStatus:
     """GET /audit/status — Trạng thái audit."""
 
@@ -480,6 +604,8 @@ class TestEngineSettings:
         assert data["data"]["member_recent_months"] == 3
         assert data["data"]["regression_gate_enabled"] is True
         assert data["data"]["regression_score_drop_threshold"] == 2.0
+        assert data["data"]["dependency_health_enabled"] is True
+        assert data["data"]["dependency_eol_warning_days"] == 180
 
     def test_put_engine_settings_updates_regression_thresholds(self, client, monkeypatch):
         store = {}
@@ -504,6 +630,8 @@ class TestEngineSettings:
                 "regression_violations_increase_threshold": 8,
                 "regression_pillar_drop_threshold": 0.9,
                 "regression_new_critical_threshold": 2,
+                "dependency_health_enabled": False,
+                "dependency_eol_warning_days": 365,
             },
         )
 
@@ -513,6 +641,8 @@ class TestEngineSettings:
         assert store["regression_violations_increase_threshold"] == "8"
         assert store["regression_pillar_drop_threshold"] == "0.9"
         assert store["regression_new_critical_threshold"] == "2"
+        assert store["dependency_health_enabled"] == "false"
+        assert store["dependency_eol_warning_days"] == "365"
 
     def test_put_engine_settings_updates_ai_mode_and_batch_model(self, client, monkeypatch):
         store = {}

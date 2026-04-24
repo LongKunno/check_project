@@ -5,6 +5,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
+  ChevronUp,
   Shield,
   FolderOpen,
   Activity,
@@ -22,6 +23,7 @@ import {
   LogOut,
   Bot,
   Database,
+  Package,
   TrendingUp,
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -41,8 +43,12 @@ export const Sidebar = ({
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [isRepoDropdownOpen, setIsRepoDropdownOpen] = React.useState(false);
   const [repoSearch, setRepoSearch] = React.useState("");
+  const [showTopOverflowCue, setShowTopOverflowCue] = React.useState(false);
+  const [showBottomOverflowCue, setShowBottomOverflowCue] = React.useState(false);
   const repoDropdownRef = React.useRef(null);
   const repoSearchRef = React.useRef(null);
+  const navScrollRef = React.useRef(null);
+  const navContentRef = React.useRef(null);
   const { user, logout, isAnonymous } = useAuth();
 
   const selectedRepo = configuredRepos.find((repo) => repo.id === selectedRepoId);
@@ -87,6 +93,62 @@ export const Sidebar = ({
     });
     return () => window.cancelAnimationFrame(rafId);
   }, [isRepoDropdownOpen]);
+
+  const updateOverflowCue = React.useCallback(() => {
+    const scrollEl = navScrollRef.current;
+    if (!scrollEl) return;
+
+    const threshold = 12;
+    const hasOverflow = scrollEl.scrollHeight - scrollEl.clientHeight > threshold;
+    const hasMoreAbove = scrollEl.scrollTop > threshold;
+    const hasMoreBelow =
+      scrollEl.scrollTop + scrollEl.clientHeight < scrollEl.scrollHeight - threshold;
+
+    const nextTopValue = hasOverflow && hasMoreAbove;
+    const nextBottomValue = hasOverflow && hasMoreBelow;
+
+    setShowTopOverflowCue((current) =>
+      current === nextTopValue ? current : nextTopValue,
+    );
+    setShowBottomOverflowCue((current) =>
+      current === nextBottomValue ? current : nextBottomValue,
+    );
+  }, []);
+
+  React.useEffect(() => {
+    const scrollEl = navScrollRef.current;
+    const contentEl = navContentRef.current;
+    if (!scrollEl) return undefined;
+
+    const requestMeasure = () => {
+      window.requestAnimationFrame(updateOverflowCue);
+    };
+
+    requestMeasure();
+    scrollEl.addEventListener("scroll", updateOverflowCue, { passive: true });
+    window.addEventListener("resize", requestMeasure);
+
+    let resizeObserver;
+    if (typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(requestMeasure);
+      resizeObserver.observe(scrollEl);
+      if (contentEl) {
+        resizeObserver.observe(contentEl);
+      }
+    }
+
+    return () => {
+      scrollEl.removeEventListener("scroll", updateOverflowCue);
+      window.removeEventListener("resize", requestMeasure);
+      resizeObserver?.disconnect();
+    };
+  }, [
+    updateOverflowCue,
+    isSidebarCollapsed,
+    isRepoDropdownOpen,
+    location.pathname,
+    configuredRepos.length,
+  ]);
 
   const isPathActive = (path) =>
     location.pathname.startsWith(path) ||
@@ -138,6 +200,14 @@ export const Sidebar = ({
       activeClass:
         "bg-indigo-500/15 text-indigo-300 border border-indigo-500/25",
       iconClass: "text-indigo-400",
+    },
+    {
+      path: "/dependencies",
+      label: "Dependencies",
+      icon: Package,
+      activeClass:
+        "bg-amber-500/15 text-amber-300 border border-amber-500/25",
+      iconClass: "text-amber-400",
     },
     {
       path: "/trends",
@@ -354,92 +424,152 @@ export const Sidebar = ({
           </div>
         )}
       </div>
+      <div className="mx-4 mb-2 border-t border-slate-700 shrink-0" />
       {/* ── NAV ITEMS CONTAINER (Scrollable) ── */}
-      <div className="flex flex-col flex-1 overflow-y-auto no-scrollbar pb-4">
-        {/* ── SECTION 1: GLOBAL VIEWS ── */}
-        <div className="flex flex-col gap-1.5 px-3 mb-1 shrink-0">
-          <div
-            className={cn(
-              "flex items-center gap-2 mb-1.5 transition-all",
-              isSidebarCollapsed ? "justify-center px-0" : "px-1",
-            )}
-          >
-            {!isSidebarCollapsed ? (
-              <>
-                <Globe size={10} className="text-slate-500 shrink-0" />
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest opacity-60">
-                  Global Views
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        <div
+          ref={navScrollRef}
+          className="flex min-h-0 flex-col flex-1 overflow-y-auto no-scrollbar pt-2 pb-4"
+        >
+          <div ref={navContentRef} className="flex flex-col min-h-full">
+          {/* ── SECTION 1: GLOBAL VIEWS ── */}
+          <div className="flex flex-col gap-1.5 px-3 mb-1 shrink-0">
+            <div
+              className={cn(
+                "flex items-center gap-2 mb-1.5 transition-all",
+                isSidebarCollapsed ? "justify-center px-0" : "px-1",
+              )}
+            >
+              {!isSidebarCollapsed ? (
+                <>
+                  <Globe size={10} className="text-slate-500 shrink-0" />
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest opacity-60">
+                    Global Views
+                  </span>
+                </>
+              ) : (
+                <span className="text-[10px] font-bold text-slate-600 opacity-70">
+                  •••
                 </span>
-              </>
-            ) : (
-              <span className="text-[10px] font-bold text-slate-600 opacity-70">
-                •••
-              </span>
-            )}
-          </div>
-          {renderNavItems(globalNavItems)}
-        </div>
-
-        {/* ── Divider ── */}
-        <div className="mx-4 my-3 border-t border-slate-700 shrink-0" />
-
-        {/* ── SECTION 2: REPOSITORY WORKSPACE ── */}
-        <div className="flex flex-col gap-1.5 px-3 shrink-0">
-          {/* Section header */}
-          <div
-            className={cn(
-              "flex items-center gap-2 mb-1.5 transition-all",
-              isSidebarCollapsed ? "justify-center px-0" : "px-1",
-            )}
-          >
-            {!isSidebarCollapsed ? (
-              <>
-                <FolderOpen size={10} className="text-slate-500 shrink-0" />
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest opacity-60">
-                  Repository Workspace
-                </span>
-              </>
-            ) : (
-              <span className="text-[10px] font-bold text-slate-600 opacity-70">
-                •••
-              </span>
-            )}
+              )}
+            </div>
+            {renderNavItems(globalNavItems)}
           </div>
 
-          {/* Repo-scoped nav items */}
-          {renderNavItems(repoNavItems)}
-        </div>
+          {/* ── Divider ── */}
+          <div className="mx-4 my-3 border-t border-slate-700 shrink-0" />
 
-        {/* ── Divider ── */}
-        <div className="mx-4 my-2 border-t border-slate-700 shrink-0" />
-
-        {/* ── SECTION 3: SYSTEM INFO ── */}
-        <div className="flex flex-col gap-1.5 px-3 mb-1 shrink-0">
-          <div
-            className={cn(
-              "flex items-center gap-2 mb-1.5 transition-all",
-              isSidebarCollapsed ? "justify-center px-0" : "px-1",
-            )}
-          >
-            {!isSidebarCollapsed ? (
-              <>
-                <MonitorPlay size={10} className="text-slate-500 shrink-0" />
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest opacity-60">
-                  System Info
+          {/* ── SECTION 2: REPOSITORY WORKSPACE ── */}
+          <div className="flex flex-col gap-1.5 px-3 shrink-0">
+            {/* Section header */}
+            <div
+              className={cn(
+                "flex items-center gap-2 mb-1.5 transition-all",
+                isSidebarCollapsed ? "justify-center px-0" : "px-1",
+              )}
+            >
+              {!isSidebarCollapsed ? (
+                <>
+                  <FolderOpen size={10} className="text-slate-500 shrink-0" />
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest opacity-60">
+                    Repository Workspace
+                  </span>
+                </>
+              ) : (
+                <span className="text-[10px] font-bold text-slate-600 opacity-70">
+                  •••
                 </span>
-              </>
-            ) : (
-              <span className="text-[10px] font-bold text-slate-600 opacity-70">
-                •••
-              </span>
-            )}
+              )}
+            </div>
+
+            {/* Repo-scoped nav items */}
+            {renderNavItems(repoNavItems)}
           </div>
-          {renderNavItems(bottomNavItems)}
+
+          {/* ── Divider ── */}
+          <div className="mx-4 my-2 border-t border-slate-700 shrink-0" />
+
+          {/* ── SECTION 3: SYSTEM INFO ── */}
+          <div className="flex flex-col gap-1.5 px-3 mb-1 shrink-0">
+            <div
+              className={cn(
+                "flex items-center gap-2 mb-1.5 transition-all",
+                isSidebarCollapsed ? "justify-center px-0" : "px-1",
+              )}
+            >
+              {!isSidebarCollapsed ? (
+                <>
+                  <MonitorPlay size={10} className="text-slate-500 shrink-0" />
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest opacity-60">
+                    System Info
+                  </span>
+                </>
+              ) : (
+                <span className="text-[10px] font-bold text-slate-600 opacity-70">
+                  •••
+                </span>
+              )}
+            </div>
+            {renderNavItems(bottomNavItems)}
+          </div>
+          </div>
         </div>
-      </div>{" "}
+
+        <AnimatePresence>
+          {showTopOverflowCue && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+              className={cn(
+                "pointer-events-none absolute inset-x-0 top-0 hidden lg:flex justify-center",
+                isSidebarCollapsed ? "px-2" : "px-3",
+              )}
+              aria-hidden="true"
+            >
+              <div
+                className={cn(
+                  "sidebar-scroll-cue sidebar-scroll-cue-top",
+                  isSidebarCollapsed && "sidebar-scroll-cue-collapsed",
+                )}
+              >
+                <span className="sidebar-scroll-cue-icon sidebar-scroll-cue-icon-top">
+                  <ChevronUp size={14} />
+                </span>
+              </div>
+            </motion.div>
+          )}
+
+          {showBottomOverflowCue && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
+              className={cn(
+                "pointer-events-none absolute inset-x-0 bottom-0 hidden lg:flex justify-center",
+                isSidebarCollapsed ? "px-2" : "px-3",
+              )}
+              aria-hidden="true"
+            >
+              <div
+                className={cn(
+                  "sidebar-scroll-cue",
+                  isSidebarCollapsed && "sidebar-scroll-cue-collapsed",
+                )}
+              >
+                <span className="sidebar-scroll-cue-icon">
+                  <ChevronDown size={14} />
+                </span>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
       {/* <-- End Nav Items Container --> */}
       {/* ── Footer ── */}
-      <div className="p-4 border-t border-slate-700 mt-auto shrink-0 flex flex-col gap-2">
+      <div className="mt-auto flex shrink-0 flex-col gap-2 border-t border-slate-700 p-4">
         <div
           className={cn(
             "flex items-center p-3 rounded-xl border mb-1",
@@ -569,7 +699,7 @@ export const Sidebar = ({
       <motion.div
         initial={false}
         animate={{ width: isSidebarCollapsed ? 80 : 280 }}
-        className="hidden lg:flex flex-shrink-0 bg-gradient-to-b from-slate-800 to-slate-900 border-r border-slate-700/50 flex-col relative z-[100] h-full transition-all duration-300"
+        className="relative z-[100] hidden h-full min-h-0 flex-shrink-0 flex-col bg-gradient-to-b from-slate-800 to-slate-900 border-r border-slate-700/50 transition-all duration-300 lg:flex"
       >
         <button
           onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}

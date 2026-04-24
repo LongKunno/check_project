@@ -19,6 +19,10 @@ import Pagination from "../ui/Pagination";
 import { useToast } from "../ui/Toast";
 import TopProgressBar from "../ui/TopProgressBar";
 import { usePaginationState } from "../../hooks/usePaginationState";
+import {
+  getDependencyHealthMeta,
+  getDependencyHealthSummaryLine,
+} from "../../utils/dependencyHealthHelpers";
 import { getRegressionMeta, getRegressionSummaryLine } from "../../utils/regressionHelpers";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -328,6 +332,7 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
                       "Violations",
                       "AI Summary",
                       "Regression Gate",
+                      "Dependencies",
                       "Action",
                     ].map((h) => (
                       <th
@@ -465,6 +470,33 @@ const HistoryView = ({ selectedRepoId, targetUrl, onRestoreAudit, cn }) => {
                                     title={regressionLine}
                                   >
                                     {regressionLine}
+                                  </span>
+                                </div>
+                              );
+                            })()}
+                          </td>
+                          <td className="px-5 py-4">
+                            {(() => {
+                              const dependencyMeta = getDependencyHealthMeta(
+                                h.dependency_health_status,
+                                h.dependency_health_summary,
+                              );
+                              const dependencyLine = getDependencyHealthSummaryLine(
+                                h.dependency_health_summary,
+                                h.dependency_health_status,
+                              );
+                              return (
+                                <div className="flex flex-col items-start gap-1">
+                                  <span
+                                    className={`inline-flex px-2.5 py-1 rounded-full border text-[11px] font-bold ${dependencyMeta.classes}`}
+                                  >
+                                    {dependencyMeta.label}
+                                  </span>
+                                  <span
+                                    className="text-[11px] text-slate-500 max-w-[260px] xl:max-w-[320px] truncate"
+                                    title={dependencyLine}
+                                  >
+                                    {dependencyLine}
                                   </span>
                                 </div>
                               );

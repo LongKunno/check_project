@@ -52,6 +52,7 @@ const PresentationsStaticView = React.lazy(
 );
 const AiOpsView = React.lazy(() => import("./components/views/AiOpsView"));
 const AiCacheView = React.lazy(() => import("./components/views/AiCacheView"));
+const DependenciesView = React.lazy(() => import("./components/views/DependenciesView"));
 const TrendsView = React.lazy(() => import("./components/views/TrendsView"));
 import { Sidebar } from "./components/layout/Sidebar";
 import PageTransition from "./components/ui/PageTransition";
@@ -253,6 +254,7 @@ function App() {
                   location.pathname.startsWith("/history") ||
                   location.pathname.startsWith("/ai-ops") ||
                   location.pathname.startsWith("/ai-cache") ||
+                  location.pathname.startsWith("/dependencies") ||
                   location.pathname.startsWith("/settings") ||
                   location.pathname.startsWith("/rules") ||
                   location.pathname.startsWith("/sandbox") ||
@@ -558,6 +560,33 @@ function App() {
                         }
                       >
                         <AiCacheView />
+                      </Suspense>
+                    </div>
+                  }
+                />
+                <Route
+                  path="/dependencies"
+                  element={
+                    <div
+                      className="flex-1 flex flex-col w-full"
+                      style={{ minHeight: "calc(100vh - 100px)" }}
+                    >
+                      <Suspense
+                        fallback={
+                          <div className="p-8 space-y-6">
+                            <CardSkeleton count={4} />
+                            <TableSkeleton rows={5} cols={5} />
+                          </div>
+                        }
+                      >
+                        <DependenciesView
+                          selectedRepoId={selectedRepoId}
+                          targetUrl={
+                            configuredRepos.find((r) => r.id === selectedRepoId)
+                              ?.url
+                          }
+                          configuredRepos={configuredRepos}
+                        />
                       </Suspense>
                     </div>
                   }

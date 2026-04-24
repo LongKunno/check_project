@@ -200,6 +200,7 @@ from src.api.routers.repositories import router as repositories_router
 from src.api.routers.members import router as members_router
 from src.api.routers.auth import router as auth_router
 from src.api.routers.ai import router as ai_router
+from src.api.routers.dependencies import router as dependencies_router
 from src.api.routers.trends import router as trends_router
 
 app.include_router(audit_router)
@@ -209,6 +210,7 @@ app.include_router(repositories_router)
 app.include_router(members_router)
 app.include_router(auth_router)
 app.include_router(ai_router)
+app.include_router(dependencies_router)
 app.include_router(trends_router)
 
 if __name__ == "__main__":

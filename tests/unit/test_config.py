@@ -229,6 +229,42 @@ def test_regression_thresholds_prefer_db_override(monkeypatch):
     assert config.get_regression_new_critical_threshold() == 2
 
 
+def test_dependency_health_defaults_when_env_missing(monkeypatch):
+    monkeypatch.delenv("DEPENDENCY_HEALTH_ENABLED", raising=False)
+    monkeypatch.delenv("DEPENDENCY_EOL_WARNING_DAYS", raising=False)
+    monkeypatch.delenv("DEPENDENCY_WARNING_RELEASE_AGE_DAYS", raising=False)
+    monkeypatch.delenv("DEPENDENCY_WARNING_MAJOR_LAG_THRESHOLD", raising=False)
+    config = _reload_config()
+    monkeypatch.setattr(
+        AuditDatabase,
+        "get_config",
+        staticmethod(lambda key, default=None: None),
+    )
+
+    assert config.get_dependency_health_enabled() is True
+    assert config.get_dependency_eol_warning_days() == 180
+    assert config.get_dependency_warning_major_lag_threshold() == 0
+
+
+def test_dependency_health_settings_prefer_db_override(monkeypatch):
+    config = _reload_config()
+    monkeypatch.setattr(
+        AuditDatabase,
+        "get_config",
+        staticmethod(
+            lambda key, default=None: {
+                "dependency_health_enabled": "false",
+                "dependency_eol_warning_days": "365",
+                "dependency_warning_major_lag_threshold": "2",
+            }.get(key, default)
+        ),
+    )
+
+    assert config.get_dependency_health_enabled() is False
+    assert config.get_dependency_eol_warning_days() == 365
+    assert config.get_dependency_warning_major_lag_threshold() == 2
+
+
 def test_openai_batch_api_key_falls_back_to_env_when_db_decrypt_fails(monkeypatch):
     monkeypatch.setenv("OPENAI_BATCH_API_KEY", "env-key")
     config = _reload_config()

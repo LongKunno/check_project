@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from typing import Any, Dict, Iterable, List, Optional
 from urllib.parse import urlparse
 
+from psycopg2 import sql
 from psycopg2.extras import RealDictCursor, execute_values
 
 from src.engine.ai_cache import ai_audit_cache
@@ -37,6 +38,13 @@ def _json_loads(value: Any, default: Any):
         return json.loads(value)
     except Exception:
         return default
+
+
+def _compose_where_clause(parts: Iterable[str]) -> sql.Composable:
+    filters = [sql.SQL(part) for part in parts if part]
+    if not filters:
+        return sql.SQL("")
+    return sql.SQL(" WHERE {}").format(sql.SQL(" AND ").join(filters))
 
 
 class AiTelemetry:
@@ -324,7 +332,7 @@ class AiTelemetry:
             finally:
                 AuditDatabase.release_connection(conn)
         except Exception:
-            pass
+            logger.warning("Failed to persist AI budget policy.", exc_info=True)
         return self.get_budget_policy()
 
     def get_pricing_catalog(self) -> List[Dict[str, Any]]:
@@ -428,7 +436,7 @@ class AiTelemetry:
             finally:
                 AuditDatabase.release_connection(conn)
         except Exception:
-            pass
+            logger.warning("Failed to persist AI pricing catalog.", exc_info=True)
         return self.get_pricing_catalog()
 
     def _get_price_entry(self, provider: str, mode: str, model: str) -> Optional[Dict[str, Any]]:
@@ -782,7 +790,7 @@ class AiTelemetry:
             finally:
                 AuditDatabase.release_connection(conn)
         except Exception:
-            pass
+            logger.warning("Failed to persist AI request log insert.", exc_info=True)
         return payload
 
     def _update_request_log(self, request_id: str, payload: Dict[str, Any]) -> None:
@@ -835,7 +843,11 @@ class AiTelemetry:
             finally:
                 AuditDatabase.release_connection(conn)
         except Exception:
-            pass
+            logger.warning(
+                "Failed to persist AI request log update for request_id=%s.",
+                request_id,
+                exc_info=True,
+            )
 
     def _get_request_log(
         self,
@@ -874,8 +886,8 @@ class AiTelemetry:
             conn = AuditDatabase.get_connection()
             try:
                 cursor = conn.cursor(cursor_factory=RealDictCursor)
-                cursor.execute(
-                    f"""
+                query = sql.SQL(
+                    """
                     SELECT request_id, external_request_id, batch_envelope_id,
                            source, feature, provider, mode, model,
                            job_id, target, project, status, error_reason,
@@ -884,12 +896,11 @@ class AiTelemetry:
                            input_preview, output_preview, input_hash, output_hash,
                            metadata, raw_input_payload, raw_output_payload,
                            started_at, ended_at, created_at
-                    FROM ai_request_logs
-                    WHERE {' AND '.join(clauses)}
+                    FROM ai_request_logs{}
                     LIMIT 1
-                    """,
-                    tuple(params),
-                )
+                    """
+                ).format(_compose_where_clause(clauses))
+                cursor.execute(query, tuple(params))
                 row = cursor.fetchone()
                 cursor.close()
             finally:
@@ -1231,7 +1242,11 @@ class AiTelemetry:
             finally:
                 AuditDatabase.release_connection(conn)
         except Exception:
-            pass
+            logger.warning(
+                "Failed to bind AI batch envelope for batch_id=%s.",
+                batch_id,
+                exc_info=True,
+            )
 
     def resolve_batch_request(
         self,
@@ -1319,14 +1334,13 @@ class AiTelemetry:
             conn = AuditDatabase.get_connection()
             try:
                 cursor = conn.cursor(cursor_factory=RealDictCursor)
-                cursor.execute(
-                    f"""
+                query = sql.SQL(
+                    """
                     SELECT request_id, metadata
-                    FROM ai_request_logs
-                    WHERE {' AND '.join(where)}
-                    """,
-                    tuple(params),
-                )
+                    FROM ai_request_logs{}
+                    """
+                ).format(_compose_where_clause(where))
+                cursor.execute(query, tuple(params))
                 rows = cursor.fetchall()
                 updated_rows = []
                 for row in rows:
@@ -1397,7 +1411,7 @@ class AiTelemetry:
             where.append("mode = %s")
             params.append(mode)
 
-        clause = f"WHERE {' AND '.join(where)}" if where else ""
+        where_clause = _compose_where_clause(where)
         limit = max(1, min(int(page_size), 100))
         offset = max(int(page) - 1, 0) * limit
 
@@ -1428,13 +1442,13 @@ class AiTelemetry:
             conn = AuditDatabase.get_connection()
             try:
                 cursor = conn.cursor(cursor_factory=RealDictCursor)
-                cursor.execute(
-                    f"SELECT COUNT(*) AS count FROM ai_request_logs {clause}",
-                    tuple(params),
-                )
+                count_query = sql.SQL(
+                    "SELECT COUNT(*) AS count FROM ai_request_logs{}"
+                ).format(where_clause)
+                cursor.execute(count_query, tuple(params))
                 total = int(cursor.fetchone()["count"])
-                cursor.execute(
-                    f"""
+                list_query = sql.SQL(
+                    """
                     SELECT request_id, external_request_id, batch_envelope_id,
                            source, feature, provider, mode, model,
                            job_id, target, project, status, error_reason,
@@ -1442,13 +1456,12 @@ class AiTelemetry:
                            estimated_cost, usage_source,
                            input_preview, output_preview, input_hash, output_hash,
                            metadata, started_at, ended_at, created_at
-                    FROM ai_request_logs
-                    {clause}
+                    FROM ai_request_logs{}
                     ORDER BY created_at DESC
                     LIMIT %s OFFSET %s
-                    """,
-                    tuple(params + [limit, offset]),
-                )
+                    """
+                ).format(where_clause)
+                cursor.execute(list_query, tuple(params + [limit, offset]))
                 rows = cursor.fetchall()
                 cursor.close()
             finally:

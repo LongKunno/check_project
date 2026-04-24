@@ -126,6 +126,18 @@ def test_non_persistent_reads_return_safe_empty_values_without_db():
     assert AuditDatabase.get_history() == []
     assert AuditDatabase.get_latest_audits_for_targets(["demo"]) == {}
     assert AuditDatabase.get_audit_by_id(1) is None
+    overview = AuditDatabase.get_dependency_health_overview()
+    assert overview["summary"]["configured_repos"] >= 0
+    assert all(
+        repo["dependency_health_status"] == "unavailable"
+        for repo in overview["repositories"]
+    )
+    assert (
+        AuditDatabase.get_repository_dependency_health("repo://demo")[
+            "dependency_health"
+        ]["status"]
+        == "unavailable"
+    )
     assert AuditDatabase.get_project_rules("repo-1") is None
     assert AuditDatabase.get_effective_rules("repo-1") == {
         "disabled_core_rules": [],

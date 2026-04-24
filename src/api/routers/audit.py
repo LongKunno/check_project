@@ -30,10 +30,13 @@ from src.api.audit_state import AuditState, JobManager
 from src.config import (
     get_ai_enabled,
     get_ai_mode,
+    get_dependency_eol_warning_days,
+    get_dependency_health_enabled,
     get_member_recent_months,
     has_openai_batch_api_key,
 )
 from src.engine.ai_telemetry import AiBudgetExceededError, ai_telemetry
+from src.engine.dependency_health import evaluate_dependency_health
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -413,6 +416,11 @@ def run_auditor_with_capture(
 def _build_and_save_audit_result(auditor, target_str, project_name):
     total_loc = auditor.discovery_data["total_loc"]
     member_recent_months = get_member_recent_months()
+    dependency_health = evaluate_dependency_health(
+        auditor.target_dir,
+        enabled=get_dependency_health_enabled(),
+        eol_warning_days=get_dependency_eol_warning_days(),
+    )
     ai_summary = getattr(auditor, "ai_summary", None) or ai_telemetry.summarize_scope(
         job_id=getattr(auditor, "ai_scope_id", None),
         source_prefix="audit.",
@@ -440,11 +448,14 @@ def _build_and_save_audit_result(auditor, target_str, project_name):
         "metadata": {
             "member_recent_months": member_recent_months,
             "ai_scope_id": getattr(auditor, "ai_scope_id", None),
+            "dependency_health": dependency_health,
         },
         "ai_summary": ai_summary,
         "cache_summary": cache_summary,
         "violations": auditor.violations,
     }
+    result["dependency_health_status"] = dependency_health.get("status", "unavailable")
+    result["dependency_health_summary"] = dependency_health.get("summary") or {}
     if not get_ai_enabled():
         scan_mode = "static_only"
     else:

@@ -10,6 +10,8 @@ from src.engine.database import AuditDatabase
 from src.engine.settings_crypto import encrypt_setting
 from src.engine.ai_telemetry import AiBudgetExceededError
 from src.config import (
+    get_dependency_eol_warning_days,
+    get_dependency_health_enabled,
     get_regression_gate_enabled,
     get_regression_new_critical_threshold,
     get_regression_pillar_drop_threshold,
@@ -73,6 +75,16 @@ async def get_projects_scores():
                     "regression_summary": (
                         latest.get("regression_summary") if latest else None
                     ),
+                    "dependency_health_status": (
+                        latest.get("dependency_health_status")
+                        if latest
+                        else "unavailable"
+                    ),
+                    "dependency_health_summary": (
+                        latest.get("dependency_health_summary")
+                        if latest
+                        else None
+                    ),
                 }
             )
         except Exception as e:
@@ -88,6 +100,8 @@ async def get_projects_scores():
                     "pillar_scores": None,
                     "regression_status": "unavailable",
                     "regression_summary": None,
+                    "dependency_health_status": "unavailable",
+                    "dependency_health_summary": None,
                 }
             )
 
@@ -166,6 +180,10 @@ class EngineSettingsRequest(BaseModel):
     regression_violations_increase_threshold: Optional[int] = None
     regression_pillar_drop_threshold: Optional[float] = None
     regression_new_critical_threshold: Optional[int] = None
+    dependency_health_enabled: Optional[bool] = None
+    dependency_eol_warning_days: Optional[int] = None
+    dependency_warning_release_age_days: Optional[int] = None
+    dependency_warning_major_lag_threshold: Optional[int] = None
 
 
 def _build_engine_settings_payload():
@@ -194,6 +212,8 @@ def _build_engine_settings_payload():
         "regression_violations_increase_threshold": get_regression_violations_increase_threshold(),
         "regression_pillar_drop_threshold": get_regression_pillar_drop_threshold(),
         "regression_new_critical_threshold": get_regression_new_critical_threshold(),
+        "dependency_health_enabled": get_dependency_health_enabled(),
+        "dependency_eol_warning_days": get_dependency_eol_warning_days(),
     }
 
 
@@ -311,6 +331,24 @@ async def update_engine_settings(request: EngineSettingsRequest):
             AuditDatabase.set_config(
                 "regression_new_critical_threshold",
                 str(request.regression_new_critical_threshold),
+            )
+        if request.dependency_health_enabled is not None:
+            AuditDatabase.set_config(
+                "dependency_health_enabled",
+                str(request.dependency_health_enabled).lower(),
+            )
+        dependency_eol_warning_days = request.dependency_eol_warning_days
+        if dependency_eol_warning_days is None:
+            dependency_eol_warning_days = request.dependency_warning_release_age_days
+        if dependency_eol_warning_days is not None:
+            if not 1 <= dependency_eol_warning_days <= 3650:
+                raise HTTPException(
+                    status_code=400,
+                    detail="dependency_eol_warning_days phải nằm trong khoảng 1..3650",
+                )
+            AuditDatabase.set_config(
+                "dependency_eol_warning_days",
+                str(dependency_eol_warning_days),
             )
     except RuntimeError as exc:
         _raise_persistence_unavailable(exc)
